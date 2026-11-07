@@ -1,0 +1,8 @@
+* text=auto eol=lf
+
+*.ttf binary
+*.otf binary
+*.ttc binary
+*.woff binary
+*.woff2 binary
+*.dfont binary

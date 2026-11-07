@@ -1,0 +1,1273 @@
+{
+	"fonttools_version": "4.68.0",
+	"formats": [
+		{
+			"module": "fontTools.ttLib.tables.BitmapGlyphMetrics",
+			"name": "bigGlyphMetricsFormat",
+			"source": "\n  > # big endian\n  height:       B\n  width:        B\n  horiBearingX: b\n  horiBearingY: b\n  horiAdvance:  B\n  vertBearingX: b\n  vertBearingY: b\n  vertAdvance:  B\n",
+			"struct_format": ">BBbbBbbB",
+			"fields": {
+				"height": "B",
+				"width": "B",
+				"horiBearingX": "b",
+				"horiBearingY": "b",
+				"horiAdvance": "B",
+				"vertBearingX": "b",
+				"vertBearingY": "b",
+				"vertAdvance": "B"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.BitmapGlyphMetrics",
+			"name": "smallGlyphMetricsFormat",
+			"source": "\n  > # big endian\n  height:   B\n  width:    B\n  BearingX: b\n  BearingY: b\n  Advance:  B\n",
+			"struct_format": ">BBbbB",
+			"fields": {
+				"height": "B",
+				"width": "B",
+				"BearingX": "b",
+				"BearingY": "b",
+				"Advance": "B"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.C_B_D_T_",
+			"name": "bigGlyphMetricsFormat",
+			"source": "\n  > # big endian\n  height:       B\n  width:        B\n  horiBearingX: b\n  horiBearingY: b\n  horiAdvance:  B\n  vertBearingX: b\n  vertBearingY: b\n  vertAdvance:  B\n",
+			"struct_format": ">BBbbBbbB",
+			"fields": {
+				"height": "B",
+				"width": "B",
+				"horiBearingX": "b",
+				"horiBearingY": "b",
+				"horiAdvance": "B",
+				"vertBearingX": "b",
+				"vertBearingY": "b",
+				"vertAdvance": "B"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.C_B_D_T_",
+			"name": "smallGlyphMetricsFormat",
+			"source": "\n  > # big endian\n  height:   B\n  width:    B\n  BearingX: b\n  BearingY: b\n  Advance:  B\n",
+			"struct_format": ">BBbbB",
+			"fields": {
+				"height": "B",
+				"width": "B",
+				"BearingX": "b",
+				"BearingY": "b",
+				"Advance": "B"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.D_S_I_G_",
+			"name": "DSIG_HeaderFormat",
+			"source": "\n\t> # big endian\n\tulVersion:      L\n\tusNumSigs:      H\n\tusFlag:         H\n",
+			"struct_format": ">LHH",
+			"fields": {
+				"ulVersion": "L",
+				"usNumSigs": "H",
+				"usFlag": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.D_S_I_G_",
+			"name": "DSIG_SignatureBlockFormat",
+			"source": "\n\t> # big endian\n\tusReserved1:    H\n\tusReserved2:    H\n\tcbSignature:    l # length of following raw pkcs7 data\n",
+			"struct_format": ">HHl",
+			"fields": {
+				"usReserved1": "H",
+				"usReserved2": "H",
+				"cbSignature": "l"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.D_S_I_G_",
+			"name": "DSIG_SignatureFormat",
+			"source": "\n\t> # big endian\n\tulFormat:       L\n\tulLength:       L # length includes DSIG_SignatureBlock header\n\tulOffset:       L\n",
+			"struct_format": ">LLL",
+			"fields": {
+				"ulFormat": "L",
+				"ulLength": "L",
+				"ulOffset": "L"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.E_B_D_T_",
+			"name": "bigGlyphMetricsFormat",
+			"source": "\n  > # big endian\n  height:       B\n  width:        B\n  horiBearingX: b\n  horiBearingY: b\n  horiAdvance:  B\n  vertBearingX: b\n  vertBearingY: b\n  vertAdvance:  B\n",
+			"struct_format": ">BBbbBbbB",
+			"fields": {
+				"height": "B",
+				"width": "B",
+				"horiBearingX": "b",
+				"horiBearingY": "b",
+				"horiAdvance": "B",
+				"vertBearingX": "b",
+				"vertBearingY": "b",
+				"vertAdvance": "B"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.E_B_D_T_",
+			"name": "ebdtComponentFormat",
+			"source": "\n\t> # big endian\n\tglyphCode: H\n\txOffset:   b\n\tyOffset:   b\n",
+			"struct_format": ">Hbb",
+			"fields": {
+				"glyphCode": "H",
+				"xOffset": "b",
+				"yOffset": "b"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.E_B_D_T_",
+			"name": "ebdtTableVersionFormat",
+			"source": "\n\t> # big endian\n\tversion: 16.16F\n",
+			"struct_format": ">l",
+			"fields": {
+				"version": "l"
+			},
+			"fixes": {
+				"version": 16
+			}
+		},
+		{
+			"module": "fontTools.ttLib.tables.E_B_D_T_",
+			"name": "smallGlyphMetricsFormat",
+			"source": "\n  > # big endian\n  height:   B\n  width:    B\n  BearingX: b\n  BearingY: b\n  Advance:  B\n",
+			"struct_format": ">BBbbB",
+			"fields": {
+				"height": "B",
+				"width": "B",
+				"BearingX": "b",
+				"BearingY": "b",
+				"Advance": "B"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.E_B_L_C_",
+			"name": "bigGlyphMetricsFormat",
+			"source": "\n  > # big endian\n  height:       B\n  width:        B\n  horiBearingX: b\n  horiBearingY: b\n  horiAdvance:  B\n  vertBearingX: b\n  vertBearingY: b\n  vertAdvance:  B\n",
+			"struct_format": ">BBbbBbbB",
+			"fields": {
+				"height": "B",
+				"width": "B",
+				"horiBearingX": "b",
+				"horiBearingY": "b",
+				"horiAdvance": "B",
+				"vertBearingX": "b",
+				"vertBearingY": "b",
+				"vertAdvance": "B"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.E_B_L_C_",
+			"name": "bitmapSizeTableFormatPart1",
+			"source": "\n\t> # big endian\n\tindexSubTableArrayOffset: I\n\tindexTablesSize:          I\n\tnumberOfIndexSubTables:   I\n\tcolorRef:                 I\n",
+			"struct_format": ">IIII",
+			"fields": {
+				"indexSubTableArrayOffset": "I",
+				"indexTablesSize": "I",
+				"numberOfIndexSubTables": "I",
+				"colorRef": "I"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.E_B_L_C_",
+			"name": "bitmapSizeTableFormatPart2",
+			"source": "\n\t> # big endian\n\tstartGlyphIndex: H\n\tendGlyphIndex:   H\n\tppemX:           B\n\tppemY:           B\n\tbitDepth:        B\n\tflags:           b\n",
+			"struct_format": ">HHBBBb",
+			"fields": {
+				"startGlyphIndex": "H",
+				"endGlyphIndex": "H",
+				"ppemX": "B",
+				"ppemY": "B",
+				"bitDepth": "B",
+				"flags": "b"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.E_B_L_C_",
+			"name": "eblcHeaderFormat",
+			"source": "\n\t> # big endian\n\tversion:  16.16F\n\tnumSizes: I\n",
+			"struct_format": ">lI",
+			"fields": {
+				"version": "l",
+				"numSizes": "I"
+			},
+			"fixes": {
+				"version": 16
+			}
+		},
+		{
+			"module": "fontTools.ttLib.tables.E_B_L_C_",
+			"name": "sbitLineMetricsFormat",
+			"source": "\n\t> # big endian\n\tascender:              b\n\tdescender:             b\n\twidthMax:              B\n\tcaretSlopeNumerator:   b\n\tcaretSlopeDenominator: b\n\tcaretOffset:           b\n\tminOriginSB:           b\n\tminAdvanceSB:          b\n\tmaxBeforeBL:           b\n\tminAfterBL:            b\n\tpad1:                  b\n\tpad2:                  b\n",
+			"struct_format": ">bbBbbbbbbbbb",
+			"fields": {
+				"ascender": "b",
+				"descender": "b",
+				"widthMax": "B",
+				"caretSlopeNumerator": "b",
+				"caretSlopeDenominator": "b",
+				"caretOffset": "b",
+				"minOriginSB": "b",
+				"minAdvanceSB": "b",
+				"maxBeforeBL": "b",
+				"minAfterBL": "b",
+				"pad1": "b",
+				"pad2": "b"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.E_B_L_C_",
+			"name": "smallGlyphMetricsFormat",
+			"source": "\n  > # big endian\n  height:   B\n  width:    B\n  BearingX: b\n  BearingY: b\n  Advance:  B\n",
+			"struct_format": ">BBbbB",
+			"fields": {
+				"height": "B",
+				"width": "B",
+				"BearingX": "b",
+				"BearingY": "b",
+				"Advance": "B"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.E_B_S_C_",
+			"name": "bitmapScaleTableFormatPart2",
+			"source": "\n    > # big endian\n    ppemX:           B\n    ppemY:           B\n    substitutePpemX: B\n    substitutePpemY: B\n",
+			"struct_format": ">BBBB",
+			"fields": {
+				"ppemX": "B",
+				"ppemY": "B",
+				"substitutePpemX": "B",
+				"substitutePpemY": "B"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.E_B_S_C_",
+			"name": "ebscHeaderFormat",
+			"source": "\n    > # big endian\n    version:  16.16F\n    numSizes: I\n",
+			"struct_format": ">lI",
+			"fields": {
+				"version": "l",
+				"numSizes": "I"
+			},
+			"fixes": {
+				"version": 16
+			}
+		},
+		{
+			"module": "fontTools.ttLib.tables.E_B_S_C_",
+			"name": "sbitLineMetricsFormat",
+			"source": "\n\t> # big endian\n\tascender:              b\n\tdescender:             b\n\twidthMax:              B\n\tcaretSlopeNumerator:   b\n\tcaretSlopeDenominator: b\n\tcaretOffset:           b\n\tminOriginSB:           b\n\tminAdvanceSB:          b\n\tmaxBeforeBL:           b\n\tminAfterBL:            b\n\tpad1:                  b\n\tpad2:                  b\n",
+			"struct_format": ">bbBbbbbbbbbb",
+			"fields": {
+				"ascender": "b",
+				"descender": "b",
+				"widthMax": "B",
+				"caretSlopeNumerator": "b",
+				"caretSlopeDenominator": "b",
+				"caretOffset": "b",
+				"minOriginSB": "b",
+				"minAdvanceSB": "b",
+				"maxBeforeBL": "b",
+				"minAfterBL": "b",
+				"pad1": "b",
+				"pad2": "b"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.F_F_T_M_",
+			"name": "FFTMFormat",
+			"source": "\n\t\t>\t# big endian\n\t\tversion:        I\n\t\tFFTimeStamp:    Q\n\t\tsourceCreated:  Q\n\t\tsourceModified: Q\n",
+			"struct_format": ">IQQQ",
+			"fields": {
+				"version": "I",
+				"FFTimeStamp": "Q",
+				"sourceCreated": "Q",
+				"sourceModified": "Q"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.F__e_a_t",
+			"name": "Feat_hdr_format",
+			"source": "\n    >\n    version:    16.16F\n",
+			"struct_format": ">l",
+			"fields": {
+				"version": "l"
+			},
+			"fixes": {
+				"version": 16
+			}
+		},
+		{
+			"module": "fontTools.ttLib.tables.G__l_a_t",
+			"name": "Glat_format_0",
+			"source": "\n    >        # big endian\n    version: 16.16F\n",
+			"struct_format": ">l",
+			"fields": {
+				"version": "l"
+			},
+			"fixes": {
+				"version": 16
+			}
+		},
+		{
+			"module": "fontTools.ttLib.tables.G__l_a_t",
+			"name": "Glat_format_1_entry",
+			"source": "\n    >\n    attNum:     B    # Attribute number of first attribute\n    num:        B    # Number of attributes in this run\n",
+			"struct_format": ">BB",
+			"fields": {
+				"attNum": "B",
+				"num": "B"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.G__l_a_t",
+			"name": "Glat_format_23_entry",
+			"source": "\n    >\n    attNum:     H    # Attribute number of first attribute\n    num:        H    # Number of attributes in this run\n",
+			"struct_format": ">HH",
+			"fields": {
+				"attNum": "H",
+				"num": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.G__l_a_t",
+			"name": "Glat_format_3",
+			"source": "\n    >\n    version: 16.16F\n    compression:L    # compression scheme or reserved \n",
+			"struct_format": ">lL",
+			"fields": {
+				"version": "l",
+				"compression": "L"
+			},
+			"fixes": {
+				"version": 16
+			}
+		},
+		{
+			"module": "fontTools.ttLib.tables.G__l_a_t",
+			"name": "Glat_format_3_octabox_metrics",
+			"source": "\n    >\n    subboxBitmap:   H    # Which subboxes exist on 4x4 grid\n    diagNegMin:     B    # Defines minimum negatively-sloped diagonal (si)\n    diagNegMax:     B    # Defines maximum negatively-sloped diagonal (sa)\n    diagPosMin:     B    # Defines minimum positively-sloped diagonal (di)\n    diagPosMax:     B    # Defines maximum positively-sloped diagonal (da)\n",
+			"struct_format": ">HBBBB",
+			"fields": {
+				"subboxBitmap": "H",
+				"diagNegMin": "B",
+				"diagNegMax": "B",
+				"diagPosMin": "B",
+				"diagPosMax": "B"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.G__l_a_t",
+			"name": "Glat_format_3_subbox_entry",
+			"source": "\n    >\n    left:           B    # xi\n    right:          B    # xa\n    bottom:         B    # yi\n    top:            B    # ya\n    diagNegMin:     B    # Defines minimum negatively-sloped diagonal (si)\n    diagNegMax:     B    # Defines maximum negatively-sloped diagonal (sa)\n    diagPosMin:     B    # Defines minimum positively-sloped diagonal (di)\n    diagPosMax:     B    # Defines maximum positively-sloped diagonal (da)\n",
+			"struct_format": ">BBBBBBBB",
+			"fields": {
+				"left": "B",
+				"right": "B",
+				"bottom": "B",
+				"top": "B",
+				"diagNegMin": "B",
+				"diagNegMax": "B",
+				"diagPosMin": "B",
+				"diagPosMax": "B"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.H_H_E_A_",
+			"name": "hheaFormat",
+			"source": "\n\t\t>  # big endian\n\t\ttableVersion:           L\n\t\tascent:                 h\n\t\tdescent:                h\n\t\tlineGap:                h\n\t\tadvanceWidthMax:        H\n\t\tminLeftSideBearing:     h\n\t\tminRightSideBearing:    h\n\t\txMaxExtent:             h\n\t\tcaretSlopeRise:         h\n\t\tcaretSlopeRun:          h\n\t\tcaretOffset:            h\n\t\treserved0:              h\n\t\treserved1:              h\n\t\treserved2:              h\n\t\treserved3:              h\n\t\tmetricDataFormat:       h\n\t\tnumberOfHMetrics:       H\n",
+			"struct_format": ">LhhhHhhhhhhhhhhhH",
+			"fields": {
+				"tableVersion": "L",
+				"ascent": "h",
+				"descent": "h",
+				"lineGap": "h",
+				"advanceWidthMax": "H",
+				"minLeftSideBearing": "h",
+				"minRightSideBearing": "h",
+				"xMaxExtent": "h",
+				"caretSlopeRise": "h",
+				"caretSlopeRun": "h",
+				"caretOffset": "h",
+				"reserved0": "h",
+				"reserved1": "h",
+				"reserved2": "h",
+				"reserved3": "h",
+				"metricDataFormat": "h",
+				"numberOfHMetrics": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.O_S_2f_2",
+			"name": "OS2_format_0",
+			"source": "\n\t>   # big endian\n\tversion:                H       # version\n\txAvgCharWidth:          h       # average character width\n\tusWeightClass:          H       # degree of thickness of strokes\n\tusWidthClass:           H       # aspect ratio\n\tfsType:                 H       # type flags\n\tySubscriptXSize:        h       # subscript horizontal font size\n\tySubscriptYSize:        h       # subscript vertical font size\n\tySubscriptXOffset:      h       # subscript x offset\n\tySubscriptYOffset:      h       # subscript y offset\n\tySuperscriptXSize:      h       # superscript horizontal font size\n\tySuperscriptYSize:      h       # superscript vertical font size\n\tySuperscriptXOffset:    h       # superscript x offset\n\tySuperscriptYOffset:    h       # superscript y offset\n\tyStrikeoutSize:         h       # strikeout size\n\tyStrikeoutPosition:     h       # strikeout position\n\tsFamilyClass:           h       # font family class and subclass\n\tpanose:                 10s     # panose classification number\n\tulUnicodeRange1:        L       # character range\n\tulUnicodeRange2:        L       # character range\n\tulUnicodeRange3:        L       # character range\n\tulUnicodeRange4:        L       # character range\n\tachVendID:              4s      # font vendor identification\n\tfsSelection:            H       # font selection flags\n\tusFirstCharIndex:       H       # first unicode character index\n\tusLastCharIndex:        H       # last unicode character index\n\tsTypoAscender:          h       # typographic ascender\n\tsTypoDescender:         h       # typographic descender\n\tsTypoLineGap:           h       # typographic line gap\n\tusWinAscent:            H       # Windows ascender\n\tusWinDescent:           H       # Windows descender\n",
+			"struct_format": ">HhHHHhhhhhhhhhhh10sLLLL4sHHHhhhHH",
+			"fields": {
+				"version": "H",
+				"xAvgCharWidth": "h",
+				"usWeightClass": "H",
+				"usWidthClass": "H",
+				"fsType": "H",
+				"ySubscriptXSize": "h",
+				"ySubscriptYSize": "h",
+				"ySubscriptXOffset": "h",
+				"ySubscriptYOffset": "h",
+				"ySuperscriptXSize": "h",
+				"ySuperscriptYSize": "h",
+				"ySuperscriptXOffset": "h",
+				"ySuperscriptYOffset": "h",
+				"yStrikeoutSize": "h",
+				"yStrikeoutPosition": "h",
+				"sFamilyClass": "h",
+				"panose": "10s",
+				"ulUnicodeRange1": "L",
+				"ulUnicodeRange2": "L",
+				"ulUnicodeRange3": "L",
+				"ulUnicodeRange4": "L",
+				"achVendID": "4s",
+				"fsSelection": "H",
+				"usFirstCharIndex": "H",
+				"usLastCharIndex": "H",
+				"sTypoAscender": "h",
+				"sTypoDescender": "h",
+				"sTypoLineGap": "h",
+				"usWinAscent": "H",
+				"usWinDescent": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.O_S_2f_2",
+			"name": "OS2_format_1",
+			"source": "\n\t>   # big endian\n\tversion:                H       # version\n\txAvgCharWidth:          h       # average character width\n\tusWeightClass:          H       # degree of thickness of strokes\n\tusWidthClass:           H       # aspect ratio\n\tfsType:                 H       # type flags\n\tySubscriptXSize:        h       # subscript horizontal font size\n\tySubscriptYSize:        h       # subscript vertical font size\n\tySubscriptXOffset:      h       # subscript x offset\n\tySubscriptYOffset:      h       # subscript y offset\n\tySuperscriptXSize:      h       # superscript horizontal font size\n\tySuperscriptYSize:      h       # superscript vertical font size\n\tySuperscriptXOffset:    h       # superscript x offset\n\tySuperscriptYOffset:    h       # superscript y offset\n\tyStrikeoutSize:         h       # strikeout size\n\tyStrikeoutPosition:     h       # strikeout position\n\tsFamilyClass:           h       # font family class and subclass\n\tpanose:                 10s     # panose classification number\n\tulUnicodeRange1:        L       # character range\n\tulUnicodeRange2:        L       # character range\n\tulUnicodeRange3:        L       # character range\n\tulUnicodeRange4:        L       # character range\n\tachVendID:              4s      # font vendor identification\n\tfsSelection:            H       # font selection flags\n\tusFirstCharIndex:       H       # first unicode character index\n\tusLastCharIndex:        H       # last unicode character index\n\tsTypoAscender:          h       # typographic ascender\n\tsTypoDescender:         h       # typographic descender\n\tsTypoLineGap:           h       # typographic line gap\n\tusWinAscent:            H       # Windows ascender\n\tusWinDescent:           H       # Windows descender\n\n\tulCodePageRange1:   L\n\tulCodePageRange2:   L\n",
+			"struct_format": ">HhHHHhhhhhhhhhhh10sLLLL4sHHHhhhHHLL",
+			"fields": {
+				"version": "H",
+				"xAvgCharWidth": "h",
+				"usWeightClass": "H",
+				"usWidthClass": "H",
+				"fsType": "H",
+				"ySubscriptXSize": "h",
+				"ySubscriptYSize": "h",
+				"ySubscriptXOffset": "h",
+				"ySubscriptYOffset": "h",
+				"ySuperscriptXSize": "h",
+				"ySuperscriptYSize": "h",
+				"ySuperscriptXOffset": "h",
+				"ySuperscriptYOffset": "h",
+				"yStrikeoutSize": "h",
+				"yStrikeoutPosition": "h",
+				"sFamilyClass": "h",
+				"panose": "10s",
+				"ulUnicodeRange1": "L",
+				"ulUnicodeRange2": "L",
+				"ulUnicodeRange3": "L",
+				"ulUnicodeRange4": "L",
+				"achVendID": "4s",
+				"fsSelection": "H",
+				"usFirstCharIndex": "H",
+				"usLastCharIndex": "H",
+				"sTypoAscender": "h",
+				"sTypoDescender": "h",
+				"sTypoLineGap": "h",
+				"usWinAscent": "H",
+				"usWinDescent": "H",
+				"ulCodePageRange1": "L",
+				"ulCodePageRange2": "L"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.O_S_2f_2",
+			"name": "OS2_format_1_addition",
+			"source": "\t>\t# big endian\n\n\tulCodePageRange1:   L\n\tulCodePageRange2:   L\n",
+			"struct_format": ">LL",
+			"fields": {
+				"ulCodePageRange1": "L",
+				"ulCodePageRange2": "L"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.O_S_2f_2",
+			"name": "OS2_format_2",
+			"source": "\n\t>   # big endian\n\tversion:                H       # version\n\txAvgCharWidth:          h       # average character width\n\tusWeightClass:          H       # degree of thickness of strokes\n\tusWidthClass:           H       # aspect ratio\n\tfsType:                 H       # type flags\n\tySubscriptXSize:        h       # subscript horizontal font size\n\tySubscriptYSize:        h       # subscript vertical font size\n\tySubscriptXOffset:      h       # subscript x offset\n\tySubscriptYOffset:      h       # subscript y offset\n\tySuperscriptXSize:      h       # superscript horizontal font size\n\tySuperscriptYSize:      h       # superscript vertical font size\n\tySuperscriptXOffset:    h       # superscript x offset\n\tySuperscriptYOffset:    h       # superscript y offset\n\tyStrikeoutSize:         h       # strikeout size\n\tyStrikeoutPosition:     h       # strikeout position\n\tsFamilyClass:           h       # font family class and subclass\n\tpanose:                 10s     # panose classification number\n\tulUnicodeRange1:        L       # character range\n\tulUnicodeRange2:        L       # character range\n\tulUnicodeRange3:        L       # character range\n\tulUnicodeRange4:        L       # character range\n\tachVendID:              4s      # font vendor identification\n\tfsSelection:            H       # font selection flags\n\tusFirstCharIndex:       H       # first unicode character index\n\tusLastCharIndex:        H       # last unicode character index\n\tsTypoAscender:          h       # typographic ascender\n\tsTypoDescender:         h       # typographic descender\n\tsTypoLineGap:           h       # typographic line gap\n\tusWinAscent:            H       # Windows ascender\n\tusWinDescent:           H       # Windows descender\n\n\tulCodePageRange1:   L\n\tulCodePageRange2:   L\n\n\tsxHeight:           h\n\tsCapHeight:         h\n\tusDefaultChar:      H\n\tusBreakChar:        H\n\tusMaxContext:       H\n",
+			"struct_format": ">HhHHHhhhhhhhhhhh10sLLLL4sHHHhhhHHLLhhHHH",
+			"fields": {
+				"version": "H",
+				"xAvgCharWidth": "h",
+				"usWeightClass": "H",
+				"usWidthClass": "H",
+				"fsType": "H",
+				"ySubscriptXSize": "h",
+				"ySubscriptYSize": "h",
+				"ySubscriptXOffset": "h",
+				"ySubscriptYOffset": "h",
+				"ySuperscriptXSize": "h",
+				"ySuperscriptYSize": "h",
+				"ySuperscriptXOffset": "h",
+				"ySuperscriptYOffset": "h",
+				"yStrikeoutSize": "h",
+				"yStrikeoutPosition": "h",
+				"sFamilyClass": "h",
+				"panose": "10s",
+				"ulUnicodeRange1": "L",
+				"ulUnicodeRange2": "L",
+				"ulUnicodeRange3": "L",
+				"ulUnicodeRange4": "L",
+				"achVendID": "4s",
+				"fsSelection": "H",
+				"usFirstCharIndex": "H",
+				"usLastCharIndex": "H",
+				"sTypoAscender": "h",
+				"sTypoDescender": "h",
+				"sTypoLineGap": "h",
+				"usWinAscent": "H",
+				"usWinDescent": "H",
+				"ulCodePageRange1": "L",
+				"ulCodePageRange2": "L",
+				"sxHeight": "h",
+				"sCapHeight": "h",
+				"usDefaultChar": "H",
+				"usBreakChar": "H",
+				"usMaxContext": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.O_S_2f_2",
+			"name": "OS2_format_2_addition",
+			"source": "\t>\t# big endian\n\n\tulCodePageRange1:   L\n\tulCodePageRange2:   L\n\n\tsxHeight:           h\n\tsCapHeight:         h\n\tusDefaultChar:      H\n\tusBreakChar:        H\n\tusMaxContext:       H\n",
+			"struct_format": ">LLhhHHH",
+			"fields": {
+				"ulCodePageRange1": "L",
+				"ulCodePageRange2": "L",
+				"sxHeight": "h",
+				"sCapHeight": "h",
+				"usDefaultChar": "H",
+				"usBreakChar": "H",
+				"usMaxContext": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.O_S_2f_2",
+			"name": "OS2_format_5",
+			"source": "\n\t>   # big endian\n\tversion:                H       # version\n\txAvgCharWidth:          h       # average character width\n\tusWeightClass:          H       # degree of thickness of strokes\n\tusWidthClass:           H       # aspect ratio\n\tfsType:                 H       # type flags\n\tySubscriptXSize:        h       # subscript horizontal font size\n\tySubscriptYSize:        h       # subscript vertical font size\n\tySubscriptXOffset:      h       # subscript x offset\n\tySubscriptYOffset:      h       # subscript y offset\n\tySuperscriptXSize:      h       # superscript horizontal font size\n\tySuperscriptYSize:      h       # superscript vertical font size\n\tySuperscriptXOffset:    h       # superscript x offset\n\tySuperscriptYOffset:    h       # superscript y offset\n\tyStrikeoutSize:         h       # strikeout size\n\tyStrikeoutPosition:     h       # strikeout position\n\tsFamilyClass:           h       # font family class and subclass\n\tpanose:                 10s     # panose classification number\n\tulUnicodeRange1:        L       # character range\n\tulUnicodeRange2:        L       # character range\n\tulUnicodeRange3:        L       # character range\n\tulUnicodeRange4:        L       # character range\n\tachVendID:              4s      # font vendor identification\n\tfsSelection:            H       # font selection flags\n\tusFirstCharIndex:       H       # first unicode character index\n\tusLastCharIndex:        H       # last unicode character index\n\tsTypoAscender:          h       # typographic ascender\n\tsTypoDescender:         h       # typographic descender\n\tsTypoLineGap:           h       # typographic line gap\n\tusWinAscent:            H       # Windows ascender\n\tusWinDescent:           H       # Windows descender\n\n\tulCodePageRange1:   L\n\tulCodePageRange2:   L\n\n\tsxHeight:           h\n\tsCapHeight:         h\n\tusDefaultChar:      H\n\tusBreakChar:        H\n\tusMaxContext:       H\n\n\tusLowerOpticalPointSize:    H\n\tusUpperOpticalPointSize:    H\n",
+			"struct_format": ">HhHHHhhhhhhhhhhh10sLLLL4sHHHhhhHHLLhhHHHHH",
+			"fields": {
+				"version": "H",
+				"xAvgCharWidth": "h",
+				"usWeightClass": "H",
+				"usWidthClass": "H",
+				"fsType": "H",
+				"ySubscriptXSize": "h",
+				"ySubscriptYSize": "h",
+				"ySubscriptXOffset": "h",
+				"ySubscriptYOffset": "h",
+				"ySuperscriptXSize": "h",
+				"ySuperscriptYSize": "h",
+				"ySuperscriptXOffset": "h",
+				"ySuperscriptYOffset": "h",
+				"yStrikeoutSize": "h",
+				"yStrikeoutPosition": "h",
+				"sFamilyClass": "h",
+				"panose": "10s",
+				"ulUnicodeRange1": "L",
+				"ulUnicodeRange2": "L",
+				"ulUnicodeRange3": "L",
+				"ulUnicodeRange4": "L",
+				"achVendID": "4s",
+				"fsSelection": "H",
+				"usFirstCharIndex": "H",
+				"usLastCharIndex": "H",
+				"sTypoAscender": "h",
+				"sTypoDescender": "h",
+				"sTypoLineGap": "h",
+				"usWinAscent": "H",
+				"usWinDescent": "H",
+				"ulCodePageRange1": "L",
+				"ulCodePageRange2": "L",
+				"sxHeight": "h",
+				"sCapHeight": "h",
+				"usDefaultChar": "H",
+				"usBreakChar": "H",
+				"usMaxContext": "H",
+				"usLowerOpticalPointSize": "H",
+				"usUpperOpticalPointSize": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.O_S_2f_2",
+			"name": "OS2_format_5_addition",
+			"source": "\t>\t# big endian\n\n\tulCodePageRange1:   L\n\tulCodePageRange2:   L\n\n\tsxHeight:           h\n\tsCapHeight:         h\n\tusDefaultChar:      H\n\tusBreakChar:        H\n\tusMaxContext:       H\n\n\tusLowerOpticalPointSize:    H\n\tusUpperOpticalPointSize:    H\n",
+			"struct_format": ">LLhhHHHHH",
+			"fields": {
+				"ulCodePageRange1": "L",
+				"ulCodePageRange2": "L",
+				"sxHeight": "h",
+				"sCapHeight": "h",
+				"usDefaultChar": "H",
+				"usBreakChar": "H",
+				"usMaxContext": "H",
+				"usLowerOpticalPointSize": "H",
+				"usUpperOpticalPointSize": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.O_S_2f_2",
+			"name": "panoseFormat",
+			"source": "\n\tbFamilyType:        B\n\tbSerifStyle:        B\n\tbWeight:            B\n\tbProportion:        B\n\tbContrast:          B\n\tbStrokeVariation:   B\n\tbArmStyle:          B\n\tbLetterForm:        B\n\tbMidline:           B\n\tbXHeight:           B\n",
+			"struct_format": "BBBBBBBBBB",
+			"fields": {
+				"bFamilyType": "B",
+				"bSerifStyle": "B",
+				"bWeight": "B",
+				"bProportion": "B",
+				"bContrast": "B",
+				"bStrokeVariation": "B",
+				"bArmStyle": "B",
+				"bLetterForm": "B",
+				"bMidline": "B",
+				"bXHeight": "B"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.S_V_G_",
+			"name": "SVG_format_0",
+			"source": "\n\t>   # big endian\n\tversion:                  H\n\toffsetToSVGDocIndex:      L\n\treserved:                 L\n",
+			"struct_format": ">HLL",
+			"fields": {
+				"version": "H",
+				"offsetToSVGDocIndex": "L",
+				"reserved": "L"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.S_V_G_",
+			"name": "doc_index_entry_format_0",
+			"source": "\n\t>   # big endian\n\tstartGlyphID:             H\n\tendGlyphID:               H\n\tsvgDocOffset:             L\n\tsvgDocLength:             L\n",
+			"struct_format": ">HHLL",
+			"fields": {
+				"startGlyphID": "H",
+				"endGlyphID": "H",
+				"svgDocOffset": "L",
+				"svgDocLength": "L"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.S__i_l_f",
+			"name": "Silf_classmap_format",
+			"source": "\n    >\n    numClass:           H\n    numLinear:          H\n",
+			"struct_format": ">HH",
+			"fields": {
+				"numClass": "H",
+				"numLinear": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.S__i_l_f",
+			"name": "Silf_hdr_format",
+			"source": "\n    >\n    version:            16.16F\n",
+			"struct_format": ">l",
+			"fields": {
+				"version": "l"
+			},
+			"fixes": {
+				"version": 16
+			}
+		},
+		{
+			"module": "fontTools.ttLib.tables.S__i_l_f",
+			"name": "Silf_hdr_format_3",
+			"source": "\n    >\n    version:            16.16F\n    compilerVersion:    L\n    numSilf:            H\n                        x\n                        x\n",
+			"struct_format": ">lLHxx",
+			"fields": {
+				"version": "l",
+				"compilerVersion": "L",
+				"numSilf": "H"
+			},
+			"fixes": {
+				"version": 16
+			}
+		},
+		{
+			"module": "fontTools.ttLib.tables.S__i_l_f",
+			"name": "Silf_justify_format",
+			"source": "\n    >\n    attrStretch:        B\n    attrShrink:         B\n    attrStep:           B\n    attrWeight:         B\n    runto:              B\n                        x\n                        x\n                        x\n",
+			"struct_format": ">BBBBBxxx",
+			"fields": {
+				"attrStretch": "B",
+				"attrShrink": "B",
+				"attrStep": "B",
+				"attrWeight": "B",
+				"runto": "B"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.S__i_l_f",
+			"name": "Silf_lookupclass_format",
+			"source": "\n    >\n    numIDs:             H\n    searchRange:        H\n    entrySelector:      H\n    rangeShift:         H\n",
+			"struct_format": ">HHHH",
+			"fields": {
+				"numIDs": "H",
+				"searchRange": "H",
+				"entrySelector": "H",
+				"rangeShift": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.S__i_l_f",
+			"name": "Silf_lookuppair_format",
+			"source": "\n    >\n    glyphId:            H\n    index:              H\n",
+			"struct_format": ">HH",
+			"fields": {
+				"glyphId": "H",
+				"index": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.S__i_l_f",
+			"name": "Silf_part1_format",
+			"source": "\n    >\n    maxGlyphID:         H\n    extraAscent:        h\n    extraDescent:       h\n    numPasses:          B\n    iSubst:             B\n    iPos:               B\n    iJust:              B\n    iBidi:              B\n    flags:              B\n    maxPreContext:      B\n    maxPostContext:     B\n    attrPseudo:         B\n    attrBreakWeight:    B\n    attrDirectionality: B\n    attrMirroring:      B\n    attrSkipPasses:     B\n    numJLevels:         B\n",
+			"struct_format": ">HhhBBBBBBBBBBBBBB",
+			"fields": {
+				"maxGlyphID": "H",
+				"extraAscent": "h",
+				"extraDescent": "h",
+				"numPasses": "B",
+				"iSubst": "B",
+				"iPos": "B",
+				"iJust": "B",
+				"iBidi": "B",
+				"flags": "B",
+				"maxPreContext": "B",
+				"maxPostContext": "B",
+				"attrPseudo": "B",
+				"attrBreakWeight": "B",
+				"attrDirectionality": "B",
+				"attrMirroring": "B",
+				"attrSkipPasses": "B",
+				"numJLevels": "B"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.S__i_l_f",
+			"name": "Silf_part1_format_v3",
+			"source": "\n    >\n    ruleVersion:        16.16F\n    passOffset:         H\n    pseudosOffset:      H\n",
+			"struct_format": ">lHH",
+			"fields": {
+				"ruleVersion": "l",
+				"passOffset": "H",
+				"pseudosOffset": "H"
+			},
+			"fixes": {
+				"ruleVersion": 16
+			}
+		},
+		{
+			"module": "fontTools.ttLib.tables.S__i_l_f",
+			"name": "Silf_part2_format",
+			"source": "\n    >\n    numLigComp:         H\n    numUserDefn:        B\n    maxCompPerLig:      B\n    direction:          B\n    attCollisions:      B\n                        x\n                        x\n                        x\n    numCritFeatures:    B\n",
+			"struct_format": ">HBBBBxxxB",
+			"fields": {
+				"numLigComp": "H",
+				"numUserDefn": "B",
+				"maxCompPerLig": "B",
+				"direction": "B",
+				"attCollisions": "B",
+				"numCritFeatures": "B"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.S__i_l_f",
+			"name": "Silf_pass_format",
+			"source": "\n    >\n    flags:              B\n    maxRuleLoop:        B\n    maxRuleContext:     B\n    maxBackup:          B\n    numRules:           H\n    fsmOffset:          H\n    pcCode:             L\n    rcCode:             L\n    aCode:              L\n    oDebug:             L\n    numRows:            H\n    numTransitional:    H\n    numSuccess:         H\n    numColumns:         H\n",
+			"struct_format": ">BBBBHHLLLLHHHH",
+			"fields": {
+				"flags": "B",
+				"maxRuleLoop": "B",
+				"maxRuleContext": "B",
+				"maxBackup": "B",
+				"numRules": "H",
+				"fsmOffset": "H",
+				"pcCode": "L",
+				"rcCode": "L",
+				"aCode": "L",
+				"oDebug": "L",
+				"numRows": "H",
+				"numTransitional": "H",
+				"numSuccess": "H",
+				"numColumns": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.S__i_l_f",
+			"name": "Silf_pseudomap_format",
+			"source": "\n    >\n    unicode:            L\n    nPseudo:            H\n",
+			"struct_format": ">LH",
+			"fields": {
+				"unicode": "L",
+				"nPseudo": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.S__i_l_f",
+			"name": "Silf_pseudomap_format_h",
+			"source": "\n    >\n    unicode:            H\n    nPseudo:            H\n",
+			"struct_format": ">HH",
+			"fields": {
+				"unicode": "H",
+				"nPseudo": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.V_H_E_A_",
+			"name": "vheaFormat",
+			"source": "\n\t\t>\t# big endian\n\t\ttableVersion:\t\tL\n\t\tascent:\t\t\th\n\t\tdescent:\t\th\n\t\tlineGap:\t\th\n\t\tadvanceHeightMax:\tH\n\t\tminTopSideBearing:\th\n\t\tminBottomSideBearing:\th\n\t\tyMaxExtent:\t\th\n\t\tcaretSlopeRise:\t\th\n\t\tcaretSlopeRun:\t\th\n\t\tcaretOffset:\t\th\n\t\treserved1:\t\th\n\t\treserved2:\t\th\n\t\treserved3:\t\th\n\t\treserved4:\t\th\n\t\tmetricDataFormat:\th\n\t\tnumberOfVMetrics:\tH\n",
+			"struct_format": ">LhhhHhhhhhhhhhhhH",
+			"fields": {
+				"tableVersion": "L",
+				"ascent": "h",
+				"descent": "h",
+				"lineGap": "h",
+				"advanceHeightMax": "H",
+				"minTopSideBearing": "h",
+				"minBottomSideBearing": "h",
+				"yMaxExtent": "h",
+				"caretSlopeRise": "h",
+				"caretSlopeRun": "h",
+				"caretOffset": "h",
+				"reserved1": "h",
+				"reserved2": "h",
+				"reserved3": "h",
+				"reserved4": "h",
+				"metricDataFormat": "h",
+				"numberOfVMetrics": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables._c_v_a_r",
+			"name": "CVAR_HEADER_FORMAT",
+			"source": "\n    > # big endian\n    majorVersion:        H\n    minorVersion:        H\n    tupleVariationCount: H\n    offsetToData:        H\n",
+			"struct_format": ">HHHH",
+			"fields": {
+				"majorVersion": "H",
+				"minorVersion": "H",
+				"tupleVariationCount": "H",
+				"offsetToData": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables._f_v_a_r",
+			"name": "FVAR_AXIS_FORMAT",
+			"source": "\n    > # big endian\n    axisTag:        4s\n    minValue:       16.16F\n    defaultValue:   16.16F\n    maxValue:       16.16F\n    flags:          H\n    axisNameID:         H\n",
+			"struct_format": ">4slllHH",
+			"fields": {
+				"axisTag": "4s",
+				"minValue": "l",
+				"defaultValue": "l",
+				"maxValue": "l",
+				"flags": "H",
+				"axisNameID": "H"
+			},
+			"fixes": {
+				"minValue": 16,
+				"defaultValue": 16,
+				"maxValue": 16
+			}
+		},
+		{
+			"module": "fontTools.ttLib.tables._f_v_a_r",
+			"name": "FVAR_HEADER_FORMAT",
+			"source": "\n    > # big endian\n    version:        L\n    offsetToData:   H\n    countSizePairs: H\n    axisCount:      H\n    axisSize:       H\n    instanceCount:  H\n    instanceSize:   H\n",
+			"struct_format": ">LHHHHHH",
+			"fields": {
+				"version": "L",
+				"offsetToData": "H",
+				"countSizePairs": "H",
+				"axisCount": "H",
+				"axisSize": "H",
+				"instanceCount": "H",
+				"instanceSize": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables._f_v_a_r",
+			"name": "FVAR_INSTANCE_FORMAT",
+			"source": "\n    > # big endian\n    subfamilyNameID:     H\n    flags:      H\n",
+			"struct_format": ">HH",
+			"fields": {
+				"subfamilyNameID": "H",
+				"flags": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables._g_l_y_f",
+			"name": "glyphHeaderFormat",
+			"source": "\n\t\t>\t# big endian\n\t\tnumberOfContours:\th\n\t\txMin:\t\t\t\th\n\t\tyMin:\t\t\t\th\n\t\txMax:\t\t\t\th\n\t\tyMax:\t\t\t\th\n",
+			"struct_format": ">hhhhh",
+			"fields": {
+				"numberOfContours": "h",
+				"xMin": "h",
+				"yMin": "h",
+				"xMax": "h",
+				"yMax": "h"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables._g_v_a_r",
+			"name": "GVAR_HEADER_FORMAT_HEAD",
+			"source": "\n\t> # big endian\n\tversion:\t\t\tH\n\treserved:\t\t\tH\n\taxisCount:\t\t\tH\n\tsharedTupleCount:\t\tH\n\toffsetToSharedTuples:\t\tI\n",
+			"struct_format": ">HHHHI",
+			"fields": {
+				"version": "H",
+				"reserved": "H",
+				"axisCount": "H",
+				"sharedTupleCount": "H",
+				"offsetToSharedTuples": "I"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables._g_v_a_r",
+			"name": "GVAR_HEADER_FORMAT_TAIL",
+			"source": "\n\t> # big endian\n\tflags:\t\t\t\tH\n\toffsetToGlyphVariationData:\tI\n",
+			"struct_format": ">HI",
+			"fields": {
+				"flags": "H",
+				"offsetToGlyphVariationData": "I"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables._h_d_m_x",
+			"name": "hdmxHeaderFormat",
+			"source": "\n\t>   # big endian!\n\tversion:\tH\n\tnumRecords:\tH\n\trecordSize:\tl\n",
+			"struct_format": ">HHl",
+			"fields": {
+				"version": "H",
+				"numRecords": "H",
+				"recordSize": "l"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables._h_e_a_d",
+			"name": "headFormat",
+			"source": "\n\t\t>\t# big endian\n\t\ttableVersion:       16.16F\n\t\tfontRevision:       16.16F\n\t\tcheckSumAdjustment: I\n\t\tmagicNumber:        I\n\t\tflags:              H\n\t\tunitsPerEm:         H\n\t\tcreated:            Q\n\t\tmodified:           Q\n\t\txMin:               h\n\t\tyMin:               h\n\t\txMax:               h\n\t\tyMax:               h\n\t\tmacStyle:           H\n\t\tlowestRecPPEM:      H\n\t\tfontDirectionHint:  h\n\t\tindexToLocFormat:   h\n\t\tglyphDataFormat:    h\n",
+			"struct_format": ">llIIHHQQhhhhHHhhh",
+			"fields": {
+				"tableVersion": "l",
+				"fontRevision": "l",
+				"checkSumAdjustment": "I",
+				"magicNumber": "I",
+				"flags": "H",
+				"unitsPerEm": "H",
+				"created": "Q",
+				"modified": "Q",
+				"xMin": "h",
+				"yMin": "h",
+				"xMax": "h",
+				"yMax": "h",
+				"macStyle": "H",
+				"lowestRecPPEM": "H",
+				"fontDirectionHint": "h",
+				"indexToLocFormat": "h",
+				"glyphDataFormat": "h"
+			},
+			"fixes": {
+				"tableVersion": 16,
+				"fontRevision": 16
+			}
+		},
+		{
+			"module": "fontTools.ttLib.tables._h_h_e_a",
+			"name": "hheaFormat",
+			"source": "\n\t\t>  # big endian\n\t\ttableVersion:           L\n\t\tascent:                 h\n\t\tdescent:                h\n\t\tlineGap:                h\n\t\tadvanceWidthMax:        H\n\t\tminLeftSideBearing:     h\n\t\tminRightSideBearing:    h\n\t\txMaxExtent:             h\n\t\tcaretSlopeRise:         h\n\t\tcaretSlopeRun:          h\n\t\tcaretOffset:            h\n\t\treserved0:              h\n\t\treserved1:              h\n\t\treserved2:              h\n\t\treserved3:              h\n\t\tmetricDataFormat:       h\n\t\tnumberOfHMetrics:       H\n",
+			"struct_format": ">LhhhHhhhhhhhhhhhH",
+			"fields": {
+				"tableVersion": "L",
+				"ascent": "h",
+				"descent": "h",
+				"lineGap": "h",
+				"advanceWidthMax": "H",
+				"minLeftSideBearing": "h",
+				"minRightSideBearing": "h",
+				"xMaxExtent": "h",
+				"caretSlopeRise": "h",
+				"caretSlopeRun": "h",
+				"caretOffset": "h",
+				"reserved0": "h",
+				"reserved1": "h",
+				"reserved2": "h",
+				"reserved3": "h",
+				"metricDataFormat": "h",
+				"numberOfHMetrics": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables._m_a_x_p",
+			"name": "maxpFormat_0_5",
+			"source": "\n\t\t>\t# big endian\n\t\ttableVersion:           i\n\t\tnumGlyphs:              H\n",
+			"struct_format": ">iH",
+			"fields": {
+				"tableVersion": "i",
+				"numGlyphs": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables._m_a_x_p",
+			"name": "maxpFormat_1_0_add",
+			"source": "\n\t\t>\t# big endian\n\t\tmaxPoints:              H\n\t\tmaxContours:            H\n\t\tmaxCompositePoints:     H\n\t\tmaxCompositeContours:   H\n\t\tmaxZones:               H\n\t\tmaxTwilightPoints:      H\n\t\tmaxStorage:             H\n\t\tmaxFunctionDefs:        H\n\t\tmaxInstructionDefs:     H\n\t\tmaxStackElements:       H\n\t\tmaxSizeOfInstructions:  H\n\t\tmaxComponentElements:   H\n\t\tmaxComponentDepth:      H\n",
+			"struct_format": ">HHHHHHHHHHHHH",
+			"fields": {
+				"maxPoints": "H",
+				"maxContours": "H",
+				"maxCompositePoints": "H",
+				"maxCompositeContours": "H",
+				"maxZones": "H",
+				"maxTwilightPoints": "H",
+				"maxStorage": "H",
+				"maxFunctionDefs": "H",
+				"maxInstructionDefs": "H",
+				"maxStackElements": "H",
+				"maxSizeOfInstructions": "H",
+				"maxComponentElements": "H",
+				"maxComponentDepth": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables._m_e_t_a",
+			"name": "DATA_MAP_FORMAT",
+			"source": "\n    > # big endian\n    tag:         4s\n    dataOffset:  L\n    dataLength:  L\n",
+			"struct_format": ">4sLL",
+			"fields": {
+				"tag": "4s",
+				"dataOffset": "L",
+				"dataLength": "L"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables._m_e_t_a",
+			"name": "META_HEADER_FORMAT",
+			"source": "\n    > # big endian\n    version:     L\n    flags:       L\n    dataOffset:  L\n    numDataMaps: L\n",
+			"struct_format": ">LLLL",
+			"fields": {
+				"version": "L",
+				"flags": "L",
+				"dataOffset": "L",
+				"numDataMaps": "L"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables._n_a_m_e",
+			"name": "nameRecordFormat",
+			"source": "\n\t\t>\t# big endian\n\t\tplatformID:\tH\n\t\tplatEncID:\tH\n\t\tlangID:\t\tH\n\t\tnameID:\t\tH\n\t\tlength:\t\tH\n\t\toffset:\t\tH\n",
+			"struct_format": ">HHHHHH",
+			"fields": {
+				"platformID": "H",
+				"platEncID": "H",
+				"langID": "H",
+				"nameID": "H",
+				"length": "H",
+				"offset": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables._p_o_s_t",
+			"name": "postFormat",
+			"source": "\n\t>\n\tformatType:\t\t\t16.16F\n\titalicAngle:\t\t16.16F\t\t# italic angle in degrees\n\tunderlinePosition:\th\n\tunderlineThickness:\th\n\tisFixedPitch:\t\tL\n\tminMemType42:\t\tL\t\t\t# minimum memory if TrueType font is downloaded\n\tmaxMemType42:\t\tL\t\t\t# maximum memory if TrueType font is downloaded\n\tminMemType1:\t\tL\t\t\t# minimum memory if Type1 font is downloaded\n\tmaxMemType1:\t\tL\t\t\t# maximum memory if Type1 font is downloaded\n",
+			"struct_format": ">llhhLLLLL",
+			"fields": {
+				"formatType": "l",
+				"italicAngle": "l",
+				"underlinePosition": "h",
+				"underlineThickness": "h",
+				"isFixedPitch": "L",
+				"minMemType42": "L",
+				"maxMemType42": "L",
+				"minMemType1": "L",
+				"maxMemType1": "L"
+			},
+			"fixes": {
+				"formatType": 16,
+				"italicAngle": 16
+			}
+		},
+		{
+			"module": "fontTools.ttLib.tables._s_b_i_x",
+			"name": "sbixHeaderFormat",
+			"source": "\n\t>\n\tversion:       H\t# Version number (set to 1)\n\tflags:         H\t# The only two bits used in the flags field are bits 0\n\t\t\t\t\t\t# and 1. For historical reasons, bit 0 must always be 1.\n\t\t\t\t\t\t# Bit 1 is a sbixDrawOutlines flag and is interpreted as\n\t\t\t\t\t\t# follows:\n\t\t\t\t\t\t#     0: Draw only 'sbix' bitmaps\n\t\t\t\t\t\t#     1: Draw both 'sbix' bitmaps and outlines, in that\n\t\t\t\t\t\t#        order\n\tnumStrikes:    L\t# Number of bitmap strikes to follow\n",
+			"struct_format": ">HHL",
+			"fields": {
+				"version": "H",
+				"flags": "H",
+				"numStrikes": "L"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables._s_b_i_x",
+			"name": "sbixStrikeOffsetFormat",
+			"source": "\n\t>\n\tstrikeOffset:  L\t# Offset from begining of table to data for the\n\t\t\t\t\t\t# individual strike\n",
+			"struct_format": ">L",
+			"fields": {
+				"strikeOffset": "L"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables._t_r_a_k",
+			"name": "TRACK_DATA_FORMAT",
+			"source": "\n\t> # big endian\n\tnTracks:         H\n\tnSizes:          H\n\tsizeTableOffset: L\n",
+			"struct_format": ">HHL",
+			"fields": {
+				"nTracks": "H",
+				"nSizes": "H",
+				"sizeTableOffset": "L"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables._t_r_a_k",
+			"name": "TRACK_TABLE_ENTRY_FORMAT",
+			"source": "\n\t> # big endian\n\ttrack:      16.16F\n\tnameIndex:       H\n\toffset:          H\n",
+			"struct_format": ">lHH",
+			"fields": {
+				"track": "l",
+				"nameIndex": "H",
+				"offset": "H"
+			},
+			"fixes": {
+				"track": 16
+			}
+		},
+		{
+			"module": "fontTools.ttLib.tables._t_r_a_k",
+			"name": "TRAK_HEADER_FORMAT",
+			"source": "\n\t> # big endian\n\tversion:     16.16F\n\tformat:      H\n\thorizOffset: H\n\tvertOffset:  H\n\treserved:    H\n",
+			"struct_format": ">lHHHH",
+			"fields": {
+				"version": "l",
+				"format": "H",
+				"horizOffset": "H",
+				"vertOffset": "H",
+				"reserved": "H"
+			},
+			"fixes": {
+				"version": 16
+			}
+		},
+		{
+			"module": "fontTools.ttLib.tables._v_h_e_a",
+			"name": "vheaFormat",
+			"source": "\n\t\t>\t# big endian\n\t\ttableVersion:\t\tL\n\t\tascent:\t\t\th\n\t\tdescent:\t\th\n\t\tlineGap:\t\th\n\t\tadvanceHeightMax:\tH\n\t\tminTopSideBearing:\th\n\t\tminBottomSideBearing:\th\n\t\tyMaxExtent:\t\th\n\t\tcaretSlopeRise:\t\th\n\t\tcaretSlopeRun:\t\th\n\t\tcaretOffset:\t\th\n\t\treserved1:\t\th\n\t\treserved2:\t\th\n\t\treserved3:\t\th\n\t\treserved4:\t\th\n\t\tmetricDataFormat:\th\n\t\tnumberOfVMetrics:\tH\n",
+			"struct_format": ">LhhhHhhhhhhhhhhhH",
+			"fields": {
+				"tableVersion": "L",
+				"ascent": "h",
+				"descent": "h",
+				"lineGap": "h",
+				"advanceHeightMax": "H",
+				"minTopSideBearing": "h",
+				"minBottomSideBearing": "h",
+				"yMaxExtent": "h",
+				"caretSlopeRise": "h",
+				"caretSlopeRun": "h",
+				"caretOffset": "h",
+				"reserved1": "h",
+				"reserved2": "h",
+				"reserved3": "h",
+				"reserved4": "h",
+				"metricDataFormat": "h",
+				"numberOfVMetrics": "H"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.sbixGlyph",
+			"name": "sbixGlyphHeaderFormat",
+			"source": "\n\t>\n\toriginOffsetX: h\t# The x-value of the point in the glyph relative to its\n\t\t\t\t\t\t# lower-left corner which corresponds to the origin of\n\t\t\t\t\t\t# the glyph on the screen, that is the point on the\n\t\t\t\t\t\t# baseline at the left edge of the glyph.\n\toriginOffsetY: h\t# The y-value of the point in the glyph relative to its\n\t\t\t\t\t\t# lower-left corner which corresponds to the origin of\n\t\t\t\t\t\t# the glyph on the screen, that is the point on the\n\t\t\t\t\t\t# baseline at the left edge of the glyph.\n\tgraphicType:  4s\t# e.g. \"png \"\n",
+			"struct_format": ">hh4s",
+			"fields": {
+				"originOffsetX": "h",
+				"originOffsetY": "h",
+				"graphicType": "4s"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.sbixStrike",
+			"name": "sbixGlyphDataOffsetFormat",
+			"source": "\n\t>\n\tglyphDataOffset:   L\t# Offset from the beginning of the strike data record\n\t\t\t\t\t\t\t# to data for the individual glyph\n",
+			"struct_format": ">L",
+			"fields": {
+				"glyphDataOffset": "L"
+			},
+			"fixes": {}
+		},
+		{
+			"module": "fontTools.ttLib.tables.sbixStrike",
+			"name": "sbixStrikeHeaderFormat",
+			"source": "\n\t>\n\tppem:          H\t# The PPEM for which this strike was designed (e.g., 9,\n\t\t\t\t\t\t# 12, 24)\n\tresolution:    H\t# The screen resolution (in dpi) for which this strike\n\t\t\t\t\t\t# was designed (e.g., 72)\n",
+			"struct_format": ">HH",
+			"fields": {
+				"ppem": "H",
+				"resolution": "H"
+			},
+			"fixes": {}
+		}
+	]
+}

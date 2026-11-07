@@ -1,0 +1,34 @@
+[project]
+name = "fontoxide-reference"
+version = "0.0.0"
+description = "Runs the pinned fontTools (upstream/fonttools) to produce reference data for fontoxide"
+requires-python = ">=3.13"
+# fontTools itself is not installed: reference.py imports it straight from
+# upstream/fonttools/Lib, so the reference always matches the submodule checkout and
+# nothing is ever built or written inside the submodule.
+#
+# These are the optional dependencies behind fontTools' extras that change what it
+# can read or write (woff, unicode, graphite, pathops, lxml). Plotting, reporting,
+# and symfont extras are intentionally left out.
+dependencies = [
+  "brotli>=1.2.1",
+  "zopfli>=0.1.4",
+  "unicodedata2>=18.0.0",
+  "lz4>=1.7.4.2",
+  "skia-pathops>=0.5.0",
+  "lxml>=4.0",
+  # For collecting the upstream test suite (`list-tests`). ufoLib2 pulls in a PyPI
+  # copy of fontTools, but reference.py puts the submodule first on sys.path.
+  "pytest>=8",
+  "ufoLib2",
+]
+
+[dependency-groups]
+# fontTools packs GSUB/GPOS with the HarfBuzz repacker when uharfbuzz is importable,
+# which changes the binary output. `reference.py` disables it unless --repacker is
+# given, so installing it only makes the comparison possible, not the default.
+repacker = ["uharfbuzz>=0.45.0"]
+
+[tool.uv]
+package = false
+default-groups = ["repacker"]

@@ -1,0 +1,283 @@
+# Maps fontTools source paths to the fontoxide crates that port them.
+# `cargo xtask upstream-report` groups upstream changes with these entries (longest
+# prefix wins). `synced` is the fontTools tag a part was last brought in line with;
+# leave it out until the part is ported, and update it after each sync.
+
+[[map]]
+upstream = "Lib/fontTools/afmLib/"
+rust = ["fontoxide-afmlib"]
+
+[[map]]
+upstream = "Tests/afmLib/"
+rust = ["fontoxide-afmlib"]
+
+[[map]]
+upstream = "Lib/fontTools/cffLib/"
+rust = ["fontoxide-cfflib"]
+
+[[map]]
+upstream = "Tests/cffLib/"
+rust = ["fontoxide-cfflib"]
+
+[[map]]
+upstream = "Lib/fontTools/colorLib/"
+rust = ["fontoxide-colorlib"]
+
+[[map]]
+upstream = "Tests/colorLib/"
+rust = ["fontoxide-colorlib"]
+
+[[map]]
+upstream = "Lib/fontTools/config/"
+rust = ["fontoxide-misc"]
+
+[[map]]
+upstream = "Tests/config/"
+rust = ["fontoxide-misc"]
+
+[[map]]
+upstream = "Lib/fontTools/cu2qu/"
+rust = ["fontoxide-cu2qu"]
+
+[[map]]
+upstream = "Tests/cu2qu/"
+rust = ["fontoxide-cu2qu"]
+
+[[map]]
+upstream = "Lib/fontTools/designspaceLib/"
+rust = ["fontoxide-designspacelib"]
+
+[[map]]
+upstream = "Tests/designspaceLib/"
+rust = ["fontoxide-designspacelib"]
+
+[[map]]
+upstream = "Lib/fontTools/diff/"
+rust = ["fontoxide-diff"]
+
+[[map]]
+upstream = "Tests/diff/"
+rust = ["fontoxide-diff"]
+
+[[map]]
+upstream = "Lib/fontTools/encodings/"
+rust = ["fontoxide-misc"]
+
+[[map]]
+upstream = "Tests/encodings/"
+rust = ["fontoxide-misc"]
+
+[[map]]
+upstream = "Lib/fontTools/feaLib/"
+rust = ["fontoxide-fealib"]
+
+[[map]]
+upstream = "Tests/feaLib/"
+rust = ["fontoxide-fealib"]
+
+[[map]]
+upstream = "Lib/fontTools/merge/"
+rust = ["fontoxide-merge"]
+
+[[map]]
+upstream = "Tests/merge/"
+rust = ["fontoxide-merge"]
+
+[[map]]
+upstream = "Lib/fontTools/misc/"
+rust = ["fontoxide-misc"]
+
+[[map]]
+upstream = "Tests/misc/"
+rust = ["fontoxide-misc"]
+
+[[map]]
+upstream = "Lib/fontTools/mtiLib/"
+rust = ["fontoxide-mtilib"]
+
+[[map]]
+upstream = "Tests/mtiLib/"
+rust = ["fontoxide-mtilib"]
+
+[[map]]
+upstream = "Lib/fontTools/otlLib/"
+rust = ["fontoxide-otllib"]
+
+[[map]]
+upstream = "Tests/otlLib/"
+rust = ["fontoxide-otllib"]
+
+[[map]]
+upstream = "Lib/fontTools/pens/"
+rust = ["fontoxide-pens"]
+
+[[map]]
+upstream = "Tests/pens/"
+rust = ["fontoxide-pens"]
+
+[[map]]
+upstream = "Lib/fontTools/qu2cu/"
+rust = ["fontoxide-qu2cu"]
+
+[[map]]
+upstream = "Tests/qu2cu/"
+rust = ["fontoxide-qu2cu"]
+
+[[map]]
+upstream = "Lib/fontTools/subset/"
+rust = ["fontoxide-subset"]
+
+[[map]]
+upstream = "Tests/subset/"
+rust = ["fontoxide-subset"]
+
+[[map]]
+upstream = "Lib/fontTools/svgLib/"
+rust = ["fontoxide-svglib"]
+
+[[map]]
+upstream = "Tests/svgLib/"
+rust = ["fontoxide-svglib"]
+
+[[map]]
+upstream = "Lib/fontTools/t1Lib/"
+rust = ["fontoxide-t1lib"]
+
+[[map]]
+upstream = "Tests/t1Lib/"
+rust = ["fontoxide-t1lib"]
+
+[[map]]
+upstream = "Lib/fontTools/tfmLib/"
+rust = ["fontoxide-tfmlib"]
+
+[[map]]
+upstream = "Tests/tfmLib/"
+rust = ["fontoxide-tfmlib"]
+
+[[map]]
+upstream = "Lib/fontTools/ttLib/"
+rust = ["fontoxide-ttlib"]
+
+[[map]]
+upstream = "Tests/ttLib/"
+rust = ["fontoxide-ttlib"]
+
+[[map]]
+upstream = "Lib/fontTools/ufoLib/"
+rust = ["fontoxide-ufolib"]
+
+[[map]]
+upstream = "Tests/ufoLib/"
+rust = ["fontoxide-ufolib"]
+
+[[map]]
+upstream = "Lib/fontTools/varLib/"
+rust = ["fontoxide-varlib"]
+
+[[map]]
+upstream = "Tests/varLib/"
+rust = ["fontoxide-varlib"]
+
+[[map]]
+upstream = "Lib/fontTools/voltLib/"
+rust = ["fontoxide-voltlib"]
+
+[[map]]
+upstream = "Tests/voltLib/"
+rust = ["fontoxide-voltlib"]
+
+[[map]]
+upstream = "Lib/fontTools/afmLib.py"
+rust = ["fontoxide-afmlib"]
+
+[[map]]
+upstream = "Lib/fontTools/agl.py"
+rust = ["fontoxide-agl"]
+
+[[map]]
+upstream = "Lib/fontTools/fontBuilder.py"
+rust = ["fontoxide"]
+
+[[map]]
+upstream = "Lib/fontTools/ttx.py"
+rust = ["fontoxide-cli"]
+
+[[map]]
+upstream = "Lib/fontTools/unicode.py"
+rust = ["fontoxide-unicodedata"]
+
+[[map]]
+upstream = "Lib/fontTools/unicodedata/"
+rust = ["fontoxide-unicodedata"]
+
+[[map]]
+upstream = "Lib/fontTools/tfmLib.py"
+rust = ["fontoxide-tfmlib"]
+
+[[map]]
+upstream = "Lib/fontTools/__main__.py"
+rust = ["fontoxide-cli"]
+
+[[map]]
+upstream = "Lib/fontTools/help.py"
+rust = ["fontoxide-cli"]
+
+[[map]]
+upstream = "Doc/"
+rust = []
+
+[[map]]
+upstream = "Icons/"
+rust = []
+
+[[map]]
+upstream = "Snippets/"
+rust = []
+
+[[map]]
+upstream = "MetaTools/"
+rust = []
+
+[[map]]
+upstream = ".github/"
+rust = []
+
+# Python-only plumbing with no Rust counterpart.
+[[map]]
+upstream = "Lib/fontTools/__init__.py"
+rust = []
+
+[[map]]
+upstream = "Lib/fontTools/annotations.py"
+rust = []
+
+# Tests for top-level modules.
+[[map]]
+upstream = "Tests/fontBuilder/"
+rust = ["fontoxide"]
+
+[[map]]
+upstream = "Tests/ttx/"
+rust = ["fontoxide-cli"]
+
+[[map]]
+upstream = "Tests/agl_test.py"
+rust = ["fontoxide-agl"]
+
+[[map]]
+upstream = "Tests/config_test.py"
+rust = ["fontoxide-misc"]
+
+[[map]]
+upstream = "Tests/unicodedata_test.py"
+rust = ["fontoxide-unicodedata"]
+
+# Tests for upstream's own build scripts (MetaTools/), and pytest plumbing.
+[[map]]
+upstream = "Tests/metaTools/"
+rust = []
+
+[[map]]
+upstream = "Tests/conftest.py"
+rust = []

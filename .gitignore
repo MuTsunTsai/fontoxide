@@ -1,0 +1,11 @@
+/target/
+
+# Local planning notes (not part of the published project).
+/docs/
+
+# Local font corpus used by `cargo xtask parity`; see corpus.md.
+/corpus/
+
+# Python reference environment.
+/tools/reference/.venv/
+__pycache__/
