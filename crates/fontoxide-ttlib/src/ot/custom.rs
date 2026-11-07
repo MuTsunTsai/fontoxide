@@ -20,9 +20,9 @@ use crate::generated::ot::{
 use crate::{Error, Font, Result};
 
 pub use super::gsub::{AlternateSubst, LigatureSubst, MultipleSubst, SingleSubst};
+pub use super::varmap::{DeltaSetIndexMap, VarIdxMap};
 pub use crate::generated::ot::{
-	ClipListRaw as ClipList, DeltaSetIndexMapRaw as DeltaSetIndexMap,
-	EntryIdStringDataRaw as EntryIdStringData, VarIdxMapRaw as VarIdxMap,
+	ClipListRaw as ClipList, EntryIdStringDataRaw as EntryIdStringData,
 };
 
 pub(crate) fn has_extended_glyph_ids(font: &mut Font) -> Result<bool> {

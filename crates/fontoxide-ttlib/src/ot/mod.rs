@@ -10,6 +10,15 @@ pub mod gsub;
 pub mod reader;
 pub mod state;
 pub mod table;
+
+/// The OpenType Layout and related types: generated from fontTools' otData, plus
+/// the classes written by hand (`Coverage`, `ClassDef`, ...).
+pub mod types {
+	pub use super::custom::*;
+	pub use crate::generated::ot::*;
+}
+
+pub mod varmap;
 pub mod writer;
 
 pub use reader::OtReader;

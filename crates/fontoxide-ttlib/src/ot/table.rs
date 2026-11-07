@@ -92,6 +92,7 @@ pub trait OtTable: Sized + Default + Clone {
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()>;
 
 	/// Reads one child element (`fromXML`).
+	#[allow(clippy::wrong_self_convention)]
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()>;
 
 	/// Fills in counts and defaults after reading TTX (`populateDefaults`).

@@ -85,7 +85,6 @@ const UNSUPPORTED: &[&str] = &[
 	"CIDGlyphMap",
 	"GlyphCIDMap",
 	"VarIdxMapValue",
-	"VarDataValue",
 	"CFF2Index",
 	"TupleListOffset",
 	"MappingEntriesConverter",
@@ -196,6 +195,7 @@ enum Kind {
 	AlternateFeature(String),
 	ValueRecord,
 	DeltaValue,
+	VarDataValue,
 	Unsupported(String),
 }
 
@@ -206,14 +206,18 @@ struct Field {
 	/// The Rust type of one value.
 	ty: String,
 	repeat: Option<Repeat>,
+	/// When the field is read and written: `condition` and, for fields that are
+	/// not arrays, `aux`.
 	cond: Option<String>,
+	/// `condition` alone (`isEnabled`).
+	enabled: Option<String>,
 }
 
 enum Repeat {
 	Fixed(i64),
 	/// A count read in this table: (field ident, name, aux, whether it is a
-	/// computed count held as `Option<u32>`, its Rust type).
-	Local(String, String, i64, bool, String),
+	/// computed count held as `Option<u32>`).
+	Local(String, String, i64, bool),
 	/// A count propagated from a parent table (name), plus aux.
 	Propagated(String, i64),
 }
@@ -288,6 +292,7 @@ fn kind_of(c: &Conv) -> Result<(Kind, String)> {
 		),
 		"ValueRecord" => (Kind::ValueRecord, "Option<ValueRecord>".into()),
 		"DeltaValue" => (Kind::DeltaValue, "Vec<i64>".into()),
+		"VarDataValue" => (Kind::VarDataValue, "Vec<i64>".into()),
 		other if UNSUPPORTED.contains(&other) => {
 			(Kind::Unsupported(other.into()), "Unsupported".into())
 		}
@@ -312,13 +317,12 @@ fn fields_of(convs: &[Conv]) -> Result<Vec<Field>> {
 			Some(serde_json::Value::String(s)) => {
 				let local = convs[..i].iter().find(|o| &o.name == s);
 				if let Some(o) = local {
-					let (k, ty) = kind_of(o)?;
+					let (k, _) = kind_of(o)?;
 					Some(Repeat::Local(
 						idents[s].clone(),
 						s.clone(),
 						aux_int,
 						matches!(k, Kind::Count(_)),
-						ty,
 					))
 				} else {
 					Some(Repeat::Propagated(s.clone(), aux_int))
@@ -330,6 +334,7 @@ fn fields_of(convs: &[Conv]) -> Result<Vec<Field>> {
 		if let Some(cond) = &c.condition {
 			conds.push(condition(cond, &idents)?);
 		}
+		let enabled = conds.first().cloned();
 		if c.repeat.is_none()
 			&& let Some(aux) = json_str(&c.aux)
 		{
@@ -342,6 +347,7 @@ fn fields_of(convs: &[Conv]) -> Result<Vec<Field>> {
 			ty,
 			repeat,
 			cond: (!conds.is_empty()).then(|| conds.join(" && ")),
+			enabled,
 		});
 	}
 	Ok(fields)
@@ -404,10 +410,10 @@ impl Gen<'_> {
 				Some(rep) => {
 					let count = match rep {
 						Repeat::Fixed(n) => format!("{n}usize"),
-						Repeat::Local(ident, name, aux, true, _) => {
+						Repeat::Local(ident, name, aux, true) => {
 							format!("repeat_count(t.{ident}.map(|v| v as i64), {aux}, {name:?})?")
 						}
-						Repeat::Local(ident, name, aux, false, _) => {
+						Repeat::Local(ident, name, aux, false) => {
 							format!("repeat_count(Some(t.{ident} as i64), {aux}, {name:?})?")
 						}
 						Repeat::Propagated(name, aux) => format!(
@@ -509,6 +515,7 @@ impl Gen<'_> {
 				format!("ValueRecord::read(r, font, {which:?})?")
 			}
 			Kind::DeltaValue => "read_delta_value(r, t.start_size, t.end_size, t.delta_format)?".into(),
+			Kind::VarDataValue => "read_var_data_value(r, t.var_region_count, t.num_shorts)?".into(),
 			Kind::Unsupported(name) => format!("Unsupported::read({name:?})?"),
 		})
 	}
@@ -585,6 +592,9 @@ impl Gen<'_> {
 			Kind::DeltaValue => format!(
 				"write_delta_value(w, &{value}, self.start_size, self.end_size, self.delta_format)?;"
 			),
+			Kind::VarDataValue => format!(
+				"write_var_data_value(w, &{value}, count_var_region_count.value(), self.num_shorts)?;"
+			),
 			Kind::Unsupported(name) => format!("Unsupported::write({name:?})?;"),
 		})
 	}
@@ -634,11 +644,11 @@ impl Gen<'_> {
 								f.ident, f.ident
 							);
 						}
-						Repeat::Local(ident, _, aux, true, _) => {
+						Repeat::Local(ident, _, aux, true) => {
 							let _ =
 								write!(body, "count_{ident}.set_value(({len} - {aux}) as u64)?;");
 						}
-						Repeat::Local(ident, name, aux, false, _) => {
+						Repeat::Local(ident, name, aux, false) => {
 							let _ = write!(
 								body,
 								"if self.{ident} as i64 != {len} - {aux} {{ return Err(Error::Assertion(format!(\"({name}, {{}}, {{}})\", self.{ident}, {len} - {aux}))); }}"
@@ -675,9 +685,16 @@ impl Gen<'_> {
 						);
 					}
 					// Declared outside the condition so that arrays can refer to it.
+					// `VarRegionList.preWrite` presets `RegionAxisCount`.
+					let init = match (class.name.as_str(), f.conv.name.as_str()) {
+						("VarRegionList", "RegionAxisCount") => {
+							"region_axis_count(font, self.region_axis_count)?"
+						}
+						_ => "None",
+					};
 					let _ = writeln!(
 						self.out,
-						"\t\tlet count_{} = CountRef::new({:?}, {size}, None);",
+						"\t\tlet count_{} = CountRef::new({:?}, {size}, {init});",
 						f.ident, f.conv.name
 					);
 				}
@@ -709,7 +726,17 @@ impl Gen<'_> {
 					}
 				}
 			}
-			match &f.cond {
+			// `BaseTable.compile` checks `aux` conditions only for plain values:
+			// counts and lookup types are written even when their `aux` is false
+			// (`LookupVariationCount` of `FeatureVariations` version 1.0).
+			let cond = if f.repeat.is_none()
+				&& (matches!(f.kind, Kind::Count(_)) || f.conv.is_lookup_type)
+			{
+				&f.enabled
+			} else {
+				&f.cond
+			};
+			match cond {
 				Some(c) => {
 					let _ = writeln!(self.out, "\t\tif {c} {{ {body} }}");
 				}
@@ -727,6 +754,10 @@ impl Gen<'_> {
 			Kind::Int(..) | Kind::Int24 | Kind::ValueFormat => {
 				format!("xml_simple(xw, {name:?}, &{attrs}, {value}.to_string());")
 			}
+			// Counts with a plain converter (`DesignAxisRecordSize`) show their value.
+			Kind::Count(_) if !f.conv.converter.starts_with("Computed") => format!(
+				"xml_simple(xw, {name:?}, &{attrs}, {value}.map_or(\"None\".to_owned(), |v| v.to_string()));"
+			),
 			Kind::Count(_) => format!("xml_computed(xw, {name:?}, {value});"),
 			Kind::Version => {
 				format!("xml_simple(xw, {name:?}, &{attrs}, format!(\"0x{{:08x}}\", {value}));")
@@ -761,14 +792,14 @@ impl Gen<'_> {
 			Kind::ValueRecord => {
 				format!("if let Some(v) = &{value} {{ v.to_xml(xw, font, {name:?}, &{attrs})?; }}")
 			}
-			Kind::DeltaValue => {
+			Kind::DeltaValue | Kind::VarDataValue => {
 				format!("xml_simple(xw, {name:?}, &{attrs}, int_list_repr(&{value}));")
 			}
 			Kind::Unsupported(_) => "let _ = &xw;".to_owned(),
 		}
 	}
 
-	fn to_xml2_body(&mut self, fields: &[Field]) {
+	fn gen_to_xml2(&mut self, fields: &[Field]) {
 		self.line("\t\tlet t = self;");
 		self.line("\t\tlet _ = t;");
 		for f in fields {
@@ -841,13 +872,18 @@ impl Gen<'_> {
 				"FeatureParamsAny::xml_read_named(e, font, ctx)?.map(Box::new)".into()
 			}
 			Kind::ValueRecord => "Some(ValueRecord::from_xml(e, font)?)".into(),
-			Kind::DeltaValue => "parse_int_list(value_attr(e)?)?".into(),
+			Kind::DeltaValue | Kind::VarDataValue => "parse_int_list(value_attr(e)?)?".into(),
 			Kind::Unsupported(name) => format!("Unsupported::xml_read({name:?})?"),
 		}
 	}
 
-	fn from_xml_body(&mut self, fields: &[Field]) {
+	fn gen_from_xml(&mut self, fields: &[Field]) {
 		self.line("\t\tlet e = element;");
+		if fields.is_empty() {
+			self.line("\t\tlet _ = (font, ctx);");
+			self.line("\t\tErr(Error::ttx(format!(\"KeyError: {:?}\", e.name)))");
+			return;
+		}
 		self.line("\t\tmatch e.name.as_str() {");
 		for f in fields {
 			let read = self.xml_read_expr(f);
@@ -894,15 +930,13 @@ impl Gen<'_> {
 		self.line("\t\tlet _ = t;");
 		for f in fields {
 			let stmt = match &f.repeat {
-				Some(Repeat::Local(ident, _, aux, true, _))
-					if !matches!(f.kind, Kind::DeltaValue) =>
-				{
+				Some(Repeat::Local(ident, _, aux, true)) if !matches!(f.kind, Kind::DeltaValue) => {
 					format!(
 						"self.{ident} = Some((self.{}.len() as i64 - {aux}).max(0) as u32);",
 						f.ident
 					)
 				}
-				Some(Repeat::Local(ident, name, aux, false, _))
+				Some(Repeat::Local(ident, name, aux, false))
 					if !matches!(f.kind, Kind::DeltaValue) =>
 				{
 					format!(
@@ -951,7 +985,7 @@ impl Gen<'_> {
 		for f in names {
 			let _ = writeln!(
 				self.out,
-				"\t\t\t{:?} => self.{} = value,",
+				"\t\t\t{:?} => if value.is_some() {{ self.{} = value; }},",
 				f.conv.name, f.ident
 			);
 		}
@@ -992,6 +1026,25 @@ impl Gen<'_> {
 		self.compile_body(class, &fields, format)?;
 		self.line("\t\tOk(())");
 		self.line("\t}");
+		// `toXML` writes a `Format` attribute for any table that has one, also
+		// for plain classes with a `Format` field (`VarStore`).
+		let format_field = fields.iter().find(|f| {
+			f.conv.name == "Format" && f.cond.is_none() && matches!(f.kind, Kind::Int(..))
+		});
+		if format.is_none()
+			&& let Some(ff) = format_field
+		{
+			let _ = writeln!(
+				self.out,
+				"\tfn format(&self) -> Option<u16> {{ Some(self.{} as u16) }}",
+				ff.ident
+			);
+			let _ = writeln!(
+				self.out,
+				"\tfn with_format(format: u16) -> Self {{ Self {{ {}: format as _, ..Self::default() }} }}",
+				ff.ident
+			);
+		}
 		if let Some((f, _)) = format {
 			let _ = writeln!(
 				self.out,
@@ -1000,13 +1053,13 @@ impl Gen<'_> {
 		}
 		self.line("\tfn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {");
 		self.line("\t\tlet _ = (&mut *xw, &mut *font);");
-		self.to_xml2_body(&fields);
+		self.gen_to_xml2(&fields);
 		self.line("\t\tOk(())");
 		self.line("\t}");
 		self.line(
 			"\tfn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {",
 		);
-		self.from_xml_body(&fields);
+		self.gen_from_xml(&fields);
 		self.line("\t}");
 		self.line("\tfn populate_defaults(&mut self, ctx: &mut XmlCtx) -> Result<()> {");
 		self.populate_body(&fields);

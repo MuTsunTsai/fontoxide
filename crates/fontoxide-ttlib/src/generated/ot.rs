@@ -2345,7 +2345,11 @@ impl OtTable for AxisValueFormat4 {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"AxisCount" => self.axis_count = value,
+			"AxisCount" => {
+				if value.is_some() {
+					self.axis_count = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -5370,8 +5374,16 @@ impl OtTable for COLR {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"BaseGlyphRecordCount" => self.base_glyph_record_count = value,
-			"LayerRecordCount" => self.layer_record_count = value,
+			"BaseGlyphRecordCount" => {
+				if value.is_some() {
+					self.base_glyph_record_count = value;
+				}
+			}
+			"LayerRecordCount" => {
+				if value.is_some() {
+					self.layer_record_count = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -14233,7 +14245,11 @@ impl OtTable for DeltaSetIndexMapRawFormat0 {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"MappingCount" => self.mapping_count = value,
+			"MappingCount" => {
+				if value.is_some() {
+					self.mapping_count = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -14331,7 +14347,11 @@ impl OtTable for DeltaSetIndexMapRawFormat1 {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"MappingCount" => self.mapping_count = value,
+			"MappingCount" => {
+				if value.is_some() {
+					self.mapping_count = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -14732,11 +14752,8 @@ impl OtTable for EntryIdStringDataRaw {
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
 		let e = element;
-		match e.name.as_str() {
-			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
-		}
 		let _ = (font, ctx);
-		Ok(())
+		Err(Error::ttx(format!("KeyError: {:?}", e.name)))
 	}
 	fn populate_defaults(&mut self, ctx: &mut XmlCtx) -> Result<()> {
 		let t = &*self;
@@ -15795,7 +15812,11 @@ impl OtTable for FeatureName {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"SettingsCount" => self.settings_count = value,
+			"SettingsCount" => {
+				if value.is_some() {
+					self.settings_count = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -15934,11 +15955,8 @@ impl OtTable for FeatureParams {
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
 		let e = element;
-		match e.name.as_str() {
-			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
-		}
 		let _ = (font, ctx);
-		Ok(())
+		Err(Error::ttx(format!("KeyError: {:?}", e.name)))
 	}
 	fn populate_defaults(&mut self, ctx: &mut XmlCtx) -> Result<()> {
 		let t = &*self;
@@ -16026,6 +16044,15 @@ impl OtTable for FeatureParamsCharacterVariants {
 			w.write_u24((*item))?;
 		}
 		Ok(())
+	}
+	fn format(&self) -> Option<u16> {
+		Some(self.format as u16)
+	}
+	fn with_format(format: u16) -> Self {
+		Self {
+			format: format as _,
+			..Self::default()
+		}
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let _ = (&mut *xw, &mut *font);
@@ -16710,9 +16737,7 @@ impl OtTable for FeatureVariations {
 			(*item).compile(w, font)?;
 		}
 		let count_lookup_variation_count = CountRef::new("LookupVariationCount", 4, None);
-		if (t.version as i64) >= 0x00010001 {
-			w.write_count_reference(count_lookup_variation_count.clone());
-		}
+		w.write_count_reference(count_lookup_variation_count.clone());
 		if (t.version as i64) >= 0x00010001 {
 			count_lookup_variation_count
 				.set_value((self.lookup_variation_record.len() as i64 - 0) as u64)?;
@@ -22361,11 +22386,8 @@ impl OtTable for LookupOrder {
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
 		let e = element;
-		match e.name.as_str() {
-			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
-		}
 		let _ = (font, ctx);
-		Ok(())
+		Err(Error::ttx(format!("KeyError: {:?}", e.name)))
 	}
 	fn populate_defaults(&mut self, ctx: &mut XmlCtx) -> Result<()> {
 		let t = &*self;
@@ -22679,7 +22701,13 @@ impl OtTable for MVAR {
 			format!("0x{:08x}", self.version),
 		);
 		xml_simple(xw, "Reserved", &Attrs::new(), self.reserved.to_string());
-		xml_computed(xw, "ValueRecordSize", self.value_record_size);
+		xml_simple(
+			xw,
+			"ValueRecordSize",
+			&Attrs::new(),
+			self.value_record_size
+				.map_or("None".to_owned(), |v| v.to_string()),
+		);
 		xml_computed(xw, "ValueRecordCount", self.value_record_count);
 		xml_struct(
 			xw,
@@ -22723,7 +22751,11 @@ impl OtTable for MVAR {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"ValueRecordSize" => self.value_record_size = value,
+			"ValueRecordSize" => {
+				if value.is_some() {
+					self.value_record_size = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -23421,7 +23453,11 @@ impl OtTable for MarkBasePosFormat1 {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"ClassCount" => self.class_count = value,
+			"ClassCount" => {
+				if value.is_some() {
+					self.class_count = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -23571,7 +23607,11 @@ impl OtTable for MarkBasePosFormat2 {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"ClassCount" => self.class_count = value,
+			"ClassCount" => {
+				if value.is_some() {
+					self.class_count = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -23912,7 +23952,11 @@ impl OtTable for MarkLigPosFormat1 {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"ClassCount" => self.class_count = value,
+			"ClassCount" => {
+				if value.is_some() {
+					self.class_count = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -24069,7 +24113,11 @@ impl OtTable for MarkLigPosFormat2 {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"ClassCount" => self.class_count = value,
+			"ClassCount" => {
+				if value.is_some() {
+					self.class_count = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -24309,7 +24357,11 @@ impl OtTable for MarkMarkPosFormat1 {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"ClassCount" => self.class_count = value,
+			"ClassCount" => {
+				if value.is_some() {
+					self.class_count = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -24459,7 +24511,11 @@ impl OtTable for MarkMarkPosFormat2 {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"ClassCount" => self.class_count = value,
+			"ClassCount" => {
+				if value.is_some() {
+					self.class_count = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -27723,6 +27779,15 @@ impl OtTable for MultiVarData {
 		Unsupported::write("TupleListOffset")?;
 		Ok(())
 	}
+	fn format(&self) -> Option<u16> {
+		Some(self.format as u16)
+	}
+	fn with_format(format: u16) -> Self {
+		Self {
+			format: format as _,
+			..Self::default()
+		}
+	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let _ = (&mut *xw, &mut *font);
 		let t = self;
@@ -27763,7 +27828,11 @@ impl OtTable for MultiVarData {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"VarRegionCount" => self.var_region_count = value,
+			"VarRegionCount" => {
+				if value.is_some() {
+					self.var_region_count = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -27838,6 +27907,15 @@ impl OtTable for MultiVarStore {
 			write_offset(w, font, item.as_deref(), 4, "MultiVarData", Some(i))?;
 		}
 		Ok(())
+	}
+	fn format(&self) -> Option<u16> {
+		Some(self.format as u16)
+	}
+	fn with_format(format: u16) -> Self {
+		Self {
+			format: format as _,
+			..Self::default()
+		}
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let _ = (&mut *xw, &mut *font);
@@ -32413,7 +32491,11 @@ impl OtTable for PairPosFormat2 {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"Class2Count" => self.class2_count = value,
+			"Class2Count" => {
+				if value.is_some() {
+					self.class2_count = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -32733,7 +32815,11 @@ impl OtTable for PairPosFormat4 {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"Class2Count" => self.class2_count = value,
+			"Class2Count" => {
+				if value.is_some() {
+					self.class2_count = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -34743,7 +34829,13 @@ impl OtTable for STAT {
 			&Attrs::new(),
 			format!("0x{:08x}", self.version),
 		);
-		xml_computed(xw, "DesignAxisRecordSize", self.design_axis_record_size);
+		xml_simple(
+			xw,
+			"DesignAxisRecordSize",
+			&Attrs::new(),
+			self.design_axis_record_size
+				.map_or("None".to_owned(), |v| v.to_string()),
+		);
 		xml_computed(xw, "DesignAxisCount", self.design_axis_count);
 		xml_struct(
 			xw,
@@ -34807,9 +34899,21 @@ impl OtTable for STAT {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"DesignAxisRecordSize" => self.design_axis_record_size = value,
-			"DesignAxisCount" => self.design_axis_count = value,
-			"AxisValueCount" => self.axis_value_count = value,
+			"DesignAxisRecordSize" => {
+				if value.is_some() {
+					self.design_axis_record_size = value;
+				}
+			}
+			"DesignAxisCount" => {
+				if value.is_some() {
+					self.design_axis_count = value;
+				}
+			}
+			"AxisValueCount" => {
+				if value.is_some() {
+					self.axis_value_count = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -37027,7 +37131,11 @@ impl OtTable for StateHeader {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"ClassCount" => self.class_count = value,
+			"ClassCount" => {
+				if value.is_some() {
+					self.class_count = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -37674,7 +37782,11 @@ impl OtTable for TSIC {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"AxisCount" => self.axis_count = value,
+			"AxisCount" => {
+				if value.is_some() {
+					self.axis_count = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -38507,7 +38619,7 @@ pub struct VarData {
 	/// `VarRegionIndex` (UShort).
 	pub var_region_index: Vec<u16>,
 	/// `Item` (VarDataValue).
-	pub item: Vec<Unsupported>,
+	pub item: Vec<Vec<i64>>,
 }
 
 impl Default for VarData {
@@ -38548,7 +38660,7 @@ impl OtTable for VarData {
 			let n = repeat_count(t.item_count.map(|v| v as i64), 0, "ItemCount")?;
 			let mut v = Vec::with_capacity(n.min(4096));
 			for _ in 0..n {
-				v.push(Unsupported::read("VarDataValue")?);
+				v.push(read_var_data_value(r, t.var_region_count, t.num_shorts)?);
 			}
 			t.item = v;
 		}
@@ -38575,7 +38687,7 @@ impl OtTable for VarData {
 		count_item_count.set_value((self.item.len() as i64 - 0) as u64)?;
 		for (i, item) in self.item.iter().enumerate() {
 			let _ = i;
-			Unsupported::write("VarDataValue")?;
+			write_var_data_value(w, &(*item), count_var_region_count.value(), self.num_shorts)?;
 		}
 		Ok(())
 	}
@@ -38594,7 +38706,7 @@ impl OtTable for VarData {
 		for (i, item) in self.item.iter().enumerate() {
 			let attrs: Attrs = vec![("index", i.to_string())];
 			let _ = &attrs;
-			let _ = &xw;
+			xml_simple(xw, "Item", &attrs, int_list_repr(item));
 		}
 		Ok(())
 	}
@@ -38607,7 +38719,7 @@ impl OtTable for VarData {
 			"VarRegionIndex" => self
 				.var_region_index
 				.push(parse_int::<u16>(value_attr(e)?)?),
-			"Item" => self.item.push(Unsupported::xml_read("VarDataValue")?),
+			"Item" => self.item.push(parse_int_list(value_attr(e)?)?),
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);
@@ -38626,7 +38738,11 @@ impl OtTable for VarData {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"VarRegionCount" => self.var_region_count = value,
+			"VarRegionCount" => {
+				if value.is_some() {
+					self.var_region_count = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -38724,7 +38840,11 @@ impl OtTable for VarIdxMapRawFormat0 {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"MappingCount" => self.mapping_count = value,
+			"MappingCount" => {
+				if value.is_some() {
+					self.mapping_count = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -38822,7 +38942,11 @@ impl OtTable for VarIdxMapRawFormat1 {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"MappingCount" => self.mapping_count = value,
+			"MappingCount" => {
+				if value.is_some() {
+					self.mapping_count = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -39133,7 +39257,11 @@ impl OtTable for VarRegionList {
 		let _ = (&mut *w, &mut *font);
 		let t = self;
 		let _ = t;
-		let count_region_axis_count = CountRef::new("RegionAxisCount", 2, None);
+		let count_region_axis_count = CountRef::new(
+			"RegionAxisCount",
+			2,
+			region_axis_count(font, self.region_axis_count)?,
+		);
 		w.write_count_reference(count_region_axis_count.clone());
 		w.set(
 			"RegionAxisCount",
@@ -39186,7 +39314,11 @@ impl OtTable for VarRegionList {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"RegionAxisCount" => self.region_axis_count = value,
+			"RegionAxisCount" => {
+				if value.is_some() {
+					self.region_axis_count = value;
+				}
+			}
 			_ => {}
 		}
 	}
@@ -39257,6 +39389,15 @@ impl OtTable for VarStore {
 			write_offset(w, font, item.as_deref(), 4, "VarData", Some(i))?;
 		}
 		Ok(())
+	}
+	fn format(&self) -> Option<u16> {
+		Some(self.format as u16)
+	}
+	fn with_format(format: u16) -> Self {
+		Self {
+			format: format as _,
+			..Self::default()
+		}
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let _ = (&mut *xw, &mut *font);
@@ -39517,7 +39658,11 @@ impl OtTable for Avar {
 	}
 	fn set_propagated_count(&mut self, name: &str, value: Option<u32>) {
 		match name {
-			"AxisCount" => self.axis_count = value,
+			"AxisCount" => {
+				if value.is_some() {
+					self.axis_count = value;
+				}
+			}
 			_ => {}
 		}
 	}

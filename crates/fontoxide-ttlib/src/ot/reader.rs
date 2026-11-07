@@ -38,6 +38,7 @@ macro_rules! read_int {
 		///
 		/// Like `array.array(...).frombytes()`, a truncated array is read as far as
 		/// it goes, unless the data ends inside an item.
+		#[allow(clippy::modulo_one)]
 		pub fn $array(&mut self, count: usize) -> Result<Vec<$t>> {
 			let bytes = self.take_partial(count * $n);
 			if bytes.len() % $n != 0 {

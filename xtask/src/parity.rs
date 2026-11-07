@@ -35,6 +35,10 @@ pub struct Args {
 	/// Only report these tables (e.g. `--table head --table OS/2`).
 	#[arg(long = "table")]
 	tables: Vec<String>,
+	/// Save fontoxide's and fontTools' outputs of every mismatching case under
+	/// `target/parity/mismatches`, for inspection.
+	#[arg(long)]
+	save_mismatches: bool,
 	/// Font files or directories to test (default: corpus/).
 	paths: Vec<PathBuf>,
 }
@@ -237,7 +241,11 @@ pub fn run(args: &Args) -> Result<()> {
 		};
 		match (ours(op, &input), reference) {
 			(Ok(a), Ok(b)) => {
-				for (table, outcome, detail) in compare(op, &a, &b) {
+				let results = compare(op, &a, &b);
+				if args.save_mismatches && results.iter().any(|r| r.1 == Outcome::Mismatch) {
+					save_mismatch(&font, op, &a, &b)?;
+				}
+				for (table, outcome, detail) in results {
 					push(&table, outcome, detail);
 				}
 			}
@@ -258,6 +266,18 @@ pub fn run(args: &Args) -> Result<()> {
 	std::fs::write(&report, serde_json::to_string_pretty(&records)?)?;
 	print_summary(&records, args.verbose);
 	println!("\nDetails: {}", report.display());
+	Ok(())
+}
+
+/// Saves both outputs of a mismatching case as `<font>.<op>.{ours,ref}.<ext>`.
+fn save_mismatch(font: &Path, op: Op, ours: &[u8], reference: &[u8]) -> Result<()> {
+	let dir = root().join("target").join("parity").join("mismatches");
+	std::fs::create_dir_all(&dir)?;
+	let stem = font.file_name().unwrap_or_default().to_string_lossy();
+	for (side, data) in [("ours", ours), ("ref", reference)] {
+		let path = dir.join(format!("{stem}.{}.{side}.{}", op.name(), op.extension()));
+		std::fs::write(&path, data).with_context(|| format!("writing {}", path.display()))?;
+	}
 	Ok(())
 }
 

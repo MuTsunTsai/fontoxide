@@ -742,3 +742,85 @@ impl ValueRecord {
 pub fn xml_value(xw: &mut XmlWriter, name: &str, attrs: &[(&'static str, String)], value: String) {
 	xml_simple(xw, name, attrs, value);
 }
+
+fn fit_array<T: TryFrom<i64>>(values: &[i64], code: char) -> Result<Vec<T>> {
+	values
+		.iter()
+		.map(|&v| {
+			T::try_from(v)
+				.map_err(|_| Error::Struct(format!("array('{code}') item out of range: {v}")))
+		})
+		.collect()
+}
+
+/// `VarDataValue.read`: one row of deltas of a `VarData` table.
+pub fn read_var_data_value(
+	r: &mut OtReader<'_>,
+	region_count: Option<u32>,
+	num_shorts: u16,
+) -> Result<Vec<i64>> {
+	let region_count =
+		region_count.ok_or_else(|| Error::ttlib("KeyError: 'VarRegionCount'"))? as usize;
+	let long_words = num_shorts & 0x8000 != 0;
+	let word_count = (num_shorts & 0x7FFF) as usize;
+	let (n1, n2) = (region_count.min(word_count), region_count.max(word_count));
+	let mut values: Vec<i64> = Vec::with_capacity(n2);
+	if long_words {
+		values.extend(r.read_i32_array(n1)?.into_iter().map(i64::from));
+		values.extend(r.read_i16_array(n2 - n1)?.into_iter().map(i64::from));
+	} else {
+		values.extend(r.read_i16_array(n1)?.into_iter().map(i64::from));
+		values.extend(r.read_i8_array(n2 - n1)?.into_iter().map(i64::from));
+	}
+	values.truncate(region_count);
+	Ok(values)
+}
+
+/// `VarDataValue.write`.
+pub fn write_var_data_value(
+	w: &mut OtWriter<'_>,
+	values: &[i64],
+	region_count: Option<u64>,
+	num_shorts: u16,
+) -> Result<()> {
+	let region_count =
+		region_count.ok_or_else(|| Error::ttlib("TypeError: VarRegionCount is None"))? as usize;
+	let long_words = num_shorts & 0x8000 != 0;
+	let word_count = (num_shorts & 0x7FFF) as usize;
+	let (n1, n2) = (region_count.min(word_count), region_count.max(word_count));
+	// Python slicing: `values[:n1]` and `values[n1:regionCount]`.
+	let mid = n1.min(values.len());
+	let end = region_count.min(values.len()).max(mid);
+	let (big, small) = (&values[..mid], &values[mid..end]);
+	if long_words {
+		for v in fit_array::<i32>(big, 'i')? {
+			w.write_i32(v);
+		}
+		for v in fit_array::<i16>(small, 'h')? {
+			w.write_i16(v);
+		}
+	} else {
+		for v in fit_array::<i16>(big, 'h')? {
+			w.write_i16(v);
+		}
+		for v in fit_array::<i8>(small, 'b')? {
+			w.write_i8(v);
+		}
+	}
+	if n2 > region_count {
+		// fontTools calls the nonexistent `writer.writeSmallArray` here.
+		return Err(Error::ttlib(
+			"AttributeError: 'OTTableWriter' object has no attribute 'writeSmallArray'",
+		));
+	}
+	Ok(())
+}
+
+/// `VarRegionList.preWrite`: `RegionAxisCount` is the number of `fvar` axes if
+/// there is an `fvar` table, whatever the regions say.
+pub fn region_axis_count(font: &mut Font, current: Option<u32>) -> Result<Option<u64>> {
+	if let Some(fvar) = font.get::<crate::tables::Fvar>()? {
+		return Ok(Some(fvar.axes.len() as u64));
+	}
+	Ok(current.map(u64::from))
+}
