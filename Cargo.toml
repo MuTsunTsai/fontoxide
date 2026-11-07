@@ -16,8 +16,16 @@ keywords = ["font", "opentype", "truetype", "fonttools", "woff2"]
 categories = ["parser-implementations", "encoding", "text-processing"]
 
 [workspace.dependencies]
+fontoxide-agl = { path = "crates/fontoxide-agl", version = "0.0.0" }
+fontoxide-encodings = { path = "crates/fontoxide-encodings", version = "0.0.0" }
 fontoxide-misc = { path = "crates/fontoxide-misc", version = "0.0.0" }
 fontoxide-ttlib = { path = "crates/fontoxide-ttlib", version = "0.0.0" }
+fontoxide-unicodedata = { path = "crates/fontoxide-unicodedata", version = "0.0.0" }
+brotli = { version = "9.1.1", default-features = false, features = ["std"] }
+flate2 = "1.1.11"
+log = "0.4.35"
+roxmltree = "0.21.2"
+thiserror = "2.0.21"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

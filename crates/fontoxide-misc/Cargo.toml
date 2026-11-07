@@ -12,6 +12,8 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
+log.workspace = true
+roxmltree.workspace = true
 
 [lints]
 workspace = true

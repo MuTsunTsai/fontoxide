@@ -10,6 +10,7 @@ Subcommands:
 	batch JOBS RESULTS       Run a list of jobs (see `run_job`) and write per-job results.
 	export-otdata OUT        Dump fontTools.ttLib.tables.otData as JSON.
 	export-sstruct OUT       Dump every sstruct format string found in ttLib.tables.
+	export-data CRATES_DIR   Write embedded data (AGL, standard glyph order, table info).
 	list-tests OUT           List fontTools' test suite (via pytest collection) as JSON.
 
 The batch interface exists so that `cargo xtask parity` can process thousands of
@@ -78,6 +79,26 @@ def run_job(job: dict) -> None:
 	output = Path(job["output"])
 	output.parent.mkdir(parents=True, exist_ok=True)
 	op = job["op"]
+	if op in ("ttc-ttx", "ttc-roundtrip"):
+		from fontTools.ttLib import TTCollection
+
+		collection = TTCollection(job["input"], recalcTimestamp=False, lazy=False)
+		for font in collection.fonts:
+			font.cfg[otBase.USE_HARFBUZZ_REPACKER] = bool(job.get("repacker", False))
+		if op == "ttc-ttx":
+			collection.saveXML(output)
+		else:
+			for font in collection.fonts:
+				font.ensureDecompiled()
+			collection.save(output)
+		return
+	if op == "fromttx":
+		# The input is a TTX file (fontTools' own dump of the font).
+		font = TTFont(recalcTimestamp=False)
+		font.cfg[otBase.USE_HARFBUZZ_REPACKER] = bool(job.get("repacker", False))
+		font.importXML(job["input"])
+		font.save(output, reorderTables=True)
+		return
 	font = open_font(job)
 	if op == "ttx":
 		font.saveXML(output)
@@ -162,11 +183,196 @@ def export_sstruct() -> dict:
 				"name": attr,
 				"source": value,
 				"struct_format": struct_format,
-				"fields": names,
+				"fields": list(names),
 				# Fixed-point fields: name -> number of fraction bits.
 				"fixes": fixes,
 			})
 	return {"fonttools_version": fontTools.version, "formats": formats}
+
+
+def export_tables() -> dict:
+	"""Per-tag facts about the table classes in fontTools.ttLib.tables.
+
+	For every module that defines a table class: the tag, the class name, and the
+	class-level `dependencies` (which may be inherited from a base class).
+	"""
+	import fontTools.ttLib.tables as tables_pkg
+	from fontTools.ttLib import getTableClass, identifierToTag
+
+	tables = []
+	for module_info in sorted(pkgutil.iter_modules(tables_pkg.__path__), key=lambda m: m.name):
+		name = module_info.name
+		try:
+			tag = identifierToTag(name)
+		except (AssertionError, ValueError, IndexError):
+			continue
+		if len(tag) != 4:
+			continue
+		try:
+			cls = getTableClass(tag)
+		except (ImportError, AttributeError):
+			continue
+		if cls.__name__ != "table_" + name:
+			continue
+		tables.append({
+			"tag": tag,
+			"module": f"{tables_pkg.__name__}.{name}",
+			"class": cls.__name__,
+			"dependencies": list(cls.dependencies),
+		})
+	tables.sort(key=lambda t: t["tag"])
+	return {"fonttools_version": fontTools.version, "tables": tables}
+
+
+def export_unicode_names(out_dir: Path) -> None:
+	"""Character names from the unicodedata that fontTools.unicode uses.
+
+	Names of the form PREFIX-XXXX (CJK ideographs and similar) and Hangul syllables
+	are derived algorithmically; they are written as ranges and checked here. All
+	other names are listed.
+	"""
+	import re
+
+	try:
+		import unicodedata2 as unicodedata
+	except ImportError:
+		import unicodedata
+
+	out_dir.mkdir(parents=True, exist_ok=True)
+	explicit = []
+	ranges = []  # [prefix, start, end]
+	for cp in range(0x110000):
+		name = unicodedata.name(chr(cp), None)
+		if name is None:
+			continue
+		m = re.fullmatch(r"(.*-)([0-9A-F]{4,6})", name)
+		if m and int(m.group(2), 16) == cp:
+			prefix = m.group(1)
+		elif name.startswith("HANGUL SYLLABLE ") and 0xAC00 <= cp <= 0xD7A3:
+			prefix = "HANGUL SYLLABLE "
+		else:
+			explicit.append(f"{cp:04X};{name}")
+			continue
+		if ranges and ranges[-1][0] == prefix and ranges[-1][2] == cp - 1:
+			ranges[-1][2] = cp
+		else:
+			ranges.append([prefix, cp, cp])
+	# The Rust side computes Hangul syllable names; make sure the range is whole.
+	assert ["HANGUL SYLLABLE ", 0xAC00, 0xD7A3] in ranges
+	with open(out_dir / "names.txt", "w", encoding="utf-8", newline="\n") as f:
+		f.write(f"# Unicode {unicodedata.unidata_version} character names, from fontTools' unicodedata\n")
+		f.write("\n".join(explicit) + "\n")
+	with open(out_dir / "name_ranges.txt", "w", encoding="utf-8", newline="\n") as f:
+		f.write(f"# Unicode {unicodedata.unidata_version} algorithmic names: prefix;first;last\n")
+		for prefix, start, end in ranges:
+			f.write(f"{prefix};{start:04X};{end:04X}\n")
+
+
+# The Python codecs that fontTools.misc.encodingTools can return (besides UTF-16BE,
+# ASCII and Latin-1, which fontoxide implements directly).
+SINGLE_BYTE_CODECS = [
+	"mac_roman", "mac_iceland", "mac_turkish", "mac_croatian", "mac_latin2",
+	"mac_romanian", "mac_greek", "mac_cyrillic",
+]
+MULTI_BYTE_CODECS = ["shift_jis", "gb2312", "big5", "euc_kr", "johab"]
+
+
+def export_codecs(out_dir: Path) -> None:
+	"""Decoding and encoding tables of Python codecs used for name records.
+
+	Single-byte codecs: one line with 256 code points (hex, "-" if undefined).
+	Multi-byte codecs: the bytes that decode alone ("single"), then every two-byte
+	sequence starting with a byte that does not ("double"), then the encoding of every
+	BMP character whose encoding differs from what the decoding tables imply.
+	"""
+	out_dir.mkdir(parents=True, exist_ok=True)
+	for name in SINGLE_BYTE_CODECS:
+		cps = []
+		for b in range(256):
+			try:
+				s = bytes([b]).decode(name)
+				assert len(s) == 1
+				cps.append(f"{ord(s):04X}")
+			except UnicodeDecodeError:
+				cps.append("-")
+		with open(out_dir / f"{name}.txt", "w", encoding="utf-8", newline="\n") as f:
+			f.write(f"# Python {sys.version.split()[0]} codec {name}: byte -> code point\n")
+			f.write(" ".join(cps) + "\n")
+	for name in MULTI_BYTE_CODECS:
+		single = {}
+		for b in range(256):
+			try:
+				s = bytes([b]).decode(name)
+				assert len(s) == 1
+				single[b] = ord(s)
+			except UnicodeDecodeError:
+				pass
+		double = {}
+		for lead in range(256):
+			if lead in single:
+				continue
+			for trail in range(256):
+				try:
+					s = bytes([lead, trail]).decode(name)
+				except UnicodeDecodeError:
+					continue
+				if len(s) == 1:
+					double[(lead << 8) | trail] = ord(s)
+		decoded = {}
+		for b, cp in single.items():
+			decoded.setdefault(cp, bytes([b]))
+		for seq, cp in sorted(double.items()):
+			decoded.setdefault(cp, bytes([seq >> 8, seq & 0xFF]))
+		encode_diff = []
+		for cp in range(0x10000):
+			if 0xD800 <= cp <= 0xDFFF:
+				continue
+			try:
+				enc = chr(cp).encode(name)
+			except UnicodeEncodeError:
+				enc = None
+			if enc != decoded.get(cp):
+				encode_diff.append(f"{cp:04X}:{enc.hex().upper() if enc is not None else '-'}")
+		with open(out_dir / f"{name}.txt", "w", encoding="utf-8", newline="\n") as f:
+			f.write(f"# Python {sys.version.split()[0]} codec {name}\n")
+			f.write("single " + " ".join(f"{b:02X}:{cp:04X}" for b, cp in sorted(single.items())) + "\n")
+			f.write("double " + " ".join(f"{s:04X}:{cp:04X}" for s, cp in sorted(double.items())) + "\n")
+			f.write("encode " + " ".join(encode_diff) + "\n")
+
+
+def export_data(out_dir: Path) -> None:
+	"""Write data tables that fontoxide embeds verbatim."""
+	from fontTools import agl
+	from fontTools.ttLib.standardGlyphOrder import standardGlyphOrder
+
+	agl_dir = out_dir / "fontoxide-agl" / "data"
+	agl_dir.mkdir(parents=True, exist_ok=True)
+	(agl_dir / "glyphlist.txt").write_text(agl._aglText, encoding="utf-8", newline="\n")
+	(agl_dir / "aglfn.txt").write_text(agl._aglfnText, encoding="utf-8", newline="\n")
+	(agl_dir / "zapfdingbats.txt").write_text(agl._AGL_ZAPF_DINGBATS, encoding="utf-8", newline="\n")
+
+	export_unicode_names(out_dir / "fontoxide-unicodedata" / "data")
+	export_codecs(out_dir / "fontoxide-encodings" / "data" / "codecs")
+
+	data_dir = out_dir / "fontoxide-ttlib" / "codegen"
+	write_json(data_dir / "tables.json", export_tables())
+	write_json(
+		data_dir / "standardGlyphOrder.json",
+		{"fonttools_version": fontTools.version, "names": standardGlyphOrder},
+	)
+
+	from fontTools import cffLib
+
+	write_json(
+		data_dir / "cffStrings.json",
+		{
+			"fonttools_version": fontTools.version,
+			"standardStrings": cffLib.cffStandardStrings,
+			"ISOAdobe": cffLib.cffISOAdobeStrings,
+			"Expert": cffLib.cffIExpertStrings,
+			"ExpertSubset": cffLib.cffExpertSubsetStrings,
+		},
+	)
 
 
 #####################################################################################################
@@ -255,6 +461,8 @@ def main() -> None:
 	p.add_argument("out", type=Path)
 	p = sub.add_parser("export-sstruct")
 	p.add_argument("out", type=Path)
+	p = sub.add_parser("export-data")
+	p.add_argument("out", type=Path)
 	p = sub.add_parser("list-tests")
 	p.add_argument("out", type=Path)
 	args = parser.parse_args()
@@ -267,6 +475,8 @@ def main() -> None:
 		write_json(args.out, export_otdata())
 	elif args.command == "export-sstruct":
 		write_json(args.out, export_sstruct())
+	elif args.command == "export-data":
+		export_data(args.out)
 	elif args.command == "list-tests":
 		write_json(args.out, list_tests())
 

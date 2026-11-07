@@ -13,7 +13,9 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
+fontoxide-agl.workspace = true
 fontoxide-misc.workspace = true
+fontoxide-unicodedata.workspace = true
 fontoxide-ttlib.workspace = true
 
 [lints]

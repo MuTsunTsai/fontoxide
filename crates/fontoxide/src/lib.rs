@@ -5,11 +5,15 @@
 //!
 //! | fontoxide            | fontTools          |
 //! |----------------------|--------------------|
+//! | [`agl`]              | `fontTools.agl`    |
 //! | [`misc`]             | `fontTools.misc`   |
 //! | [`ttlib`]            | `fontTools.ttLib`  |
+//! | [`unicodedata`]      | `fontTools.unicodedata` |
 
+pub use fontoxide_agl as agl;
 pub use fontoxide_misc as misc;
 pub use fontoxide_ttlib as ttlib;
+pub use fontoxide_unicodedata as unicodedata;
 
 /// The fontTools release whose behavior this version of fontoxide matches.
-pub const FONTTOOLS_VERSION: &str = "4.68.0";
+pub use fontoxide_ttlib::FONTTOOLS_VERSION;

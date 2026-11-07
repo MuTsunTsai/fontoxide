@@ -12,7 +12,18 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
+fontoxide-agl.workspace = true
+fontoxide-encodings.workspace = true
 fontoxide-misc.workspace = true
+fontoxide-unicodedata.workspace = true
+brotli.workspace = true
+flate2.workspace = true
+log.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 
 [lints]
 workspace = true

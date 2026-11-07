@@ -1,0 +1,657 @@
+{
+	"fonttools_version": "4.68.0",
+	"tables": [
+		{
+			"tag": "BASE",
+			"module": "fontTools.ttLib.tables.B_A_S_E_",
+			"class": "table_B_A_S_E_",
+			"dependencies": []
+		},
+		{
+			"tag": "CBDT",
+			"module": "fontTools.ttLib.tables.C_B_D_T_",
+			"class": "table_C_B_D_T_",
+			"dependencies": []
+		},
+		{
+			"tag": "CBLC",
+			"module": "fontTools.ttLib.tables.C_B_L_C_",
+			"class": "table_C_B_L_C_",
+			"dependencies": [
+				"CBDT"
+			]
+		},
+		{
+			"tag": "CFF ",
+			"module": "fontTools.ttLib.tables.C_F_F_",
+			"class": "table_C_F_F_",
+			"dependencies": []
+		},
+		{
+			"tag": "CFF2",
+			"module": "fontTools.ttLib.tables.C_F_F__2",
+			"class": "table_C_F_F__2",
+			"dependencies": []
+		},
+		{
+			"tag": "COLR",
+			"module": "fontTools.ttLib.tables.C_O_L_R_",
+			"class": "table_C_O_L_R_",
+			"dependencies": []
+		},
+		{
+			"tag": "CPAL",
+			"module": "fontTools.ttLib.tables.C_P_A_L_",
+			"class": "table_C_P_A_L_",
+			"dependencies": []
+		},
+		{
+			"tag": "DMAP",
+			"module": "fontTools.ttLib.tables.D_M_A_P_",
+			"class": "table_D_M_A_P_",
+			"dependencies": []
+		},
+		{
+			"tag": "DSIG",
+			"module": "fontTools.ttLib.tables.D_S_I_G_",
+			"class": "table_D_S_I_G_",
+			"dependencies": []
+		},
+		{
+			"tag": "Debg",
+			"module": "fontTools.ttLib.tables.D__e_b_g",
+			"class": "table_D__e_b_g",
+			"dependencies": []
+		},
+		{
+			"tag": "EBDT",
+			"module": "fontTools.ttLib.tables.E_B_D_T_",
+			"class": "table_E_B_D_T_",
+			"dependencies": []
+		},
+		{
+			"tag": "EBLC",
+			"module": "fontTools.ttLib.tables.E_B_L_C_",
+			"class": "table_E_B_L_C_",
+			"dependencies": [
+				"EBDT"
+			]
+		},
+		{
+			"tag": "EBSC",
+			"module": "fontTools.ttLib.tables.E_B_S_C_",
+			"class": "table_E_B_S_C_",
+			"dependencies": [
+				"EBDT",
+				"EBLC"
+			]
+		},
+		{
+			"tag": "FFTM",
+			"module": "fontTools.ttLib.tables.F_F_T_M_",
+			"class": "table_F_F_T_M_",
+			"dependencies": []
+		},
+		{
+			"tag": "Feat",
+			"module": "fontTools.ttLib.tables.F__e_a_t",
+			"class": "table_F__e_a_t",
+			"dependencies": []
+		},
+		{
+			"tag": "GDEF",
+			"module": "fontTools.ttLib.tables.G_D_E_F_",
+			"class": "table_G_D_E_F_",
+			"dependencies": []
+		},
+		{
+			"tag": "GLYF",
+			"module": "fontTools.ttLib.tables.G_L_Y_F_",
+			"class": "table_G_L_Y_F_",
+			"dependencies": []
+		},
+		{
+			"tag": "GPOS",
+			"module": "fontTools.ttLib.tables.G_P_O_S_",
+			"class": "table_G_P_O_S_",
+			"dependencies": []
+		},
+		{
+			"tag": "GSUB",
+			"module": "fontTools.ttLib.tables.G_S_U_B_",
+			"class": "table_G_S_U_B_",
+			"dependencies": []
+		},
+		{
+			"tag": "GVAR",
+			"module": "fontTools.ttLib.tables.G_V_A_R_",
+			"class": "table_G_V_A_R_",
+			"dependencies": [
+				"fvar",
+				"GLYF"
+			]
+		},
+		{
+			"tag": "Glat",
+			"module": "fontTools.ttLib.tables.G__l_a_t",
+			"class": "table_G__l_a_t",
+			"dependencies": []
+		},
+		{
+			"tag": "Gloc",
+			"module": "fontTools.ttLib.tables.G__l_o_c",
+			"class": "table_G__l_o_c",
+			"dependencies": [
+				"Glat"
+			]
+		},
+		{
+			"tag": "HHEA",
+			"module": "fontTools.ttLib.tables.H_H_E_A_",
+			"class": "table_H_H_E_A_",
+			"dependencies": [
+				"HMTX",
+				"GLYF",
+				"CFF ",
+				"CFF2"
+			]
+		},
+		{
+			"tag": "HMTX",
+			"module": "fontTools.ttLib.tables.H_M_T_X_",
+			"class": "table_H_M_T_X_",
+			"dependencies": []
+		},
+		{
+			"tag": "HVAR",
+			"module": "fontTools.ttLib.tables.H_V_A_R_",
+			"class": "table_H_V_A_R_",
+			"dependencies": []
+		},
+		{
+			"tag": "IFT ",
+			"module": "fontTools.ttLib.tables.I_F_T_",
+			"class": "table_I_F_T_",
+			"dependencies": []
+		},
+		{
+			"tag": "IFTX",
+			"module": "fontTools.ttLib.tables.I_F_T_X_",
+			"class": "table_I_F_T_X_",
+			"dependencies": []
+		},
+		{
+			"tag": "JSTF",
+			"module": "fontTools.ttLib.tables.J_S_T_F_",
+			"class": "table_J_S_T_F_",
+			"dependencies": []
+		},
+		{
+			"tag": "LOCA",
+			"module": "fontTools.ttLib.tables.L_O_C_A_",
+			"class": "table_L_O_C_A_",
+			"dependencies": [
+				"GLYF"
+			]
+		},
+		{
+			"tag": "LTSH",
+			"module": "fontTools.ttLib.tables.L_T_S_H_",
+			"class": "table_L_T_S_H_",
+			"dependencies": []
+		},
+		{
+			"tag": "MATH",
+			"module": "fontTools.ttLib.tables.M_A_T_H_",
+			"class": "table_M_A_T_H_",
+			"dependencies": []
+		},
+		{
+			"tag": "MAXP",
+			"module": "fontTools.ttLib.tables.M_A_X_P_",
+			"class": "table_M_A_X_P_",
+			"dependencies": [
+				"GLYF"
+			]
+		},
+		{
+			"tag": "MVAR",
+			"module": "fontTools.ttLib.tables.M_V_A_R_",
+			"class": "table_M_V_A_R_",
+			"dependencies": []
+		},
+		{
+			"tag": "OS/2",
+			"module": "fontTools.ttLib.tables.O_S_2f_2",
+			"class": "table_O_S_2f_2",
+			"dependencies": [
+				"head",
+				"bhed"
+			]
+		},
+		{
+			"tag": "STAT",
+			"module": "fontTools.ttLib.tables.S_T_A_T_",
+			"class": "table_S_T_A_T_",
+			"dependencies": []
+		},
+		{
+			"tag": "SVG ",
+			"module": "fontTools.ttLib.tables.S_V_G_",
+			"class": "table_S_V_G_",
+			"dependencies": []
+		},
+		{
+			"tag": "Silf",
+			"module": "fontTools.ttLib.tables.S__i_l_f",
+			"class": "table_S__i_l_f",
+			"dependencies": []
+		},
+		{
+			"tag": "Sill",
+			"module": "fontTools.ttLib.tables.S__i_l_l",
+			"class": "table_S__i_l_l",
+			"dependencies": []
+		},
+		{
+			"tag": "TSI0",
+			"module": "fontTools.ttLib.tables.T_S_I__0",
+			"class": "table_T_S_I__0",
+			"dependencies": [
+				"TSI1"
+			]
+		},
+		{
+			"tag": "TSI1",
+			"module": "fontTools.ttLib.tables.T_S_I__1",
+			"class": "table_T_S_I__1",
+			"dependencies": []
+		},
+		{
+			"tag": "TSI2",
+			"module": "fontTools.ttLib.tables.T_S_I__2",
+			"class": "table_T_S_I__2",
+			"dependencies": [
+				"TSI3"
+			]
+		},
+		{
+			"tag": "TSI3",
+			"module": "fontTools.ttLib.tables.T_S_I__3",
+			"class": "table_T_S_I__3",
+			"dependencies": []
+		},
+		{
+			"tag": "TSI5",
+			"module": "fontTools.ttLib.tables.T_S_I__5",
+			"class": "table_T_S_I__5",
+			"dependencies": []
+		},
+		{
+			"tag": "TSIB",
+			"module": "fontTools.ttLib.tables.T_S_I_B_",
+			"class": "table_T_S_I_B_",
+			"dependencies": []
+		},
+		{
+			"tag": "TSIC",
+			"module": "fontTools.ttLib.tables.T_S_I_C_",
+			"class": "table_T_S_I_C_",
+			"dependencies": []
+		},
+		{
+			"tag": "TSID",
+			"module": "fontTools.ttLib.tables.T_S_I_D_",
+			"class": "table_T_S_I_D_",
+			"dependencies": []
+		},
+		{
+			"tag": "TSIJ",
+			"module": "fontTools.ttLib.tables.T_S_I_J_",
+			"class": "table_T_S_I_J_",
+			"dependencies": []
+		},
+		{
+			"tag": "TSIP",
+			"module": "fontTools.ttLib.tables.T_S_I_P_",
+			"class": "table_T_S_I_P_",
+			"dependencies": []
+		},
+		{
+			"tag": "TSIS",
+			"module": "fontTools.ttLib.tables.T_S_I_S_",
+			"class": "table_T_S_I_S_",
+			"dependencies": []
+		},
+		{
+			"tag": "TSIV",
+			"module": "fontTools.ttLib.tables.T_S_I_V_",
+			"class": "table_T_S_I_V_",
+			"dependencies": []
+		},
+		{
+			"tag": "TTFA",
+			"module": "fontTools.ttLib.tables.T_T_F_A_",
+			"class": "table_T_T_F_A_",
+			"dependencies": []
+		},
+		{
+			"tag": "VARC",
+			"module": "fontTools.ttLib.tables.V_A_R_C_",
+			"class": "table_V_A_R_C_",
+			"dependencies": []
+		},
+		{
+			"tag": "VDMX",
+			"module": "fontTools.ttLib.tables.V_D_M_X_",
+			"class": "table_V_D_M_X_",
+			"dependencies": []
+		},
+		{
+			"tag": "VHEA",
+			"module": "fontTools.ttLib.tables.V_H_E_A_",
+			"class": "table_V_H_E_A_",
+			"dependencies": [
+				"VMTX",
+				"GLYF",
+				"CFF ",
+				"CFF2"
+			]
+		},
+		{
+			"tag": "VMTX",
+			"module": "fontTools.ttLib.tables.V_M_T_X_",
+			"class": "table_V_M_T_X_",
+			"dependencies": []
+		},
+		{
+			"tag": "VORG",
+			"module": "fontTools.ttLib.tables.V_O_R_G_",
+			"class": "table_V_O_R_G_",
+			"dependencies": []
+		},
+		{
+			"tag": "VVAR",
+			"module": "fontTools.ttLib.tables.V_V_A_R_",
+			"class": "table_V_V_A_R_",
+			"dependencies": []
+		},
+		{
+			"tag": "ankr",
+			"module": "fontTools.ttLib.tables._a_n_k_r",
+			"class": "table__a_n_k_r",
+			"dependencies": []
+		},
+		{
+			"tag": "avar",
+			"module": "fontTools.ttLib.tables._a_v_a_r",
+			"class": "table__a_v_a_r",
+			"dependencies": [
+				"fvar"
+			]
+		},
+		{
+			"tag": "bdat",
+			"module": "fontTools.ttLib.tables._b_d_a_t",
+			"class": "table__b_d_a_t",
+			"dependencies": []
+		},
+		{
+			"tag": "bgcl",
+			"module": "fontTools.ttLib.tables._b_g_c_l",
+			"class": "table__b_g_c_l",
+			"dependencies": []
+		},
+		{
+			"tag": "bhed",
+			"module": "fontTools.ttLib.tables._b_h_e_d",
+			"class": "table__b_h_e_d",
+			"dependencies": [
+				"maxp",
+				"MAXP",
+				"loca",
+				"LOCA",
+				"CFF ",
+				"CFF2"
+			]
+		},
+		{
+			"tag": "bloc",
+			"module": "fontTools.ttLib.tables._b_l_o_c",
+			"class": "table__b_l_o_c",
+			"dependencies": [
+				"bdat"
+			]
+		},
+		{
+			"tag": "bsln",
+			"module": "fontTools.ttLib.tables._b_s_l_n",
+			"class": "table__b_s_l_n",
+			"dependencies": []
+		},
+		{
+			"tag": "cidg",
+			"module": "fontTools.ttLib.tables._c_i_d_g",
+			"class": "table__c_i_d_g",
+			"dependencies": []
+		},
+		{
+			"tag": "cmap",
+			"module": "fontTools.ttLib.tables._c_m_a_p",
+			"class": "table__c_m_a_p",
+			"dependencies": []
+		},
+		{
+			"tag": "cvar",
+			"module": "fontTools.ttLib.tables._c_v_a_r",
+			"class": "table__c_v_a_r",
+			"dependencies": [
+				"cvt ",
+				"fvar"
+			]
+		},
+		{
+			"tag": "cvt ",
+			"module": "fontTools.ttLib.tables._c_v_t",
+			"class": "table__c_v_t",
+			"dependencies": []
+		},
+		{
+			"tag": "feat",
+			"module": "fontTools.ttLib.tables._f_e_a_t",
+			"class": "table__f_e_a_t",
+			"dependencies": []
+		},
+		{
+			"tag": "fpgm",
+			"module": "fontTools.ttLib.tables._f_p_g_m",
+			"class": "table__f_p_g_m",
+			"dependencies": []
+		},
+		{
+			"tag": "fvar",
+			"module": "fontTools.ttLib.tables._f_v_a_r",
+			"class": "table__f_v_a_r",
+			"dependencies": []
+		},
+		{
+			"tag": "gasp",
+			"module": "fontTools.ttLib.tables._g_a_s_p",
+			"class": "table__g_a_s_p",
+			"dependencies": []
+		},
+		{
+			"tag": "gcid",
+			"module": "fontTools.ttLib.tables._g_c_i_d",
+			"class": "table__g_c_i_d",
+			"dependencies": []
+		},
+		{
+			"tag": "glyf",
+			"module": "fontTools.ttLib.tables._g_l_y_f",
+			"class": "table__g_l_y_f",
+			"dependencies": []
+		},
+		{
+			"tag": "gvar",
+			"module": "fontTools.ttLib.tables._g_v_a_r",
+			"class": "table__g_v_a_r",
+			"dependencies": [
+				"fvar",
+				"glyf"
+			]
+		},
+		{
+			"tag": "hdmx",
+			"module": "fontTools.ttLib.tables._h_d_m_x",
+			"class": "table__h_d_m_x",
+			"dependencies": []
+		},
+		{
+			"tag": "head",
+			"module": "fontTools.ttLib.tables._h_e_a_d",
+			"class": "table__h_e_a_d",
+			"dependencies": [
+				"maxp",
+				"MAXP",
+				"loca",
+				"LOCA",
+				"CFF ",
+				"CFF2"
+			]
+		},
+		{
+			"tag": "hhea",
+			"module": "fontTools.ttLib.tables._h_h_e_a",
+			"class": "table__h_h_e_a",
+			"dependencies": [
+				"hmtx",
+				"glyf",
+				"CFF ",
+				"CFF2"
+			]
+		},
+		{
+			"tag": "hmtx",
+			"module": "fontTools.ttLib.tables._h_m_t_x",
+			"class": "table__h_m_t_x",
+			"dependencies": []
+		},
+		{
+			"tag": "kern",
+			"module": "fontTools.ttLib.tables._k_e_r_n",
+			"class": "table__k_e_r_n",
+			"dependencies": []
+		},
+		{
+			"tag": "lcar",
+			"module": "fontTools.ttLib.tables._l_c_a_r",
+			"class": "table__l_c_a_r",
+			"dependencies": []
+		},
+		{
+			"tag": "loca",
+			"module": "fontTools.ttLib.tables._l_o_c_a",
+			"class": "table__l_o_c_a",
+			"dependencies": [
+				"glyf"
+			]
+		},
+		{
+			"tag": "ltag",
+			"module": "fontTools.ttLib.tables._l_t_a_g",
+			"class": "table__l_t_a_g",
+			"dependencies": []
+		},
+		{
+			"tag": "maxp",
+			"module": "fontTools.ttLib.tables._m_a_x_p",
+			"class": "table__m_a_x_p",
+			"dependencies": [
+				"glyf"
+			]
+		},
+		{
+			"tag": "meta",
+			"module": "fontTools.ttLib.tables._m_e_t_a",
+			"class": "table__m_e_t_a",
+			"dependencies": []
+		},
+		{
+			"tag": "mort",
+			"module": "fontTools.ttLib.tables._m_o_r_t",
+			"class": "table__m_o_r_t",
+			"dependencies": []
+		},
+		{
+			"tag": "morx",
+			"module": "fontTools.ttLib.tables._m_o_r_x",
+			"class": "table__m_o_r_x",
+			"dependencies": []
+		},
+		{
+			"tag": "name",
+			"module": "fontTools.ttLib.tables._n_a_m_e",
+			"class": "table__n_a_m_e",
+			"dependencies": [
+				"ltag"
+			]
+		},
+		{
+			"tag": "opbd",
+			"module": "fontTools.ttLib.tables._o_p_b_d",
+			"class": "table__o_p_b_d",
+			"dependencies": []
+		},
+		{
+			"tag": "post",
+			"module": "fontTools.ttLib.tables._p_o_s_t",
+			"class": "table__p_o_s_t",
+			"dependencies": [
+				"maxp",
+				"MAXP"
+			]
+		},
+		{
+			"tag": "prep",
+			"module": "fontTools.ttLib.tables._p_r_e_p",
+			"class": "table__p_r_e_p",
+			"dependencies": []
+		},
+		{
+			"tag": "prop",
+			"module": "fontTools.ttLib.tables._p_r_o_p",
+			"class": "table__p_r_o_p",
+			"dependencies": []
+		},
+		{
+			"tag": "sbix",
+			"module": "fontTools.ttLib.tables._s_b_i_x",
+			"class": "table__s_b_i_x",
+			"dependencies": []
+		},
+		{
+			"tag": "trak",
+			"module": "fontTools.ttLib.tables._t_r_a_k",
+			"class": "table__t_r_a_k",
+			"dependencies": []
+		},
+		{
+			"tag": "vhea",
+			"module": "fontTools.ttLib.tables._v_h_e_a",
+			"class": "table__v_h_e_a",
+			"dependencies": [
+				"vmtx",
+				"glyf",
+				"CFF ",
+				"CFF2"
+			]
+		},
+		{
+			"tag": "vmtx",
+			"module": "fontTools.ttLib.tables._v_m_t_x",
+			"class": "table__v_m_t_x",
+			"dependencies": []
+		}
+	]
+}
