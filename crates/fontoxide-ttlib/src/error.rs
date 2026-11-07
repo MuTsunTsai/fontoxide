@@ -61,6 +61,10 @@ pub enum Error {
 	/// be decompiled and is kept as raw data).
 	#[error("'{0}' table has an unexpected type")]
 	WrongTableType(Tag),
+	/// `OTLOffsetOverflowError`: a 16-bit offset does not fit while compiling an
+	/// OpenType Layout table.
+	#[error("offset overflow: {0:?}")]
+	OffsetOverflow(Box<crate::ot::writer::OverflowErrorRecord>),
 	/// An I/O error.
 	#[error(transparent)]
 	Io(#[from] std::io::Error),

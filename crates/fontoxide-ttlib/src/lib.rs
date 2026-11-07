@@ -20,6 +20,7 @@ mod error;
 pub mod font;
 mod generated;
 pub mod glyph_order;
+pub mod ot;
 pub mod sfnt;
 pub mod sstruct;
 pub mod table;

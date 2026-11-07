@@ -1,6 +1,8 @@
 //! Development tasks for fontoxide. Run with `cargo xtask <command>`.
 
 mod codegen;
+mod codegen_ot;
+#[cfg(feature = "parity")]
 mod parity;
 mod reference;
 mod test_manifest;
@@ -31,6 +33,7 @@ enum Command {
 		check: bool,
 	},
 	/// Compare fontoxide against fontTools on a font corpus.
+	#[cfg(feature = "parity")]
 	Parity(parity::Args),
 	/// List upstream changes between two fontTools tags, grouped by fontoxide crate.
 	UpstreamReport {
@@ -46,6 +49,7 @@ fn main() -> Result<()> {
 		Command::Reference => reference::print_info(),
 		Command::Codegen => codegen::run(),
 		Command::TestManifest { check } => test_manifest::run(check),
+		#[cfg(feature = "parity")]
 		Command::Parity(args) => parity::run(&args),
 		Command::UpstreamReport { from, to } => upstream_report::run(&from, &to),
 	}

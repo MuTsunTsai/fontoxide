@@ -21,6 +21,7 @@ import argparse
 import importlib
 import json
 import pkgutil
+import re
 import sys
 import traceback
 from pathlib import Path
@@ -190,6 +191,115 @@ def export_sstruct() -> dict:
 	return {"fonttools_version": fontTools.version, "formats": formats}
 
 
+def export_ottables() -> dict:
+	"""The otTables classes and their converters, as fontTools builds them from otData.
+
+	This is what fontTools actually uses to read, write and dump OpenType Layout and
+	related tables, so fontoxide's code generator follows it instead of interpreting
+	otData itself.
+	"""
+	import inspect
+	from fontTools.ttLib.tables import otBase, otConverters, otTables
+	from fontTools.ttLib.tables.otData import otData
+
+	hooks = [
+		"postRead", "preWrite", "toXML", "toXML2", "fromXML", "populateDefaults",
+		"decompile", "compile", "readFormat", "writeFormat",
+	]
+
+	def class_name(cls):
+		return cls.__name__ if cls is not None else None
+
+	def aux_value(aux):
+		if aux is None or isinstance(aux, int):
+			return aux
+		if isinstance(aux, str):
+			return aux
+		# compiled condition expressions keep their source in co_consts? no: use the spec.
+		return None
+
+	spec_aux = {}
+	for name, fields in otData:
+		for f in fields:
+			spec_aux[(name, f.name)] = (f.aux, f.condition)
+
+	def converter(owner, conv):
+		aux, condition = spec_aux.get((owner, conv.name), (conv.aux, None))
+		d = {
+			"converter": type(conv).__name__,
+			"name": conv.name,
+			"repeat": conv.repeat,
+			"aux": aux if isinstance(aux, (int, str)) or aux is None else None,
+			"condition": condition,
+			"tableClass": class_name(getattr(conv, "tableClass", None)),
+			"staticSize": getattr(conv, "staticSize", None),
+			"isCount": conv.isCount,
+			"isPropagated": conv.isPropagated,
+			"isLookupType": conv.isLookupType,
+			"description": conv.description,
+		}
+		value_conv = getattr(conv, "converter", None)
+		if isinstance(value_conv, otConverters.BaseConverter):
+			d["valueConverter"] = type(value_conv).__name__
+			d["valueTableClass"] = class_name(getattr(value_conv, "tableClass", None))
+		for attr in ("writeNullOffset", "DEFAULT", "enumClass", "itemClass", "itemConverterClass"):
+			if hasattr(conv, attr):
+				v = getattr(conv, attr)
+				if inspect.isclass(v):
+					v = v.__name__
+				elif not isinstance(v, (int, float, str, bool, type(None))):
+					v = True  # a method or other callable: only presence matters
+				d[attr] = v
+		return d
+
+	classes = []
+	seen = set()
+	for name, _ in otData:
+		m = re.match(r"(.*)Format(\d+)$", name)
+		base_name = m.group(1) if m and hasattr(otTables, m.group(1)) else name
+		if base_name in seen:
+			continue
+		seen.add(base_name)
+		cls = getattr(otTables, base_name)
+		if issubclass(cls, otBase.UInt8FormatSwitchingBaseTable):
+			kind = "FormatSwitching8"
+		elif issubclass(cls, otBase.FormatSwitchingBaseTable):
+			kind = "FormatSwitching16"
+		else:
+			kind = "BaseTable"
+		entry = {
+			"name": base_name,
+			"kind": kind,
+			"bases": [b.__name__ for b in cls.__mro__[1:] if b.__module__.startswith("fontTools")],
+			"hooks": [h for h in hooks if h in vars(cls)],
+			"inheritedHooks": [
+				h for h in hooks
+				if any(h in vars(b) for b in cls.__mro__[1:] if b not in (otBase.BaseTable, otBase.FormatSwitchingBaseTable, otBase.UInt8FormatSwitchingBaseTable, object))
+			],
+			"attrs": {a: getattr(cls, a) for a in ("LookupType", "sortCoverageLast", "DontShare") if hasattr(cls, a)},
+		}
+		if kind == "BaseTable":
+			entry["converters"] = [converter(base_name, c) for c in cls.converters]
+		else:
+			entry["formats"] = {
+				str(fmt): [converter(f"{base_name}Format{fmt}", c) for c in convs]
+				for fmt, convs in sorted(cls.converters.items())
+			}
+		classes.append(entry)
+
+	lookup_types = {
+		tag: {str(t): c.__name__ for t, c in sorted(types.items())}
+		for tag, types in otTables.lookupTypes.items()
+	}
+	feature_params = {tag: c.__name__ for tag, c in sorted(otTables.featureParamTypes.items())}
+	return {
+		"fonttools_version": fontTools.version,
+		"classes": classes,
+		"lookupTypes": lookup_types,
+		"featureParamTypes": feature_params,
+	}
+
+
 def export_tables() -> dict:
 	"""Per-tag facts about the table classes in fontTools.ttLib.tables.
 
@@ -356,6 +466,7 @@ def export_data(out_dir: Path) -> None:
 
 	data_dir = out_dir / "fontoxide-ttlib" / "codegen"
 	write_json(data_dir / "tables.json", export_tables())
+	write_json(data_dir / "ottables.json", export_ottables())
 	write_json(
 		data_dir / "standardGlyphOrder.json",
 		{"fonttools_version": fontTools.version, "names": standardGlyphOrder},

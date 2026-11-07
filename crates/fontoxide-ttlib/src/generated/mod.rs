@@ -3,5 +3,6 @@
 //! Code generated from fontTools definitions.
 
 pub mod cff_strings;
+pub mod ot;
 pub mod standard_glyph_order;
 pub mod tables;
