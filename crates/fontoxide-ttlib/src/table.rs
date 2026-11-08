@@ -195,6 +195,8 @@ macro_rules! registry {
 
 registry! {
 	b"cvt " => crate::tables::Cvt,
+	b"CFF " => crate::tables::Cff,
+	b"CFF2" => crate::tables::Cff2,
 	b"BASE" => crate::tables::otl::Base,
 	b"GDEF" => crate::tables::otl::Gdef,
 	b"GPOS" => crate::tables::otl::Gpos,

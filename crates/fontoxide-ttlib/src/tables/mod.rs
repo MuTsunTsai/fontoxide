@@ -4,7 +4,7 @@
 //! in each.
 
 pub mod avar;
-pub mod cff_names;
+pub mod cff;
 pub mod cmap;
 pub mod colr;
 pub mod cpal;
@@ -29,6 +29,7 @@ pub mod tt_program;
 pub mod tuple_variation;
 
 pub use avar::Avar;
+pub use cff::{Cff, Cff2};
 pub use cmap::{Cmap, CmapSubtable};
 pub use colr::Colr;
 pub use cpal::Cpal;

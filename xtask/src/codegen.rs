@@ -140,6 +140,7 @@ fn generate_mod() -> String {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct CffStrings {
+	standard_encoding: Vec<String>,
 	standard_strings: Vec<String>,
 	#[serde(rename = "ISOAdobe")]
 	iso_adobe: Vec<String>,
@@ -164,6 +165,11 @@ fn generate_cff_strings(strings: &CffStrings) -> String {
 		"The CFF standard strings (`cffStandardStrings`).",
 		"STANDARD_STRINGS",
 		&strings.standard_strings,
+	);
+	list(
+		"The glyph names of the Standard Encoding by code (`StandardEncoding`).",
+		"STANDARD_ENCODING",
+		&strings.standard_encoding,
 	);
 	list(
 		"The ISOAdobe charset (`cffISOAdobeStrings`).",

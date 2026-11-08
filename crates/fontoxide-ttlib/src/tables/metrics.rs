@@ -11,6 +11,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 use crate::binary::{Reader, WriteBytes};
 use crate::sstruct::eval;
 use crate::table::{Table, TableType};
+use crate::tables::cff::{Cff, Cff2};
 use crate::tables::glyf::Glyf;
 use crate::tables::hhea::{Hhea, Vhea};
 use crate::tables::maxp::Maxp;
@@ -243,12 +244,33 @@ pub(crate) fn recalc_header(font: &mut Font, vertical: bool) -> Result<Option<He
 	if !font.contains(metrics_tag) {
 		return Ok(None);
 	}
-	if font.contains(Tag::new(b"VARC")) || !font.contains(Glyf::TAG) {
+	if font.contains(Tag::new(b"VARC")) {
 		return Ok(None);
 	}
 	let order = font.glyph_order()?;
 	let mut extents = Vec::new();
-	{
+	if !font.contains(Glyf::TAG) {
+		let cff = if font.contains(Cff::TAG) {
+			&mut font.require::<Cff>()?.cff
+		} else if font.contains(Cff2::TAG) {
+			&mut font.require::<Cff2>()?.cff
+		} else {
+			return Ok(None);
+		};
+		for (gid, name) in order.names().iter().enumerate() {
+			let index = cff
+				.glyph_index_hint(name, gid)
+				.ok_or_else(|| Error::ttlib(format!("KeyError: {name:?}")))?;
+			if let Some(b) = cff.calc_bounds(index)? {
+				let size = if vertical {
+					b[3].ceil() as i64 - b[1].floor() as i64
+				} else {
+					b[2].ceil() as i64 - b[0].floor() as i64
+				};
+				extents.push((gid as u32, size));
+			}
+		}
+	} else {
 		let glyf = font.require::<Glyf>()?;
 		for gid in 0..order.len() as u32 {
 			let g = glyf

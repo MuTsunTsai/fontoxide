@@ -15,6 +15,7 @@
 #![forbid(unsafe_code)]
 
 pub mod binary;
+pub mod cff;
 pub mod collection;
 mod error;
 pub mod font;

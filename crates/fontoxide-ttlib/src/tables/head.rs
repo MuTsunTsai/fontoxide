@@ -84,6 +84,16 @@ impl TableType for Head {
 	}
 }
 
+impl Head {
+	fn set_bbox(&mut self, [x_min, y_min, x_max, y_max]: [i64; 4]) -> Result<()> {
+		self.x_min = crate::binary::fit(x_min, "xMin")?;
+		self.y_min = crate::binary::fit(y_min, "yMin")?;
+		self.x_max = crate::binary::fit(x_max, "xMax")?;
+		self.y_max = crate::binary::fit(y_max, "yMax")?;
+		Ok(())
+	}
+}
+
 impl Table for Head {
 	fn tag(&self) -> Tag {
 		Self::TAG
@@ -97,18 +107,29 @@ impl Table for Head {
 					"recalculating the 'head' bounding box from 'VARC' is not supported yet",
 				));
 			} else if font.contains(Tag::new(b"CFF ")) {
-				if let Some([x_min, y_min, x_max, y_max]) =
-					crate::tables::cff_names::font_bbox(font)?
-				{
-					self.x_min = crate::binary::fit(x_min, "xMin")?;
-					self.y_min = crate::binary::fit(y_min, "yMin")?;
-					self.x_max = crate::binary::fit(x_max, "xMax")?;
-					self.y_max = crate::binary::fit(y_max, "yMax")?;
-				}
-			} else if font.contains(Tag::new(b"CFF2")) {
-				return Err(Error::ttlib(
-					"recalculating the 'head' bounding box from 'CFF2' is not supported yet",
-				));
+				let cff = &font.require::<crate::tables::Cff>()?.cff;
+				let top = cff
+					.top_dicts
+					.first()
+					.ok_or_else(crate::cff::charstring::index_error)?;
+				let bbox = top
+					.get("FontBBox")
+					.ok_or_else(|| Error::ttlib("AttributeError: FontBBox"))?;
+				let rect = match &bbox {
+					crate::cff::dict::Value::List(v) if v.len() == 4 => {
+						let n = |i: usize| {
+							v[i].number()
+								.ok_or_else(|| Error::ttlib("TypeError: must be real number"))
+						};
+						[n(0)?, n(1)?, n(2)?, n(3)?]
+					}
+					_ => return Err(Error::value("not enough values to unpack (expected 4)")),
+				};
+				self.set_bbox(crate::cff::bounds::int_rect(rect))?;
+			} else if font.contains(Tag::new(b"CFF2"))
+				&& let Some(rect) = font.require::<crate::tables::Cff2>()?.cff.font_bounds()?
+			{
+				self.set_bbox(crate::cff::bounds::int_rect(rect))?;
 			}
 		}
 		if font.recalc_timestamp {

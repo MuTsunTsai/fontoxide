@@ -203,6 +203,43 @@ pub fn latin1_decode(data: &[u8]) -> String {
 	data.iter().map(|&b| b as char).collect()
 }
 
+/// `"%.{precision}G" % value`: `precision` significant digits, in positional
+/// notation unless the exponent is below -4 or not below `precision`, without
+/// trailing zeros.
+///
+/// ```
+/// use fontoxide_misc::py::format_g;
+/// assert_eq!(format_g(0.001, 8), "0.001");
+/// assert_eq!(format_g(123456789.0, 8), "1.2345679E+08");
+/// assert_eq!(format_g(1e-5, 8), "1E-05");
+/// assert_eq!(format_g(-2.5, 8), "-2.5");
+/// ```
+pub fn format_g(value: f64, precision: usize) -> String {
+	if value.is_nan() {
+		return "NAN".into();
+	}
+	if value.is_infinite() {
+		return if value > 0.0 { "INF" } else { "-INF" }.into();
+	}
+	let p = precision.max(1);
+	let e = format!("{:.*e}", p - 1, value);
+	let (mantissa, exponent) = e.split_once('e').unwrap_or((&e, "0"));
+	let exponent: i64 = exponent.parse().unwrap_or(0);
+	let strip = |s: &str| -> String {
+		if s.contains('.') {
+			s.trim_end_matches('0').trim_end_matches('.').to_owned()
+		} else {
+			s.to_owned()
+		}
+	};
+	if -4 <= exponent && exponent < p as i64 {
+		strip(&format!("{:.*}", (p as i64 - 1 - exponent) as usize, value))
+	} else {
+		let sign = if exponent < 0 { '-' } else { '+' };
+		format!("{}E{sign}{:02}", strip(mantissa), exponent.abs())
+	}
+}
+
 /// Encodes a string as Latin-1, as `str.encode("latin-1")` does. Returns `None` if
 /// a character is outside Latin-1.
 pub fn latin1_encode(s: &str) -> Option<Vec<u8>> {

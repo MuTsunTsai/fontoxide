@@ -415,7 +415,7 @@ impl Font {
 			return Ok(order.clone());
 		}
 		if self.contains(CFF) {
-			let names = crate::tables::cff_names::glyph_order(self)?;
+			let names = self.require::<crate::tables::Cff>()?.cff.glyph_order()?;
 			self.set_glyph_order(names);
 		} else if self.contains(POST) {
 			let names = self

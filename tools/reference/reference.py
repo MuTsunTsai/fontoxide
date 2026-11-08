@@ -473,11 +473,13 @@ def export_data(out_dir: Path) -> None:
 	)
 
 	from fontTools import cffLib
+	from fontTools.encodings.StandardEncoding import StandardEncoding
 
 	write_json(
 		data_dir / "cffStrings.json",
 		{
 			"fonttools_version": fontTools.version,
+			"standardEncoding": StandardEncoding,
 			"standardStrings": cffLib.cffStandardStrings,
 			"ISOAdobe": cffLib.cffISOAdobeStrings,
 			"Expert": cffLib.cffIExpertStrings,
