@@ -21,9 +21,9 @@ use crate::{Error, Font, Result};
 
 pub use super::colr::ClipList;
 pub use super::gsub::{AlternateSubst, LigatureSubst, MultipleSubst, SingleSubst};
+pub use super::ift::{EntryIdStringData, MappingEntry};
 pub use super::varc::{DecomposedTransform, VarComponent, VarCompositeGlyph};
 pub use super::varmap::{DeltaSetIndexMap, VarIdxMap};
-pub use crate::generated::ot::EntryIdStringDataRaw as EntryIdStringData;
 
 pub(crate) fn has_extended_glyph_ids(font: &mut Font) -> Result<bool> {
 	Ok(font.glyph_order()?.len() > 0x10000)

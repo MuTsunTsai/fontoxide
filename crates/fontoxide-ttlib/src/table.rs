@@ -200,6 +200,8 @@ registry! {
 	b"GPOS" => crate::tables::otl::Gpos,
 	b"GSUB" => crate::tables::otl::Gsub,
 	b"HVAR" => crate::tables::otl::Hvar,
+	b"IFT " => crate::tables::otl::Ift,
+	b"IFTX" => crate::tables::otl::Iftx,
 	b"JSTF" => crate::tables::otl::Jstf,
 	b"MATH" => crate::tables::otl::Math,
 	b"MVAR" => crate::tables::otl::Mvar,

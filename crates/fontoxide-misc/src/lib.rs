@@ -4,6 +4,7 @@
 //! |---------------------|-------------------------------|
 //! | [`encoding_tools`]  | `fontTools.misc.encodingTools` |
 //! | [`fixed_tools`]     | `fontTools.misc.fixedTools`   |
+//! | [`ift_sparse_bit_set`] | `fontTools.misc.iftSparseBitSet` |
 //! | [`round_tools`]     | `fontTools.misc.roundTools`   |
 //! | [`text_tools`]      | `fontTools.misc.textTools`    |
 //! | [`time_tools`]      | `fontTools.misc.timeTools`    |
@@ -14,6 +15,7 @@
 
 pub mod encoding_tools;
 pub mod fixed_tools;
+pub mod ift_sparse_bit_set;
 pub mod py;
 pub mod round_tools;
 pub mod text_tools;

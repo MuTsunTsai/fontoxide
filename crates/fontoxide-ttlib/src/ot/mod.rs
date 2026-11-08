@@ -8,6 +8,7 @@ pub mod colr;
 pub mod conv;
 pub mod custom;
 pub mod gsub;
+pub mod ift;
 pub mod reader;
 pub mod state;
 pub mod table;

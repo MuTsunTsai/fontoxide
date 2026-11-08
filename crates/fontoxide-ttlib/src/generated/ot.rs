@@ -18,6 +18,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 use crate::ot::colr::*;
 use crate::ot::conv::*;
 use crate::ot::custom::*;
+use crate::ot::ift::*;
 use crate::ot::table::*;
 use crate::ot::varc::*;
 use crate::ot::{CountRef, OtReader, OtWriter, StateValue};
@@ -22790,7 +22791,7 @@ impl OtTable for MVAR {
 #[derive(Debug, Clone, PartialEq)]
 pub struct MappingEntries {
 	/// `entries` (MappingEntriesConverter).
-	pub entries: Unsupported,
+	pub entries: Vec<MappingEntry>,
 }
 
 impl Default for MappingEntries {
@@ -22808,27 +22809,27 @@ impl OtTable for MappingEntries {
 	fn decompile(r: &mut OtReader<'_>, font: &mut Font) -> Result<Self> {
 		let mut t = Self::default();
 		let _ = (&mut *r, &mut *font);
-		t.entries = Unsupported::read("MappingEntriesConverter")?;
+		t.entries = read_mapping_entries(r)?;
 		Ok(t)
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
 		let t = self;
 		let _ = t;
-		Unsupported::write("MappingEntriesConverter")?;
+		write_mapping_entries(w, &self.entries)?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let _ = (&mut *xw, &mut *font);
 		let t = self;
 		let _ = t;
-		let _ = &xw;
+		xml_mapping_entries(xw, &self.entries);
 		Ok(())
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
 		let e = element;
 		match e.name.as_str() {
-			"entries" => self.entries = Unsupported::xml_read("MappingEntriesConverter")?,
+			"entries" => self.entries = read_mapping_entries_xml(e)?,
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);

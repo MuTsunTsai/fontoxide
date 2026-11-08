@@ -104,7 +104,6 @@ const UNSUPPORTED: &[&str] = &[
 	"CIDGlyphMap",
 	"GlyphCIDMap",
 	"VarIdxMapValue",
-	"MappingEntriesConverter",
 	"STXHeader",
 ];
 
@@ -218,6 +217,8 @@ enum Kind {
 	TupleList(bool),
 	/// A CFF2 INDEX of variable composite glyphs (`VarCompositeGlyphList`).
 	VarCompositeGlyphList,
+	/// IFT mapping entries (`MappingEntriesConverter`).
+	MappingEntries,
 	Unsupported(String),
 }
 
@@ -320,6 +321,7 @@ fn kind_of(c: &Conv) -> Result<(Kind, String)> {
 		}
 		"CFF2Index" => (Kind::TupleList(false), "Vec<Vec<i64>>".into()),
 		"TupleListOffset" => (Kind::TupleList(true), "Vec<Vec<i64>>".into()),
+		"MappingEntriesConverter" => (Kind::MappingEntries, "Vec<MappingEntry>".into()),
 		other if UNSUPPORTED.contains(&other) => {
 			(Kind::Unsupported(other.into()), "Unsupported".into())
 		}
@@ -555,6 +557,7 @@ impl Gen<'_> {
 			Kind::TupleList(false) => "read_tuple_list(r)?".into(),
 			Kind::TupleList(true) => "read_tuple_list_offset(r)?".into(),
 			Kind::VarCompositeGlyphList => "read_var_composite_glyphs(r, font)?".into(),
+			Kind::MappingEntries => "read_mapping_entries(r)?".into(),
 			Kind::Unsupported(name) => format!("Unsupported::read({name:?})?"),
 		})
 	}
@@ -639,6 +642,7 @@ impl Gen<'_> {
 				format!("write_tuple_list_offset(w, &{value}, {:?})?;", f.conv.name)
 			}
 			Kind::VarCompositeGlyphList => format!("write_var_composite_glyphs(w, &{value})?;"),
+			Kind::MappingEntries => format!("write_mapping_entries(w, &{value})?;"),
 			Kind::Unsupported(name) => format!("Unsupported::write({name:?})?;"),
 		})
 	}
@@ -861,6 +865,7 @@ impl Gen<'_> {
 			Kind::VarCompositeGlyphList => {
 				format!("xml_var_composite_glyphs(xw, font, &{value})?;")
 			}
+			Kind::MappingEntries => format!("xml_mapping_entries(xw, &{value});"),
 			Kind::Unsupported(_) => "let _ = &xw;".to_owned(),
 		}
 	}
@@ -941,6 +946,10 @@ impl Gen<'_> {
 			Kind::DeltaValue | Kind::VarDataValue => "parse_int_list(value_attr(e)?)?".into(),
 			Kind::TupleList(_) => "parse_tuple(e)?".into(),
 			Kind::VarCompositeGlyphList => "VarCompositeGlyph::from_xml(e, font)?".into(),
+			// UPSTREAM-BUG(B9): `xmlWrite` writes the entries without an element
+			// of their own, while `xmlRead` expects them in one named after the
+			// field, so `entry` elements fail with KeyError.
+			Kind::MappingEntries => "read_mapping_entries_xml(e)?".into(),
 			Kind::Unsupported(name) => format!("Unsupported::xml_read({name:?})?"),
 		}
 	}
@@ -1576,6 +1585,7 @@ pub fn generate(ot: &OtTables) -> Result<String> {
 	g.line("use crate::ot::custom::*;");
 	g.line("use crate::ot::varc::*;");
 	g.line("use crate::ot::colr::*;");
+	g.line("use crate::ot::ift::*;");
 	g.line("use crate::ot::table::*;");
 	g.line("use crate::ot::{CountRef, OtReader, OtWriter, StateValue};");
 	g.line("use crate::{Error, Font, Result};");
