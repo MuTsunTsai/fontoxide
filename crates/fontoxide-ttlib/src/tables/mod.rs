@@ -6,6 +6,8 @@
 pub mod avar;
 pub mod cff_names;
 pub mod cmap;
+pub mod colr;
+pub mod cpal;
 pub mod cvt;
 pub mod fvar;
 pub mod gasp;
@@ -23,6 +25,8 @@ pub mod tuple_variation;
 
 pub use avar::Avar;
 pub use cmap::{Cmap, CmapSubtable};
+pub use colr::Colr;
+pub use cpal::Cpal;
 pub use cvt::Cvt;
 pub use fvar::Fvar;
 pub use gasp::Gasp;

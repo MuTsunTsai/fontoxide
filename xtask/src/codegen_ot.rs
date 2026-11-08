@@ -72,6 +72,25 @@ const CUSTOM: &[&str] = &[
 	"EntryIdStringData",
 ];
 
+/// The count that a class reads before its other fields, and whose reference it
+/// creates before writing them (`COLR.decompile` / `COLR.preWrite`): the count
+/// follows the offset to the array it counts.
+fn pre_count(class: &str) -> Option<&'static str> {
+	match class {
+		"COLR" => Some("LayerRecordCount"),
+		_ => None,
+	}
+}
+
+/// Classes whose `preWrite` sorts an array by a glyph field: (array, glyph field).
+fn sort_by_glyph(class: &str) -> Option<(&'static str, &'static str)> {
+	match class {
+		"BaseGlyphRecordArray" => Some(("BaseGlyphRecord", "BaseGlyph")),
+		"BaseGlyphList" => Some(("BaseGlyphPaintRecord", "BaseGlyph")),
+		_ => None,
+	}
+}
+
 /// Converters that are not implemented yet; fields using them get the
 /// `Unsupported` type, which fails when read.
 const UNSUPPORTED: &[&str] = &[
@@ -630,6 +649,14 @@ impl Gen<'_> {
 		fields: &[Field],
 		format: Option<(u64, &str)>,
 	) -> Result<()> {
+		if let Some((array, glyph)) = sort_by_glyph(&class.name) {
+			// `preWrite` sorts in place, with a stable sort.
+			let (array, glyph) = (snake(array), snake(glyph));
+			let _ = writeln!(
+				self.out,
+				"\t\tif !self.{array}.is_sorted_by_key(|r| r.{glyph}) {{ let mut c = self.clone(); c.{array}.sort_by_key(|r| r.{glyph}); return c.compile(w, font); }}"
+			);
+		}
 		if class.attrs.contains_key("sortCoverageLast") {
 			self.line("\t\tw.set_sort_coverage_last();");
 		}
@@ -652,6 +679,14 @@ impl Gen<'_> {
 			} else {
 				let _ = writeln!(self.out, "\t\tw.write_u16({fmt});");
 			}
+		}
+		let pre = pre_count(&class.name);
+		if let Some(name) = pre {
+			let ident = snake(name);
+			let _ = writeln!(
+				self.out,
+				"\t\tlet count_{ident} = CountRef::new({name:?}, 2, None); w.set({name:?}, StateValue::Count(count_{ident}.clone()));"
+			);
 		}
 		// Bind the fields under `t` so that conditions read like in decompile.
 		self.line("\t\tlet t = self;");
@@ -717,11 +752,13 @@ impl Gen<'_> {
 						}
 						_ => "None",
 					};
-					let _ = writeln!(
-						self.out,
-						"\t\tlet count_{} = CountRef::new({:?}, {size}, {init});",
-						f.ident, f.conv.name
-					);
+					if pre != Some(f.conv.name.as_str()) {
+						let _ = writeln!(
+							self.out,
+							"\t\tlet count_{} = CountRef::new({:?}, {size}, {init});",
+							f.ident, f.conv.name
+						);
+					}
 				}
 				(None, _) if f.conv.is_lookup_type => {
 					let size = json_int(&f.conv.static_size).unwrap_or(2);
@@ -1051,6 +1088,28 @@ impl Gen<'_> {
 		self.line("\tfn decompile(r: &mut OtReader<'_>, font: &mut Font) -> Result<Self> {");
 		self.line("\t\tlet mut t = Self::default();");
 		self.line("\t\tlet _ = (&mut *r, &mut *font);");
+		if let Some(name) = pre_count(&class.name) {
+			// `COLR.decompile` reads the count first: it follows the array it counts.
+			let mut offset = 0;
+			let mut size = None;
+			for c in convs {
+				let s = json_int(&c.static_size)
+					.ok_or_else(|| anyhow::anyhow!("{} has no static size", c.name))?;
+				if c.name == name {
+					size = Some(s);
+					break;
+				}
+				offset += s;
+			}
+			let read = match size {
+				Some(2) => "read_u16",
+				_ => bail!("{name} not found in {}", class.name),
+			};
+			let _ = writeln!(
+				self.out,
+				"\t\t{{ let mut sub = r.sub_reader(0); sub.advance({offset}); let n = sub.{read}()?; r.set({name:?}, StateValue::Int(n as i64)); }}"
+			);
+		}
 		self.decompile_body(&fields)?;
 		self.line("\t\tOk(t)");
 		self.line("\t}");
@@ -1182,6 +1241,12 @@ impl Gen<'_> {
 		self.line("\t\t\tSelf::Unknown(f) => *f,");
 		self.line("\t\t})");
 		self.line("\t}");
+		if class.name == "Paint" {
+			// `Paint.toXML` adds the format name as a comment.
+			self.line("\tfn to_xml(&self, xw: &mut XmlWriter, font: &mut Font, attrs: &[(&'static str, String)], name: &str) -> Result<()> {");
+			self.line("\t\tpaint_to_xml(self, xw, font, attrs, name)");
+			self.line("\t}");
+		}
 		for (method, args, call) in [
 			(
 				"to_xml2",
@@ -1510,6 +1575,7 @@ pub fn generate(ot: &OtTables) -> Result<String> {
 	g.line("use crate::ot::conv::*;");
 	g.line("use crate::ot::custom::*;");
 	g.line("use crate::ot::varc::*;");
+	g.line("use crate::ot::colr::*;");
 	g.line("use crate::ot::table::*;");
 	g.line("use crate::ot::{CountRef, OtReader, OtWriter, StateValue};");
 	g.line("use crate::{Error, Font, Result};");

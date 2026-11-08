@@ -15,6 +15,7 @@ use fontoxide_misc::Tag;
 use fontoxide_misc::xml_reader::Element;
 use fontoxide_misc::xml_writer::XmlWriter;
 
+use crate::ot::colr::*;
 use crate::ot::conv::*;
 use crate::ot::custom::*;
 use crate::ot::table::*;
@@ -3423,6 +3424,14 @@ impl OtTable for BaseGlyphList {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if !self
+			.base_glyph_paint_record
+			.is_sorted_by_key(|r| r.base_glyph)
+		{
+			let mut c = self.clone();
+			c.base_glyph_paint_record.sort_by_key(|r| r.base_glyph);
+			return c.compile(w, font);
+		}
 		let t = self;
 		let _ = t;
 		let count_base_glyph_count = CountRef::new("BaseGlyphCount", 4, None);
@@ -3659,6 +3668,11 @@ impl OtTable for BaseGlyphRecordArray {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if !self.base_glyph_record.is_sorted_by_key(|r| r.base_glyph) {
+			let mut c = self.clone();
+			c.base_glyph_record.sort_by_key(|r| r.base_glyph);
+			return c.compile(w, font);
+		}
 		let t = self;
 		let _ = t;
 		w.count_ref("BaseGlyphRecordCount")?
@@ -5169,6 +5183,12 @@ impl OtTable for COLR {
 	fn decompile(r: &mut OtReader<'_>, font: &mut Font) -> Result<Self> {
 		let mut t = Self::default();
 		let _ = (&mut *r, &mut *font);
+		{
+			let mut sub = r.sub_reader(0);
+			sub.advance(12);
+			let n = sub.read_u16()?;
+			r.set("LayerRecordCount", StateValue::Int(n as i64));
+		}
 		t.version = r.read_u16()?;
 		t.base_glyph_record_count = Some(r.read_u16()? as u32);
 		r.set(
@@ -5201,6 +5221,11 @@ impl OtTable for COLR {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		let count_layer_record_count = CountRef::new("LayerRecordCount", 2, None);
+		w.set(
+			"LayerRecordCount",
+			StateValue::Count(count_layer_record_count.clone()),
+		);
 		let t = self;
 		let _ = t;
 		w.write_u16(self.version);
@@ -5226,7 +5251,6 @@ impl OtTable for COLR {
 			"LayerRecordArray",
 			None,
 		)?;
-		let count_layer_record_count = CountRef::new("LayerRecordCount", 2, None);
 		w.write_count_reference(count_layer_record_count.clone());
 		w.set(
 			"LayerRecordCount",
@@ -31947,6 +31971,15 @@ impl OtTable for Paint {
 			Self::Format9(_) => 9,
 			Self::Unknown(f) => *f,
 		})
+	}
+	fn to_xml(
+		&self,
+		xw: &mut XmlWriter,
+		font: &mut Font,
+		attrs: &[(&'static str, String)],
+		name: &str,
+	) -> Result<()> {
+		paint_to_xml(self, xw, font, attrs, name)
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		match self {

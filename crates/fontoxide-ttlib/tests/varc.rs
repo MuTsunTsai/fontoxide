@@ -26,7 +26,11 @@ fn fonts() -> Vec<(PathBuf, Vec<u8>)> {
 			std::fs::read(&path).ok().map(|data| (path, data))
 		})
 		.collect();
-	assert_eq!(fonts.len(), FONTS.len(), "fontTools' test fonts are missing");
+	assert_eq!(
+		fonts.len(),
+		FONTS.len(),
+		"fontTools' test fonts are missing"
+	);
 	fonts
 }
 

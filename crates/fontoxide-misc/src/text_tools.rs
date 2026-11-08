@@ -275,6 +275,40 @@ pub fn parse_int_literal(s: &str) -> Option<i128> {
 	Some(if negative { -v } else { v })
 }
 
+/// `int(s, radix)` for radix 2 to 36: an optional sign, then digits that may be
+/// separated by single underscores; radix 2, 8 and 16 also allow their prefix.
+pub fn parse_int_radix(s: &str, radix: u32) -> Option<i128> {
+	let t = s.trim();
+	let (negative, t) = match t.as_bytes().first() {
+		Some(b'-') => (true, &t[1..]),
+		Some(b'+') => (false, &t[1..]),
+		_ => (false, t),
+	};
+	let lower = t.to_ascii_lowercase();
+	let prefix = match radix {
+		2 => Some("0b"),
+		8 => Some("0o"),
+		16 => Some("0x"),
+		_ => None,
+	};
+	let digits = match prefix.and_then(|p| lower.strip_prefix(p)) {
+		Some(d) => d.strip_prefix('_').unwrap_or(d),
+		None => lower.as_str(),
+	};
+	if digits.is_empty()
+		|| digits.starts_with('_')
+		|| digits.ends_with('_')
+		|| digits.contains("__")
+		|| !digits
+			.bytes()
+			.all(|b| b == b'_' || (b as char).is_digit(radix))
+	{
+		return None;
+	}
+	let v = i128::from_str_radix(&digits.replace('_', ""), radix).ok()?;
+	Some(if negative { -v } else { v })
+}
+
 fn parse_unsigned_int(t: &str) -> Option<i128> {
 	let lower = t.to_ascii_lowercase();
 	let (radix, digits) = if let Some(d) = lower.strip_prefix("0x") {

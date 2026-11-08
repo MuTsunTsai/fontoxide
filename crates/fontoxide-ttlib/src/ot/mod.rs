@@ -4,6 +4,7 @@
 //! The table types themselves are generated from fontTools' `otData` into
 //! `crate::generated::ot`; this module provides what the generated code uses.
 
+pub mod colr;
 pub mod conv;
 pub mod custom;
 pub mod gsub;

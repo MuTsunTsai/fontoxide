@@ -137,7 +137,7 @@ pub trait OtTable: Sized + Default + Clone {
 	}
 }
 
-fn begintag(xw: &mut XmlWriter, name: &str, attrs: &[(&'static str, String)]) {
+pub(crate) fn begintag(xw: &mut XmlWriter, name: &str, attrs: &[(&'static str, String)]) {
 	let refs: Vec<(&str, &dyn AttrValue)> = attrs
 		.iter()
 		.map(|(n, v)| (*n, v as &dyn AttrValue))

@@ -219,6 +219,8 @@ registry! {
 	b"prop" => crate::tables::otl::Prop,
 	b"FFTM" => crate::tables::Fftm,
 	b"avar" => crate::tables::Avar,
+	b"COLR" => crate::tables::Colr,
+	b"CPAL" => crate::tables::Cpal,
 	b"fvar" => crate::tables::Fvar,
 	b"gasp" => crate::tables::Gasp,
 	b"cmap" => crate::tables::Cmap,
