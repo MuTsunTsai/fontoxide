@@ -52,44 +52,8 @@ fn clear(value: u64, flag: u64) -> u64 {
 	value & (0xFFFF_FFFF ^ flag)
 }
 
-/// The transform of a component (`DecomposedTransform`).
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct DecomposedTransform {
-	#[allow(missing_docs)]
-	pub translate_x: f64,
-	#[allow(missing_docs)]
-	pub translate_y: f64,
-	/// In degrees.
-	pub rotation: f64,
-	#[allow(missing_docs)]
-	pub scale_x: f64,
-	#[allow(missing_docs)]
-	pub scale_y: f64,
-	/// In degrees.
-	pub skew_x: f64,
-	/// In degrees.
-	pub skew_y: f64,
-	#[allow(missing_docs)]
-	pub t_center_x: f64,
-	#[allow(missing_docs)]
-	pub t_center_y: f64,
-}
-
-impl Default for DecomposedTransform {
-	fn default() -> Self {
-		DecomposedTransform {
-			translate_x: 0.0,
-			translate_y: 0.0,
-			rotation: 0.0,
-			scale_x: 1.0,
-			scale_y: 1.0,
-			skew_x: 0.0,
-			skew_y: 0.0,
-			t_center_x: 0.0,
-			t_center_y: 0.0,
-		}
-	}
-}
+/// The transform of a component.
+pub use fontoxide_misc::transform::DecomposedTransform;
 
 /// How a transform component is stored (`VAR_TRANSFORM_MAPPING`).
 struct Mapping {
@@ -325,6 +289,29 @@ impl VarComponent {
 			n &= n - 1;
 		}
 		Ok((c, i))
+	}
+
+	/// Adds the transform deltas of a variation (`applyTransformDeltas`), in the
+	/// units stored in the font.
+	pub fn apply_transform_deltas(&mut self, deltas: &[f64]) -> Result<()> {
+		let mut i = 0;
+		for m in &MAPPING {
+			let value = if self.flags & m.flag != 0 {
+				let d = deltas.get(i).ok_or_else(index_error)?;
+				i += 1;
+				d / (1u64 << m.fractional_bits) as f64 * m.scale
+			} else {
+				0.0
+			};
+			*(m.field)(&mut self.transform) += value;
+		}
+		if self.flags & flags::HAVE_SCALE_Y == 0 {
+			self.transform.scale_y = self.transform.scale_x;
+		}
+		if i != deltas.len() {
+			return Err(Error::Assertion(format!("({i}, {})", deltas.len())));
+		}
+		Ok(())
 	}
 
 	/// Writes the component (`compile`).

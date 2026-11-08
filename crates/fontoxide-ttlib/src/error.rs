@@ -70,6 +70,21 @@ pub enum Error {
 	Io(#[from] std::io::Error),
 }
 
+impl From<fontoxide_pens::Error> for Error {
+	fn from(e: fontoxide_pens::Error) -> Self {
+		match e {
+			fontoxide_pens::Error::Glyph(inner) => match inner.downcast::<Error>() {
+				Ok(e) => *e,
+				Err(other) => Error::TtLib(other.to_string()),
+			},
+			fontoxide_pens::Error::MissingComponent(name) => {
+				Error::TtLib(format!("MissingComponentError: {name}"))
+			}
+			fontoxide_pens::Error::Usage(msg) => Error::TtLib(msg),
+		}
+	}
+}
+
 /// Shorthand for `Result<T, fontoxide_ttlib::Error>`.
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
@@ -87,6 +102,11 @@ impl Error {
 	/// A TTX parse error with the given message.
 	pub fn ttx(msg: impl Into<String>) -> Self {
 		Error::TtxParse(msg.into())
+	}
+
+	/// This error as one of [`fontoxide_pens`], to pass it through a pen.
+	pub fn into_pen_error(self) -> fontoxide_pens::Error {
+		fontoxide_pens::Error::Glyph(Box::new(self))
 	}
 
 	/// The innermost error, skipping the `Decompile`/`Compile` wrappers.

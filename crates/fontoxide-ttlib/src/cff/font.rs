@@ -1,13 +1,16 @@
 //! CFF font sets and their DICTs (`fontTools.cffLib`): reading.
 
+use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::OnceLock;
 
 use fontoxide_misc::Tag;
+use fontoxide_misc::array_tools::{Point, Rect, int_rect, union_rect};
 use fontoxide_misc::py::latin1_decode;
+use fontoxide_misc::transform::Transform;
+use fontoxide_pens::{BoundsPen, GlyphSet, Pen};
 
-use super::bounds::{BoundsPen, Rect, int_rect, union_rect};
-use super::charstring::{Context, Interpreter, T2CharString, index_error};
+use super::charstring::{Blender, Context, Interpreter, T2CharString, index_error};
 use super::dict::{
 	Conv, DictDecompiler, Operator, PRIVATE_DICT, PRIVATE_DICT2, TOP_DICT, TOP_DICT2, Value,
 	operator,
@@ -998,13 +1001,9 @@ impl CffFontSet {
 
 	/// Runs a charstring of the first font, decompiling it and the subroutines it
 	/// calls; draws it onto `pen` if given.
-	pub fn run_char_string(
-		&mut self,
-		gid: usize,
-		pen: Option<&mut dyn super::charstring::Pen>,
-	) -> Result<()> {
+	pub fn run_char_string(&mut self, gid: usize, pen: Option<&mut dyn Pen>) -> Result<()> {
 		let top = self.top_dicts.first_mut().ok_or_else(index_error)?;
-		run_char_string(top, &mut self.global_subrs, gid, pen)
+		run_char_string(top, &mut self.global_subrs, gid, pen, None)
 	}
 
 	/// Decompiles all charstrings of the first font (`decompileAllCharStrings`).
@@ -1015,10 +1014,16 @@ impl CffFontSet {
 				.as_ref()
 				.map_or(0, |c| c.items.len());
 			for gid in 0..n {
-				run_char_string(&mut self.top_dicts[t], &mut self.global_subrs, gid, None)
-					.inspect_err(|_| {
-						log::error!("Error in charstring {gid}");
-					})?;
+				run_char_string(
+					&mut self.top_dicts[t],
+					&mut self.global_subrs,
+					gid,
+					None,
+					None,
+				)
+				.inspect_err(|_| {
+					log::error!("Error in charstring {gid}");
+				})?;
 			}
 		}
 		Ok(())
@@ -1028,36 +1033,145 @@ impl CffFontSet {
 /// The nesting limit for components, in place of Python's recursion limit.
 const MAX_COMPONENT_DEPTH: usize = 100;
 
-/// Draws the components a pen collected (`DecomposingPen.addComponent`).
-fn draw_components(
-	top: &mut TopDict,
-	global_subrs: &mut [T2CharString],
-	pen: &mut BoundsPen,
-	depth: usize,
-) -> Result<()> {
-	let components = std::mem::take(&mut pen.components);
-	for (name, offset) in components {
-		let Some(gid) = top.char_strings.as_ref().and_then(|cs| cs.index(&name)) else {
-			log::warn!("glyph '{name}' is missing from glyphSet; skipped");
-			continue;
-		};
-		if depth >= MAX_COMPONENT_DEPTH {
+/// Passes drawing on, but keeps the components for later, so that they can be
+/// drawn once the charstring is no longer borrowed. Components only come from
+/// `endchar`, at the end of a charstring.
+pub(crate) struct DeferComponents<'p> {
+	pub out: &'p mut dyn Pen,
+	pub components: Vec<(String, Transform)>,
+}
+
+impl Pen for DeferComponents<'_> {
+	fn move_to(&mut self, pt: Point) -> fontoxide_pens::Result<()> {
+		self.out.move_to(pt)
+	}
+	fn line_to(&mut self, pt: Point) -> fontoxide_pens::Result<()> {
+		self.out.line_to(pt)
+	}
+	fn curve_to(&mut self, points: &[Point]) -> fontoxide_pens::Result<()> {
+		self.out.curve_to(points)
+	}
+	fn q_curve_to(
+		&mut self,
+		off_curves: &[Point],
+		on_curve: Option<Point>,
+	) -> fontoxide_pens::Result<()> {
+		self.out.q_curve_to(off_curves, on_curve)
+	}
+	fn close_path(&mut self) -> fontoxide_pens::Result<()> {
+		self.out.close_path()
+	}
+	fn end_path(&mut self) -> fontoxide_pens::Result<()> {
+		self.out.end_path()
+	}
+	fn add_component(
+		&mut self,
+		glyph_name: &str,
+		transformation: Transform,
+	) -> fontoxide_pens::Result<()> {
+		self.components
+			.push((glyph_name.to_owned(), transformation));
+		Ok(())
+	}
+}
+
+/// The charstrings of a Top DICT as a glyph set (`CharStrings`), drawing at the
+/// location of `blender`.
+pub(crate) struct CharStringsGlyphSet<'a> {
+	top: RefCell<(&'a mut TopDict, &'a mut [T2CharString])>,
+	blender: Option<Blender<'a>>,
+	depth: Cell<usize>,
+}
+
+impl<'a> CharStringsGlyphSet<'a> {
+	pub(crate) fn new(
+		top: &'a mut TopDict,
+		global_subrs: &'a mut [T2CharString],
+		blender: Option<Blender<'a>>,
+	) -> Self {
+		CharStringsGlyphSet {
+			top: RefCell::new((top, global_subrs)),
+			blender,
+			depth: Cell::new(0),
+		}
+	}
+
+	/// The glyph ID of a glyph name.
+	pub(crate) fn index(&self, name: &str) -> Option<usize> {
+		self.top.borrow().0.char_strings.as_ref()?.index(name)
+	}
+
+	/// Draws a charstring (`T2CharString.draw`); components are drawn afterwards.
+	pub(crate) fn draw(&self, gid: usize, pen: &mut dyn Pen) -> Result<()> {
+		let depth = self.depth.get();
+		if depth > MAX_COMPONENT_DEPTH {
+			// LENIENT(L15): fontTools runs into Python's recursion limit.
 			return Err(Error::ttlib(
 				"RecursionError: maximum recursion depth exceeded",
 			));
 		}
-		let saved = pen.offset;
-		pen.offset = offset;
-		run_char_string(
-			top,
-			global_subrs,
-			gid,
-			Some(&mut *pen as &mut dyn super::charstring::Pen),
-		)?;
-		draw_components(top, global_subrs, pen, depth + 1)?;
-		pen.offset = saved;
+		self.depth.set(depth + 1);
+		let result = self.draw_inner(gid, pen);
+		self.depth.set(depth);
+		result
 	}
-	Ok(())
+
+	fn draw_inner(&self, gid: usize, pen: &mut dyn Pen) -> Result<()> {
+		let mut deferred = DeferComponents {
+			out: pen,
+			components: Vec::new(),
+		};
+		{
+			let mut guard = self.top.borrow_mut();
+			let (top, global_subrs) = &mut *guard;
+			run_char_string(top, global_subrs, gid, Some(&mut deferred), self.blender)?;
+		}
+		let DeferComponents { out, components } = deferred;
+		for (name, t) in components {
+			out.add_component(&name, t)?;
+		}
+		Ok(())
+	}
+
+	/// The bounds of a glyph (`T2CharString.calcBounds`).
+	pub(crate) fn calc_bounds(&self, gid: usize) -> Result<Option<Rect>> {
+		let mut pen = BoundsPen::new_bounds(Some(self));
+		self.draw(gid, &mut pen)?;
+		Ok(pen.bounds())
+	}
+
+	/// The union of the bounds of all glyphs.
+	fn font_bounds(&self) -> Result<Option<Rect>> {
+		let n = self
+			.top
+			.borrow()
+			.0
+			.char_strings
+			.as_ref()
+			.ok_or_else(|| Error::ttlib("AttributeError: CharStrings"))?
+			.items
+			.len();
+		let mut bbox: Option<Rect> = None;
+		for gid in 0..n {
+			if let Some(b) = self.calc_bounds(gid)? {
+				bbox = Some(match bbox {
+					Some(a) => union_rect(a, b),
+					None => b,
+				});
+			}
+		}
+		Ok(bbox)
+	}
+}
+
+impl GlyphSet for CharStringsGlyphSet<'_> {
+	fn draw_glyph(&self, glyph_name: &str, pen: &mut dyn Pen) -> fontoxide_pens::Result<bool> {
+		let Some(gid) = self.index(glyph_name) else {
+			return Ok(false);
+		};
+		self.draw(gid, pen).map_err(Error::into_pen_error)?;
+		Ok(true)
+	}
 }
 
 /// The bounds of a glyph of a Top DICT (`T2CharString.calcBounds`).
@@ -1066,15 +1180,7 @@ pub(crate) fn calc_bounds(
 	global_subrs: &mut [T2CharString],
 	gid: usize,
 ) -> Result<Option<Rect>> {
-	let mut pen = BoundsPen::default();
-	run_char_string(
-		top,
-		global_subrs,
-		gid,
-		Some(&mut pen as &mut dyn super::charstring::Pen),
-	)?;
-	draw_components(top, global_subrs, &mut pen, 0)?;
-	Ok(pen.bounds)
+	CharStringsGlyphSet::new(top, global_subrs, None).calc_bounds(gid)
 }
 
 impl CffFontSet {
@@ -1106,22 +1212,7 @@ impl CffFontSet {
 }
 
 fn font_bounds(top: &mut TopDict, global_subrs: &mut [T2CharString]) -> Result<Option<Rect>> {
-	let n = top
-		.char_strings
-		.as_ref()
-		.ok_or_else(|| Error::ttlib("AttributeError: CharStrings"))?
-		.items
-		.len();
-	let mut bbox: Option<Rect> = None;
-	for gid in 0..n {
-		if let Some(b) = calc_bounds(top, global_subrs, gid)? {
-			bbox = Some(match bbox {
-				Some(a) => union_rect(a, b),
-				None => b,
-			});
-		}
-	}
-	Ok(bbox)
+	CharStringsGlyphSet::new(top, global_subrs, None).font_bounds()
 }
 
 /// `TopDict.recalcFontBBox`.
@@ -1141,7 +1232,8 @@ pub(crate) fn run_char_string(
 	top: &mut TopDict,
 	global_subrs: &mut [T2CharString],
 	gid: usize,
-	pen: Option<&mut dyn super::charstring::Pen>,
+	pen: Option<&mut dyn Pen>,
+	blender: Option<Blender<'_>>,
 ) -> Result<()> {
 	let TopDict {
 		char_strings,
@@ -1205,6 +1297,7 @@ pub(crate) fn run_char_string(
 		default_width_x: default,
 		vsindex,
 		num_regions: &regions,
+		blender,
 	};
 	let result = Interpreter::new(ctx, pen).execute(&mut cs);
 	char_strings.items[gid] = cs;

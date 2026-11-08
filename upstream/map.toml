@@ -11,13 +11,19 @@ rust = ["fontoxide-afmlib"]
 upstream = "Tests/afmLib/"
 rust = ["fontoxide-afmlib"]
 
+# cffLib lives in fontoxide-ttlib (its `cff` module), since CFF2 uses the
+# generated OpenType types and the tables are tied to `Font`.
 [[map]]
 upstream = "Lib/fontTools/cffLib/"
-rust = ["fontoxide-cfflib"]
+rust = ["fontoxide-ttlib"]
 
 [[map]]
 upstream = "Tests/cffLib/"
-rust = ["fontoxide-cfflib"]
+rust = ["fontoxide-ttlib"]
+
+[[map]]
+upstream = "Lib/fontTools/misc/psCharStrings.py"
+rust = ["fontoxide-ttlib"]
 
 [[map]]
 upstream = "Lib/fontTools/colorLib/"
@@ -174,6 +180,24 @@ rust = ["fontoxide-ufolib"]
 [[map]]
 upstream = "Lib/fontTools/varLib/"
 rust = ["fontoxide-varlib"]
+
+# Evaluating variations at a location, which ttLib's glyph sets need: ported in
+# fontoxide-ttlib's `var` module.
+[[map]]
+upstream = "Lib/fontTools/varLib/models.py"
+rust = ["fontoxide-ttlib", "fontoxide-varlib"]
+
+[[map]]
+upstream = "Lib/fontTools/varLib/iup.py"
+rust = ["fontoxide-ttlib", "fontoxide-varlib"]
+
+[[map]]
+upstream = "Lib/fontTools/varLib/varStore.py"
+rust = ["fontoxide-ttlib", "fontoxide-varlib"]
+
+[[map]]
+upstream = "Lib/fontTools/varLib/multiVarStore.py"
+rust = ["fontoxide-ttlib", "fontoxide-varlib"]
 
 [[map]]
 upstream = "Tests/varLib/"

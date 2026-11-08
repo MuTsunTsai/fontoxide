@@ -9,8 +9,11 @@ use fontoxide_misc::fixed_tools::{
 use fontoxide_misc::py::float_repr;
 use fontoxide_misc::round_tools::ot_round;
 use fontoxide_misc::text_tools::Literal;
+use fontoxide_misc::transform::Transform;
 use fontoxide_misc::xml_reader::Element;
 use fontoxide_misc::xml_writer::{AttrValue, XmlWriter};
+
+use fontoxide_pens::Pen;
 
 use crate::glyph_order::GlyphOrder;
 use crate::sstruct::eval;
@@ -436,6 +439,143 @@ impl Glyph {
 	/// Whether the glyph is composite (`isComposite`).
 	pub fn is_composite(&self) -> bool {
 		self.number_of_contours == -1
+	}
+
+	/// The component glyph and its transformation (`getComponentInfo`).
+	pub fn component_info(c: &GlyphComponent) -> Result<(u32, Transform)> {
+		let ComponentPlacement::Offset { x, y } = c.placement else {
+			return Err(Error::ttlib(
+				"AttributeError: 'GlyphComponent' object has no attribute 'x'",
+			));
+		};
+		let [[xx, xy], [yx, yy]] = c.transform.unwrap_or([[1.0, 0.0], [0.0, 1.0]]);
+		Ok((
+			c.glyph,
+			Transform::new(xx, xy, yx, yy, x.value(), y.value()),
+		))
+	}
+
+	/// Draws the glyph onto `pen`, moved right by `offset` (`draw`). Components
+	/// are passed on to the pen.
+	pub fn draw(&self, order: &GlyphOrder, pen: &mut dyn Pen, offset: f64) -> Result<()> {
+		if self.is_composite() {
+			for c in &self.components {
+				let (gid, t) = Self::component_info(c)?;
+				pen.add_component(&order.name(gid), t)?;
+			}
+			return Ok(());
+		}
+		if self.number_of_contours <= 0 {
+			return Ok(());
+		}
+		let mut coordinates = self.coordinates.clone();
+		if offset != 0.0 {
+			translate(&mut coordinates, (offset, 0.0));
+		}
+		let assertion = |what: &str| Error::Assertion(what.to_owned());
+		let mid = |a: (f64, f64), b: (f64, f64)| ((a.0 + b.0) * 0.5, (a.1 + b.1) * 0.5);
+		let mut start = 0;
+		for &end in &self.end_pts_of_contours {
+			let end = usize::try_from(end + 1)
+				.unwrap_or(0)
+				.clamp(start, coordinates.len());
+			let mut contour = coordinates[start..end].to_vec();
+			let mut c_flags: Vec<bool> = self.flags
+				[start.min(self.flags.len())..end.min(self.flags.len())]
+				.iter()
+				.map(|f| f & FLAG_ON_CURVE != 0)
+				.collect();
+			let mut cu_flags: Vec<bool> = self.flags
+				[start.min(self.flags.len())..end.min(self.flags.len())]
+				.iter()
+				.map(|f| f & FLAG_CUBIC != 0)
+				.collect();
+			start = end;
+			match c_flags.iter().position(|&f| f) {
+				None => {
+					let all = cu_flags.iter().all(|&f| f);
+					if !all && cu_flags.iter().any(|&f| f) {
+						return Err(assertion("all(cuFlags) or not any(cuFlags)"));
+					}
+					if all {
+						let count = contour.len();
+						if !count.is_multiple_of(2) {
+							return Err(assertion("Odd number of cubic off-curves undefined"));
+						}
+						let (Some(&l), Some(&f)) = (contour.last(), contour.first()) else {
+							return Err(Error::ttlib("IndexError: array index out of range"));
+						};
+						pen.move_to(mid(l, f))?;
+						for i in (0..count).step_by(2) {
+							let p1 = contour[i];
+							let p2 = contour[i + 1];
+							let p4 = contour[if i + 2 < count { i + 2 } else { 0 }];
+							pen.curve_to(&[p1, p2, mid(p2, p4)])?;
+						}
+					} else {
+						// No on-curve point at all: `qCurveTo` with `None` as the
+						// on-curve point.
+						pen.q_curve_to(&contour, None)?;
+					}
+				}
+				Some(first) => {
+					// Rotate the points so that the contour ends in an on-curve
+					// point, which is used for the `moveTo`.
+					let first = first + 1;
+					contour.rotate_left(first);
+					c_flags.rotate_left(first);
+					cu_flags.rotate_left(first);
+					pen.move_to(contour[contour.len() - 1])?;
+					while !contour.is_empty() {
+						let next = c_flags
+							.iter()
+							.position(|&f| f)
+							.ok_or_else(|| Error::value("ValueError: 1 is not in list"))?
+							+ 1;
+						if next == 1 {
+							// A final `lineTo` is implied by `closePath`.
+							if contour.len() > 1 {
+								pen.line_to(contour[0])?;
+							}
+						} else {
+							let cubic_flags = &cu_flags[..next - 1];
+							let all = cubic_flags.iter().all(|&f| f);
+							let any = cubic_flags.iter().any(|&f| f);
+							if !all && any {
+								return Err(assertion("all(cubicFlags) or not any(cubicFlags)"));
+							}
+							if any {
+								let count = next;
+								if count < 3 {
+									return Err(assertion(
+										"At least two cubic off-curve points required",
+									));
+								}
+								if (count - 1) % 2 != 0 {
+									return Err(assertion(
+										"Odd number of cubic off-curves undefined",
+									));
+								}
+								for i in (0..count - 3).step_by(2) {
+									let p1 = contour[i];
+									let p2 = contour[i + 1];
+									let p4 = contour[i + 2];
+									pen.curve_to(&[p1, p2, mid(p2, p4)])?;
+								}
+								pen.curve_to(&contour[count - 3..count])?;
+							} else {
+								pen.q_curve_to(&contour[..next - 1], Some(contour[next - 1]))?;
+							}
+						}
+						contour.drain(..next);
+						c_flags.drain(..next);
+						cu_flags.drain(..next);
+					}
+				}
+			}
+			pen.close_path()?;
+		}
+		Ok(())
 	}
 
 	/// Parses a glyph (`Glyph(data)` + `expand`). Component glyph IDs must be

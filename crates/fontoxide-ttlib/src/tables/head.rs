@@ -103,9 +103,14 @@ impl Table for Head {
 		if font.recalc_bboxes {
 			// For TrueType-flavored fonts, the bounding box is set in maxp.recalc().
 			if font.contains(Tag::new(b"VARC")) {
-				return Err(Error::ttlib(
-					"recalculating the 'head' bounding box from 'VARC' is not supported yet",
-				));
+				let glyph_set = crate::glyph_set::GlyphSet::new(font)?;
+				let mut pen = fontoxide_pens::BoundsPen::new_bounds(Some(&glyph_set));
+				for name in glyph_set.glyph_order().names() {
+					glyph_set.draw(name, &mut pen)?;
+				}
+				if let Some(b) = pen.bounds() {
+					self.set_bbox(fontoxide_misc::array_tools::int_rect(b))?;
+				}
 			} else if font.contains(Tag::new(b"CFF ")) {
 				let cff = &font.require::<crate::tables::Cff>()?.cff;
 				let top = cff
@@ -125,11 +130,11 @@ impl Table for Head {
 					}
 					_ => return Err(Error::value("not enough values to unpack (expected 4)")),
 				};
-				self.set_bbox(crate::cff::bounds::int_rect(rect))?;
+				self.set_bbox(fontoxide_misc::array_tools::int_rect(rect))?;
 			} else if font.contains(Tag::new(b"CFF2"))
 				&& let Some(rect) = font.require::<crate::tables::Cff2>()?.cff.font_bounds()?
 			{
-				self.set_bbox(crate::cff::bounds::int_rect(rect))?;
+				self.set_bbox(fontoxide_misc::array_tools::int_rect(rect))?;
 			}
 		}
 		if font.recalc_timestamp {

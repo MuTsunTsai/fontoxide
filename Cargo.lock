@@ -222,6 +222,7 @@ version = "0.0.0"
 dependencies = [
  "fontoxide-agl",
  "fontoxide-misc",
+ "fontoxide-pens",
  "fontoxide-ttlib",
  "fontoxide-unicodedata",
 ]
@@ -243,6 +244,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "fontoxide-pens"
+version = "0.0.0"
+dependencies = [
+ "fontoxide-misc",
+ "log",
+ "thiserror",
+]
+
+[[package]]
 name = "fontoxide-ttlib"
 version = "0.0.0"
 dependencies = [
@@ -251,6 +261,7 @@ dependencies = [
  "fontoxide-agl",
  "fontoxide-encodings",
  "fontoxide-misc",
+ "fontoxide-pens",
  "fontoxide-unicodedata",
  "log",
  "serde",

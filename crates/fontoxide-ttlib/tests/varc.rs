@@ -1,7 +1,4 @@
-//! Round trips of `VARC` tables in fontTools' test fonts.
-//!
-//! The parity runner cannot compile these fonts yet, because recalculating the
-//! `head` bounding box needs the glyphs drawn; so the table is compared alone.
+//! Round trips of `VARC` tables in fontTools' test fonts, compared alone.
 
 use std::path::PathBuf;
 

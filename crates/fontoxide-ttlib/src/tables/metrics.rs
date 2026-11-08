@@ -7,8 +7,10 @@ use std::collections::BTreeMap;
 use fontoxide_misc::Tag;
 use fontoxide_misc::xml_reader::Element;
 use fontoxide_misc::xml_writer::XmlWriter;
+use fontoxide_pens::BoundsPen;
 
 use crate::binary::{Reader, WriteBytes};
+use crate::glyph_set::GlyphSet;
 use crate::sstruct::eval;
 use crate::table::{Table, TableType};
 use crate::tables::cff::{Cff, Cff2};
@@ -237,19 +239,30 @@ pub(crate) struct HeaderRecalc {
 /// The shared part of `hhea.recalc` and `vhea.recalc`. Returns `None` when there is
 /// nothing to recalculate.
 ///
-/// The extents come from the outlines. Only `glyf` is supported so far: with
-/// `VARC`, `CFF ` or `CFF2` outlines the header is left unchanged.
+/// The extents come from the outlines: of the glyph set with `VARC`, else of
+/// `glyf`, `CFF ` or `CFF2`.
 pub(crate) fn recalc_header(font: &mut Font, vertical: bool) -> Result<Option<HeaderRecalc>> {
 	let metrics_tag = Tag::new(if vertical { b"vmtx" } else { b"hmtx" });
 	if !font.contains(metrics_tag) {
 		return Ok(None);
 	}
-	if font.contains(Tag::new(b"VARC")) {
-		return Ok(None);
-	}
 	let order = font.glyph_order()?;
 	let mut extents = Vec::new();
-	if !font.contains(Glyf::TAG) {
+	if font.contains(Tag::new(b"VARC")) {
+		let glyph_set = GlyphSet::new(font)?;
+		for (gid, name) in order.names().iter().enumerate() {
+			let mut pen = BoundsPen::new_bounds(Some(&glyph_set));
+			glyph_set.draw(name, &mut pen)?;
+			if let Some(b) = pen.bounds() {
+				let size = if vertical {
+					b[3].ceil() as i64 - b[1].floor() as i64
+				} else {
+					b[2].ceil() as i64 - b[0].floor() as i64
+				};
+				extents.push((gid as u32, size));
+			}
+		}
+	} else if !font.contains(Glyf::TAG) {
 		let cff = if font.contains(Cff::TAG) {
 			&mut font.require::<Cff>()?.cff
 		} else if font.contains(Cff2::TAG) {

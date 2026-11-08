@@ -7,11 +7,13 @@
 //! |----------------------|--------------------|
 //! | [`agl`]              | `fontTools.agl`    |
 //! | [`misc`]             | `fontTools.misc`   |
+//! | [`pens`]             | `fontTools.pens`   |
 //! | [`ttlib`]            | `fontTools.ttLib`  |
 //! | [`unicodedata`]      | `fontTools.unicodedata` |
 
 pub use fontoxide_agl as agl;
 pub use fontoxide_misc as misc;
+pub use fontoxide_pens as pens;
 pub use fontoxide_ttlib as ttlib;
 pub use fontoxide_unicodedata as unicodedata;
 

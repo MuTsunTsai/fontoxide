@@ -5,8 +5,10 @@ use fontoxide_misc::fixed_tools::{
 	fixed_to_float, float_to_fixed, float_to_fixed_to_str, str_to_fixed_to_float,
 };
 use fontoxide_misc::text_tools::{binary2num, num2binary, read_hex};
+use fontoxide_misc::transform::Transform;
 use fontoxide_misc::xml_reader::Element;
 use fontoxide_misc::xml_writer::XmlWriter;
+use fontoxide_pens::Pen;
 
 use crate::{Error, Result};
 
@@ -428,19 +430,9 @@ impl Num {
 	}
 }
 
-/// A pen that charstrings draw onto (`AbstractPen`).
-pub trait Pen {
-	/// Starts a contour.
-	fn move_to(&mut self, p: (f64, f64));
-	/// A line.
-	fn line_to(&mut self, p: (f64, f64));
-	/// A cubic curve.
-	fn curve_to(&mut self, p1: (f64, f64), p2: (f64, f64), p3: (f64, f64));
-	/// Closes the contour.
-	fn close_path(&mut self);
-	/// A component: a glyph of the Standard Encoding, translated (`seac`).
-	fn add_component(&mut self, glyph: &str, offset: (f64, f64)) -> Result<()>;
-}
+/// A blender: the delta of a blended value at the location being drawn, from
+/// the `vsindex` and the deltas of the regions.
+pub type Blender<'a> = &'a dyn Fn(i64, &[f64]) -> Result<f64>;
 
 /// What the interpreter needs from the font: subroutines, and the private
 /// DICT of the charstring being run.
@@ -458,6 +450,10 @@ pub struct Context<'a> {
 	pub vsindex: Option<i64>,
 	/// The number of regions of a `vsindex` (`Private.getNumRegions`).
 	pub num_regions: &'a dyn Fn(i64) -> Result<i64>,
+	/// Computes the delta of a blended value at the location being drawn, from
+	/// the `vsindex` and the deltas of the regions (`blender`); without it,
+	/// `blend` keeps the default values.
+	pub blender: Option<Blender<'a>>,
 }
 
 /// The interpreter (`SimpleT2Decompiler`, or `T2OutlineExtractor` when there is
@@ -514,7 +510,7 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 		if self.drawing() {
 			self.subr_level -= 1;
 			if self.subr_level == 0 {
-				self.end_path();
+				self.end_path()?;
 			}
 		}
 		Ok(())
@@ -672,13 +668,35 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 		let regions = self.num_regions.unwrap_or(0);
 		let blends = self.pop()?.int()?;
 		let ops = blends * (regions + 1);
-		if regions != 0 {
-			// `del stack[-(numOps - numBlends):]`: `-0` deletes everything.
-			let k = ops - blends;
-			let n = self.stack.len() as i64;
-			let start = if k == 0 { 0 } else { (n - k).max(0) };
-			self.stack.truncate(start as usize);
+		let Some(blender) = self.ctx.blender else {
+			if regions != 0 {
+				// `del stack[-(numOps - numBlends):]`: `-0` deletes everything.
+				let k = ops - blends;
+				let n = self.stack.len() as i64;
+				let start = if k == 0 { 0 } else { (n - k).max(0) };
+				self.stack.truncate(start as usize);
+			}
+			return Ok(());
+		};
+		let mut argi = self.stack.len() as i64 - ops;
+		if argi < 0 || blends < 0 || regions < 0 {
+			return Err(Error::ttlib("IndexError: list index out of range"));
 		}
+		let end_args = argi + blends;
+		let mut tuplei = end_args;
+		while argi < end_args {
+			let next_ti = tuplei + regions;
+			let deltas: Vec<f64> = self.stack[tuplei as usize..next_ti as usize]
+				.iter()
+				.map(|n| n.value())
+				.collect();
+			let delta = blender(self.vs_index, &deltas)?;
+			let at = &mut self.stack[argi as usize];
+			*at = Num::Float(at.value() + delta);
+			tuplei = next_ti;
+			argi += 1;
+		}
+		self.stack.truncate(end_args as usize);
 		Ok(())
 	}
 
@@ -689,43 +707,47 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 		self.current
 	}
 
-	fn r_move_to(&mut self, p: (f64, f64)) {
+	fn r_move_to(&mut self, p: (f64, f64)) -> Result<()> {
 		let p = self.next_point(p);
 		if let Some(pen) = self.pen.as_mut() {
-			pen.move_to(p);
+			pen.move_to(p)?;
 		}
 		self.saw_move_to = true;
+		Ok(())
 	}
 
-	fn r_line_to(&mut self, p: (f64, f64)) {
+	fn r_line_to(&mut self, p: (f64, f64)) -> Result<()> {
 		if !self.saw_move_to {
-			self.r_move_to((0.0, 0.0));
+			self.r_move_to((0.0, 0.0))?;
 		}
 		let p = self.next_point(p);
 		if let Some(pen) = self.pen.as_mut() {
-			pen.line_to(p);
+			pen.line_to(p)?;
 		}
+		Ok(())
 	}
 
-	fn r_curve_to(&mut self, p1: (f64, f64), p2: (f64, f64), p3: (f64, f64)) {
+	fn r_curve_to(&mut self, p1: (f64, f64), p2: (f64, f64), p3: (f64, f64)) -> Result<()> {
 		if !self.saw_move_to {
-			self.r_move_to((0.0, 0.0));
+			self.r_move_to((0.0, 0.0))?;
 		}
 		let a = self.next_point(p1);
 		let b = self.next_point(p2);
 		let c = self.next_point(p3);
 		if let Some(pen) = self.pen.as_mut() {
-			pen.curve_to(a, b, c);
+			pen.curve_to(&[a, b, c])?;
 		}
+		Ok(())
 	}
 
-	fn end_path(&mut self) {
+	fn end_path(&mut self) -> Result<()> {
 		if self.saw_move_to
 			&& let Some(pen) = self.pen.as_mut()
 		{
-			pen.close_path();
+			pen.close_path()?;
 		}
 		self.saw_move_to = false;
+		Ok(())
 	}
 
 	fn draw_operator(&mut self, op: &str) -> Result<()> {
@@ -740,25 +762,25 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 		};
 		match op {
 			"rmoveto" => {
-				self.end_path();
+				self.end_path()?;
 				let a = self.popall_width(0)?;
 				let v = unpack(&a, 2)?;
-				self.r_move_to((v[0], v[1]));
+				self.r_move_to((v[0], v[1]))?;
 			}
 			"hmoveto" => {
-				self.end_path();
+				self.end_path()?;
 				let a = self.popall_width(1)?;
 				let x = a.first().ok_or_else(index_error)?.value();
-				self.r_move_to((x, 0.0));
+				self.r_move_to((x, 0.0))?;
 			}
 			"vmoveto" => {
-				self.end_path();
+				self.end_path()?;
 				let a = self.popall_width(1)?;
 				let y = a.first().ok_or_else(index_error)?.value();
-				self.r_move_to((0.0, y));
+				self.r_move_to((0.0, y))?;
 			}
 			"endchar" => {
-				self.end_path();
+				self.end_path()?;
 				let args = self.popall_width(0)?;
 				if !args.is_empty() {
 					// `seac`: a base and an accent glyph from the Standard Encoding.
@@ -770,8 +792,8 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 					let base = *enc.get(code(args[2])?).ok_or_else(index_error)?;
 					let accent = *enc.get(code(args[3])?).ok_or_else(index_error)?;
 					if let Some(pen) = self.pen.as_mut() {
-						pen.add_component(base, (0.0, 0.0))?;
-						pen.add_component(accent, (v[0], v[1]))?;
+						pen.add_component(base, Transform::new(1.0, 0.0, 0.0, 1.0, 0.0, 0.0))?;
+						pen.add_component(accent, Transform::new(1.0, 0.0, 0.0, 1.0, v[0], v[1]))?;
 					}
 				}
 			}
@@ -783,14 +805,14 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 						.get(1)
 						.ok_or_else(|| Error::value("not enough values"))?
 						.value();
-					self.r_line_to((x, y));
+					self.r_line_to((x, y))?;
 				}
 			}
 			"hlineto" | "vlineto" => {
 				let mut horizontal = op == "hlineto";
 				for a in self.popall() {
 					let v = a.value();
-					self.r_line_to(if horizontal { (v, 0.0) } else { (0.0, v) });
+					self.r_line_to(if horizontal { (v, 0.0) } else { (0.0, v) })?;
 					horizontal = !horizontal;
 				}
 			}
@@ -798,7 +820,7 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 				let args = self.popall();
 				for c in args.chunks(6) {
 					let v = unpack(c, 6)?;
-					self.r_curve_to((v[0], v[1]), (v[2], v[3]), (v[4], v[5]));
+					self.r_curve_to((v[0], v[1]), (v[2], v[3]), (v[4], v[5]))?;
 				}
 			}
 			"rcurveline" => {
@@ -807,11 +829,11 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 				let mut i = 0;
 				while (i as i64) < n as i64 - 2 {
 					let v = unpack(&args[i..(i + 6).min(n)], 6)?;
-					self.r_curve_to((v[0], v[1]), (v[2], v[3]), (v[4], v[5]));
+					self.r_curve_to((v[0], v[1]), (v[2], v[3]), (v[4], v[5]))?;
 					i += 6;
 				}
 				let last = unpack(&args[n.saturating_sub(2)..], 2)?;
-				self.r_line_to((last[0], last[1]));
+				self.r_line_to((last[0], last[1]))?;
 			}
 			"rlinecurve" => {
 				let args = self.popall();
@@ -819,10 +841,10 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 				let split = n.saturating_sub(6);
 				for pair in args[..split].chunks(2) {
 					let v = unpack(pair, 2)?;
-					self.r_line_to((v[0], v[1]));
+					self.r_line_to((v[0], v[1]))?;
 				}
 				let v = unpack(&args[split..], 6)?;
-				self.r_curve_to((v[0], v[1]), (v[2], v[3]), (v[4], v[5]));
+				self.r_curve_to((v[0], v[1]), (v[2], v[3]), (v[4], v[5]))?;
 			}
 			"vvcurveto" | "hhcurveto" => {
 				let mut args = self.popall();
@@ -834,9 +856,9 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 				for c in args.chunks(4) {
 					let v = unpack(c, 4)?;
 					if op == "vvcurveto" {
-						self.r_curve_to((d1, v[0]), (v[1], v[2]), (0.0, v[3]));
+						self.r_curve_to((d1, v[0]), (v[1], v[2]), (0.0, v[3]))?;
 					} else {
-						self.r_curve_to((v[0], d1), (v[1], v[2]), (v[3], 0.0));
+						self.r_curve_to((v[0], d1), (v[1], v[2]), (v[3], 0.0))?;
 					}
 					d1 = 0.0;
 				}
@@ -851,19 +873,19 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 			}
 			"hflex" => {
 				let v = unpack(&self.popall(), 7)?;
-				self.r_curve_to((v[0], 0.0), (v[1], v[2]), (v[3], 0.0));
-				self.r_curve_to((v[4], 0.0), (v[5], -v[2]), (v[6], 0.0));
+				self.r_curve_to((v[0], 0.0), (v[1], v[2]), (v[3], 0.0))?;
+				self.r_curve_to((v[4], 0.0), (v[5], -v[2]), (v[6], 0.0))?;
 			}
 			"flex" => {
 				let v = unpack(&self.popall(), 13)?;
-				self.r_curve_to((v[0], v[1]), (v[2], v[3]), (v[4], v[5]));
-				self.r_curve_to((v[6], v[7]), (v[8], v[9]), (v[10], v[11]));
+				self.r_curve_to((v[0], v[1]), (v[2], v[3]), (v[4], v[5]))?;
+				self.r_curve_to((v[6], v[7]), (v[8], v[9]), (v[10], v[11]))?;
 			}
 			"hflex1" => {
 				let v = unpack(&self.popall(), 9)?;
 				let dy6 = -(v[1] + v[3] + 0.0 + 0.0 + v[7]);
-				self.r_curve_to((v[0], v[1]), (v[2], v[3]), (v[4], 0.0));
-				self.r_curve_to((v[5], 0.0), (v[6], v[7]), (v[8], dy6));
+				self.r_curve_to((v[0], v[1]), (v[2], v[3]), (v[4], 0.0))?;
+				self.r_curve_to((v[5], 0.0), (v[6], v[7]), (v[8], dy6))?;
 			}
 			"flex1" => {
 				let v = unpack(&self.popall(), 11)?;
@@ -874,8 +896,8 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 				} else {
 					(-dx, v[10])
 				};
-				self.r_curve_to((v[0], v[1]), (v[2], v[3]), (v[4], v[5]));
-				self.r_curve_to((v[6], v[7]), (v[8], v[9]), (dx6, dy6));
+				self.r_curve_to((v[0], v[1]), (v[2], v[3]), (v[4], v[5]))?;
+				self.r_curve_to((v[6], v[7]), (v[8], v[9]), (dx6, dy6))?;
 			}
 			"div" => {
 				let num2 = self.pop()?;
@@ -922,9 +944,9 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 			(0.0, rest.to_vec())
 		};
 		if vertical {
-			self.r_curve_to((0.0, v[0]), (v[1], v[2]), (v[3], last));
+			self.r_curve_to((0.0, v[0]), (v[1], v[2]), (v[3], last))?;
 		} else {
-			self.r_curve_to((v[0], 0.0), (v[1], v[2]), (last, v[3]));
+			self.r_curve_to((v[0], 0.0), (v[1], v[2]), (last, v[3]))?;
 		}
 		Ok(rest)
 	}
