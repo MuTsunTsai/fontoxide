@@ -15,10 +15,12 @@ use fontoxide_misc::Tag;
 use fontoxide_misc::xml_reader::Element;
 use fontoxide_misc::xml_writer::XmlWriter;
 
+use crate::ot::aat::*;
 use crate::ot::colr::*;
 use crate::ot::conv::*;
 use crate::ot::custom::*;
 use crate::ot::ift::*;
+use crate::ot::morph::*;
 use crate::ot::table::*;
 use crate::ot::varc::*;
 use crate::ot::{CountRef, OtReader, OtWriter, StateValue};
@@ -631,6 +633,13 @@ impl OtTable for AlternateSubstRaw {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Unknown(_) => None,
+		}
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		match self {
 			Self::Format1(v) => v.propagated_counts(),
@@ -1016,6 +1025,14 @@ impl OtTable for Anchor {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Format3(v) => v.struct_length(),
+			Self::Unknown(_) => None,
+		}
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		match self {
 			Self::Format1(v) => v.propagated_counts(),
@@ -1207,7 +1224,7 @@ pub struct AnchorPointsFormat0 {
 	/// `Flags` (UShort).
 	pub flags: u16,
 	/// `Anchors` (AATLookupWithDataOffset).
-	pub anchors: Unsupported,
+	pub anchors: AatLookup<Option<Box<AnchorGlyphData>>>,
 }
 
 impl Default for AnchorPointsFormat0 {
@@ -1227,7 +1244,7 @@ impl OtTable for AnchorPointsFormat0 {
 		let mut t = Self::default();
 		let _ = (&mut *r, &mut *font);
 		t.flags = r.read_u16()?;
-		t.anchors = Unsupported::read("AATLookupWithDataOffset")?;
+		t.anchors = read_aat_lookup_with_data_offset::<AnchorGlyphData>(r, font)?;
 		Ok(t)
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
@@ -1236,7 +1253,7 @@ impl OtTable for AnchorPointsFormat0 {
 		let t = self;
 		let _ = t;
 		w.write_u16(self.flags);
-		Unsupported::write("AATLookupWithDataOffset")?;
+		write_aat_lookup_with_data_offset(w, font, &self.anchors)?;
 		Ok(())
 	}
 	fn format(&self) -> Option<u16> {
@@ -1247,14 +1264,16 @@ impl OtTable for AnchorPointsFormat0 {
 		let t = self;
 		let _ = t;
 		xml_simple(xw, "Flags", &Attrs::new(), self.flags.to_string());
-		let _ = &xw;
+		xml_aat_lookup(xw, font, "Anchors", &Attrs::new(), &self.anchors)?;
 		Ok(())
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
 		let e = element;
 		match e.name.as_str() {
 			"Flags" => self.flags = parse_int::<u16>(value_attr(e)?)?,
-			"Anchors" => self.anchors = Unsupported::xml_read("AATLookupWithDataOffset")?,
+			"Anchors" => {
+				self.anchors = read_aat_lookup_xml::<Option<Box<AnchorGlyphData>>>(e, font, ctx)?
+			}
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);
@@ -1325,6 +1344,12 @@ impl OtTable for AnchorPoints {
 		match self {
 			Self::Format0(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format0(v) => v.struct_length(),
+			Self::Unknown(_) => None,
 		}
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -2441,6 +2466,15 @@ impl OtTable for AxisValue {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Format3(v) => v.struct_length(),
+			Self::Format4(v) => v.struct_length(),
+			Self::Unknown(_) => None,
+		}
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		match self {
 			Self::Format1(v) => v.propagated_counts(),
@@ -3356,6 +3390,15 @@ impl OtTable for BaseCoord {
 			Self::Format3(v) => v.populate_defaults(ctx),
 			Self::Format4(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Format3(v) => v.struct_length(),
+			Self::Format4(v) => v.struct_length(),
+			Self::Unknown(_) => None,
 		}
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -4513,7 +4556,7 @@ pub struct BaselineFormat1 {
 	/// `Delta` (UShort).
 	pub delta: Vec<u16>,
 	/// `BaselineValues` (AATLookup).
-	pub baseline_values: Unsupported,
+	pub baseline_values: AatLookup<u16>,
 }
 
 impl Default for BaselineFormat1 {
@@ -4542,7 +4585,7 @@ impl OtTable for BaselineFormat1 {
 			}
 			t.delta = v;
 		}
-		t.baseline_values = Unsupported::read("AATLookup")?;
+		t.baseline_values = read_aat_lookup::<u16>(r, font)?;
 		Ok(t)
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
@@ -4561,7 +4604,7 @@ impl OtTable for BaselineFormat1 {
 			let _ = i;
 			w.write_u16((*item));
 		}
-		Unsupported::write("AATLookup")?;
+		write_aat_lookup(w, font, &self.baseline_values)?;
 		Ok(())
 	}
 	fn format(&self) -> Option<u16> {
@@ -4582,7 +4625,13 @@ impl OtTable for BaselineFormat1 {
 			let _ = &attrs;
 			xml_simple(xw, "Delta", &attrs, (*item).to_string());
 		}
-		let _ = &xw;
+		xml_aat_lookup(
+			xw,
+			font,
+			"BaselineValues",
+			&Attrs::new(),
+			&self.baseline_values,
+		)?;
 		Ok(())
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
@@ -4590,7 +4639,7 @@ impl OtTable for BaselineFormat1 {
 		match e.name.as_str() {
 			"DefaultBaseline" => self.default_baseline = parse_int::<u16>(value_attr(e)?)?,
 			"Delta" => self.delta.push(parse_int::<u16>(value_attr(e)?)?),
-			"BaselineValues" => self.baseline_values = Unsupported::xml_read("AATLookup")?,
+			"BaselineValues" => self.baseline_values = read_aat_lookup_xml::<u16>(e, font, ctx)?,
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);
@@ -4718,7 +4767,7 @@ pub struct BaselineFormat3 {
 	/// `ControlPoint` (UShort).
 	pub control_point: Vec<u16>,
 	/// `BaselineValues` (AATLookup).
-	pub baseline_values: Unsupported,
+	pub baseline_values: AatLookup<u16>,
 }
 
 impl Default for BaselineFormat3 {
@@ -4749,7 +4798,7 @@ impl OtTable for BaselineFormat3 {
 			}
 			t.control_point = v;
 		}
-		t.baseline_values = Unsupported::read("AATLookup")?;
+		t.baseline_values = read_aat_lookup::<u16>(r, font)?;
 		Ok(t)
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
@@ -4769,7 +4818,7 @@ impl OtTable for BaselineFormat3 {
 			let _ = i;
 			w.write_u16((*item));
 		}
-		Unsupported::write("AATLookup")?;
+		write_aat_lookup(w, font, &self.baseline_values)?;
 		Ok(())
 	}
 	fn format(&self) -> Option<u16> {
@@ -4796,7 +4845,13 @@ impl OtTable for BaselineFormat3 {
 			let _ = &attrs;
 			xml_simple(xw, "ControlPoint", &attrs, (*item).to_string());
 		}
-		let _ = &xw;
+		xml_aat_lookup(
+			xw,
+			font,
+			"BaselineValues",
+			&Attrs::new(),
+			&self.baseline_values,
+		)?;
 		Ok(())
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
@@ -4805,7 +4860,7 @@ impl OtTable for BaselineFormat3 {
 			"DefaultBaseline" => self.default_baseline = parse_int::<u16>(value_attr(e)?)?,
 			"StandardGlyph" => self.standard_glyph = font.glyph_id(value_attr(e)?)?,
 			"ControlPoint" => self.control_point.push(parse_int::<u16>(value_attr(e)?)?),
-			"BaselineValues" => self.baseline_values = Unsupported::xml_read("AATLookup")?,
+			"BaselineValues" => self.baseline_values = read_aat_lookup_xml::<u16>(e, font, ctx)?,
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);
@@ -4902,6 +4957,15 @@ impl OtTable for Baseline {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format0(v) => v.struct_length(),
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Format3(v) => v.struct_length(),
+			Self::Unknown(_) => None,
+		}
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		match self {
 			Self::Format0(v) => v.propagated_counts(),
@@ -4949,7 +5013,7 @@ pub struct CIDGlyphMappingFormat0 {
 	/// `SupplementVersion` (UShort).
 	pub supplement_version: u16,
 	/// `Mapping` (CIDGlyphMap).
-	pub mapping: Unsupported,
+	pub mapping: std::collections::BTreeMap<u32, u32>,
 }
 
 impl Default for CIDGlyphMappingFormat0 {
@@ -4981,7 +5045,7 @@ impl OtTable for CIDGlyphMappingFormat0 {
 		t.order = r.read_u16()?;
 		t.order_name = read_char64(r);
 		t.supplement_version = r.read_u16()?;
-		t.mapping = Unsupported::read("CIDGlyphMap")?;
+		t.mapping = read_cid_glyph_map(r)?;
 		Ok(t)
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
@@ -4997,8 +5061,15 @@ impl OtTable for CIDGlyphMappingFormat0 {
 		w.write_u16(self.order);
 		write_char64(w, &self.order_name);
 		w.write_u16(self.supplement_version);
-		Unsupported::write("CIDGlyphMap")?;
+		write_cid_glyph_map(w, &self.mapping)?;
 		Ok(())
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		Some(StructLength {
+			value: self.struct_length,
+			item: 2,
+			size: 4,
+		})
 	}
 	fn format(&self) -> Option<u16> {
 		Some(0)
@@ -5029,7 +5100,7 @@ impl OtTable for CIDGlyphMappingFormat0 {
 			&Attrs::new(),
 			self.supplement_version.to_string(),
 		);
-		let _ = &xw;
+		xml_cid_glyph_map(xw, font, "Mapping", &Attrs::new(), &self.mapping)?;
 		Ok(())
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
@@ -5042,7 +5113,7 @@ impl OtTable for CIDGlyphMappingFormat0 {
 			"Order" => self.order = parse_int::<u16>(value_attr(e)?)?,
 			"OrderName" => self.order_name = value_attr(e)?.to_owned(),
 			"SupplementVersion" => self.supplement_version = parse_int::<u16>(value_attr(e)?)?,
-			"Mapping" => self.mapping = Unsupported::xml_read("CIDGlyphMap")?,
+			"Mapping" => self.mapping = read_cid_glyph_map_xml(e, font)?,
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);
@@ -5113,6 +5184,12 @@ impl OtTable for CIDGlyphMapping {
 		match self {
 			Self::Format0(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format0(v) => v.struct_length(),
+			Self::Unknown(_) => None,
 		}
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -5695,6 +5772,14 @@ impl OtTable for CaretValue {
 			Self::Format2(v) => v.populate_defaults(ctx),
 			Self::Format3(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Format3(v) => v.struct_length(),
+			Self::Unknown(_) => None,
 		}
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -6598,6 +6683,16 @@ impl OtTable for ChainContextPos {
 			Self::Format4(v) => v.populate_defaults(ctx),
 			Self::Format5(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Format3(v) => v.struct_length(),
+			Self::Format4(v) => v.struct_length(),
+			Self::Format5(v) => v.struct_length(),
+			Self::Unknown(_) => None,
 		}
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -7507,6 +7602,16 @@ impl OtTable for ChainContextSubst {
 			Self::Format4(v) => v.populate_defaults(ctx),
 			Self::Format5(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Format3(v) => v.struct_length(),
+			Self::Format4(v) => v.struct_length(),
+			Self::Format5(v) => v.struct_length(),
+			Self::Unknown(_) => None,
 		}
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -9829,6 +9934,15 @@ impl OtTable for ClassDefRaw {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Format3(v) => v.struct_length(),
+			Self::Format4(v) => v.struct_length(),
+			Self::Unknown(_) => None,
+		}
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		match self {
 			Self::Format1(v) => v.propagated_counts(),
@@ -10435,6 +10549,13 @@ impl OtTable for ClipBox {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Unknown(_) => None,
+		}
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		match self {
 			Self::Format1(v) => v.propagated_counts(),
@@ -10602,6 +10723,12 @@ impl OtTable for ClipListRaw {
 		match self {
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Unknown(_) => None,
 		}
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -11716,6 +11843,16 @@ impl OtTable for ConditionTable {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Format3(v) => v.struct_length(),
+			Self::Format4(v) => v.struct_length(),
+			Self::Format5(v) => v.struct_length(),
+			Self::Unknown(_) => None,
+		}
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		match self {
 			Self::Format1(v) => v.propagated_counts(),
@@ -12525,6 +12662,17 @@ impl OtTable for ContextPos {
 			Self::Format5(v) => v.populate_defaults(ctx),
 			Self::Format6(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Format3(v) => v.struct_length(),
+			Self::Format4(v) => v.struct_length(),
+			Self::Format5(v) => v.struct_length(),
+			Self::Format6(v) => v.struct_length(),
+			Self::Unknown(_) => None,
 		}
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -13341,6 +13489,17 @@ impl OtTable for ContextSubst {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Format3(v) => v.struct_length(),
+			Self::Format4(v) => v.struct_length(),
+			Self::Format5(v) => v.struct_length(),
+			Self::Format6(v) => v.struct_length(),
+			Self::Unknown(_) => None,
+		}
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		match self {
 			Self::Format1(v) => v.propagated_counts(),
@@ -13380,7 +13539,7 @@ impl OtTable for ContextSubst {
 #[derive(Debug, Clone, PartialEq)]
 pub struct ContextualMorph {
 	/// `StateTable` (MorphStateTable).
-	pub state_table: Unsupported,
+	pub state_table: AatStateTable,
 }
 
 impl Default for ContextualMorph {
@@ -13398,7 +13557,7 @@ impl OtTable for ContextualMorph {
 	fn decompile(r: &mut OtReader<'_>, font: &mut Font) -> Result<Self> {
 		let mut t = Self::default();
 		let _ = (&mut *r, &mut *font);
-		t.state_table = Unsupported::read("MorphStateTable")?;
+		t.state_table = read_morph_state_table(ActionKind::Contextual, r, font)?;
 		Ok(t)
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
@@ -13406,20 +13565,22 @@ impl OtTable for ContextualMorph {
 		w.count_ref("LookupType")?.set_value(1)?;
 		let t = self;
 		let _ = t;
-		Unsupported::write("MorphStateTable")?;
+		write_morph_state_table(ActionKind::Contextual, w, font, &self.state_table)?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let _ = (&mut *xw, &mut *font);
 		let t = self;
 		let _ = t;
-		let _ = &xw;
+		xml_morph_state_table(xw, font, "StateTable", &Attrs::new(), &self.state_table)?;
 		Ok(())
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
 		let e = element;
 		match e.name.as_str() {
-			"StateTable" => self.state_table = Unsupported::xml_read("MorphStateTable")?,
+			"StateTable" => {
+				self.state_table = read_morph_state_table_xml(ActionKind::Contextual, e, font)?
+			}
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);
@@ -13860,6 +14021,15 @@ impl OtTable for CoverageRaw {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Format3(v) => v.struct_length(),
+			Self::Format4(v) => v.struct_length(),
+			Self::Unknown(_) => None,
+		}
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		match self {
 			Self::Format1(v) => v.propagated_counts(),
@@ -14156,6 +14326,13 @@ impl OtTable for CursivePos {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Unknown(_) => None,
+		}
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		match self {
 			Self::Format1(v) => v.propagated_counts(),
@@ -14448,6 +14625,13 @@ impl OtTable for DeltaSetIndexMapRaw {
 			Self::Format0(v) => v.populate_defaults(ctx),
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format0(v) => v.struct_length(),
+			Self::Format1(v) => v.struct_length(),
+			Self::Unknown(_) => None,
 		}
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -15120,6 +15304,12 @@ impl OtTable for ExtensionPos {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Unknown(_) => None,
+		}
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		match self {
 			Self::Format1(v) => v.propagated_counts(),
@@ -15309,6 +15499,12 @@ impl OtTable for ExtensionSubst {
 		match self {
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Unknown(_) => None,
 		}
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -17752,7 +17948,7 @@ pub struct GlyphCIDMappingFormat0 {
 	/// `SupplementVersion` (UShort).
 	pub supplement_version: u16,
 	/// `Mapping` (GlyphCIDMap).
-	pub mapping: Unsupported,
+	pub mapping: std::collections::BTreeMap<u32, u32>,
 }
 
 impl Default for GlyphCIDMappingFormat0 {
@@ -17784,7 +17980,7 @@ impl OtTable for GlyphCIDMappingFormat0 {
 		t.order = r.read_u16()?;
 		t.order_name = read_char64(r);
 		t.supplement_version = r.read_u16()?;
-		t.mapping = Unsupported::read("GlyphCIDMap")?;
+		t.mapping = read_glyph_cid_map(r, font)?;
 		Ok(t)
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
@@ -17800,8 +17996,15 @@ impl OtTable for GlyphCIDMappingFormat0 {
 		w.write_u16(self.order);
 		write_char64(w, &self.order_name);
 		w.write_u16(self.supplement_version);
-		Unsupported::write("GlyphCIDMap")?;
+		write_glyph_cid_map(w, &self.mapping)?;
 		Ok(())
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		Some(StructLength {
+			value: self.struct_length,
+			item: 2,
+			size: 4,
+		})
 	}
 	fn format(&self) -> Option<u16> {
 		Some(0)
@@ -17832,7 +18035,7 @@ impl OtTable for GlyphCIDMappingFormat0 {
 			&Attrs::new(),
 			self.supplement_version.to_string(),
 		);
-		let _ = &xw;
+		xml_glyph_cid_map(xw, font, "Mapping", &Attrs::new(), &self.mapping)?;
 		Ok(())
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
@@ -17845,7 +18048,7 @@ impl OtTable for GlyphCIDMappingFormat0 {
 			"Order" => self.order = parse_int::<u16>(value_attr(e)?)?,
 			"OrderName" => self.order_name = value_attr(e)?.to_owned(),
 			"SupplementVersion" => self.supplement_version = parse_int::<u16>(value_attr(e)?)?,
-			"Mapping" => self.mapping = Unsupported::xml_read("GlyphCIDMap")?,
+			"Mapping" => self.mapping = read_glyph_cid_map_xml(e, font)?,
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);
@@ -17916,6 +18119,12 @@ impl OtTable for GlyphCIDMapping {
 		match self {
 			Self::Format0(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format0(v) => v.struct_length(),
+			Self::Unknown(_) => None,
 		}
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -18110,7 +18319,7 @@ pub struct GlyphPropertiesFormat1 {
 	/// `DefaultProperties` (UShort).
 	pub default_properties: u16,
 	/// `Properties` (AATLookup).
-	pub properties: Unsupported,
+	pub properties: AatLookup<u16>,
 }
 
 impl Default for GlyphPropertiesFormat1 {
@@ -18130,7 +18339,7 @@ impl OtTable for GlyphPropertiesFormat1 {
 		let mut t = Self::default();
 		let _ = (&mut *r, &mut *font);
 		t.default_properties = r.read_u16()?;
-		t.properties = Unsupported::read("AATLookup")?;
+		t.properties = read_aat_lookup::<u16>(r, font)?;
 		Ok(t)
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
@@ -18139,7 +18348,7 @@ impl OtTable for GlyphPropertiesFormat1 {
 		let t = self;
 		let _ = t;
 		w.write_u16(self.default_properties);
-		Unsupported::write("AATLookup")?;
+		write_aat_lookup(w, font, &self.properties)?;
 		Ok(())
 	}
 	fn format(&self) -> Option<u16> {
@@ -18155,14 +18364,14 @@ impl OtTable for GlyphPropertiesFormat1 {
 			&Attrs::new(),
 			self.default_properties.to_string(),
 		);
-		let _ = &xw;
+		xml_aat_lookup(xw, font, "Properties", &Attrs::new(), &self.properties)?;
 		Ok(())
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
 		let e = element;
 		match e.name.as_str() {
 			"DefaultProperties" => self.default_properties = parse_int::<u16>(value_attr(e)?)?,
-			"Properties" => self.properties = Unsupported::xml_read("AATLookup")?,
+			"Properties" => self.properties = read_aat_lookup_xml::<u16>(e, font, ctx)?,
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);
@@ -18241,6 +18450,13 @@ impl OtTable for GlyphProperties {
 			Self::Format0(v) => v.populate_defaults(ctx),
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format0(v) => v.struct_length(),
+			Self::Format1(v) => v.struct_length(),
+			Self::Unknown(_) => None,
 		}
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -18392,7 +18608,7 @@ impl OtTable for HVAR {
 #[derive(Debug, Clone, PartialEq)]
 pub struct InsertionMorph {
 	/// `StateTable` (MorphStateTable).
-	pub state_table: Unsupported,
+	pub state_table: AatStateTable,
 }
 
 impl Default for InsertionMorph {
@@ -18410,7 +18626,7 @@ impl OtTable for InsertionMorph {
 	fn decompile(r: &mut OtReader<'_>, font: &mut Font) -> Result<Self> {
 		let mut t = Self::default();
 		let _ = (&mut *r, &mut *font);
-		t.state_table = Unsupported::read("MorphStateTable")?;
+		t.state_table = read_morph_state_table(ActionKind::Insertion, r, font)?;
 		Ok(t)
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
@@ -18418,20 +18634,22 @@ impl OtTable for InsertionMorph {
 		w.count_ref("LookupType")?.set_value(5)?;
 		let t = self;
 		let _ = t;
-		Unsupported::write("MorphStateTable")?;
+		write_morph_state_table(ActionKind::Insertion, w, font, &self.state_table)?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let _ = (&mut *xw, &mut *font);
 		let t = self;
 		let _ = t;
-		let _ = &xw;
+		xml_morph_state_table(xw, font, "StateTable", &Attrs::new(), &self.state_table)?;
 		Ok(())
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
 		let e = element;
 		match e.name.as_str() {
-			"StateTable" => self.state_table = Unsupported::xml_read("MorphStateTable")?,
+			"StateTable" => {
+				self.state_table = read_morph_state_table_xml(ActionKind::Insertion, e, font)?
+			}
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);
@@ -21094,7 +21312,7 @@ impl OtTable for LigatureAttach2 {
 #[derive(Debug, Clone, PartialEq)]
 pub struct LigatureCaretsFormat0 {
 	/// `Carets` (AATLookup).
-	pub carets: Unsupported,
+	pub carets: AatLookup<Option<Box<LigCaretDistances>>>,
 }
 
 impl Default for LigatureCaretsFormat0 {
@@ -21112,7 +21330,7 @@ impl OtTable for LigatureCaretsFormat0 {
 	fn decompile(r: &mut OtReader<'_>, font: &mut Font) -> Result<Self> {
 		let mut t = Self::default();
 		let _ = (&mut *r, &mut *font);
-		t.carets = Unsupported::read("AATLookup")?;
+		t.carets = read_aat_lookup::<Option<Box<LigCaretDistances>>>(r, font)?;
 		Ok(t)
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
@@ -21120,7 +21338,7 @@ impl OtTable for LigatureCaretsFormat0 {
 		w.write_u16(0);
 		let t = self;
 		let _ = t;
-		Unsupported::write("AATLookup")?;
+		write_aat_lookup(w, font, &self.carets)?;
 		Ok(())
 	}
 	fn format(&self) -> Option<u16> {
@@ -21130,13 +21348,15 @@ impl OtTable for LigatureCaretsFormat0 {
 		let _ = (&mut *xw, &mut *font);
 		let t = self;
 		let _ = t;
-		let _ = &xw;
+		xml_aat_lookup(xw, font, "Carets", &Attrs::new(), &self.carets)?;
 		Ok(())
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
 		let e = element;
 		match e.name.as_str() {
-			"Carets" => self.carets = Unsupported::xml_read("AATLookup")?,
+			"Carets" => {
+				self.carets = read_aat_lookup_xml::<Option<Box<LigCaretDistances>>>(e, font, ctx)?
+			}
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);
@@ -21154,7 +21374,7 @@ impl OtTable for LigatureCaretsFormat0 {
 #[derive(Debug, Clone, PartialEq)]
 pub struct LigatureCaretsFormat1 {
 	/// `Carets` (AATLookup).
-	pub carets: Unsupported,
+	pub carets: AatLookup<Option<Box<LigCaretPoints>>>,
 }
 
 impl Default for LigatureCaretsFormat1 {
@@ -21172,7 +21392,7 @@ impl OtTable for LigatureCaretsFormat1 {
 	fn decompile(r: &mut OtReader<'_>, font: &mut Font) -> Result<Self> {
 		let mut t = Self::default();
 		let _ = (&mut *r, &mut *font);
-		t.carets = Unsupported::read("AATLookup")?;
+		t.carets = read_aat_lookup::<Option<Box<LigCaretPoints>>>(r, font)?;
 		Ok(t)
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
@@ -21180,7 +21400,7 @@ impl OtTable for LigatureCaretsFormat1 {
 		w.write_u16(1);
 		let t = self;
 		let _ = t;
-		Unsupported::write("AATLookup")?;
+		write_aat_lookup(w, font, &self.carets)?;
 		Ok(())
 	}
 	fn format(&self) -> Option<u16> {
@@ -21190,13 +21410,15 @@ impl OtTable for LigatureCaretsFormat1 {
 		let _ = (&mut *xw, &mut *font);
 		let t = self;
 		let _ = t;
-		let _ = &xw;
+		xml_aat_lookup(xw, font, "Carets", &Attrs::new(), &self.carets)?;
 		Ok(())
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
 		let e = element;
 		match e.name.as_str() {
-			"Carets" => self.carets = Unsupported::xml_read("AATLookup")?,
+			"Carets" => {
+				self.carets = read_aat_lookup_xml::<Option<Box<LigCaretPoints>>>(e, font, ctx)?
+			}
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);
@@ -21277,6 +21499,13 @@ impl OtTable for LigatureCarets {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format0(v) => v.struct_length(),
+			Self::Format1(v) => v.struct_length(),
+			Self::Unknown(_) => None,
+		}
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		match self {
 			Self::Format0(v) => v.propagated_counts(),
@@ -21304,7 +21533,7 @@ impl OtTable for LigatureCarets {
 #[derive(Debug, Clone, PartialEq)]
 pub struct LigatureMorph {
 	/// `StateTable` (MorphStateTable).
-	pub state_table: Unsupported,
+	pub state_table: AatStateTable,
 }
 
 impl Default for LigatureMorph {
@@ -21322,7 +21551,7 @@ impl OtTable for LigatureMorph {
 	fn decompile(r: &mut OtReader<'_>, font: &mut Font) -> Result<Self> {
 		let mut t = Self::default();
 		let _ = (&mut *r, &mut *font);
-		t.state_table = Unsupported::read("MorphStateTable")?;
+		t.state_table = read_morph_state_table(ActionKind::Ligature, r, font)?;
 		Ok(t)
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
@@ -21330,20 +21559,22 @@ impl OtTable for LigatureMorph {
 		w.count_ref("LookupType")?.set_value(2)?;
 		let t = self;
 		let _ = t;
-		Unsupported::write("MorphStateTable")?;
+		write_morph_state_table(ActionKind::Ligature, w, font, &self.state_table)?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let _ = (&mut *xw, &mut *font);
 		let t = self;
 		let _ = t;
-		let _ = &xw;
+		xml_morph_state_table(xw, font, "StateTable", &Attrs::new(), &self.state_table)?;
 		Ok(())
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
 		let e = element;
 		match e.name.as_str() {
-			"StateTable" => self.state_table = Unsupported::xml_read("MorphStateTable")?,
+			"StateTable" => {
+				self.state_table = read_morph_state_table_xml(ActionKind::Ligature, e, font)?
+			}
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);
@@ -21788,6 +22019,13 @@ impl OtTable for LigatureSubstRaw {
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Format2(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Unknown(_) => None,
 		}
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -23710,6 +23948,13 @@ impl OtTable for MarkBasePos {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Unknown(_) => None,
+		}
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		match self {
 			Self::Format1(v) => v.propagated_counts(),
@@ -24216,6 +24461,13 @@ impl OtTable for MarkLigPos {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Unknown(_) => None,
+		}
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		match self {
 			Self::Format1(v) => v.propagated_counts(),
@@ -24612,6 +24864,13 @@ impl OtTable for MarkMarkPos {
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Format2(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Unknown(_) => None,
 		}
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -27259,7 +27518,7 @@ pub struct MortChain {
 	/// `MorphFeature` (Struct).
 	pub morph_feature: Vec<MorphFeature>,
 	/// `MorphSubtable` (MortSubtableConverter).
-	pub morph_subtable: Vec<Unsupported>,
+	pub morph_subtable: Vec<MortSubtable>,
 }
 
 impl Default for MortChain {
@@ -27306,7 +27565,7 @@ impl OtTable for MortChain {
 			)?;
 			let mut v = Vec::with_capacity(n.min(4096));
 			for _ in 0..n {
-				v.push(Unsupported::read("MortSubtableConverter")?);
+				v.push(read_mort_subtable(r, font)?);
 			}
 			t.morph_subtable = v;
 		}
@@ -27331,9 +27590,16 @@ impl OtTable for MortChain {
 		count_morph_subtable_count.set_value((self.morph_subtable.len() as i64 - 0) as u64)?;
 		for (i, item) in self.morph_subtable.iter().enumerate() {
 			let _ = i;
-			Unsupported::write("MortSubtableConverter")?;
+			write_mort_subtable(w, font, &(*item))?;
 		}
 		Ok(())
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		Some(StructLength {
+			value: self.struct_length,
+			item: 1,
+			size: 4,
+		})
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let _ = (&mut *xw, &mut *font);
@@ -27356,7 +27622,7 @@ impl OtTable for MortChain {
 		for (i, item) in self.morph_subtable.iter().enumerate() {
 			let attrs: Attrs = vec![("index", i.to_string())];
 			let _ = &attrs;
-			let _ = &xw;
+			xml_mort_subtable(xw, font, "MorphSubtable", &attrs, item)?;
 		}
 		Ok(())
 	}
@@ -27374,9 +27640,7 @@ impl OtTable for MortChain {
 			"MorphFeature" => self
 				.morph_feature
 				.push(xml_read_struct::<MorphFeature>(e, font, ctx)?.unwrap_or_default()),
-			"MorphSubtable" => self
-				.morph_subtable
-				.push(Unsupported::xml_read("MortSubtableConverter")?),
+			"MorphSubtable" => self.morph_subtable.push(read_mort_subtable_xml(e, font)?),
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);
@@ -27393,8 +27657,9 @@ impl OtTable for MortChain {
 }
 
 /// `MortSubtable`.
+#[doc(hidden)]
 #[derive(Debug, Clone, PartialEq)]
-pub struct MortSubtable {
+pub struct MortSubtableRaw {
 	/// `StructLength` (ComputedUShort).
 	pub struct_length: Option<u32>,
 	/// `CoverageFlags` (UInt8).
@@ -27407,9 +27672,9 @@ pub struct MortSubtable {
 	pub sub_struct: Unsupported,
 }
 
-impl Default for MortSubtable {
+impl Default for MortSubtableRaw {
 	fn default() -> Self {
-		MortSubtable {
+		MortSubtableRaw {
 			struct_length: Default::default(),
 			coverage_flags: Default::default(),
 			morph_type: Default::default(),
@@ -27419,7 +27684,7 @@ impl Default for MortSubtable {
 	}
 }
 
-impl OtTable for MortSubtable {
+impl OtTable for MortSubtableRaw {
 	fn class_name(&self) -> &'static str {
 		"MortSubtable"
 	}
@@ -27445,6 +27710,13 @@ impl OtTable for MortSubtable {
 		w.write_u32(self.sub_feature_flags);
 		Unsupported::write("SubStruct")?;
 		Ok(())
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		Some(StructLength {
+			value: self.struct_length,
+			item: 0,
+			size: 2,
+		})
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let _ = (&mut *xw, &mut *font);
@@ -27502,7 +27774,7 @@ pub struct MorxChain {
 	/// `MorphFeature` (Struct).
 	pub morph_feature: Vec<MorphFeature>,
 	/// `MorphSubtable` (MorxSubtableConverter).
-	pub morph_subtable: Vec<Unsupported>,
+	pub morph_subtable: Vec<MorxSubtable>,
 }
 
 impl Default for MorxChain {
@@ -27549,7 +27821,7 @@ impl OtTable for MorxChain {
 			)?;
 			let mut v = Vec::with_capacity(n.min(4096));
 			for _ in 0..n {
-				v.push(Unsupported::read("MorxSubtableConverter")?);
+				v.push(read_morx_subtable(r, font)?);
 			}
 			t.morph_subtable = v;
 		}
@@ -27574,9 +27846,16 @@ impl OtTable for MorxChain {
 		count_morph_subtable_count.set_value((self.morph_subtable.len() as i64 - 0) as u64)?;
 		for (i, item) in self.morph_subtable.iter().enumerate() {
 			let _ = i;
-			Unsupported::write("MorxSubtableConverter")?;
+			write_morx_subtable(w, font, &(*item))?;
 		}
 		Ok(())
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		Some(StructLength {
+			value: self.struct_length,
+			item: 1,
+			size: 4,
+		})
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let _ = (&mut *xw, &mut *font);
@@ -27599,7 +27878,7 @@ impl OtTable for MorxChain {
 		for (i, item) in self.morph_subtable.iter().enumerate() {
 			let attrs: Attrs = vec![("index", i.to_string())];
 			let _ = &attrs;
-			let _ = &xw;
+			xml_morx_subtable(xw, font, "MorphSubtable", &attrs, item)?;
 		}
 		Ok(())
 	}
@@ -27617,9 +27896,7 @@ impl OtTable for MorxChain {
 			"MorphFeature" => self
 				.morph_feature
 				.push(xml_read_struct::<MorphFeature>(e, font, ctx)?.unwrap_or_default()),
-			"MorphSubtable" => self
-				.morph_subtable
-				.push(Unsupported::xml_read("MorxSubtableConverter")?),
+			"MorphSubtable" => self.morph_subtable.push(read_morx_subtable_xml(e, font)?),
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);
@@ -27636,8 +27913,9 @@ impl OtTable for MorxChain {
 }
 
 /// `MorxSubtable`.
+#[doc(hidden)]
 #[derive(Debug, Clone, PartialEq)]
-pub struct MorxSubtable {
+pub struct MorxSubtableRaw {
 	/// `StructLength` (ComputedULong).
 	pub struct_length: Option<u32>,
 	/// `CoverageFlags` (UInt8).
@@ -27652,9 +27930,9 @@ pub struct MorxSubtable {
 	pub sub_struct: Unsupported,
 }
 
-impl Default for MorxSubtable {
+impl Default for MorxSubtableRaw {
 	fn default() -> Self {
-		MorxSubtable {
+		MorxSubtableRaw {
 			struct_length: Default::default(),
 			coverage_flags: Default::default(),
 			reserved: Default::default(),
@@ -27665,7 +27943,7 @@ impl Default for MorxSubtable {
 	}
 }
 
-impl OtTable for MorxSubtable {
+impl OtTable for MorxSubtableRaw {
 	fn class_name(&self) -> &'static str {
 		"MorxSubtable"
 	}
@@ -27693,6 +27971,13 @@ impl OtTable for MorxSubtable {
 		w.write_u32(self.sub_feature_flags);
 		Unsupported::write("SubStruct")?;
 		Ok(())
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		Some(StructLength {
+			value: self.struct_length,
+			item: 0,
+			size: 4,
+		})
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let _ = (&mut *xw, &mut *font);
@@ -28260,6 +28545,13 @@ impl OtTable for MultipleSubstRaw {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Unknown(_) => None,
+		}
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		match self {
 			Self::Format1(v) => v.propagated_counts(),
@@ -28287,7 +28579,7 @@ impl OtTable for MultipleSubstRaw {
 #[derive(Debug, Clone, PartialEq)]
 pub struct NoncontextualMorph {
 	/// `Substitution` (AATLookup).
-	pub substitution: Unsupported,
+	pub substitution: AatLookup<u32>,
 }
 
 impl Default for NoncontextualMorph {
@@ -28305,7 +28597,7 @@ impl OtTable for NoncontextualMorph {
 	fn decompile(r: &mut OtReader<'_>, font: &mut Font) -> Result<Self> {
 		let mut t = Self::default();
 		let _ = (&mut *r, &mut *font);
-		t.substitution = Unsupported::read("AATLookup")?;
+		t.substitution = read_aat_lookup::<u32>(r, font)?;
 		Ok(t)
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
@@ -28313,20 +28605,20 @@ impl OtTable for NoncontextualMorph {
 		w.count_ref("LookupType")?.set_value(4)?;
 		let t = self;
 		let _ = t;
-		Unsupported::write("AATLookup")?;
+		write_aat_lookup(w, font, &self.substitution)?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let _ = (&mut *xw, &mut *font);
 		let t = self;
 		let _ = t;
-		let _ = &xw;
+		xml_aat_lookup(xw, font, "Substitution", &Attrs::new(), &self.substitution)?;
 		Ok(())
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
 		let e = element;
 		match e.name.as_str() {
-			"Substitution" => self.substitution = Unsupported::xml_read("AATLookup")?,
+			"Substitution" => self.substitution = read_aat_lookup_xml::<u32>(e, font, ctx)?,
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);
@@ -28344,7 +28636,7 @@ impl OtTable for NoncontextualMorph {
 #[derive(Debug, Clone, PartialEq)]
 pub struct OpticalBoundsFormat0 {
 	/// `OpticalBoundsDeltas` (AATLookup).
-	pub optical_bounds_deltas: Unsupported,
+	pub optical_bounds_deltas: AatLookup<Option<Box<OpticalBoundsDeltas>>>,
 }
 
 impl Default for OpticalBoundsFormat0 {
@@ -28362,7 +28654,7 @@ impl OtTable for OpticalBoundsFormat0 {
 	fn decompile(r: &mut OtReader<'_>, font: &mut Font) -> Result<Self> {
 		let mut t = Self::default();
 		let _ = (&mut *r, &mut *font);
-		t.optical_bounds_deltas = Unsupported::read("AATLookup")?;
+		t.optical_bounds_deltas = read_aat_lookup::<Option<Box<OpticalBoundsDeltas>>>(r, font)?;
 		Ok(t)
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
@@ -28370,7 +28662,7 @@ impl OtTable for OpticalBoundsFormat0 {
 		w.write_u16(0);
 		let t = self;
 		let _ = t;
-		Unsupported::write("AATLookup")?;
+		write_aat_lookup(w, font, &self.optical_bounds_deltas)?;
 		Ok(())
 	}
 	fn format(&self) -> Option<u16> {
@@ -28380,14 +28672,21 @@ impl OtTable for OpticalBoundsFormat0 {
 		let _ = (&mut *xw, &mut *font);
 		let t = self;
 		let _ = t;
-		let _ = &xw;
+		xml_aat_lookup(
+			xw,
+			font,
+			"OpticalBoundsDeltas",
+			&Attrs::new(),
+			&self.optical_bounds_deltas,
+		)?;
 		Ok(())
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
 		let e = element;
 		match e.name.as_str() {
 			"OpticalBoundsDeltas" => {
-				self.optical_bounds_deltas = Unsupported::xml_read("AATLookup")?
+				self.optical_bounds_deltas =
+					read_aat_lookup_xml::<Option<Box<OpticalBoundsDeltas>>>(e, font, ctx)?
 			}
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
@@ -28406,7 +28705,7 @@ impl OtTable for OpticalBoundsFormat0 {
 #[derive(Debug, Clone, PartialEq)]
 pub struct OpticalBoundsFormat1 {
 	/// `OpticalBoundsPoints` (AATLookup).
-	pub optical_bounds_points: Unsupported,
+	pub optical_bounds_points: AatLookup<Option<Box<OpticalBoundsPoints>>>,
 }
 
 impl Default for OpticalBoundsFormat1 {
@@ -28424,7 +28723,7 @@ impl OtTable for OpticalBoundsFormat1 {
 	fn decompile(r: &mut OtReader<'_>, font: &mut Font) -> Result<Self> {
 		let mut t = Self::default();
 		let _ = (&mut *r, &mut *font);
-		t.optical_bounds_points = Unsupported::read("AATLookup")?;
+		t.optical_bounds_points = read_aat_lookup::<Option<Box<OpticalBoundsPoints>>>(r, font)?;
 		Ok(t)
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
@@ -28432,7 +28731,7 @@ impl OtTable for OpticalBoundsFormat1 {
 		w.write_u16(1);
 		let t = self;
 		let _ = t;
-		Unsupported::write("AATLookup")?;
+		write_aat_lookup(w, font, &self.optical_bounds_points)?;
 		Ok(())
 	}
 	fn format(&self) -> Option<u16> {
@@ -28442,14 +28741,21 @@ impl OtTable for OpticalBoundsFormat1 {
 		let _ = (&mut *xw, &mut *font);
 		let t = self;
 		let _ = t;
-		let _ = &xw;
+		xml_aat_lookup(
+			xw,
+			font,
+			"OpticalBoundsPoints",
+			&Attrs::new(),
+			&self.optical_bounds_points,
+		)?;
 		Ok(())
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
 		let e = element;
 		match e.name.as_str() {
 			"OpticalBoundsPoints" => {
-				self.optical_bounds_points = Unsupported::xml_read("AATLookup")?
+				self.optical_bounds_points =
+					read_aat_lookup_xml::<Option<Box<OpticalBoundsPoints>>>(e, font, ctx)?
 			}
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
@@ -28529,6 +28835,13 @@ impl OtTable for OpticalBounds {
 			Self::Format0(v) => v.populate_defaults(ctx),
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format0(v) => v.struct_length(),
+			Self::Format1(v) => v.struct_length(),
+			Self::Unknown(_) => None,
 		}
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -32096,6 +32409,44 @@ impl OtTable for Paint {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format10(v) => v.struct_length(),
+			Self::Format11(v) => v.struct_length(),
+			Self::Format12(v) => v.struct_length(),
+			Self::Format13(v) => v.struct_length(),
+			Self::Format14(v) => v.struct_length(),
+			Self::Format15(v) => v.struct_length(),
+			Self::Format16(v) => v.struct_length(),
+			Self::Format17(v) => v.struct_length(),
+			Self::Format18(v) => v.struct_length(),
+			Self::Format19(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Format20(v) => v.struct_length(),
+			Self::Format21(v) => v.struct_length(),
+			Self::Format22(v) => v.struct_length(),
+			Self::Format23(v) => v.struct_length(),
+			Self::Format24(v) => v.struct_length(),
+			Self::Format25(v) => v.struct_length(),
+			Self::Format26(v) => v.struct_length(),
+			Self::Format27(v) => v.struct_length(),
+			Self::Format28(v) => v.struct_length(),
+			Self::Format29(v) => v.struct_length(),
+			Self::Format3(v) => v.struct_length(),
+			Self::Format30(v) => v.struct_length(),
+			Self::Format31(v) => v.struct_length(),
+			Self::Format32(v) => v.struct_length(),
+			Self::Format33(v) => v.struct_length(),
+			Self::Format4(v) => v.struct_length(),
+			Self::Format5(v) => v.struct_length(),
+			Self::Format6(v) => v.struct_length(),
+			Self::Format7(v) => v.struct_length(),
+			Self::Format8(v) => v.struct_length(),
+			Self::Format9(v) => v.struct_length(),
+			Self::Unknown(_) => None,
+		}
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		match self {
 			Self::Format1(v) => v.propagated_counts(),
@@ -32943,6 +33294,15 @@ impl OtTable for PairPos {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Format3(v) => v.struct_length(),
+			Self::Format4(v) => v.struct_length(),
+			Self::Unknown(_) => None,
+		}
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		match self {
 			Self::Format1(v) => v.propagated_counts(),
@@ -33605,6 +33965,12 @@ impl OtTable for PatchMap {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format2(v) => v.struct_length(),
+			Self::Unknown(_) => None,
+		}
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		match self {
 			Self::Format2(v) => v.propagated_counts(),
@@ -34248,7 +34614,7 @@ impl OtTable for RangeRecord2 {
 #[derive(Debug, Clone, PartialEq)]
 pub struct RearrangementMorph {
 	/// `StateTable` (MorphStateTable).
-	pub state_table: Unsupported,
+	pub state_table: AatStateTable,
 }
 
 impl Default for RearrangementMorph {
@@ -34266,7 +34632,7 @@ impl OtTable for RearrangementMorph {
 	fn decompile(r: &mut OtReader<'_>, font: &mut Font) -> Result<Self> {
 		let mut t = Self::default();
 		let _ = (&mut *r, &mut *font);
-		t.state_table = Unsupported::read("MorphStateTable")?;
+		t.state_table = read_morph_state_table(ActionKind::Rearrangement, r, font)?;
 		Ok(t)
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
@@ -34274,20 +34640,22 @@ impl OtTable for RearrangementMorph {
 		w.count_ref("LookupType")?.set_value(0)?;
 		let t = self;
 		let _ = t;
-		Unsupported::write("MorphStateTable")?;
+		write_morph_state_table(ActionKind::Rearrangement, w, font, &self.state_table)?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let _ = (&mut *xw, &mut *font);
 		let t = self;
 		let _ = t;
-		let _ = &xw;
+		xml_morph_state_table(xw, font, "StateTable", &Attrs::new(), &self.state_table)?;
 		Ok(())
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
 		let e = element;
 		match e.name.as_str() {
-			"StateTable" => self.state_table = Unsupported::xml_read("MorphStateTable")?,
+			"StateTable" => {
+				self.state_table = read_morph_state_table_xml(ActionKind::Rearrangement, e, font)?
+			}
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);
@@ -34722,6 +35090,13 @@ impl OtTable for ReverseChainSingleSubst {
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Format2(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Unknown(_) => None,
 		}
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -36296,6 +36671,15 @@ impl OtTable for SinglePos {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Format3(v) => v.struct_length(),
+			Self::Format4(v) => v.struct_length(),
+			Self::Unknown(_) => None,
+		}
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		match self {
 			Self::Format1(v) => v.propagated_counts(),
@@ -36764,6 +37148,15 @@ impl OtTable for SingleSubstRaw {
 			Self::Format3(v) => v.populate_defaults(ctx),
 			Self::Format4(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format1(v) => v.struct_length(),
+			Self::Format2(v) => v.struct_length(),
+			Self::Format3(v) => v.struct_length(),
+			Self::Format4(v) => v.struct_length(),
+			Self::Unknown(_) => None,
 		}
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -39059,6 +39452,13 @@ impl OtTable for VarIdxMapRaw {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn struct_length(&self) -> Option<StructLength> {
+		match self {
+			Self::Format0(v) => v.struct_length(),
+			Self::Format1(v) => v.struct_length(),
+			Self::Unknown(_) => None,
+		}
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		match self {
 			Self::Format0(v) => v.propagated_counts(),
@@ -39788,7 +40188,7 @@ impl OtTable for Bsln {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cidg {
 	/// `CIDGlyphMapping` (StructWithLength).
-	pub cid_glyph_mapping: Unsupported,
+	pub cid_glyph_mapping: CIDGlyphMapping,
 }
 
 impl Default for Cidg {
@@ -39806,28 +40206,35 @@ impl OtTable for Cidg {
 	fn decompile(r: &mut OtReader<'_>, font: &mut Font) -> Result<Self> {
 		let mut t = Self::default();
 		let _ = (&mut *r, &mut *font);
-		t.cid_glyph_mapping = Unsupported::read("StructWithLength")?;
+		t.cid_glyph_mapping = read_struct_with_length::<CIDGlyphMapping>(r, font)?;
 		Ok(t)
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
 		let t = self;
 		let _ = t;
-		Unsupported::write("StructWithLength")?;
+		write_struct_with_length(w, font, &self.cid_glyph_mapping)?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let _ = (&mut *xw, &mut *font);
 		let t = self;
 		let _ = t;
-		let _ = &xw;
+		xml_struct(
+			xw,
+			font,
+			Some(&self.cid_glyph_mapping),
+			Some("CIDGlyphMapping"),
+			&Attrs::new(),
+		)?;
 		Ok(())
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
 		let e = element;
 		match e.name.as_str() {
 			"CIDGlyphMapping" => {
-				self.cid_glyph_mapping = Unsupported::xml_read("StructWithLength")?
+				self.cid_glyph_mapping =
+					xml_read_struct::<CIDGlyphMapping>(e, font, ctx)?.unwrap_or_default()
 			}
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
@@ -39923,7 +40330,7 @@ impl OtTable for Feat {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Gcid {
 	/// `GlyphCIDMapping` (StructWithLength).
-	pub glyph_cid_mapping: Unsupported,
+	pub glyph_cid_mapping: GlyphCIDMapping,
 }
 
 impl Default for Gcid {
@@ -39941,28 +40348,35 @@ impl OtTable for Gcid {
 	fn decompile(r: &mut OtReader<'_>, font: &mut Font) -> Result<Self> {
 		let mut t = Self::default();
 		let _ = (&mut *r, &mut *font);
-		t.glyph_cid_mapping = Unsupported::read("StructWithLength")?;
+		t.glyph_cid_mapping = read_struct_with_length::<GlyphCIDMapping>(r, font)?;
 		Ok(t)
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
 		let t = self;
 		let _ = t;
-		Unsupported::write("StructWithLength")?;
+		write_struct_with_length(w, font, &self.glyph_cid_mapping)?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let _ = (&mut *xw, &mut *font);
 		let t = self;
 		let _ = t;
-		let _ = &xw;
+		xml_struct(
+			xw,
+			font,
+			Some(&self.glyph_cid_mapping),
+			Some("GlyphCIDMapping"),
+			&Attrs::new(),
+		)?;
 		Ok(())
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
 		let e = element;
 		match e.name.as_str() {
 			"GlyphCIDMapping" => {
-				self.glyph_cid_mapping = Unsupported::xml_read("StructWithLength")?
+				self.glyph_cid_mapping =
+					xml_read_struct::<GlyphCIDMapping>(e, font, ctx)?.unwrap_or_default()
 			}
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
@@ -40062,7 +40476,7 @@ pub struct Mort {
 	/// `MorphChainCount` (ComputedULong).
 	pub morph_chain_count: Option<u32>,
 	/// `MorphChain` (StructWithLength).
-	pub morph_chain: Vec<Unsupported>,
+	pub morph_chain: Vec<MortChain>,
 }
 
 impl Default for Mort {
@@ -40088,7 +40502,7 @@ impl OtTable for Mort {
 			let n = repeat_count(t.morph_chain_count.map(|v| v as i64), 0, "MorphChainCount")?;
 			let mut v = Vec::with_capacity(n.min(4096));
 			for _ in 0..n {
-				v.push(Unsupported::read("StructWithLength")?);
+				v.push(read_struct_with_length::<MortChain>(r, font)?);
 			}
 			t.morph_chain = v;
 		}
@@ -40104,7 +40518,7 @@ impl OtTable for Mort {
 		count_morph_chain_count.set_value((self.morph_chain.len() as i64 - 0) as u64)?;
 		for (i, item) in self.morph_chain.iter().enumerate() {
 			let _ = i;
-			Unsupported::write("StructWithLength")?;
+			write_struct_with_length(w, font, &(*item))?;
 		}
 		Ok(())
 	}
@@ -40122,7 +40536,7 @@ impl OtTable for Mort {
 		for (i, item) in self.morph_chain.iter().enumerate() {
 			let attrs: Attrs = vec![("index", i.to_string())];
 			let _ = &attrs;
-			let _ = &xw;
+			xml_struct(xw, font, Some(item), Some("MorphChain"), &attrs)?;
 		}
 		Ok(())
 	}
@@ -40133,7 +40547,7 @@ impl OtTable for Mort {
 			"MorphChainCount" => self.morph_chain_count = Some(parse_int::<u32>(value_attr(e)?)?),
 			"MorphChain" => self
 				.morph_chain
-				.push(Unsupported::xml_read("StructWithLength")?),
+				.push(xml_read_struct::<MortChain>(e, font, ctx)?.unwrap_or_default()),
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);
@@ -40158,7 +40572,7 @@ pub struct Morx {
 	/// `MorphChainCount` (ComputedULong).
 	pub morph_chain_count: Option<u32>,
 	/// `MorphChain` (StructWithLength).
-	pub morph_chain: Vec<Unsupported>,
+	pub morph_chain: Vec<MorxChain>,
 }
 
 impl Default for Morx {
@@ -40186,7 +40600,7 @@ impl OtTable for Morx {
 			let n = repeat_count(t.morph_chain_count.map(|v| v as i64), 0, "MorphChainCount")?;
 			let mut v = Vec::with_capacity(n.min(4096));
 			for _ in 0..n {
-				v.push(Unsupported::read("StructWithLength")?);
+				v.push(read_struct_with_length::<MorxChain>(r, font)?);
 			}
 			t.morph_chain = v;
 		}
@@ -40203,7 +40617,7 @@ impl OtTable for Morx {
 		count_morph_chain_count.set_value((self.morph_chain.len() as i64 - 0) as u64)?;
 		for (i, item) in self.morph_chain.iter().enumerate() {
 			let _ = i;
-			Unsupported::write("StructWithLength")?;
+			write_struct_with_length(w, font, &(*item))?;
 		}
 		Ok(())
 	}
@@ -40217,7 +40631,7 @@ impl OtTable for Morx {
 		for (i, item) in self.morph_chain.iter().enumerate() {
 			let attrs: Attrs = vec![("index", i.to_string())];
 			let _ = &attrs;
-			let _ = &xw;
+			xml_struct(xw, font, Some(item), Some("MorphChain"), &attrs)?;
 		}
 		Ok(())
 	}
@@ -40229,7 +40643,7 @@ impl OtTable for Morx {
 			"MorphChainCount" => self.morph_chain_count = Some(parse_int::<u32>(value_attr(e)?)?),
 			"MorphChain" => self
 				.morph_chain
-				.push(Unsupported::xml_read("StructWithLength")?),
+				.push(xml_read_struct::<MorxChain>(e, font, ctx)?.unwrap_or_default()),
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);

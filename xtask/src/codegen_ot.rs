@@ -54,6 +54,9 @@ struct Conv {
 	is_propagated: bool,
 	#[serde(rename = "isLookupType")]
 	is_lookup_type: bool,
+	/// The value converter of an `AATLookup`.
+	#[serde(rename = "valueConverter", default)]
+	value_converter: Option<String>,
 }
 
 /// Classes whose fontTools representation differs from the binary layout
@@ -69,6 +72,8 @@ const CUSTOM: &[&str] = &[
 	"VarIdxMap",
 	"DeltaSetIndexMap",
 	"ClipList",
+	"MortSubtable",
+	"MorxSubtable",
 	"EntryIdStringData",
 ];
 
@@ -93,19 +98,7 @@ fn sort_by_glyph(class: &str) -> Option<(&'static str, &'static str)> {
 
 /// Converters that are not implemented yet; fields using them get the
 /// `Unsupported` type, which fails when read.
-const UNSUPPORTED: &[&str] = &[
-	"AATLookup",
-	"AATLookupWithDataOffset",
-	"MorphStateTable",
-	"StructWithLength",
-	"SubStruct",
-	"MortSubtableConverter",
-	"MorxSubtableConverter",
-	"CIDGlyphMap",
-	"GlyphCIDMap",
-	"VarIdxMapValue",
-	"STXHeader",
-];
+const UNSUPPORTED: &[&str] = &["SubStruct", "VarIdxMapValue", "STXHeader"];
 
 fn snake(name: &str) -> String {
 	let chars: Vec<char> = name.chars().collect();
@@ -219,6 +212,23 @@ enum Kind {
 	VarCompositeGlyphList,
 	/// IFT mapping entries (`MappingEntriesConverter`).
 	MappingEntries,
+	/// A glyph-keyed AAT lookup with values of the given Rust type (`AATLookup`).
+	AatLookup(String),
+	/// An `ankr` lookup of glyph data tables (`AATLookupWithDataOffset`).
+	AatLookupWithDataOffset(String),
+	/// A struct followed by padding up to its `StructLength` (`StructWithLength`).
+	StructWithLength(String),
+	/// CIDs to glyphs (`CIDGlyphMap`).
+	CidGlyphMap,
+	/// Glyphs to CIDs (`GlyphCIDMap`).
+	GlyphCidMap,
+	/// An AAT state table with actions of the given `ActionKind` variant
+	/// (`MorphStateTable`).
+	MorphStateTable(String),
+	/// A `mort` subtable (`MortSubtableConverter`).
+	MortSubtable,
+	/// A `morx` subtable (`MorxSubtableConverter`).
+	MorxSubtable,
 	Unsupported(String),
 }
 
@@ -322,6 +332,43 @@ fn kind_of(c: &Conv) -> Result<(Kind, String)> {
 		"CFF2Index" => (Kind::TupleList(false), "Vec<Vec<i64>>".into()),
 		"TupleListOffset" => (Kind::TupleList(true), "Vec<Vec<i64>>".into()),
 		"MappingEntriesConverter" => (Kind::MappingEntries, "Vec<MappingEntry>".into()),
+		"AATLookup" => {
+			let value = match c.value_converter.as_deref() {
+				Some("UShort") => "u16".to_owned(),
+				Some("GlyphID") => "u32".to_owned(),
+				Some("Table") => format!("Option<Box<{}>>", target(&tc())),
+				other => bail!("unknown AATLookup value converter {other:?} for {}", c.name),
+			};
+			(
+				Kind::AatLookup(value.clone()),
+				format!("AatLookup<{value}>"),
+			)
+		}
+		"AATLookupWithDataOffset" => {
+			let value = format!("Option<Box<{}>>", target(&tc()));
+			(
+				Kind::AatLookupWithDataOffset(target(&tc())),
+				format!("AatLookup<{value}>"),
+			)
+		}
+		"StructWithLength" => (Kind::StructWithLength(tc()), target(&tc())),
+		"CIDGlyphMap" => (
+			Kind::CidGlyphMap,
+			"std::collections::BTreeMap<u32, u32>".into(),
+		),
+		"GlyphCIDMap" => (
+			Kind::GlyphCidMap,
+			"std::collections::BTreeMap<u32, u32>".into(),
+		),
+		"MorphStateTable" => {
+			let kind = tc()
+				.strip_suffix("MorphAction")
+				.map(str::to_owned)
+				.ok_or_else(|| anyhow::anyhow!("unknown state table action {}", tc()))?;
+			(Kind::MorphStateTable(kind), "AatStateTable".into())
+		}
+		"MortSubtableConverter" => (Kind::MortSubtable, "MortSubtable".into()),
+		"MorxSubtableConverter" => (Kind::MorxSubtable, "MorxSubtable".into()),
 		other if UNSUPPORTED.contains(&other) => {
 			(Kind::Unsupported(other.into()), "Unsupported".into())
 		}
@@ -558,6 +605,20 @@ impl Gen<'_> {
 			Kind::TupleList(true) => "read_tuple_list_offset(r)?".into(),
 			Kind::VarCompositeGlyphList => "read_var_composite_glyphs(r, font)?".into(),
 			Kind::MappingEntries => "read_mapping_entries(r)?".into(),
+			Kind::AatLookup(v) => format!("read_aat_lookup::<{v}>(r, font)?"),
+			Kind::AatLookupWithDataOffset(c) => {
+				format!("read_aat_lookup_with_data_offset::<{c}>(r, font)?")
+			}
+			Kind::StructWithLength(c) => {
+				format!("read_struct_with_length::<{}>(r, font)?", rust_class(c, false))
+			}
+			Kind::CidGlyphMap => "read_cid_glyph_map(r)?".into(),
+			Kind::GlyphCidMap => "read_glyph_cid_map(r, font)?".into(),
+			Kind::MorphStateTable(k) => {
+				format!("read_morph_state_table(ActionKind::{k}, r, font)?")
+			}
+			Kind::MortSubtable => "read_mort_subtable(r, font)?".into(),
+			Kind::MorxSubtable => "read_morx_subtable(r, font)?".into(),
 			Kind::Unsupported(name) => format!("Unsupported::read({name:?})?"),
 		})
 	}
@@ -643,6 +704,18 @@ impl Gen<'_> {
 			}
 			Kind::VarCompositeGlyphList => format!("write_var_composite_glyphs(w, &{value})?;"),
 			Kind::MappingEntries => format!("write_mapping_entries(w, &{value})?;"),
+			Kind::AatLookup(_) => format!("write_aat_lookup(w, font, &{value})?;"),
+			Kind::AatLookupWithDataOffset(_) => {
+				format!("write_aat_lookup_with_data_offset(w, font, &{value})?;")
+			}
+			Kind::StructWithLength(_) => format!("write_struct_with_length(w, font, &{value})?;"),
+			Kind::CidGlyphMap => format!("write_cid_glyph_map(w, &{value})?;"),
+			Kind::GlyphCidMap => format!("write_glyph_cid_map(w, &{value})?;"),
+			Kind::MorphStateTable(k) => {
+				format!("write_morph_state_table(ActionKind::{k}, w, font, &{value})?;")
+			}
+			Kind::MortSubtable => format!("write_mort_subtable(w, font, &{value})?;"),
+			Kind::MorxSubtable => format!("write_morx_subtable(w, font, &{value})?;"),
 			Kind::Unsupported(name) => format!("Unsupported::write({name:?})?;"),
 		})
 	}
@@ -846,7 +919,7 @@ impl Gen<'_> {
 			Kind::Enum(e) => {
 				format!("xml_simple(xw, {name:?}, &{attrs}, enum_to_string({e:?}, {value})?);")
 			}
-			Kind::Struct(_) => {
+			Kind::Struct(_) | Kind::StructWithLength(_) => {
 				format!("xml_struct(xw, font, Some(&{value}), Some({name:?}), &{attrs})?;")
 			}
 			Kind::Offset(..) | Kind::FeatureVariations | Kind::AlternateFeature(_) => {
@@ -866,6 +939,24 @@ impl Gen<'_> {
 				format!("xml_var_composite_glyphs(xw, font, &{value})?;")
 			}
 			Kind::MappingEntries => format!("xml_mapping_entries(xw, &{value});"),
+			Kind::AatLookup(_) | Kind::AatLookupWithDataOffset(_) => {
+				format!("xml_aat_lookup(xw, font, {name:?}, &{attrs}, &{value})?;")
+			}
+			Kind::CidGlyphMap => {
+				format!("xml_cid_glyph_map(xw, font, {name:?}, &{attrs}, &{value})?;")
+			}
+			Kind::GlyphCidMap => {
+				format!("xml_glyph_cid_map(xw, font, {name:?}, &{attrs}, &{value})?;")
+			}
+			Kind::MorphStateTable(_) => {
+				format!("xml_morph_state_table(xw, font, {name:?}, &{attrs}, &{value})?;")
+			}
+			Kind::MortSubtable => {
+				format!("xml_mort_subtable(xw, font, {name:?}, &{attrs}, &{value})?;")
+			}
+			Kind::MorxSubtable => {
+				format!("xml_morx_subtable(xw, font, {name:?}, &{attrs}, &{value})?;")
+			}
 			Kind::Unsupported(_) => "let _ = &xw;".to_owned(),
 		}
 	}
@@ -907,6 +998,8 @@ impl Gen<'_> {
 
 	fn xml_read_expr(&self, f: &Field) -> String {
 		match &f.kind {
+			// LENIENT(L9): values are range-checked when read, while fontTools
+			// keeps any integer until `struct.pack` fails when compiling.
 			Kind::Int(ty, ..) => format!("parse_int::<{ty}>(value_attr(e)?)?"),
 			Kind::Int24 => "parse_int::<i32>(value_attr(e)?)?".into(),
 			Kind::ValueFormat | Kind::NameId | Kind::StatFlags | Kind::LookupFlag => {
@@ -921,7 +1014,7 @@ impl Gen<'_> {
 			Kind::Tag => "parse_tag(value_attr(e)?)?".into(),
 			Kind::Char64 => "value_attr(e)?.to_owned()".into(),
 			Kind::Enum(name) => format!("enum_from_string({name:?}, value_attr(e)?)?"),
-			Kind::Struct(c) => format!(
+			Kind::Struct(c) | Kind::StructWithLength(c) => format!(
 				"xml_read_struct::<{}>(e, font, ctx)?.unwrap_or_default()",
 				rust_class(c, false)
 			),
@@ -950,6 +1043,17 @@ impl Gen<'_> {
 			// of their own, while `xmlRead` expects them in one named after the
 			// field, so `entry` elements fail with KeyError.
 			Kind::MappingEntries => "read_mapping_entries_xml(e)?".into(),
+			Kind::AatLookup(v) => format!("read_aat_lookup_xml::<{v}>(e, font, ctx)?"),
+			Kind::AatLookupWithDataOffset(c) => {
+				format!("read_aat_lookup_xml::<Option<Box<{c}>>>(e, font, ctx)?")
+			}
+			Kind::CidGlyphMap => "read_cid_glyph_map_xml(e, font)?".into(),
+			Kind::GlyphCidMap => "read_glyph_cid_map_xml(e, font)?".into(),
+			Kind::MorphStateTable(k) => {
+				format!("read_morph_state_table_xml(ActionKind::{k}, e, font)?")
+			}
+			Kind::MortSubtable => "read_mort_subtable_xml(e, font)?".into(),
+			Kind::MorxSubtable => "read_morx_subtable_xml(e, font)?".into(),
 			Kind::Unsupported(name) => format!("Unsupported::xml_read({name:?})?"),
 		}
 	}
@@ -1127,6 +1231,18 @@ impl Gen<'_> {
 		self.compile_body(class, &fields, format)?;
 		self.line("\t\tOk(())");
 		self.line("\t}");
+		// `StructWithLength` patches this field after writing the struct.
+		if let Some(i) = fields.iter().position(|f| f.conv.name == "StructLength") {
+			let f = &fields[i];
+			let size = json_int(&f.conv.static_size).unwrap_or(4);
+			// The format of a format-switching table is an item of its own.
+			let item = i + usize::from(format.is_some());
+			let _ = writeln!(
+				self.out,
+				"\tfn struct_length(&self) -> Option<StructLength> {{ Some(StructLength {{ value: self.{}, item: {item}, size: {size} }}) }}",
+				f.ident
+			);
+		}
 		// `toXML` writes a `Format` attribute for any table that has one, also
 		// for plain classes with a `Format` field (`VarStore`).
 		let format_field = fields.iter().find(|f| {
@@ -1288,6 +1404,14 @@ impl Gen<'_> {
 			self.line("\t\t}");
 			self.line("\t}");
 		}
+		self.line("\tfn struct_length(&self) -> Option<StructLength> {");
+		self.line("\t\tmatch self {");
+		for (fmt, _) in &variants {
+			let _ = writeln!(self.out, "\t\t\tSelf::Format{fmt}(v) => v.struct_length(),");
+		}
+		self.line("\t\t\tSelf::Unknown(_) => None,");
+		self.line("\t\t}");
+		self.line("\t}");
 		self.line("\tfn propagated_counts(&self) -> &'static [&'static str] {");
 		self.line("\t\tmatch self {");
 		for (fmt, _) in &variants {
@@ -1586,6 +1710,8 @@ pub fn generate(ot: &OtTables) -> Result<String> {
 	g.line("use crate::ot::varc::*;");
 	g.line("use crate::ot::colr::*;");
 	g.line("use crate::ot::ift::*;");
+	g.line("use crate::ot::aat::*;");
+	g.line("use crate::ot::morph::*;");
 	g.line("use crate::ot::table::*;");
 	g.line("use crate::ot::{CountRef, OtReader, OtWriter, StateValue};");
 	g.line("use crate::{Error, Font, Result};");

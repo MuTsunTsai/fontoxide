@@ -22,6 +22,7 @@ use crate::{Error, Font, Result};
 pub use super::colr::ClipList;
 pub use super::gsub::{AlternateSubst, LigatureSubst, MultipleSubst, SingleSubst};
 pub use super::ift::{EntryIdStringData, MappingEntry};
+pub use super::morph::{MortSubtable, MorxSubtable};
 pub use super::varc::{DecomposedTransform, VarComponent, VarCompositeGlyph};
 pub use super::varmap::{DeltaSetIndexMap, VarIdxMap};
 

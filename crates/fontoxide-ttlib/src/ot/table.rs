@@ -98,6 +98,11 @@ pub trait OtTable: Sized + Default + Clone {
 	/// Fills in counts and defaults after reading TTX (`populateDefaults`).
 	fn populate_defaults(&mut self, ctx: &mut XmlCtx) -> Result<()>;
 
+	/// Where its `StructLength` field is, for `StructWithLength`.
+	fn struct_length(&self) -> Option<super::aat::StructLength> {
+		None
+	}
+
 	/// The counts this table receives from its children while reading TTX.
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&[]
