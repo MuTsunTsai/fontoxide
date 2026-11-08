@@ -125,6 +125,11 @@ impl XmlWriter {
 		w
 	}
 
+	/// The indentation of one level (`indentwhite`).
+	pub fn indent_white(&self) -> &str {
+		&self.indent_white
+	}
+
 	/// The line ending in use.
 	pub fn newline_str(&self) -> &str {
 		&self.newline_str

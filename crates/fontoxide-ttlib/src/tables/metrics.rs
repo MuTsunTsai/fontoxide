@@ -11,6 +11,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 use crate::binary::{Reader, WriteBytes};
 use crate::sstruct::eval;
 use crate::table::{Table, TableType};
+use crate::tables::glyf::Glyf;
 use crate::tables::hhea::{Hhea, Vhea};
 use crate::tables::maxp::Maxp;
 use crate::{Error, Font, Result};
@@ -235,18 +236,160 @@ pub(crate) struct HeaderRecalc {
 /// The shared part of `hhea.recalc` and `vhea.recalc`. Returns `None` when there is
 /// nothing to recalculate.
 ///
-/// The extents come from the outlines (`glyf`, `CFF `, `CFF2` or `VARC`), which are
-/// not implemented yet; until they are, the header is left unchanged.
+/// The extents come from the outlines. Only `glyf` is supported so far: with
+/// `VARC`, `CFF ` or `CFF2` outlines the header is left unchanged.
 pub(crate) fn recalc_header(font: &mut Font, vertical: bool) -> Result<Option<HeaderRecalc>> {
 	let metrics_tag = Tag::new(if vertical { b"vmtx" } else { b"hmtx" });
 	if !font.contains(metrics_tag) {
 		return Ok(None);
 	}
-	let _ = font;
-	Ok(None)
+	if font.contains(Tag::new(b"VARC")) || !font.contains(Glyf::TAG) {
+		return Ok(None);
+	}
+	let order = font.glyph_order()?;
+	let mut extents = Vec::new();
+	{
+		let glyf = font.require::<Glyf>()?;
+		for gid in 0..order.len() as u32 {
+			let g = glyf
+				.glyphs
+				.get(&gid)
+				.ok_or_else(|| Error::ttlib(format!("KeyError: {:?}", order.name(gid))))?;
+			if g.number_of_contours == 0 {
+				continue;
+			}
+			extents.push((
+				gid,
+				if vertical {
+					g.y_max - g.y_min
+				} else {
+					g.x_max - g.x_min
+				},
+			));
+		}
+	}
+	let metrics: BTreeMap<u32, Metric> = if vertical {
+		font.require::<Vmtx>()?.metrics.clone()
+	} else {
+		font.require::<Hmtx>()?.metrics.clone()
+	};
+	let advance_max = metrics
+		.values()
+		.map(|m| m.0)
+		.max()
+		.ok_or_else(|| Error::value("max() arg is an empty sequence"))?;
+	if extents.is_empty() {
+		// No glyph has outlines.
+		return Ok(Some(HeaderRecalc {
+			advance_max,
+			min_start_side_bearing: 0,
+			min_end_side_bearing: 0,
+			max_extent: 0,
+		}));
+	}
+	let (mut min_start, mut min_end, mut max_extent) = (i64::MAX, i64::MAX, i64::MIN);
+	for (gid, size) in extents {
+		let (advance, start) = metrics
+			.get(&gid)
+			.copied()
+			.ok_or_else(|| Error::ttlib(format!("KeyError: {:?}", order.name(gid))))?;
+		let (advance, start) = (advance as i64, start as i64);
+		min_start = min_start.min(start);
+		min_end = min_end.min(advance - start - size);
+		max_extent = max_extent.max(start + size);
+	}
+	let fit = |v: i64, name: &str| crate::binary::fit::<i16, _>(v, name);
+	Ok(Some(HeaderRecalc {
+		advance_max,
+		min_start_side_bearing: fit(min_start, "minStartSideBearing")?,
+		min_end_side_bearing: fit(min_end, "minEndSideBearing")?,
+		max_extent: fit(max_extent, "maxExtent")?,
+	}))
 }
 
-/// `maxp.recalc`: needs the `glyf` implementation; a no-op until it exists.
-pub(crate) fn recalc_maxp(_maxp: &mut Maxp, _font: &mut Font) -> Result<()> {
+/// `maxp.recalc`: the outline maxima from `glyf`, and the font bounding box and
+/// the "left side bearing at x = 0" flag in `head`.
+pub(crate) fn recalc_maxp(maxp: &mut Maxp, font: &mut Font) -> Result<()> {
+	let order = font.glyph_order()?;
+	let fit = |v: usize, name: &str| crate::binary::fit::<u16, _>(v, name);
+	// What each glyph contributes: its bounds, and whether it has outlines.
+	let mut glyphs: Vec<(u32, [i64; 4])> = Vec::new();
+	let (mut max_points, mut max_contours) = (0, 0);
+	let (mut max_composite_points, mut max_composite_contours) = (0, 0);
+	let (mut max_component_elements, mut max_component_depth) = (0, 0i64);
+	let num_glyphs;
+	{
+		let glyf = font.require::<Glyf>()?;
+		if glyf.glyphs.len() != order.len() {
+			return Err(Error::Assertion(
+				"len(self.glyphOrder) == len(self.glyphs)".into(),
+			));
+		}
+		num_glyphs = glyf.glyphs.len();
+		let mut cache = std::collections::HashMap::new();
+		for gid in 0..order.len() as u32 {
+			let g = glyf
+				.glyphs
+				.get(&gid)
+				.ok_or_else(|| Error::ttlib(format!("KeyError: {:?}", order.name(gid))))?;
+			if g.number_of_contours == 0 {
+				continue;
+			}
+			glyphs.push((gid, [g.x_min, g.y_min, g.x_max, g.y_max]));
+			if g.number_of_contours > 0 {
+				max_points = max_points.max(g.coordinates.len());
+				max_contours = max_contours.max(g.end_pts_of_contours.len());
+			} else if g.is_composite() {
+				let (p, c, d) =
+					glyf.composite_maxp_values(gid, &order, 1, &mut cache, &mut vec![gid])?;
+				max_composite_points = max_composite_points.max(p);
+				max_composite_contours = max_composite_contours.max(c);
+				max_component_elements = max_component_elements.max(g.components.len());
+				max_component_depth = max_component_depth.max(d);
+			}
+		}
+	}
+	let mut all_x_min_is_lsb = true;
+	{
+		let hmtx = font.require::<Hmtx>()?;
+		for &(gid, b) in &glyphs {
+			let (_, lsb) = hmtx
+				.get(gid)
+				.ok_or_else(|| Error::ttlib(format!("KeyError: {:?}", order.name(gid))))?;
+			if lsb as i64 != b[0] {
+				all_x_min_is_lsb = false;
+			}
+		}
+	}
+	let bounds = glyphs.iter().fold(None, |acc: Option<[i64; 4]>, &(_, b)| {
+		Some(match acc {
+			None => b,
+			Some(a) => [
+				a[0].min(b[0]),
+				a[1].min(b[1]),
+				a[2].max(b[2]),
+				a[3].max(b[3]),
+			],
+		})
+	});
+	let head = font.require::<crate::tables::Head>()?;
+	let [x_min, y_min, x_max, y_max] = bounds.unwrap_or([0; 4]);
+	let fit16 = |v: i64, name: &str| crate::binary::fit::<i16, _>(v, name);
+	head.x_min = fit16(x_min, "xMin")?;
+	head.y_min = fit16(y_min, "yMin")?;
+	head.x_max = fit16(x_max, "xMax")?;
+	head.y_max = fit16(y_max, "yMax")?;
+	if all_x_min_is_lsb {
+		head.flags |= 0x2;
+	} else {
+		head.flags &= !0x2;
+	}
+	maxp.num_glyphs = fit(num_glyphs, "numGlyphs")?;
+	maxp.v1.max_points = fit(max_points, "maxPoints")?;
+	maxp.v1.max_contours = fit(max_contours, "maxContours")?;
+	maxp.v1.max_composite_points = fit(max_composite_points, "maxCompositePoints")?;
+	maxp.v1.max_composite_contours = fit(max_composite_contours, "maxCompositeContours")?;
+	maxp.v1.max_component_elements = fit(max_component_elements, "maxComponentElements")?;
+	maxp.v1.max_component_depth = fit(max_component_depth.max(0) as usize, "maxComponentDepth")?;
 	Ok(())
 }
