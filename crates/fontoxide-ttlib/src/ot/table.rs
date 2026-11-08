@@ -98,6 +98,15 @@ pub trait OtTable: Sized + Default + Clone {
 	/// Fills in counts and defaults after reading TTX (`populateDefaults`).
 	fn populate_defaults(&mut self, ctx: &mut XmlCtx) -> Result<()>;
 
+	/// Whether the subtables below are never shared (`DontShare` on an
+	/// instance); only lookup subtables can be marked.
+	fn dont_share(&self) -> bool {
+		false
+	}
+
+	/// Marks the subtables below as never shared, if this is a lookup subtable.
+	fn set_dont_share(&mut self) {}
+
 	/// Where its `StructLength` field is, for `StructWithLength`.
 	fn struct_length(&self) -> Option<super::aat::StructLength> {
 		None

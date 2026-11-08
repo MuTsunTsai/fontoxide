@@ -9,8 +9,8 @@ use fontoxide_misc::xml_reader::Element;
 use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::generated::ot;
+use crate::ot::OtReader;
 use crate::ot::table::{OtTable, XmlCtx};
-use crate::ot::{OtReader, WriterGraph};
 use crate::table::{Table, TableType};
 use crate::{Error, Font, Result};
 
@@ -63,9 +63,7 @@ macro_rules! otl_table {
 			}
 
 			fn compile(&mut self, font: &mut Font) -> Result<Vec<u8>> {
-				let mut graph = WriterGraph::new(Self::TAG);
-				self.table.compile(&mut graph.root(), font)?;
-				graph.get_all_data()
+				crate::ot::overflow::compile_table(&mut self.table, Self::TAG, font)
 			}
 
 			fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {

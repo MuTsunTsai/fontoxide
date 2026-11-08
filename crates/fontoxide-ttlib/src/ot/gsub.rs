@@ -56,7 +56,18 @@ macro_rules! lookup_subtable_impl {
 			}
 
 			fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
+				if self.dont_share {
+					w.set_dont_share();
+				}
 				self.to_raw(w, font)?.compile(w, font)
+			}
+
+			fn dont_share(&self) -> bool {
+				self.dont_share
+			}
+
+			fn set_dont_share(&mut self) {
+				self.dont_share = true;
 			}
 
 			fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
@@ -84,6 +95,9 @@ macro_rules! lookup_subtable_impl {
 pub struct SingleSubst {
 	/// Input glyph to output glyph.
 	pub mapping: BTreeMap<u32, u32>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl SingleSubst {
@@ -132,7 +146,10 @@ impl SingleSubst {
 				return Err(Error::Assertion(format!("unknown format: {f}")));
 			}
 		}
-		Ok(SingleSubst { mapping })
+		Ok(SingleSubst {
+			mapping,
+			dont_share: false,
+		})
 	}
 
 	/// `preWrite`.
@@ -212,6 +229,9 @@ lookup_subtable_impl!(SingleSubst, SingleSubstRaw, "SingleSubst");
 pub struct MultipleSubst {
 	/// Input glyph to output glyphs.
 	pub mapping: BTreeMap<u32, Vec<u32>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl MultipleSubst {
@@ -247,6 +267,7 @@ impl MultipleSubst {
 			}
 		};
 		Ok(MultipleSubst {
+			dont_share: false,
 			mapping: glyphs.into_iter().zip(subst).collect(),
 		})
 	}
@@ -341,6 +362,9 @@ lookup_subtable_impl!(MultipleSubst, MultipleSubstRaw, "MultipleSubst");
 pub struct AlternateSubst {
 	/// Input glyph to its alternates.
 	pub alternates: BTreeMap<u32, Vec<u32>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl AlternateSubst {
@@ -383,6 +407,7 @@ impl AlternateSubst {
 			return Err(Error::Assertion("len(input) == len(alts)".into()));
 		}
 		Ok(AlternateSubst {
+			dont_share: false,
 			alternates: input.into_iter().zip(alts).collect(),
 		})
 	}
@@ -477,6 +502,9 @@ lookup_subtable_impl!(AlternateSubst, AlternateSubstRaw, "AlternateSubst");
 pub struct LigatureSubst {
 	/// First component glyph to the ligatures that start with it.
 	pub ligatures: BTreeMap<u32, Vec<Ligature>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl LigatureSubst {
@@ -532,6 +560,7 @@ impl LigatureSubst {
 			return Err(Error::Assertion("len(input) == len(ligSets)".into()));
 		}
 		Ok(LigatureSubst {
+			dont_share: false,
 			ligatures: input.into_iter().zip(sets).collect(),
 		})
 	}

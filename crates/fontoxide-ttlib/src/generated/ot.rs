@@ -5817,6 +5817,9 @@ pub struct ChainContextPosFormat1 {
 	pub chain_pos_rule_set_count: Option<u32>,
 	/// `ChainPosRuleSet` (Table).
 	pub chain_pos_rule_set: Vec<Option<Box<ChainPosRuleSet>>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ChainContextPosFormat1 {
@@ -5825,6 +5828,7 @@ impl Default for ChainContextPosFormat1 {
 			coverage: Default::default(),
 			chain_pos_rule_set_count: Default::default(),
 			chain_pos_rule_set: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -5854,6 +5858,9 @@ impl OtTable for ChainContextPosFormat1 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(8)?;
 		w.write_u16(1);
 		let t = self;
@@ -5868,6 +5875,12 @@ impl OtTable for ChainContextPosFormat1 {
 			write_offset(w, font, item.as_deref(), 2, "ChainPosRuleSet", Some(i))?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(1)
@@ -5931,6 +5944,9 @@ pub struct ChainContextPosFormat2 {
 	pub chain_pos_class_set_count: Option<u32>,
 	/// `ChainPosClassSet` (Table).
 	pub chain_pos_class_set: Vec<Option<Box<ChainPosClassSet>>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ChainContextPosFormat2 {
@@ -5942,6 +5958,7 @@ impl Default for ChainContextPosFormat2 {
 			look_ahead_class_def: Default::default(),
 			chain_pos_class_set_count: Default::default(),
 			chain_pos_class_set: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -5974,6 +5991,9 @@ impl OtTable for ChainContextPosFormat2 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(8)?;
 		w.write_u16(2);
 		let t = self;
@@ -6012,6 +6032,12 @@ impl OtTable for ChainContextPosFormat2 {
 			write_offset(w, font, item.as_deref(), 2, "ChainPosClassSet", Some(i))?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(2)
@@ -6109,6 +6135,9 @@ pub struct ChainContextPosFormat3 {
 	pub pos_count: Option<u32>,
 	/// `PosLookupRecord` (Struct).
 	pub pos_lookup_record: Vec<PosLookupRecord>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ChainContextPosFormat3 {
@@ -6122,6 +6151,7 @@ impl Default for ChainContextPosFormat3 {
 			look_ahead_coverage: Default::default(),
 			pos_count: Default::default(),
 			pos_lookup_record: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -6181,6 +6211,9 @@ impl OtTable for ChainContextPosFormat3 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(8)?;
 		w.write_u16(3);
 		let t = self;
@@ -6215,6 +6248,12 @@ impl OtTable for ChainContextPosFormat3 {
 			(*item).compile(w, font)?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(3)
@@ -6299,6 +6338,9 @@ pub struct ChainContextPosFormat4 {
 	pub chained_seq_rule_set_count: Option<u32>,
 	/// `ChainedSeqRuleSet` (Table24).
 	pub chained_seq_rule_set: Vec<Option<Box<ChainedSeqRuleSet2>>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ChainContextPosFormat4 {
@@ -6307,6 +6349,7 @@ impl Default for ChainContextPosFormat4 {
 			coverage: Default::default(),
 			chained_seq_rule_set_count: Default::default(),
 			chained_seq_rule_set: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -6336,6 +6379,9 @@ impl OtTable for ChainContextPosFormat4 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(8)?;
 		w.write_u16(4);
 		let t = self;
@@ -6350,6 +6396,12 @@ impl OtTable for ChainContextPosFormat4 {
 			write_offset(w, font, item.as_deref(), 3, "ChainedSeqRuleSet", Some(i))?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(4)
@@ -6417,6 +6469,9 @@ pub struct ChainContextPosFormat5 {
 	pub chained_class_seq_rule_set_count: Option<u32>,
 	/// `ChainedClassSeqRuleSet` (Table24).
 	pub chained_class_seq_rule_set: Vec<Option<Box<ChainedClassSeqRuleSet2>>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ChainContextPosFormat5 {
@@ -6428,6 +6483,7 @@ impl Default for ChainContextPosFormat5 {
 			look_ahead_class_def: Default::default(),
 			chained_class_seq_rule_set_count: Default::default(),
 			chained_class_seq_rule_set: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -6460,6 +6516,9 @@ impl OtTable for ChainContextPosFormat5 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(8)?;
 		w.write_u16(5);
 		let t = self;
@@ -6506,6 +6565,12 @@ impl OtTable for ChainContextPosFormat5 {
 			)?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(5)
@@ -6685,6 +6750,26 @@ impl OtTable for ChainContextPos {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn dont_share(&self) -> bool {
+		match self {
+			Self::Format1(v) => v.dont_share(),
+			Self::Format2(v) => v.dont_share(),
+			Self::Format3(v) => v.dont_share(),
+			Self::Format4(v) => v.dont_share(),
+			Self::Format5(v) => v.dont_share(),
+			Self::Unknown(_) => false,
+		}
+	}
+	fn set_dont_share(&mut self) {
+		match self {
+			Self::Format1(v) => v.set_dont_share(),
+			Self::Format2(v) => v.set_dont_share(),
+			Self::Format3(v) => v.set_dont_share(),
+			Self::Format4(v) => v.set_dont_share(),
+			Self::Format5(v) => v.set_dont_share(),
+			Self::Unknown(_) => {}
+		}
+	}
 	fn struct_length(&self) -> Option<StructLength> {
 		match self {
 			Self::Format1(v) => v.struct_length(),
@@ -6736,6 +6821,9 @@ pub struct ChainContextSubstFormat1 {
 	pub chain_sub_rule_set_count: Option<u32>,
 	/// `ChainSubRuleSet` (Table).
 	pub chain_sub_rule_set: Vec<Option<Box<ChainSubRuleSet>>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ChainContextSubstFormat1 {
@@ -6744,6 +6832,7 @@ impl Default for ChainContextSubstFormat1 {
 			coverage: Default::default(),
 			chain_sub_rule_set_count: Default::default(),
 			chain_sub_rule_set: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -6773,6 +6862,9 @@ impl OtTable for ChainContextSubstFormat1 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(6)?;
 		w.write_u16(1);
 		let t = self;
@@ -6787,6 +6879,12 @@ impl OtTable for ChainContextSubstFormat1 {
 			write_offset(w, font, item.as_deref(), 2, "ChainSubRuleSet", Some(i))?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(1)
@@ -6850,6 +6948,9 @@ pub struct ChainContextSubstFormat2 {
 	pub chain_sub_class_set_count: Option<u32>,
 	/// `ChainSubClassSet` (Table).
 	pub chain_sub_class_set: Vec<Option<Box<ChainSubClassSet>>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ChainContextSubstFormat2 {
@@ -6861,6 +6962,7 @@ impl Default for ChainContextSubstFormat2 {
 			look_ahead_class_def: Default::default(),
 			chain_sub_class_set_count: Default::default(),
 			chain_sub_class_set: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -6893,6 +6995,9 @@ impl OtTable for ChainContextSubstFormat2 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(6)?;
 		w.write_u16(2);
 		let t = self;
@@ -6931,6 +7036,12 @@ impl OtTable for ChainContextSubstFormat2 {
 			write_offset(w, font, item.as_deref(), 2, "ChainSubClassSet", Some(i))?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(2)
@@ -7028,6 +7139,9 @@ pub struct ChainContextSubstFormat3 {
 	pub subst_count: Option<u32>,
 	/// `SubstLookupRecord` (Struct).
 	pub subst_lookup_record: Vec<SubstLookupRecord>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ChainContextSubstFormat3 {
@@ -7041,6 +7155,7 @@ impl Default for ChainContextSubstFormat3 {
 			look_ahead_coverage: Default::default(),
 			subst_count: Default::default(),
 			subst_lookup_record: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -7100,6 +7215,9 @@ impl OtTable for ChainContextSubstFormat3 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(6)?;
 		w.write_u16(3);
 		let t = self;
@@ -7134,6 +7252,12 @@ impl OtTable for ChainContextSubstFormat3 {
 			(*item).compile(w, font)?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(3)
@@ -7218,6 +7342,9 @@ pub struct ChainContextSubstFormat4 {
 	pub chained_seq_rule_set_count: Option<u32>,
 	/// `ChainedSeqRuleSet` (Table24).
 	pub chained_seq_rule_set: Vec<Option<Box<ChainedSeqRuleSet2>>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ChainContextSubstFormat4 {
@@ -7226,6 +7353,7 @@ impl Default for ChainContextSubstFormat4 {
 			coverage: Default::default(),
 			chained_seq_rule_set_count: Default::default(),
 			chained_seq_rule_set: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -7255,6 +7383,9 @@ impl OtTable for ChainContextSubstFormat4 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(6)?;
 		w.write_u16(4);
 		let t = self;
@@ -7269,6 +7400,12 @@ impl OtTable for ChainContextSubstFormat4 {
 			write_offset(w, font, item.as_deref(), 3, "ChainedSeqRuleSet", Some(i))?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(4)
@@ -7336,6 +7473,9 @@ pub struct ChainContextSubstFormat5 {
 	pub chained_class_seq_rule_set_count: Option<u32>,
 	/// `ChainedClassSeqRuleSet` (Table24).
 	pub chained_class_seq_rule_set: Vec<Option<Box<ChainedClassSeqRuleSet2>>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ChainContextSubstFormat5 {
@@ -7347,6 +7487,7 @@ impl Default for ChainContextSubstFormat5 {
 			look_ahead_class_def: Default::default(),
 			chained_class_seq_rule_set_count: Default::default(),
 			chained_class_seq_rule_set: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -7379,6 +7520,9 @@ impl OtTable for ChainContextSubstFormat5 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(6)?;
 		w.write_u16(5);
 		let t = self;
@@ -7425,6 +7569,12 @@ impl OtTable for ChainContextSubstFormat5 {
 			)?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(5)
@@ -7602,6 +7752,26 @@ impl OtTable for ChainContextSubst {
 			Self::Format4(v) => v.populate_defaults(ctx),
 			Self::Format5(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn dont_share(&self) -> bool {
+		match self {
+			Self::Format1(v) => v.dont_share(),
+			Self::Format2(v) => v.dont_share(),
+			Self::Format3(v) => v.dont_share(),
+			Self::Format4(v) => v.dont_share(),
+			Self::Format5(v) => v.dont_share(),
+			Self::Unknown(_) => false,
+		}
+	}
+	fn set_dont_share(&mut self) {
+		match self {
+			Self::Format1(v) => v.set_dont_share(),
+			Self::Format2(v) => v.set_dont_share(),
+			Self::Format3(v) => v.set_dont_share(),
+			Self::Format4(v) => v.set_dont_share(),
+			Self::Format5(v) => v.set_dont_share(),
+			Self::Unknown(_) => {}
 		}
 	}
 	fn struct_length(&self) -> Option<StructLength> {
@@ -11894,6 +12064,9 @@ pub struct ContextPosFormat1 {
 	pub pos_rule_set_count: Option<u32>,
 	/// `PosRuleSet` (Table).
 	pub pos_rule_set: Vec<Option<Box<PosRuleSet>>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ContextPosFormat1 {
@@ -11902,6 +12075,7 @@ impl Default for ContextPosFormat1 {
 			coverage: Default::default(),
 			pos_rule_set_count: Default::default(),
 			pos_rule_set: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -11927,6 +12101,9 @@ impl OtTable for ContextPosFormat1 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(7)?;
 		w.write_u16(1);
 		let t = self;
@@ -11940,6 +12117,12 @@ impl OtTable for ContextPosFormat1 {
 			write_offset(w, font, item.as_deref(), 2, "PosRuleSet", Some(i))?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(1)
@@ -11996,6 +12179,9 @@ pub struct ContextPosFormat2 {
 	pub pos_class_set_count: Option<u32>,
 	/// `PosClassSet` (Table).
 	pub pos_class_set: Vec<Option<Box<PosClassSet>>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ContextPosFormat2 {
@@ -12005,6 +12191,7 @@ impl Default for ContextPosFormat2 {
 			class_def: Default::default(),
 			pos_class_set_count: Default::default(),
 			pos_class_set: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -12035,6 +12222,9 @@ impl OtTable for ContextPosFormat2 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(7)?;
 		w.write_u16(2);
 		let t = self;
@@ -12049,6 +12239,12 @@ impl OtTable for ContextPosFormat2 {
 			write_offset(w, font, item.as_deref(), 2, "PosClassSet", Some(i))?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(2)
@@ -12115,6 +12311,9 @@ pub struct ContextPosFormat3 {
 	pub coverage: Vec<Option<Box<Coverage>>>,
 	/// `PosLookupRecord` (Struct).
 	pub pos_lookup_record: Vec<PosLookupRecord>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ContextPosFormat3 {
@@ -12124,6 +12323,7 @@ impl Default for ContextPosFormat3 {
 			pos_count: Default::default(),
 			coverage: Default::default(),
 			pos_lookup_record: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -12157,6 +12357,9 @@ impl OtTable for ContextPosFormat3 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(7)?;
 		w.write_u16(3);
 		let t = self;
@@ -12176,6 +12379,12 @@ impl OtTable for ContextPosFormat3 {
 			(*item).compile(w, font)?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(3)
@@ -12233,6 +12442,9 @@ pub struct ContextPosFormat4 {
 	pub seq_rule_set_count: Option<u32>,
 	/// `SeqRuleSet` (Table24).
 	pub seq_rule_set: Vec<Option<Box<SeqRuleSet2>>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ContextPosFormat4 {
@@ -12241,6 +12453,7 @@ impl Default for ContextPosFormat4 {
 			coverage: Default::default(),
 			seq_rule_set_count: Default::default(),
 			seq_rule_set: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -12266,6 +12479,9 @@ impl OtTable for ContextPosFormat4 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(7)?;
 		w.write_u16(4);
 		let t = self;
@@ -12279,6 +12495,12 @@ impl OtTable for ContextPosFormat4 {
 			write_offset(w, font, item.as_deref(), 3, "SeqRuleSet", Some(i))?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(4)
@@ -12335,6 +12557,9 @@ pub struct ContextPosFormat5 {
 	pub class_seq_rule_set_count: Option<u32>,
 	/// `ClassSeqRuleSet` (Table24).
 	pub class_seq_rule_set: Vec<Option<Box<ClassSeqRuleSet2>>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ContextPosFormat5 {
@@ -12344,6 +12569,7 @@ impl Default for ContextPosFormat5 {
 			class_def: Default::default(),
 			class_seq_rule_set_count: Default::default(),
 			class_seq_rule_set: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -12374,6 +12600,9 @@ impl OtTable for ContextPosFormat5 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(7)?;
 		w.write_u16(5);
 		let t = self;
@@ -12389,6 +12618,12 @@ impl OtTable for ContextPosFormat5 {
 			write_offset(w, font, item.as_deref(), 3, "ClassSeqRuleSet", Some(i))?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(5)
@@ -12456,6 +12691,9 @@ pub struct ContextPosFormat6 {
 	pub coverage: Vec<Option<Box<Coverage>>>,
 	/// `SeqLookupRecord` (Struct).
 	pub seq_lookup_record: Vec<SeqLookup>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ContextPosFormat6 {
@@ -12465,6 +12703,7 @@ impl Default for ContextPosFormat6 {
 			seq_lookup_count: Default::default(),
 			coverage: Default::default(),
 			seq_lookup_record: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -12498,6 +12737,9 @@ impl OtTable for ContextPosFormat6 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(7)?;
 		w.write_u16(6);
 		let t = self;
@@ -12517,6 +12759,12 @@ impl OtTable for ContextPosFormat6 {
 			(*item).compile(w, font)?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(6)
@@ -12664,6 +12912,28 @@ impl OtTable for ContextPos {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn dont_share(&self) -> bool {
+		match self {
+			Self::Format1(v) => v.dont_share(),
+			Self::Format2(v) => v.dont_share(),
+			Self::Format3(v) => v.dont_share(),
+			Self::Format4(v) => v.dont_share(),
+			Self::Format5(v) => v.dont_share(),
+			Self::Format6(v) => v.dont_share(),
+			Self::Unknown(_) => false,
+		}
+	}
+	fn set_dont_share(&mut self) {
+		match self {
+			Self::Format1(v) => v.set_dont_share(),
+			Self::Format2(v) => v.set_dont_share(),
+			Self::Format3(v) => v.set_dont_share(),
+			Self::Format4(v) => v.set_dont_share(),
+			Self::Format5(v) => v.set_dont_share(),
+			Self::Format6(v) => v.set_dont_share(),
+			Self::Unknown(_) => {}
+		}
+	}
 	fn struct_length(&self) -> Option<StructLength> {
 		match self {
 			Self::Format1(v) => v.struct_length(),
@@ -12719,6 +12989,9 @@ pub struct ContextSubstFormat1 {
 	pub sub_rule_set_count: Option<u32>,
 	/// `SubRuleSet` (Table).
 	pub sub_rule_set: Vec<Option<Box<SubRuleSet>>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ContextSubstFormat1 {
@@ -12727,6 +13000,7 @@ impl Default for ContextSubstFormat1 {
 			coverage: Default::default(),
 			sub_rule_set_count: Default::default(),
 			sub_rule_set: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -12752,6 +13026,9 @@ impl OtTable for ContextSubstFormat1 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(5)?;
 		w.write_u16(1);
 		let t = self;
@@ -12765,6 +13042,12 @@ impl OtTable for ContextSubstFormat1 {
 			write_offset(w, font, item.as_deref(), 2, "SubRuleSet", Some(i))?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(1)
@@ -12821,6 +13104,9 @@ pub struct ContextSubstFormat2 {
 	pub sub_class_set_count: Option<u32>,
 	/// `SubClassSet` (Table).
 	pub sub_class_set: Vec<Option<Box<SubClassSet>>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ContextSubstFormat2 {
@@ -12830,6 +13116,7 @@ impl Default for ContextSubstFormat2 {
 			class_def: Default::default(),
 			sub_class_set_count: Default::default(),
 			sub_class_set: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -12860,6 +13147,9 @@ impl OtTable for ContextSubstFormat2 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(5)?;
 		w.write_u16(2);
 		let t = self;
@@ -12874,6 +13164,12 @@ impl OtTable for ContextSubstFormat2 {
 			write_offset(w, font, item.as_deref(), 2, "SubClassSet", Some(i))?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(2)
@@ -12940,6 +13236,9 @@ pub struct ContextSubstFormat3 {
 	pub coverage: Vec<Option<Box<Coverage>>>,
 	/// `SubstLookupRecord` (Struct).
 	pub subst_lookup_record: Vec<SubstLookupRecord>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ContextSubstFormat3 {
@@ -12949,6 +13248,7 @@ impl Default for ContextSubstFormat3 {
 			subst_count: Default::default(),
 			coverage: Default::default(),
 			subst_lookup_record: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -12982,6 +13282,9 @@ impl OtTable for ContextSubstFormat3 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(5)?;
 		w.write_u16(3);
 		let t = self;
@@ -13001,6 +13304,12 @@ impl OtTable for ContextSubstFormat3 {
 			(*item).compile(w, font)?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(3)
@@ -13058,6 +13367,9 @@ pub struct ContextSubstFormat4 {
 	pub seq_rule_set_count: Option<u32>,
 	/// `SeqRuleSet` (Table24).
 	pub seq_rule_set: Vec<Option<Box<SeqRuleSet2>>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ContextSubstFormat4 {
@@ -13066,6 +13378,7 @@ impl Default for ContextSubstFormat4 {
 			coverage: Default::default(),
 			seq_rule_set_count: Default::default(),
 			seq_rule_set: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -13091,6 +13404,9 @@ impl OtTable for ContextSubstFormat4 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(5)?;
 		w.write_u16(4);
 		let t = self;
@@ -13104,6 +13420,12 @@ impl OtTable for ContextSubstFormat4 {
 			write_offset(w, font, item.as_deref(), 3, "SeqRuleSet", Some(i))?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(4)
@@ -13160,6 +13482,9 @@ pub struct ContextSubstFormat5 {
 	pub class_seq_rule_set_count: Option<u32>,
 	/// `ClassSeqRuleSet` (Table24).
 	pub class_seq_rule_set: Vec<Option<Box<ClassSeqRuleSet2>>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ContextSubstFormat5 {
@@ -13169,6 +13494,7 @@ impl Default for ContextSubstFormat5 {
 			class_def: Default::default(),
 			class_seq_rule_set_count: Default::default(),
 			class_seq_rule_set: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -13199,6 +13525,9 @@ impl OtTable for ContextSubstFormat5 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(5)?;
 		w.write_u16(5);
 		let t = self;
@@ -13214,6 +13543,12 @@ impl OtTable for ContextSubstFormat5 {
 			write_offset(w, font, item.as_deref(), 3, "ClassSeqRuleSet", Some(i))?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(5)
@@ -13281,6 +13616,9 @@ pub struct ContextSubstFormat6 {
 	pub coverage: Vec<Option<Box<Coverage>>>,
 	/// `SeqLookupRecord` (Struct).
 	pub seq_lookup_record: Vec<SeqLookup>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ContextSubstFormat6 {
@@ -13290,6 +13628,7 @@ impl Default for ContextSubstFormat6 {
 			seq_lookup_count: Default::default(),
 			coverage: Default::default(),
 			seq_lookup_record: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -13323,6 +13662,9 @@ impl OtTable for ContextSubstFormat6 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(5)?;
 		w.write_u16(6);
 		let t = self;
@@ -13342,6 +13684,12 @@ impl OtTable for ContextSubstFormat6 {
 			(*item).compile(w, font)?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(6)
@@ -13487,6 +13835,28 @@ impl OtTable for ContextSubst {
 			Self::Format5(v) => v.populate_defaults(ctx),
 			Self::Format6(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn dont_share(&self) -> bool {
+		match self {
+			Self::Format1(v) => v.dont_share(),
+			Self::Format2(v) => v.dont_share(),
+			Self::Format3(v) => v.dont_share(),
+			Self::Format4(v) => v.dont_share(),
+			Self::Format5(v) => v.dont_share(),
+			Self::Format6(v) => v.dont_share(),
+			Self::Unknown(_) => false,
+		}
+	}
+	fn set_dont_share(&mut self) {
+		match self {
+			Self::Format1(v) => v.set_dont_share(),
+			Self::Format2(v) => v.set_dont_share(),
+			Self::Format3(v) => v.set_dont_share(),
+			Self::Format4(v) => v.set_dont_share(),
+			Self::Format5(v) => v.set_dont_share(),
+			Self::Format6(v) => v.set_dont_share(),
+			Self::Unknown(_) => {}
 		}
 	}
 	fn struct_length(&self) -> Option<StructLength> {
@@ -14068,6 +14438,9 @@ pub struct CursivePosFormat1 {
 	pub entry_exit_count: Option<u32>,
 	/// `EntryExitRecord` (Struct).
 	pub entry_exit_record: Vec<EntryExitRecord>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for CursivePosFormat1 {
@@ -14076,6 +14449,7 @@ impl Default for CursivePosFormat1 {
 			coverage: Default::default(),
 			entry_exit_count: Default::default(),
 			entry_exit_record: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -14101,6 +14475,9 @@ impl OtTable for CursivePosFormat1 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(3)?;
 		w.write_u16(1);
 		let t = self;
@@ -14114,6 +14491,12 @@ impl OtTable for CursivePosFormat1 {
 			(*item).compile(w, font)?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(1)
@@ -14168,6 +14551,9 @@ pub struct CursivePosFormat2 {
 	pub entry_exit_count: Option<u32>,
 	/// `EntryExitRecord` (Struct).
 	pub entry_exit_record: Vec<EntryExit2>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for CursivePosFormat2 {
@@ -14176,6 +14562,7 @@ impl Default for CursivePosFormat2 {
 			coverage: Default::default(),
 			entry_exit_count: Default::default(),
 			entry_exit_record: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -14201,6 +14588,9 @@ impl OtTable for CursivePosFormat2 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(3)?;
 		w.write_u16(2);
 		let t = self;
@@ -14214,6 +14604,12 @@ impl OtTable for CursivePosFormat2 {
 			(*item).compile(w, font)?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(2)
@@ -14324,6 +14720,20 @@ impl OtTable for CursivePos {
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Format2(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn dont_share(&self) -> bool {
+		match self {
+			Self::Format1(v) => v.dont_share(),
+			Self::Format2(v) => v.dont_share(),
+			Self::Unknown(_) => false,
+		}
+	}
+	fn set_dont_share(&mut self) {
+		match self {
+			Self::Format1(v) => v.set_dont_share(),
+			Self::Format2(v) => v.set_dont_share(),
+			Self::Unknown(_) => {}
 		}
 	}
 	fn struct_length(&self) -> Option<StructLength> {
@@ -15140,6 +15550,9 @@ pub struct ExtensionPosFormat1 {
 	pub extension_lookup_type: u16,
 	/// `ExtSubTable` (ExtSubTable).
 	pub ext_sub_table: Option<Box<LookupSubTable>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ExtensionPosFormat1 {
@@ -15147,6 +15560,7 @@ impl Default for ExtensionPosFormat1 {
 		ExtensionPosFormat1 {
 			extension_lookup_type: Default::default(),
 			ext_sub_table: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -15164,6 +15578,9 @@ impl OtTable for ExtensionPosFormat1 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(9)?;
 		w.write_u16(1);
 		let t = self;
@@ -15187,6 +15604,12 @@ impl OtTable for ExtensionPosFormat1 {
 			None,
 		)?;
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(1)
@@ -15304,6 +15727,18 @@ impl OtTable for ExtensionPos {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn dont_share(&self) -> bool {
+		match self {
+			Self::Format1(v) => v.dont_share(),
+			Self::Unknown(_) => false,
+		}
+	}
+	fn set_dont_share(&mut self) {
+		match self {
+			Self::Format1(v) => v.set_dont_share(),
+			Self::Unknown(_) => {}
+		}
+	}
 	fn struct_length(&self) -> Option<StructLength> {
 		match self {
 			Self::Format1(v) => v.struct_length(),
@@ -15337,6 +15772,9 @@ pub struct ExtensionSubstFormat1 {
 	pub extension_lookup_type: u16,
 	/// `ExtSubTable` (ExtSubTable).
 	pub ext_sub_table: Option<Box<LookupSubTable>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ExtensionSubstFormat1 {
@@ -15344,6 +15782,7 @@ impl Default for ExtensionSubstFormat1 {
 		ExtensionSubstFormat1 {
 			extension_lookup_type: Default::default(),
 			ext_sub_table: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -15361,6 +15800,9 @@ impl OtTable for ExtensionSubstFormat1 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(7)?;
 		w.write_u16(1);
 		let t = self;
@@ -15384,6 +15826,12 @@ impl OtTable for ExtensionSubstFormat1 {
 			None,
 		)?;
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(1)
@@ -15499,6 +15947,18 @@ impl OtTable for ExtensionSubst {
 		match self {
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn dont_share(&self) -> bool {
+		match self {
+			Self::Format1(v) => v.dont_share(),
+			Self::Unknown(_) => false,
+		}
+	}
+	fn set_dont_share(&mut self) {
+		match self {
+			Self::Format1(v) => v.set_dont_share(),
+			Self::Unknown(_) => {}
 		}
 	}
 	fn struct_length(&self) -> Option<StructLength> {
@@ -23586,6 +24046,9 @@ pub struct MarkBasePosFormat1 {
 	pub mark_array: Option<Box<MarkArray>>,
 	/// `BaseArray` (Table).
 	pub base_array: Option<Box<BaseArray>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for MarkBasePosFormat1 {
@@ -23596,6 +24059,7 @@ impl Default for MarkBasePosFormat1 {
 			class_count: Default::default(),
 			mark_array: Default::default(),
 			base_array: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -23620,6 +24084,9 @@ impl OtTable for MarkBasePosFormat1 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(4)?;
 		w.write_u16(1);
 		let t = self;
@@ -23646,6 +24113,12 @@ impl OtTable for MarkBasePosFormat1 {
 		write_offset(w, font, self.mark_array.as_deref(), 2, "MarkArray", None)?;
 		write_offset(w, font, self.base_array.as_deref(), 2, "BaseArray", None)?;
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(1)
@@ -23740,6 +24213,9 @@ pub struct MarkBasePosFormat2 {
 	pub mark_array: Option<Box<MarkArray2>>,
 	/// `BaseArray` (LTable).
 	pub base_array: Option<Box<BaseArray2>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for MarkBasePosFormat2 {
@@ -23750,6 +24226,7 @@ impl Default for MarkBasePosFormat2 {
 			class_count: Default::default(),
 			mark_array: Default::default(),
 			base_array: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -23774,6 +24251,9 @@ impl OtTable for MarkBasePosFormat2 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(4)?;
 		w.write_u16(2);
 		let t = self;
@@ -23800,6 +24280,12 @@ impl OtTable for MarkBasePosFormat2 {
 		write_offset(w, font, self.mark_array.as_deref(), 4, "MarkArray", None)?;
 		write_offset(w, font, self.base_array.as_deref(), 4, "BaseArray", None)?;
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(2)
@@ -23948,6 +24434,20 @@ impl OtTable for MarkBasePos {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn dont_share(&self) -> bool {
+		match self {
+			Self::Format1(v) => v.dont_share(),
+			Self::Format2(v) => v.dont_share(),
+			Self::Unknown(_) => false,
+		}
+	}
+	fn set_dont_share(&mut self) {
+		match self {
+			Self::Format1(v) => v.set_dont_share(),
+			Self::Format2(v) => v.set_dont_share(),
+			Self::Unknown(_) => {}
+		}
+	}
 	fn struct_length(&self) -> Option<StructLength> {
 		match self {
 			Self::Format1(v) => v.struct_length(),
@@ -24085,6 +24585,9 @@ pub struct MarkLigPosFormat1 {
 	pub mark_array: Option<Box<MarkArray>>,
 	/// `LigatureArray` (Table).
 	pub ligature_array: Option<Box<LigatureArray>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for MarkLigPosFormat1 {
@@ -24095,6 +24598,7 @@ impl Default for MarkLigPosFormat1 {
 			class_count: Default::default(),
 			mark_array: Default::default(),
 			ligature_array: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -24119,6 +24623,9 @@ impl OtTable for MarkLigPosFormat1 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(5)?;
 		w.write_u16(1);
 		let t = self;
@@ -24152,6 +24659,12 @@ impl OtTable for MarkLigPosFormat1 {
 			None,
 		)?;
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(1)
@@ -24246,6 +24759,9 @@ pub struct MarkLigPosFormat2 {
 	pub mark_array: Option<Box<MarkArray2>>,
 	/// `LigatureArray` (LTable).
 	pub ligature_array: Option<Box<LigatureArray2>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for MarkLigPosFormat2 {
@@ -24256,6 +24772,7 @@ impl Default for MarkLigPosFormat2 {
 			class_count: Default::default(),
 			mark_array: Default::default(),
 			ligature_array: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -24280,6 +24797,9 @@ impl OtTable for MarkLigPosFormat2 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(5)?;
 		w.write_u16(2);
 		let t = self;
@@ -24313,6 +24833,12 @@ impl OtTable for MarkLigPosFormat2 {
 			None,
 		)?;
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(2)
@@ -24461,6 +24987,20 @@ impl OtTable for MarkLigPos {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn dont_share(&self) -> bool {
+		match self {
+			Self::Format1(v) => v.dont_share(),
+			Self::Format2(v) => v.dont_share(),
+			Self::Unknown(_) => false,
+		}
+	}
+	fn set_dont_share(&mut self) {
+		match self {
+			Self::Format1(v) => v.set_dont_share(),
+			Self::Format2(v) => v.set_dont_share(),
+			Self::Unknown(_) => {}
+		}
+	}
 	fn struct_length(&self) -> Option<StructLength> {
 		match self {
 			Self::Format1(v) => v.struct_length(),
@@ -24504,6 +25044,9 @@ pub struct MarkMarkPosFormat1 {
 	pub mark1_array: Option<Box<MarkArray>>,
 	/// `Mark2Array` (Table).
 	pub mark2_array: Option<Box<Mark2Array>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for MarkMarkPosFormat1 {
@@ -24514,6 +25057,7 @@ impl Default for MarkMarkPosFormat1 {
 			class_count: Default::default(),
 			mark1_array: Default::default(),
 			mark2_array: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -24538,6 +25082,9 @@ impl OtTable for MarkMarkPosFormat1 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(6)?;
 		w.write_u16(1);
 		let t = self;
@@ -24564,6 +25111,12 @@ impl OtTable for MarkMarkPosFormat1 {
 		write_offset(w, font, self.mark1_array.as_deref(), 2, "Mark1Array", None)?;
 		write_offset(w, font, self.mark2_array.as_deref(), 2, "Mark2Array", None)?;
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(1)
@@ -24658,6 +25211,9 @@ pub struct MarkMarkPosFormat2 {
 	pub mark1_array: Option<Box<MarkArray2>>,
 	/// `Mark2Array` (LTable).
 	pub mark2_array: Option<Box<Mark2Array2>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for MarkMarkPosFormat2 {
@@ -24668,6 +25224,7 @@ impl Default for MarkMarkPosFormat2 {
 			class_count: Default::default(),
 			mark1_array: Default::default(),
 			mark2_array: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -24692,6 +25249,9 @@ impl OtTable for MarkMarkPosFormat2 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(6)?;
 		w.write_u16(2);
 		let t = self;
@@ -24718,6 +25278,12 @@ impl OtTable for MarkMarkPosFormat2 {
 		write_offset(w, font, self.mark1_array.as_deref(), 4, "Mark1Array", None)?;
 		write_offset(w, font, self.mark2_array.as_deref(), 4, "Mark2Array", None)?;
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(2)
@@ -24864,6 +25430,20 @@ impl OtTable for MarkMarkPos {
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Format2(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn dont_share(&self) -> bool {
+		match self {
+			Self::Format1(v) => v.dont_share(),
+			Self::Format2(v) => v.dont_share(),
+			Self::Unknown(_) => false,
+		}
+	}
+	fn set_dont_share(&mut self) {
+		match self {
+			Self::Format1(v) => v.set_dont_share(),
+			Self::Format2(v) => v.set_dont_share(),
+			Self::Unknown(_) => {}
 		}
 	}
 	fn struct_length(&self) -> Option<StructLength> {
@@ -32576,6 +33156,9 @@ pub struct PairPosFormat1 {
 	pub pair_set_count: Option<u32>,
 	/// `PairSet` (Table).
 	pub pair_set: Vec<Option<Box<PairSet>>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for PairPosFormat1 {
@@ -32586,6 +33169,7 @@ impl Default for PairPosFormat1 {
 			value_format2: Default::default(),
 			pair_set_count: Default::default(),
 			pair_set: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -32621,6 +33205,9 @@ impl OtTable for PairPosFormat1 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(2)?;
 		w.write_u16(1);
 		let t = self;
@@ -32638,6 +33225,12 @@ impl OtTable for PairPosFormat1 {
 			write_offset(w, font, item.as_deref(), 2, "PairSet", Some(i))?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(1)
@@ -32716,6 +33309,9 @@ pub struct PairPosFormat2 {
 	pub class2_count: Option<u32>,
 	/// `Class1Record` (Struct).
 	pub class1_record: Vec<Class1Record>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for PairPosFormat2 {
@@ -32729,6 +33325,7 @@ impl Default for PairPosFormat2 {
 			class1_count: Default::default(),
 			class2_count: Default::default(),
 			class1_record: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -32771,6 +33368,9 @@ impl OtTable for PairPosFormat2 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(2)?;
 		w.write_u16(2);
 		let t = self;
@@ -32793,6 +33393,12 @@ impl OtTable for PairPosFormat2 {
 			(*item).compile(w, font)?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(2)
@@ -32900,6 +33506,9 @@ pub struct PairPosFormat3 {
 	pub pair_set_count: Option<u32>,
 	/// `PairSet` (Table24).
 	pub pair_set: Vec<Option<Box<PairSet2>>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for PairPosFormat3 {
@@ -32910,6 +33519,7 @@ impl Default for PairPosFormat3 {
 			value_format2: Default::default(),
 			pair_set_count: Default::default(),
 			pair_set: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -32945,6 +33555,9 @@ impl OtTable for PairPosFormat3 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(2)?;
 		w.write_u16(3);
 		let t = self;
@@ -32962,6 +33575,12 @@ impl OtTable for PairPosFormat3 {
 			write_offset(w, font, item.as_deref(), 3, "PairSet", Some(i))?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(3)
@@ -33040,6 +33659,9 @@ pub struct PairPosFormat4 {
 	pub class2_count: Option<u32>,
 	/// `Class1Record` (Struct).
 	pub class1_record: Vec<Class1Record>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for PairPosFormat4 {
@@ -33053,6 +33675,7 @@ impl Default for PairPosFormat4 {
 			class1_count: Default::default(),
 			class2_count: Default::default(),
 			class1_record: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -33095,6 +33718,9 @@ impl OtTable for PairPosFormat4 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(2)?;
 		w.write_u16(4);
 		let t = self;
@@ -33117,6 +33743,12 @@ impl OtTable for PairPosFormat4 {
 			(*item).compile(w, font)?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(4)
@@ -33292,6 +33924,24 @@ impl OtTable for PairPos {
 			Self::Format3(v) => v.populate_defaults(ctx),
 			Self::Format4(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn dont_share(&self) -> bool {
+		match self {
+			Self::Format1(v) => v.dont_share(),
+			Self::Format2(v) => v.dont_share(),
+			Self::Format3(v) => v.dont_share(),
+			Self::Format4(v) => v.dont_share(),
+			Self::Unknown(_) => false,
+		}
+	}
+	fn set_dont_share(&mut self) {
+		match self {
+			Self::Format1(v) => v.set_dont_share(),
+			Self::Format2(v) => v.set_dont_share(),
+			Self::Format3(v) => v.set_dont_share(),
+			Self::Format4(v) => v.set_dont_share(),
+			Self::Unknown(_) => {}
 		}
 	}
 	fn struct_length(&self) -> Option<StructLength> {
@@ -34686,6 +35336,9 @@ pub struct ReverseChainSingleSubstFormat1 {
 	pub glyph_count: Option<u32>,
 	/// `Substitute` (GlyphID).
 	pub substitute: Vec<u32>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ReverseChainSingleSubstFormat1 {
@@ -34698,6 +35351,7 @@ impl Default for ReverseChainSingleSubstFormat1 {
 			look_ahead_coverage: Default::default(),
 			glyph_count: Default::default(),
 			substitute: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -34749,6 +35403,9 @@ impl OtTable for ReverseChainSingleSubstFormat1 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(8)?;
 		w.write_u16(1);
 		let t = self;
@@ -34777,6 +35434,12 @@ impl OtTable for ReverseChainSingleSubstFormat1 {
 			write_glyph(w, (*item), 2)?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(1)
@@ -34864,6 +35527,9 @@ pub struct ReverseChainSingleSubstFormat2 {
 	pub glyph_count: Option<u32>,
 	/// `Substitute` (GlyphID24).
 	pub substitute: Vec<u32>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for ReverseChainSingleSubstFormat2 {
@@ -34876,6 +35542,7 @@ impl Default for ReverseChainSingleSubstFormat2 {
 			look_ahead_coverage: Default::default(),
 			glyph_count: Default::default(),
 			substitute: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -34927,6 +35594,9 @@ impl OtTable for ReverseChainSingleSubstFormat2 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(8)?;
 		w.write_u16(2);
 		let t = self;
@@ -34955,6 +35625,12 @@ impl OtTable for ReverseChainSingleSubstFormat2 {
 			write_glyph(w, (*item), 3)?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(2)
@@ -35090,6 +35766,20 @@ impl OtTable for ReverseChainSingleSubst {
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Format2(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn dont_share(&self) -> bool {
+		match self {
+			Self::Format1(v) => v.dont_share(),
+			Self::Format2(v) => v.dont_share(),
+			Self::Unknown(_) => false,
+		}
+	}
+	fn set_dont_share(&mut self) {
+		match self {
+			Self::Format1(v) => v.set_dont_share(),
+			Self::Format2(v) => v.set_dont_share(),
+			Self::Unknown(_) => {}
 		}
 	}
 	fn struct_length(&self) -> Option<StructLength> {
@@ -36177,6 +36867,9 @@ pub struct SinglePosFormat1 {
 	pub value_format: u16,
 	/// `Value` (ValueRecord).
 	pub value: Option<ValueRecord>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for SinglePosFormat1 {
@@ -36185,6 +36878,7 @@ impl Default for SinglePosFormat1 {
 			coverage: Default::default(),
 			value_format: Default::default(),
 			value: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -36207,6 +36901,9 @@ impl OtTable for SinglePosFormat1 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(1)?;
 		w.write_u16(1);
 		let t = self;
@@ -36216,6 +36913,12 @@ impl OtTable for SinglePosFormat1 {
 		w.set("ValueFormat1", StateValue::ValueFormat(self.value_format));
 		ValueRecord::write(w, font, "ValueFormat1", self.value.as_ref())?;
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(1)
@@ -36272,6 +36975,9 @@ pub struct SinglePosFormat2 {
 	pub value_count: Option<u32>,
 	/// `Value` (ValueRecord).
 	pub value: Vec<Option<ValueRecord>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for SinglePosFormat2 {
@@ -36281,6 +36987,7 @@ impl Default for SinglePosFormat2 {
 			value_format: Default::default(),
 			value_count: Default::default(),
 			value: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -36311,6 +37018,9 @@ impl OtTable for SinglePosFormat2 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(1)?;
 		w.write_u16(2);
 		let t = self;
@@ -36326,6 +37036,12 @@ impl OtTable for SinglePosFormat2 {
 			ValueRecord::write(w, font, "ValueFormat1", item.as_ref())?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(2)
@@ -36387,6 +37103,9 @@ pub struct SinglePosFormat3 {
 	pub value_format: u16,
 	/// `Value` (ValueRecord).
 	pub value: Option<ValueRecord>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for SinglePosFormat3 {
@@ -36395,6 +37114,7 @@ impl Default for SinglePosFormat3 {
 			coverage: Default::default(),
 			value_format: Default::default(),
 			value: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -36417,6 +37137,9 @@ impl OtTable for SinglePosFormat3 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(1)?;
 		w.write_u16(3);
 		let t = self;
@@ -36426,6 +37149,12 @@ impl OtTable for SinglePosFormat3 {
 		w.set("ValueFormat1", StateValue::ValueFormat(self.value_format));
 		ValueRecord::write(w, font, "ValueFormat1", self.value.as_ref())?;
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(3)
@@ -36482,6 +37211,9 @@ pub struct SinglePosFormat4 {
 	pub value_count: Option<u32>,
 	/// `Value` (ValueRecord).
 	pub value: Vec<Option<ValueRecord>>,
+	/// Whether the subtables below are never shared (`DontShare`), set when
+	/// resolving offset overflows.
+	pub dont_share: bool,
 }
 
 impl Default for SinglePosFormat4 {
@@ -36491,6 +37223,7 @@ impl Default for SinglePosFormat4 {
 			value_format: Default::default(),
 			value_count: Default::default(),
 			value: Default::default(),
+			dont_share: false,
 		}
 	}
 }
@@ -36521,6 +37254,9 @@ impl OtTable for SinglePosFormat4 {
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
+		if self.dont_share {
+			w.set_dont_share();
+		}
 		w.count_ref("LookupType")?.set_value(1)?;
 		w.write_u16(4);
 		let t = self;
@@ -36536,6 +37272,12 @@ impl OtTable for SinglePosFormat4 {
 			ValueRecord::write(w, font, "ValueFormat1", item.as_ref())?;
 		}
 		Ok(())
+	}
+	fn dont_share(&self) -> bool {
+		self.dont_share
+	}
+	fn set_dont_share(&mut self) {
+		self.dont_share = true;
 	}
 	fn format(&self) -> Option<u16> {
 		Some(4)
@@ -36669,6 +37411,24 @@ impl OtTable for SinglePos {
 			Self::Format3(v) => v.populate_defaults(ctx),
 			Self::Format4(v) => v.populate_defaults(ctx),
 			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn dont_share(&self) -> bool {
+		match self {
+			Self::Format1(v) => v.dont_share(),
+			Self::Format2(v) => v.dont_share(),
+			Self::Format3(v) => v.dont_share(),
+			Self::Format4(v) => v.dont_share(),
+			Self::Unknown(_) => false,
+		}
+	}
+	fn set_dont_share(&mut self) {
+		match self {
+			Self::Format1(v) => v.set_dont_share(),
+			Self::Format2(v) => v.set_dont_share(),
+			Self::Format3(v) => v.set_dont_share(),
+			Self::Format4(v) => v.set_dont_share(),
+			Self::Unknown(_) => {}
 		}
 	}
 	fn struct_length(&self) -> Option<StructLength> {
@@ -41078,6 +41838,58 @@ impl OtTable for LookupSubTable {
 			Self::SingleSubst(v) => v.format(),
 		}
 	}
+	fn dont_share(&self) -> bool {
+		match self {
+			Self::AlternateSubst(v) => v.dont_share(),
+			Self::ChainContextPos(v) => v.dont_share(),
+			Self::ChainContextSubst(v) => v.dont_share(),
+			Self::ContextPos(v) => v.dont_share(),
+			Self::ContextSubst(v) => v.dont_share(),
+			Self::ContextualMorph(v) => v.dont_share(),
+			Self::CursivePos(v) => v.dont_share(),
+			Self::ExtensionPos(v) => v.dont_share(),
+			Self::ExtensionSubst(v) => v.dont_share(),
+			Self::InsertionMorph(v) => v.dont_share(),
+			Self::LigatureMorph(v) => v.dont_share(),
+			Self::LigatureSubst(v) => v.dont_share(),
+			Self::MarkBasePos(v) => v.dont_share(),
+			Self::MarkLigPos(v) => v.dont_share(),
+			Self::MarkMarkPos(v) => v.dont_share(),
+			Self::MultipleSubst(v) => v.dont_share(),
+			Self::NoncontextualMorph(v) => v.dont_share(),
+			Self::PairPos(v) => v.dont_share(),
+			Self::RearrangementMorph(v) => v.dont_share(),
+			Self::ReverseChainSingleSubst(v) => v.dont_share(),
+			Self::SinglePos(v) => v.dont_share(),
+			Self::SingleSubst(v) => v.dont_share(),
+		}
+	}
+	fn set_dont_share(&mut self) {
+		match self {
+			Self::AlternateSubst(v) => v.set_dont_share(),
+			Self::ChainContextPos(v) => v.set_dont_share(),
+			Self::ChainContextSubst(v) => v.set_dont_share(),
+			Self::ContextPos(v) => v.set_dont_share(),
+			Self::ContextSubst(v) => v.set_dont_share(),
+			Self::ContextualMorph(v) => v.set_dont_share(),
+			Self::CursivePos(v) => v.set_dont_share(),
+			Self::ExtensionPos(v) => v.set_dont_share(),
+			Self::ExtensionSubst(v) => v.set_dont_share(),
+			Self::InsertionMorph(v) => v.set_dont_share(),
+			Self::LigatureMorph(v) => v.set_dont_share(),
+			Self::LigatureSubst(v) => v.set_dont_share(),
+			Self::MarkBasePos(v) => v.set_dont_share(),
+			Self::MarkLigPos(v) => v.set_dont_share(),
+			Self::MarkMarkPos(v) => v.set_dont_share(),
+			Self::MultipleSubst(v) => v.set_dont_share(),
+			Self::NoncontextualMorph(v) => v.set_dont_share(),
+			Self::PairPos(v) => v.set_dont_share(),
+			Self::RearrangementMorph(v) => v.set_dont_share(),
+			Self::ReverseChainSingleSubst(v) => v.set_dont_share(),
+			Self::SinglePos(v) => v.set_dont_share(),
+			Self::SingleSubst(v) => v.set_dont_share(),
+		}
+	}
 	fn to_xml(
 		&self,
 		xw: &mut XmlWriter,
@@ -41421,6 +42233,22 @@ impl OtTable for FeatureParamsAny {
 			Self::FeatureParamsCharacterVariants(v) => v.format(),
 			Self::FeatureParamsSize(v) => v.format(),
 			Self::FeatureParamsStylisticSet(v) => v.format(),
+		}
+	}
+	fn dont_share(&self) -> bool {
+		match self {
+			Self::FeatureParams(v) => v.dont_share(),
+			Self::FeatureParamsCharacterVariants(v) => v.dont_share(),
+			Self::FeatureParamsSize(v) => v.dont_share(),
+			Self::FeatureParamsStylisticSet(v) => v.dont_share(),
+		}
+	}
+	fn set_dont_share(&mut self) {
+		match self {
+			Self::FeatureParams(v) => v.set_dont_share(),
+			Self::FeatureParamsCharacterVariants(v) => v.set_dont_share(),
+			Self::FeatureParamsSize(v) => v.set_dont_share(),
+			Self::FeatureParamsStylisticSet(v) => v.set_dont_share(),
 		}
 	}
 	fn to_xml(

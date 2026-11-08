@@ -172,15 +172,23 @@ pub fn run(args: &Args) -> Result<()> {
 	for font in &fonts {
 		let key = content_key(font)?;
 		let collection = is_collection(font);
+		let ttx_input = is_ttx_input(font);
 		let ttx_ref = ref_dir.join(Op::Ttx.name()).join(format!("{key}.ttx"));
 		let mut scheduled_ttx = false;
-		for &op in ops.iter().filter(|op| !op.is_collection_op() || collection) {
+		for &op in ops
+			.iter()
+			.filter(|op| !op.is_collection_op() || collection)
+			.filter(|&&op| !ttx_input || op == Op::Fromttx)
+		{
 			let out = ref_dir
 				.join(op.name())
 				.join(format!("{key}.{}", op.extension()));
 			let err = out.with_extension("err");
 			// fromttx reads fontTools' TTX dump, which must be produced first.
-			let input = if op == Op::Fromttx {
+			let input = if ttx_input {
+				// A TTX file of its own is compiled directly.
+				font.clone()
+			} else if op == Op::Fromttx {
 				let ttx_err = ttx_ref.with_extension("err");
 				if !scheduled_ttx && !(ttx_ref.exists() || ttx_err.exists()) {
 					jobs.push(serde_json::json!({
@@ -491,6 +499,15 @@ fn run_reference_jobs(ref_dir: &Path, jobs: &[serde_json::Value]) -> Result<()> 
 	Ok(())
 }
 
+/// TTX files made for parity runs (`*.parity.ttx`): only `fromttx` applies.
+const TTX_INPUT_SUFFIX: &str = ".parity.ttx";
+
+fn is_ttx_input(path: &Path) -> bool {
+	path.to_string_lossy()
+		.to_ascii_lowercase()
+		.ends_with(TTX_INPUT_SUFFIX)
+}
+
 fn collect_fonts(path: &Path, fonts: &mut Vec<PathBuf>) -> Result<()> {
 	if path.is_dir() {
 		for entry in std::fs::read_dir(path)? {
@@ -500,6 +517,7 @@ fn collect_fonts(path: &Path, fonts: &mut Vec<PathBuf>) -> Result<()> {
 		.extension()
 		.and_then(|e| e.to_str())
 		.is_some_and(|e| FONT_EXTENSIONS.contains(&e.to_ascii_lowercase().as_str()))
+		|| is_ttx_input(path)
 	{
 		fonts.push(path.to_path_buf());
 	}

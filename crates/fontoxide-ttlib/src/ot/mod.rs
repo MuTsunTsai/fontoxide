@@ -11,6 +11,7 @@ pub mod custom;
 pub mod gsub;
 pub mod ift;
 pub mod morph;
+pub mod overflow;
 pub mod reader;
 pub mod state;
 pub mod table;

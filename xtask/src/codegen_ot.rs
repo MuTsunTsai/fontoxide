@@ -442,7 +442,14 @@ impl Gen<'_> {
 		self.out.push('\n');
 	}
 
-	fn struct_def(&mut self, ty: &str, fields: &[Field], doc: &str, public: bool) {
+	fn struct_def(
+		&mut self,
+		ty: &str,
+		fields: &[Field],
+		doc: &str,
+		public: bool,
+		dont_share: bool,
+	) {
 		let vis = "pub";
 		let _ = writeln!(self.out, "/// {doc}");
 		if !public {
@@ -459,6 +466,11 @@ impl Gen<'_> {
 			let _ = writeln!(self.out, "\t/// `{}` ({}).", f.conv.name, f.conv.converter);
 			let _ = writeln!(self.out, "\tpub {}: {ty},", f.ident);
 		}
+		if dont_share {
+			self.line("\t/// Whether the subtables below are never shared (`DontShare`), set when");
+			self.line("\t/// resolving offset overflows.");
+			self.line("\tpub dont_share: bool,");
+		}
 		self.line("}");
 		self.line("");
 		let _ = writeln!(self.out, "impl Default for {ty} {{");
@@ -471,6 +483,9 @@ impl Gen<'_> {
 				"Default::default()".to_owned()
 			};
 			let _ = writeln!(self.out, "\t\t\t{}: {default},", f.ident);
+		}
+		if dont_share {
+			self.line("\t\t\tdont_share: false,");
 		}
 		self.line("\t\t}");
 		self.line("\t}");
@@ -1191,7 +1206,8 @@ impl Gen<'_> {
 			Some((f, _)) => format!("`{}` format {f}.", class.name),
 			None => format!("`{}`.", class.name),
 		};
-		self.struct_def(ty, &fields, &doc, public);
+		let dont_share = public && self.is_layout_subtable(&class.name);
+		self.struct_def(ty, &fields, &doc, public, dont_share);
 		let _ = writeln!(self.out, "impl OtTable for {ty} {{");
 		let _ = writeln!(
 			self.out,
@@ -1228,9 +1244,16 @@ impl Gen<'_> {
 		self.line("\t}");
 		self.line("\tfn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {");
 		self.line("\t\tlet _ = (&mut *w, &mut *font);");
+		if dont_share {
+			self.line("\t\tif self.dont_share { w.set_dont_share(); }");
+		}
 		self.compile_body(class, &fields, format)?;
 		self.line("\t\tOk(())");
 		self.line("\t}");
+		if dont_share {
+			self.line("\tfn dont_share(&self) -> bool { self.dont_share }");
+			self.line("\tfn set_dont_share(&mut self) { self.dont_share = true; }");
+		}
 		// `StructWithLength` patches this field after writing the struct.
 		if let Some(i) = fields.iter().position(|f| f.conv.name == "StructLength") {
 			let f = &fields[i];
@@ -1404,6 +1427,27 @@ impl Gen<'_> {
 			self.line("\t\t}");
 			self.line("\t}");
 		}
+		if !raw && self.is_layout_subtable(&class.name) {
+			self.line("\tfn dont_share(&self) -> bool {");
+			self.line("\t\tmatch self {");
+			for (fmt, _) in &variants {
+				let _ = writeln!(self.out, "\t\t\tSelf::Format{fmt}(v) => v.dont_share(),");
+			}
+			self.line("\t\t\tSelf::Unknown(_) => false,");
+			self.line("\t\t}");
+			self.line("\t}");
+			self.line("\tfn set_dont_share(&mut self) {");
+			self.line("\t\tmatch self {");
+			for (fmt, _) in &variants {
+				let _ = writeln!(
+					self.out,
+					"\t\t\tSelf::Format{fmt}(v) => v.set_dont_share(),"
+				);
+			}
+			self.line("\t\t\tSelf::Unknown(_) => {}");
+			self.line("\t\t}");
+			self.line("\t}");
+		}
 		self.line("\tfn struct_length(&self) -> Option<StructLength> {");
 		self.line("\t\tmatch self {");
 		for (fmt, _) in &variants {
@@ -1448,6 +1492,17 @@ impl Gen<'_> {
 		self.line("}");
 		self.line("");
 		Ok(())
+	}
+
+	/// Whether a class is a `GSUB` or `GPOS` lookup subtable, which fontTools may
+	/// mark `DontShare` when resolving overflows.
+	fn is_layout_subtable(&self, class: &str) -> bool {
+		["GSUB", "GPOS"].iter().any(|t| {
+			self.ot
+				.lookup_types
+				.get(*t)
+				.is_some_and(|m| m.values().any(|c| c == class))
+		})
 	}
 
 	fn lookup_sub_table_enum(&mut self) {
@@ -1628,6 +1683,18 @@ impl Gen<'_> {
 		}
 		self.line("\t\t}");
 		self.line("\t}");
+		for (method, args, ret) in [
+			("dont_share", "&self", " -> bool"),
+			("set_dont_share", "&mut self", ""),
+		] {
+			let _ = writeln!(self.out, "\tfn {method}({args}){ret} {{");
+			self.line("\t\tmatch self {");
+			for n in names {
+				let _ = writeln!(self.out, "\t\t\tSelf::{}(v) => v.{method}(),", type_name(n));
+			}
+			self.line("\t\t}");
+			self.line("\t}");
+		}
 		if feature_params {
 			// FeatureParams.toXML always uses the class name.
 			self.line("\tfn to_xml(&self, xw: &mut XmlWriter, font: &mut Font, attrs: &[(&'static str, String)], _name: &str) -> Result<()> {");
