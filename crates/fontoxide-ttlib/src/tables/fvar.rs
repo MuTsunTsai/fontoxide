@@ -80,7 +80,7 @@ impl Axis {
 	}
 
 	/// The tag as fontTools holds it after unpacking: a `str` if ASCII.
-	fn tag_text(&self) -> String {
+	pub fn tag_text(&self) -> String {
 		crate::sstruct::bytes_to_py_str(&self.axis_tag)
 	}
 

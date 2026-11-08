@@ -808,7 +808,8 @@ pub fn write_var_data_value(
 		}
 	}
 	if n2 > region_count {
-		// fontTools calls the nonexistent `writer.writeSmallArray` here.
+		// UPSTREAM-BUG(B2): fontTools calls the nonexistent `writer.writeSmallArray`
+		// to pad rows when `wordCount > regionCount`.
 		return Err(Error::ttlib(
 			"AttributeError: 'OTTableWriter' object has no attribute 'writeSmallArray'",
 		));

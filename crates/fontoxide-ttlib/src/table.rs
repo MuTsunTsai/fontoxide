@@ -218,6 +218,7 @@ registry! {
 	b"opbd" => crate::tables::otl::Opbd,
 	b"prop" => crate::tables::otl::Prop,
 	b"FFTM" => crate::tables::Fftm,
+	b"avar" => crate::tables::Avar,
 	b"fvar" => crate::tables::Fvar,
 	b"gasp" => crate::tables::Gasp,
 	b"cmap" => crate::tables::Cmap,

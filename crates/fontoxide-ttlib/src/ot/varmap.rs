@@ -211,7 +211,8 @@ impl OtTable for VarIdxMap {
 	fn decompile(r: &mut OtReader<'_>, font: &mut Font) -> Result<Self> {
 		let (_, mut list) = read_map(r)?;
 		let n = font.glyph_order()?.len();
-		// `mapList[-1]` is evaluated even when nothing is added.
+		// UPSTREAM-BUG(B6): `mapList[-1]` is evaluated even when nothing is added,
+		// so an empty map fails to decompile.
 		let last = *list
 			.last()
 			.ok_or_else(|| Error::ttlib("IndexError: list index out of range"))?;

@@ -101,6 +101,9 @@ pub enum StateValue {
 	Tag(Option<Tag>),
 	/// A list of tags (`FeatureTags`).
 	Tags(Rc<Vec<Tag>>),
+	/// The length of each item of a list (`AxisIndicesList` of `VARC`, which
+	/// fontTools propagates as the table itself).
+	Lens(Rc<Vec<usize>>),
 }
 
 impl StateValue {

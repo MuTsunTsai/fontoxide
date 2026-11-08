@@ -85,8 +85,6 @@ const UNSUPPORTED: &[&str] = &[
 	"CIDGlyphMap",
 	"GlyphCIDMap",
 	"VarIdxMapValue",
-	"CFF2Index",
-	"TupleListOffset",
 	"MappingEntriesConverter",
 	"STXHeader",
 ];
@@ -196,6 +194,11 @@ enum Kind {
 	ValueRecord,
 	DeltaValue,
 	VarDataValue,
+	/// A CFF2 INDEX of packed tuples (`TupleList`); whether it is behind an offset
+	/// (`TupleListOffset`).
+	TupleList(bool),
+	/// A CFF2 INDEX of variable composite glyphs (`VarCompositeGlyphList`).
+	VarCompositeGlyphList,
 	Unsupported(String),
 }
 
@@ -293,6 +296,11 @@ fn kind_of(c: &Conv) -> Result<(Kind, String)> {
 		"ValueRecord" => (Kind::ValueRecord, "Option<ValueRecord>".into()),
 		"DeltaValue" => (Kind::DeltaValue, "Vec<i64>".into()),
 		"VarDataValue" => (Kind::VarDataValue, "Vec<i64>".into()),
+		"CFF2Index" if c.table_class.as_deref() == Some("VarCompositeGlyph") => {
+			(Kind::VarCompositeGlyphList, "Vec<VarCompositeGlyph>".into())
+		}
+		"CFF2Index" => (Kind::TupleList(false), "Vec<Vec<i64>>".into()),
+		"TupleListOffset" => (Kind::TupleList(true), "Vec<Vec<i64>>".into()),
 		other if UNSUPPORTED.contains(&other) => {
 			(Kind::Unsupported(other.into()), "Unsupported".into())
 		}
@@ -452,7 +460,16 @@ impl Gen<'_> {
 							Kind::Int(..) | Kind::Version | Kind::Flags32 | Kind::NameId => {
 								Some(format!("StateValue::Int(t.{} as i64)", f.ident))
 							}
-							// Tables propagated as objects (VARC) are not supported yet.
+							// fontTools propagates `AxisIndicesList` as the table; the
+							// composite glyphs only need the length of each item.
+							Kind::Offset(..) if f.conv.name == "AxisIndicesList" => {
+								let _ = write!(
+									body,
+									" if let Some(l) = t.{}.as_deref() {{ r.set({:?}, axis_indices_state(&l.item)); }}",
+									f.ident, f.conv.name
+								);
+								None
+							}
 							_ => None,
 						};
 						if let Some(state) = state {
@@ -516,6 +533,9 @@ impl Gen<'_> {
 			}
 			Kind::DeltaValue => "read_delta_value(r, t.start_size, t.end_size, t.delta_format)?".into(),
 			Kind::VarDataValue => "read_var_data_value(r, t.var_region_count, t.num_shorts)?".into(),
+			Kind::TupleList(false) => "read_tuple_list(r)?".into(),
+			Kind::TupleList(true) => "read_tuple_list_offset(r)?".into(),
+			Kind::VarCompositeGlyphList => "read_var_composite_glyphs(r, font)?".into(),
 			Kind::Unsupported(name) => format!("Unsupported::read({name:?})?"),
 		})
 	}
@@ -595,6 +615,11 @@ impl Gen<'_> {
 			Kind::VarDataValue => format!(
 				"write_var_data_value(w, &{value}, count_var_region_count.value(), self.num_shorts)?;"
 			),
+			Kind::TupleList(false) => format!("write_tuple_list(w, &{value})?;"),
+			Kind::TupleList(true) => {
+				format!("write_tuple_list_offset(w, &{value}, {:?})?;", f.conv.name)
+			}
+			Kind::VarCompositeGlyphList => format!("write_var_composite_glyphs(w, &{value})?;"),
 			Kind::Unsupported(name) => format!("Unsupported::write({name:?})?;"),
 		})
 	}
@@ -726,7 +751,7 @@ impl Gen<'_> {
 					}
 				}
 			}
-			// `BaseTable.compile` checks `aux` conditions only for plain values:
+			// UPSTREAM-BUG(B1): `BaseTable.compile` checks `aux` conditions only for plain values:
 			// counts and lookup types are written even when their `aux` is false
 			// (`LookupVariationCount` of `FeatureVariations` version 1.0).
 			let cond = if f.repeat.is_none()
@@ -794,6 +819,10 @@ impl Gen<'_> {
 			}
 			Kind::DeltaValue | Kind::VarDataValue => {
 				format!("xml_simple(xw, {name:?}, &{attrs}, int_list_repr(&{value}));")
+			}
+			Kind::TupleList(_) => format!("xml_tuple_list(xw, {name:?}, &{attrs}, &{value});"),
+			Kind::VarCompositeGlyphList => {
+				format!("xml_var_composite_glyphs(xw, font, &{value})?;")
 			}
 			Kind::Unsupported(_) => "let _ = &xw;".to_owned(),
 		}
@@ -873,6 +902,8 @@ impl Gen<'_> {
 			}
 			Kind::ValueRecord => "Some(ValueRecord::from_xml(e, font)?)".into(),
 			Kind::DeltaValue | Kind::VarDataValue => "parse_int_list(value_attr(e)?)?".into(),
+			Kind::TupleList(_) => "parse_tuple(e)?".into(),
+			Kind::VarCompositeGlyphList => "VarCompositeGlyph::from_xml(e, font)?".into(),
 			Kind::Unsupported(name) => format!("Unsupported::xml_read({name:?})?"),
 		}
 	}
@@ -897,7 +928,9 @@ impl Gen<'_> {
 				.map(|n| format!("{n:?}"))
 				.collect::<Vec<_>>()
 				.join(" | ");
-			if f.repeat.is_some() && !matches!(f.kind, Kind::DeltaValue) {
+			// CFF2 INDEX fields (repeat "") append an item for each element.
+			let appends = matches!(f.kind, Kind::TupleList(_) | Kind::VarCompositeGlyphList);
+			if appends || (f.repeat.is_some() && !matches!(f.kind, Kind::DeltaValue)) {
 				let _ = writeln!(self.out, "\t\t\t{pat} => self.{}.push({read}),", f.ident);
 			} else {
 				let _ = writeln!(self.out, "\t\t\t{pat} => self.{} = {read},", f.ident);
@@ -1476,6 +1509,7 @@ pub fn generate(ot: &OtTables) -> Result<String> {
 	g.line("");
 	g.line("use crate::ot::conv::*;");
 	g.line("use crate::ot::custom::*;");
+	g.line("use crate::ot::varc::*;");
 	g.line("use crate::ot::table::*;");
 	g.line("use crate::ot::{CountRef, OtReader, OtWriter, StateValue};");
 	g.line("use crate::{Error, Font, Result};");

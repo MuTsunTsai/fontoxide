@@ -18,6 +18,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 use crate::ot::conv::*;
 use crate::ot::custom::*;
 use crate::ot::table::*;
+use crate::ot::varc::*;
 use crate::ot::{CountRef, OtReader, OtWriter, StateValue};
 use crate::{Error, Font, Result};
 
@@ -1617,7 +1618,7 @@ impl OtTable for Axis {
 #[derive(Debug, Clone, PartialEq)]
 pub struct AxisIndicesList {
 	/// `Item` (CFF2Index).
-	pub item: Unsupported,
+	pub item: Vec<Vec<i64>>,
 }
 
 impl Default for AxisIndicesList {
@@ -1635,27 +1636,27 @@ impl OtTable for AxisIndicesList {
 	fn decompile(r: &mut OtReader<'_>, font: &mut Font) -> Result<Self> {
 		let mut t = Self::default();
 		let _ = (&mut *r, &mut *font);
-		t.item = Unsupported::read("CFF2Index")?;
+		t.item = read_tuple_list(r)?;
 		Ok(t)
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
 		let t = self;
 		let _ = t;
-		Unsupported::write("CFF2Index")?;
+		write_tuple_list(w, &self.item)?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let _ = (&mut *xw, &mut *font);
 		let t = self;
 		let _ = t;
-		let _ = &xw;
+		xml_tuple_list(xw, "Item", &Attrs::new(), &self.item);
 		Ok(())
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
 		let e = element;
 		match e.name.as_str() {
-			"Item" => self.item = Unsupported::xml_read("CFF2Index")?,
+			"Item" => self.item.push(parse_tuple(e)?),
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);
@@ -27722,7 +27723,7 @@ pub struct MultiVarData {
 	/// `VarRegionIndex` (UShort).
 	pub var_region_index: Vec<u16>,
 	/// `Item` (TupleListOffset).
-	pub item: Unsupported,
+	pub item: Vec<Vec<i64>>,
 }
 
 impl Default for MultiVarData {
@@ -27757,7 +27758,7 @@ impl OtTable for MultiVarData {
 			}
 			t.var_region_index = v;
 		}
-		t.item = Unsupported::read("TupleListOffset")?;
+		t.item = read_tuple_list_offset(r)?;
 		Ok(t)
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
@@ -27776,7 +27777,7 @@ impl OtTable for MultiVarData {
 			let _ = i;
 			w.write_u16((*item));
 		}
-		Unsupported::write("TupleListOffset")?;
+		write_tuple_list_offset(w, &self.item, "Item")?;
 		Ok(())
 	}
 	fn format(&self) -> Option<u16> {
@@ -27799,7 +27800,7 @@ impl OtTable for MultiVarData {
 			let _ = &attrs;
 			xml_simple(xw, "VarRegionIndex", &attrs, (*item).to_string());
 		}
-		let _ = &xw;
+		xml_tuple_list(xw, "Item", &Attrs::new(), &self.item);
 		Ok(())
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
@@ -27810,7 +27811,7 @@ impl OtTable for MultiVarData {
 			"VarRegionIndex" => self
 				.var_region_index
 				.push(parse_int::<u16>(value_attr(e)?)?),
-			"Item" => self.item = Unsupported::xml_read("TupleListOffset")?,
+			"Item" => self.item.push(parse_tuple(e)?),
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);
@@ -38010,6 +38011,9 @@ impl OtTable for VARC {
 		t.multi_var_store = read_offset::<MultiVarStore>(r, font, 4)?;
 		t.condition_list = read_offset::<ConditionList>(r, font, 4)?;
 		t.axis_indices_list = read_offset::<AxisIndicesList>(r, font, 4)?;
+		if let Some(l) = t.axis_indices_list.as_deref() {
+			r.set("AxisIndicesList", axis_indices_state(&l.item));
+		}
 		t.var_composite_glyphs = read_offset::<VarCompositeGlyphs>(r, font, 4)?;
 		Ok(t)
 	}
@@ -38555,7 +38559,7 @@ impl OtTable for VarColorStop {
 #[derive(Debug, Clone, PartialEq)]
 pub struct VarCompositeGlyphs {
 	/// `VarCompositeGlyph` (CFF2Index).
-	pub var_composite_glyph: Unsupported,
+	pub var_composite_glyph: Vec<VarCompositeGlyph>,
 }
 
 impl Default for VarCompositeGlyphs {
@@ -38573,27 +38577,29 @@ impl OtTable for VarCompositeGlyphs {
 	fn decompile(r: &mut OtReader<'_>, font: &mut Font) -> Result<Self> {
 		let mut t = Self::default();
 		let _ = (&mut *r, &mut *font);
-		t.var_composite_glyph = Unsupported::read("CFF2Index")?;
+		t.var_composite_glyph = read_var_composite_glyphs(r, font)?;
 		Ok(t)
 	}
 	fn compile(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()> {
 		let _ = (&mut *w, &mut *font);
 		let t = self;
 		let _ = t;
-		Unsupported::write("CFF2Index")?;
+		write_var_composite_glyphs(w, &self.var_composite_glyph)?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let _ = (&mut *xw, &mut *font);
 		let t = self;
 		let _ = t;
-		let _ = &xw;
+		xml_var_composite_glyphs(xw, font, &self.var_composite_glyph)?;
 		Ok(())
 	}
 	fn from_xml(&mut self, element: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
 		let e = element;
 		match e.name.as_str() {
-			"VarCompositeGlyph" => self.var_composite_glyph = Unsupported::xml_read("CFF2Index")?,
+			"VarCompositeGlyph" => self
+				.var_composite_glyph
+				.push(VarCompositeGlyph::from_xml(e, font)?),
 			other => return Err(Error::ttx(format!("KeyError: {other:?}"))),
 		}
 		let _ = (font, ctx);

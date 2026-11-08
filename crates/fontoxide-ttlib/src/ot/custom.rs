@@ -20,6 +20,7 @@ use crate::generated::ot::{
 use crate::{Error, Font, Result};
 
 pub use super::gsub::{AlternateSubst, LigatureSubst, MultipleSubst, SingleSubst};
+pub use super::varc::{DecomposedTransform, VarComponent, VarCompositeGlyph};
 pub use super::varmap::{DeltaSetIndexMap, VarIdxMap};
 pub use crate::generated::ot::{
 	ClipListRaw as ClipList, EntryIdStringDataRaw as EntryIdStringData,

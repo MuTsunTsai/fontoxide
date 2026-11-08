@@ -18,6 +18,7 @@ pub mod types {
 	pub use crate::generated::ot::*;
 }
 
+pub mod varc;
 pub mod varmap;
 pub mod writer;
 

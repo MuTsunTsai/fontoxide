@@ -3,6 +3,7 @@
 //! Modules are named after the table they implement; the fontTools module is noted
 //! in each.
 
+pub mod avar;
 pub mod cff_names;
 pub mod cmap;
 pub mod cvt;
@@ -18,7 +19,9 @@ pub mod name;
 pub mod os2;
 pub mod otl;
 pub mod post;
+pub mod tuple_variation;
 
+pub use avar::Avar;
 pub use cmap::{Cmap, CmapSubtable};
 pub use cvt::Cvt;
 pub use fvar::Fvar;
