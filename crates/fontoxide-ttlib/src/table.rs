@@ -228,6 +228,8 @@ registry! {
 	b"fvar" => crate::tables::Fvar,
 	b"gasp" => crate::tables::Gasp,
 	b"glyf" => crate::tables::Glyf,
+	b"gvar" => crate::tables::Gvar,
+	b"cvar" => crate::tables::Cvar,
 	b"loca" => crate::tables::Loca,
 	b"cmap" => crate::tables::Cmap,
 	b"hdmx" => crate::tables::Hdmx,
