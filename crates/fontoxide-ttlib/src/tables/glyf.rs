@@ -166,7 +166,10 @@ pub struct GlyphComponent {
 impl GlyphComponent {
 	/// `decompile`: the component, whether more follow and whether the glyph has
 	/// instructions, and the bytes read.
-	fn decompile(data: &[u8], num_glyph_names: usize) -> Result<(Self, bool, bool, usize)> {
+	pub(crate) fn decompile(
+		data: &[u8],
+		num_glyph_names: usize,
+	) -> Result<(Self, bool, bool, usize)> {
 		let short = |n: usize| Error::Struct(format!("unpack requires a buffer of {n} bytes"));
 		let take = |pos: usize, n: usize| data.get(pos..pos + n).ok_or_else(|| short(n));
 		let b = take(0, 2)?;
@@ -241,7 +244,12 @@ impl GlyphComponent {
 	}
 
 	/// `compile`.
-	fn compile(&self, more: bool, have_instructions: bool, num_glyphs: usize) -> Result<Vec<u8>> {
+	pub(crate) fn compile(
+		&self,
+		more: bool,
+		have_instructions: bool,
+		num_glyphs: usize,
+	) -> Result<Vec<u8>> {
 		let mut data = Vec::new();
 		let mut flags = self.flags & KEPT_COMPONENT_FLAGS;
 		if more {

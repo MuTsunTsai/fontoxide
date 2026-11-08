@@ -32,6 +32,8 @@ pub struct ReadOptions {
 	/// Use the original offset table of a version 1.1/2.1 collection
 	/// (`_useLegacyTTC`).
 	pub use_legacy_ttc: bool,
+	/// See [`Font::use_harfbuzz_repacker`].
+	pub use_harfbuzz_repacker: Option<bool>,
 }
 
 impl Default for ReadOptions {
@@ -43,6 +45,7 @@ impl Default for ReadOptions {
 			recalc_timestamp: true,
 			ignore_decompile_errors: false,
 			use_legacy_ttc: false,
+			use_harfbuzz_repacker: None,
 		}
 	}
 }
@@ -146,6 +149,11 @@ pub struct Font {
 	pub disassemble_instructions: bool,
 	/// Set while dumping TTX (`bitmapGlyphDataFormat`).
 	pub bitmap_glyph_data_format: String,
+	/// Whether `GSUB` and `GPOS` are packed with the HarfBuzz repacker
+	/// (`fontTools.ttLib.tables.otBase:USE_HARFBUZZ_REPACKER`): `None` (the
+	/// default) uses it for tables before version 1.2, `Some(true)` always,
+	/// `Some(false)` never. fontTools does this when uharfbuzz is installed.
+	pub use_harfbuzz_repacker: Option<bool>,
 }
 
 impl Clone for Font {
@@ -169,6 +177,7 @@ impl Clone for Font {
 			ignore_decompile_errors: self.ignore_decompile_errors,
 			disassemble_instructions: self.disassemble_instructions,
 			bitmap_glyph_data_format: self.bitmap_glyph_data_format.clone(),
+			use_harfbuzz_repacker: self.use_harfbuzz_repacker,
 		}
 	}
 }
@@ -202,6 +211,7 @@ impl Font {
 			ignore_decompile_errors: false,
 			disassemble_instructions: true,
 			bitmap_glyph_data_format: "raw".into(),
+			use_harfbuzz_repacker: None,
 		}
 	}
 
@@ -222,6 +232,7 @@ impl Font {
 		font.recalc_bboxes = options.recalc_bboxes;
 		font.recalc_timestamp = options.recalc_timestamp;
 		font.ignore_decompile_errors = options.ignore_decompile_errors;
+		font.use_harfbuzz_repacker = options.use_harfbuzz_repacker;
 		font.reader = Some(reader);
 		Ok(font)
 	}
@@ -401,6 +412,11 @@ impl Font {
 			return Err(Error::ttlib("'MAXP' table is not supported yet"));
 		}
 		Ok(self.require::<crate::tables::maxp::Maxp>()?.num_glyphs as usize)
+	}
+
+	/// Whether the glyph order is set, or has been derived already.
+	pub fn has_glyph_order(&self) -> bool {
+		self.glyph_order.is_some()
 	}
 
 	/// Sets the glyph order (`setGlyphOrder`).

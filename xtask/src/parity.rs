@@ -247,7 +247,7 @@ pub fn run(args: &Args) -> Result<()> {
 				detail,
 			});
 		};
-		match (ours(op, &input), reference) {
+		match (ours(op, &input, args.repacker), reference) {
 			(Ok(a), Ok(b)) => {
 				let results = compare(op, &a, &b);
 				if args.save_mismatches && results.iter().any(|r| r.1 == Outcome::Mismatch) {
@@ -290,10 +290,11 @@ fn save_mismatch(font: &Path, op: Op, ours: &[u8], reference: &[u8]) -> Result<(
 }
 
 /// fontoxide's side of each operation, with the same options as `reference.py`.
-fn ours(op: Op, input: &[u8]) -> Result<Vec<u8>, String> {
+fn ours(op: Op, input: &[u8], repacker: bool) -> Result<Vec<u8>, String> {
 	let options = ReadOptions {
 		font_number: Some(0),
 		recalc_timestamp: false,
+		use_harfbuzz_repacker: Some(repacker),
 		..Default::default()
 	};
 	if op.is_collection_op() {
@@ -316,6 +317,7 @@ fn ours(op: Op, input: &[u8]) -> Result<Vec<u8>, String> {
 		let text = std::str::from_utf8(input).map_err(|e| e.to_string())?;
 		let mut font = Font::new();
 		font.recalc_timestamp = false;
+		font.use_harfbuzz_repacker = Some(repacker);
 		font.import_ttx_with(
 			text,
 			&fontoxide_ttlib::TtxImportOptions {
@@ -468,7 +470,71 @@ fn split_sfnt(data: &[u8]) -> Result<BTreeMap<String, Vec<u8>>, String> {
 		}
 		out.insert(tag.to_string().trim_end().to_owned(), table);
 	}
-	out.insert(FILE.into(), data.to_vec());
+	let file = if data.starts_with(b"wOF2") {
+		woff2_canonical(data)?
+	} else {
+		data.to_vec()
+	};
+	out.insert(FILE.into(), file);
+	Ok(out)
+}
+
+/// A WOFF 2.0 file with its Brotli streams decompressed, and the fields that
+/// depend on the compressed sizes zeroed: fontoxide's Brotli encoder does not
+/// always produce the same bytes as the C library that fontTools uses.
+fn woff2_canonical(data: &[u8]) -> Result<Vec<u8>, String> {
+	use fontoxide_ttlib::woff2::unpack_base128;
+	let short = || "WOFF2 file too short".to_owned();
+	let header = data.get(..48).ok_or_else(short)?;
+	let u16_at = |i: usize| u16::from_be_bytes([header[i], header[i + 1]]) as usize;
+	let u32_at = |i: usize| {
+		u32::from_be_bytes([header[i], header[i + 1], header[i + 2], header[i + 3]]) as usize
+	};
+	let decompress = |raw: &[u8]| -> Result<Vec<u8>, String> {
+		let mut out = Vec::new();
+		brotli::BrotliDecompress(&mut &raw[..], &mut out).map_err(|e| e.to_string())?;
+		Ok(out)
+	};
+	let mut pos = 48;
+	for _ in 0..u16_at(12) {
+		let flags = *data.get(pos).ok_or_else(short)?;
+		pos += 1;
+		if flags & 0x3F == 0x3F {
+			pos += 4;
+		}
+		let tag_is_glyf_or_loca = matches!(flags & 0x3F, 10 | 11);
+		let transformed = if tag_is_glyf_or_loca {
+			flags >> 6 != 3
+		} else {
+			flags >> 6 != 0
+		};
+		for _ in 0..if transformed { 2 } else { 1 } {
+			let (_, n) =
+				unpack_base128(data.get(pos..).ok_or_else(short)?).map_err(|e| e.to_string())?;
+			pos += n;
+		}
+	}
+	let mut out = header.to_vec();
+	for (at, len) in [(8, 4), (20, 4), (28, 8), (40, 4)] {
+		out[at..at + len].fill(0);
+	}
+	out.extend_from_slice(data.get(48..pos).ok_or_else(short)?);
+	let compressed = data.get(pos..pos + u32_at(20)).ok_or_else(short)?;
+	out.extend(decompress(compressed)?);
+	let (meta_offset, meta_length) = (u32_at(28), u32_at(32));
+	if meta_length != 0 {
+		let raw = data
+			.get(meta_offset..meta_offset + meta_length)
+			.ok_or_else(short)?;
+		out.extend(decompress(raw)?);
+	}
+	let (priv_offset, priv_length) = (u32_at(40), u32_at(44));
+	if priv_length != 0 {
+		out.extend_from_slice(
+			data.get(priv_offset..priv_offset + priv_length)
+				.ok_or_else(short)?,
+		);
+	}
 	Ok(out)
 }
 

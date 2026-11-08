@@ -108,6 +108,83 @@ impl WriterGraph {
 		let mut keys = StructuralKeys::default();
 		let mut interned = HashMap::new();
 		self.done_writing(0, &mut interned, &mut keys, false)?;
+		self.get_all_data_shared()
+	}
+
+	/// Packs the table with the HarfBuzz repacker (`getAllDataUsingHarfbuzz`),
+	/// sharing identical subtables across Extension subtables too. If the
+	/// repacker fails, falls back to `getAllData (remove_duplicate=False)` on
+	/// the shared tree (`tryPackingHarfbuzz`); `log_failure` logs that once.
+	pub fn get_all_data_using_harfbuzz(mut self, log_failure: bool) -> Result<Vec<u8>> {
+		let mut keys = StructuralKeys::default();
+		let mut interned = HashMap::new();
+		self.done_writing(0, &mut interned, &mut keys, true)?;
+		let mut objects = Vec::new();
+		let mut done = HashMap::new();
+		self.gather_graph_for_harfbuzz(0, &mut objects, &mut done)?;
+		match fontoxide_repack::serialize_with_tag(self.table_tag.to_bytes(), objects) {
+			Ok(data) => Ok(data),
+			Err(e) => {
+				if log_failure {
+					log::warn!(
+						"hb.repack failed to serialize '{}', attempting fonttools resolutions ; the error message was: RepackerError ({e})",
+						self.table_tag
+					);
+				}
+				self.get_all_data_shared()
+			}
+		}
+	}
+
+	/// `_gatherGraphForHarfbuzz`: the objects in post-order, children first.
+	/// Returns the object's position plus one, as `done` records it.
+	///
+	/// UPSTREAM-BUG(B17): `sortCoverageLast` looks for an item named `Coverage`
+	/// among the items, which are `OffsetToWriter`s and bytes without a `name`,
+	/// so it never applies and there are never virtual links.
+	fn gather_graph_for_harfbuzz(
+		&self,
+		id: NodeId,
+		objects: &mut Vec<fontoxide_repack::Object>,
+		done: &mut HashMap<NodeId, u32>,
+	) -> Result<u32> {
+		let mut item_idx = objects.len() as u32;
+		let mut real_links = Vec::new();
+		let mut data = Vec::with_capacity(self.data_length(id));
+		for item in &self.nodes[id].items {
+			match item {
+				Item::Data(d) => data.extend_from_slice(d),
+				Item::Count(c) => data.extend(c.data()?),
+				Item::Offset { node, size } => {
+					let child_idx = match done.get(node) {
+						Some(&idx) => idx,
+						None => {
+							item_idx = self.gather_graph_for_harfbuzz(*node, objects, done)?;
+							item_idx
+						}
+					};
+					real_links.push(fontoxide_repack::Link {
+						width: *size as u8,
+						position: data.len() as u32,
+						objidx: child_idx - 1,
+					});
+					// `getDataForHarfbuzz`: offsets are written as 0.
+					data.resize(data.len() + size, 0);
+				}
+			}
+		}
+		objects.push(fontoxide_repack::Object {
+			data,
+			real_links,
+			virtual_links: Vec::new(),
+		});
+		item_idx += 1;
+		done.insert(id, item_idx);
+		Ok(item_idx)
+	}
+
+	/// The end of `getAllData`, once `_doneWriting` has run.
+	fn get_all_data_shared(mut self) -> Result<Vec<u8>> {
 		let mut tables = Vec::new();
 		let mut ext_tables = Vec::new();
 		let mut done = HashSet::new();

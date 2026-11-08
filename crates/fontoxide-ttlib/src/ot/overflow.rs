@@ -23,21 +23,76 @@ use crate::{Error, Font, Result};
 const GSUB: Tag = Tag::new(b"GSUB");
 const GPOS: Tag = Tag::new(b"GPOS");
 
+/// How a table is being packed (`RepackerState`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RepackerState {
+	/// Only with fontTools' serializer, without sharing across Extension
+	/// subtables.
+	PureFt,
+	/// With the HarfBuzz repacker (sharing across Extension subtables), using
+	/// fontTools' overflow resolution when it fails.
+	HbFt,
+	/// fontTools' serializer only, until it fits; then back to `HbFt` for the
+	/// final packing.
+	FtFallback,
+}
+
+/// The version of a `GSUB` or `GPOS` table (`Version`); 0 for other tables.
+fn layout_version<T: Any>(table: &T) -> u32 {
+	let table = table as &dyn Any;
+	if let Some(t) = table.downcast_ref::<ot::GSUB>() {
+		return t.version;
+	}
+	if let Some(t) = table.downcast_ref::<ot::GPOS>() {
+		return t.version;
+	}
+	0
+}
+
 /// Compiles an otData table, resolving overflows in `GSUB` and `GPOS` lookups
-/// (`BaseTTXConverter.compile` with the pure-Python serializer).
+/// (`BaseTTXConverter.compile`). `GSUB` and `GPOS` are packed with the
+/// HarfBuzz repacker as [`Font::use_harfbuzz_repacker`] says.
 pub fn compile_table<T: OtTable + Any>(
 	table: &mut T,
 	tag: Tag,
 	font: &mut Font,
 ) -> Result<Vec<u8>> {
+	let is_layout = tag == GSUB || tag == GPOS;
+	let mut use_hb_repack = font.use_harfbuzz_repacker;
+	if is_layout && use_hb_repack.is_none() && layout_version(table) >= 0x0001_0002 {
+		use_hb_repack = Some(false);
+	}
+	let mut state = if use_hb_repack != Some(false) && is_layout {
+		RepackerState::HbFt
+	} else {
+		RepackerState::PureFt
+	};
+	let mut hb_first_error_logged = false;
 	loop {
 		let mut graph = WriterGraph::new(tag);
 		table.compile(&mut graph.root(), font)?;
-		let record = match graph.get_all_data() {
+		let result = match state {
+			RepackerState::HbFt => graph.get_all_data_using_harfbuzz(!hb_first_error_logged),
+			RepackerState::PureFt => graph.get_all_data(),
+			RepackerState::FtFallback => match graph.get_all_data() {
+				Ok(_) => {
+					// Packing with fontTools only succeeded: pack again with HarfBuzz
+					// for the final, optimal, packing.
+					log::debug!(
+						"Re-enabling sharing between extensions and switching back to harfbuzz+fontTools packing."
+					);
+					state = RepackerState::HbFt;
+					continue;
+				}
+				Err(e) => Err(e),
+			},
+		};
+		let record = match result {
 			Ok(data) => return Ok(data),
 			Err(Error::OffsetOverflow(record)) => record,
 			Err(e) => return Err(e),
 		};
+		hb_first_error_logged = true;
 		// UPSTREAM-BUG(B11): `tryResolveOverflow` gives up when the same overflow
 		// comes back, but `OverflowErrorRecord` has no `__eq__`, so the check never
 		// matches; resolution stops only when no fix applies.
@@ -47,7 +102,15 @@ pub fn compile_table<T: OtTable + Any>(
 				"AttributeError: 'NoneType' object has no attribute 'Lookup'",
 			));
 		};
-		if !try_resolve_overflow(lookups, tag, &record, font)? {
+		if try_resolve_overflow(lookups, tag, &record, font)? {
+			continue;
+		}
+		if state == RepackerState::HbFt {
+			log::debug!(
+				"Harfbuzz packing out of resolutions, disabling sharing between extensions and switching to fontTools only packing."
+			);
+			state = RepackerState::FtFallback;
+		} else {
 			return Err(Error::OffsetOverflow(record));
 		}
 	}

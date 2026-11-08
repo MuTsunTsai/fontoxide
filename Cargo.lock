@@ -223,6 +223,7 @@ dependencies = [
  "fontoxide-agl",
  "fontoxide-misc",
  "fontoxide-pens",
+ "fontoxide-repack",
  "fontoxide-ttlib",
  "fontoxide-unicodedata",
 ]
@@ -253,6 +254,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "fontoxide-repack"
+version = "0.0.0"
+dependencies = [
+ "log",
+ "thiserror",
+]
+
+[[package]]
 name = "fontoxide-ttlib"
 version = "0.0.0"
 dependencies = [
@@ -262,6 +271,7 @@ dependencies = [
  "fontoxide-encodings",
  "fontoxide-misc",
  "fontoxide-pens",
+ "fontoxide-repack",
  "fontoxide-unicodedata",
  "log",
  "serde",
@@ -579,6 +589,7 @@ name = "xtask"
 version = "0.0.0"
 dependencies = [
  "anyhow",
+ "brotli",
  "clap",
  "fontoxide-ttlib",
  "serde",

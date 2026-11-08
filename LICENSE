@@ -2,6 +2,9 @@ MIT License
 
 Copyright (c) 2026-present Mu-Tsun Tsai
 
+The fontoxide-repack crate is a port of the HarfBuzz repacker; see
+crates/fontoxide-repack/LICENSE-HARFBUZZ for its license.
+
 fontoxide is a port of fontTools (https://github.com/fonttools/fonttools),
 which is distributed under the following license:
 

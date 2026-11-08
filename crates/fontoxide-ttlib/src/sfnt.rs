@@ -100,8 +100,6 @@ pub struct DirectoryEntry {
 enum Container {
 	Sfnt,
 	Woff,
-	// Constructed once WOFF 2.0 reading is implemented.
-	#[allow(dead_code)]
 	Woff2(Arc<crate::woff2::Woff2Data>),
 }
 
@@ -351,7 +349,6 @@ impl SfntReader {
 	}
 
 	/// Creates a reader over already-decoded WOFF 2.0 data.
-	#[allow(dead_code)]
 	pub(crate) fn from_woff2(
 		file: Arc<[u8]>,
 		sfnt_version: Tag,
@@ -434,7 +431,8 @@ impl SfntReader {
 				}
 			}
 		};
-		if self.check_checksums > 0 {
+		// WOFF 2.0 has no table checksums.
+		if self.check_checksums > 0 && !matches!(self.container, Container::Woff2(_)) {
 			let checksum = if tag == *b"head" {
 				head_checksum(&data)
 			} else {

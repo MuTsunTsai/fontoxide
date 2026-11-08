@@ -16,6 +16,7 @@ fontoxide-agl.workspace = true
 fontoxide-encodings.workspace = true
 fontoxide-misc.workspace = true
 fontoxide-pens.workspace = true
+fontoxide-repack.workspace = true
 fontoxide-unicodedata.workspace = true
 brotli.workspace = true
 flate2.workspace = true
