@@ -2468,12 +2468,14 @@ pub(crate) fn gdef_prune_post_subset(font: &mut Font) -> Result<bool> {
 	{
 		t.attach_list = None;
 	}
-	if t.version >= 0x0001_0003 && t.var_store.is_some() {
-		return Err(Error::Unsupported("GDEF VarStore".into()));
+	if t.version >= 0x0001_0003 {
+		crate::varstore::prune_gdef(font)?;
+		let t = &mut font.require::<Gdef>()?.table;
+		if t.var_store.as_ref().is_none_or(|s| s.var_data.is_empty()) && t.version == 0x0001_0003 {
+			t.version = 0x0001_0002;
+		}
 	}
-	if t.version >= 0x0001_0003 && t.var_store.is_none() && t.version == 0x0001_0003 {
-		t.version = 0x0001_0002;
-	}
+	let t = &mut font.require::<Gdef>()?.table;
 	if t.mark_glyph_sets_def
 		.as_ref()
 		.is_none_or(|m| m.coverage.is_empty())

@@ -13,7 +13,7 @@ use fontoxide_ttlib::tables::{
 use fontoxide_ttlib::{Font, Tag};
 
 use crate::options::{has_int, has_str};
-use crate::{Error, Result, Subsetter, cff, cmap, glyf, layout, strip};
+use crate::{Error, Result, Subsetter, cff, cmap, glyf, layout, strip, varstore};
 
 fn unsupported<T>(tag: Tag) -> Result<T> {
 	Err(Error::Unsupported(strip(tag)))
@@ -136,9 +136,10 @@ pub(crate) fn subset_glyphs(s: &mut Subsetter, font: &mut Font, tag: Tag) -> Res
 		b"GSUB" | b"GPOS" => layout::subset_glyphs(s, font, tag)?,
 		b"GDEF" => layout::gdef_subset_glyphs(s, font)?,
 		b"EBLC" | b"EBDT" | b"CBLC" | b"CBDT" | b"sbix" | b"kern" | b"ankr" | b"bsln" | b"lcar"
-		| b"HVAR" | b"VVAR" | b"opbd" | b"prop" | b"COLR" | b"MATH" | b"VARC" | b"DMAP"
-		| b"SVG " => return unsupported(tag),
+		| b"opbd" | b"prop" | b"COLR" | b"MATH" | b"VARC" | b"DMAP" | b"SVG " => return unsupported(tag),
 		b"CFF " | b"CFF2" => cff::subset_glyphs(s, font, tag)?,
+		b"HVAR" => varstore::hvar_subset_glyphs(s, font)?,
+		b"VVAR" => varstore::vvar_subset_glyphs(s, font)?,
 		_ => return Ok(None),
 	}))
 }

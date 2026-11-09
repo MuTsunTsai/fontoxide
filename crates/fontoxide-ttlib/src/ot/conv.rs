@@ -540,6 +540,24 @@ pub struct ValueRecord {
 }
 
 impl ValueRecord {
+	/// Visits the devices (`visit_mut` of the tables).
+	pub fn visit_mut(
+		&mut self,
+		f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>,
+	) -> Result<()> {
+		for d in [
+			&mut self.x_pla_device,
+			&mut self.y_pla_device,
+			&mut self.x_adv_device,
+			&mut self.y_adv_device,
+		] {
+			if let Some(Some(d)) = d {
+				d.visit_mut(f)?;
+			}
+		}
+		Ok(())
+	}
+
 	fn int_field(&mut self, i: usize) -> Option<&mut Option<i16>> {
 		match i {
 			0 => Some(&mut self.x_placement),

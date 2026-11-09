@@ -26,6 +26,7 @@ mod glyf;
 mod layout;
 pub mod options;
 mod tables;
+mod varstore;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;

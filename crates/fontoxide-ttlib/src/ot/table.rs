@@ -103,6 +103,15 @@ pub trait OtTable: Sized + Default + Clone {
 	/// implicitly there). `f` fails for glyphs that no longer exist.
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()>;
 
+	/// Calls `f` on the table, then on its subtables, depth-first, as
+	/// fontTools' visitors do (`_visit` of `varLib.varStore`). Like those, it
+	/// does not look into the types that fontTools reads by hand (`postRead`):
+	/// for them, it does nothing.
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
+
 	/// Whether the subtables below are never shared (`DontShare` on an
 	/// instance); only lookup subtables can be marked.
 	fn dont_share(&self) -> bool {

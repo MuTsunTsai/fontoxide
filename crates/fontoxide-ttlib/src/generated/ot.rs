@@ -103,6 +103,10 @@ impl OtTable for AATLookupSegment {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `Affine2x3`.
@@ -198,6 +202,10 @@ impl OtTable for Affine2x3 {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `AlternateSet`.
@@ -287,6 +295,10 @@ impl OtTable for AlternateSet {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `AlternateSet2`.
@@ -374,6 +386,10 @@ impl OtTable for AlternateSet2 {
 		for v in self.alternate.iter_mut() {
 			*v = f(*v)?;
 		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -493,6 +509,21 @@ impl OtTable for AlternateSubstRawFormat1 {
 		for v in self.alternate_set.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.alternate_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -618,6 +649,21 @@ impl OtTable for AlternateSubstRawFormat2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.alternate_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `AlternateSubst` (format-switching).
@@ -691,6 +737,13 @@ impl OtTable for AlternateSubstRaw {
 		match self {
 			Self::Format1(v) => v.remap_glyphs(f),
 			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -803,6 +856,10 @@ impl OtTable for AnchorFormat1 {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `Anchor` format 2.
@@ -894,6 +951,10 @@ impl OtTable for AnchorFormat2 {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -1032,6 +1093,22 @@ impl OtTable for AnchorFormat3 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.x_device_table;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.y_device_table;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Anchor` (format-switching).
@@ -1114,6 +1191,14 @@ impl OtTable for Anchor {
 			Self::Format1(v) => v.remap_glyphs(f),
 			Self::Format2(v) => v.remap_glyphs(f),
 			Self::Format3(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
+			Self::Format3(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -1241,6 +1326,13 @@ impl OtTable for AnchorGlyphData {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.anchor_point.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `AnchorPoint`.
@@ -1316,6 +1408,10 @@ impl OtTable for AnchorPoint {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -1394,6 +1490,10 @@ impl OtTable for AnchorPointsFormat0 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `AnchorPoints` (format-switching).
@@ -1458,6 +1558,12 @@ impl OtTable for AnchorPoints {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		match self {
 			Self::Format0(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format0(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -1594,6 +1700,21 @@ impl OtTable for AttachList {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.attach_point.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `AttachPoint`.
@@ -1679,6 +1800,10 @@ impl OtTable for AttachPoint {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -1790,6 +1915,22 @@ impl OtTable for Axis {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.base_tag_list;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.base_script_list;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `AxisIndicesList`.
@@ -1848,6 +1989,10 @@ impl OtTable for AxisIndicesList {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -1963,6 +2108,10 @@ impl OtTable for AxisRecord {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `AxisRecordArray`.
@@ -2048,6 +2197,13 @@ impl OtTable for AxisRecordArray {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		for v in self.axis.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.axis.iter_mut() {
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -2143,6 +2299,13 @@ impl OtTable for AxisSegmentMap {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.axis_value_map.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `AxisValue` format 1.
@@ -2231,6 +2394,10 @@ impl OtTable for AxisValueFormat1 {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -2347,6 +2514,10 @@ impl OtTable for AxisValueFormat2 {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `AxisValue` format 3.
@@ -2447,6 +2618,10 @@ impl OtTable for AxisValueFormat3 {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -2560,6 +2735,13 @@ impl OtTable for AxisValueFormat4 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.axis_value_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["AxisCount"]
 	}
@@ -2664,6 +2846,15 @@ impl OtTable for AxisValue {
 			Self::Format2(v) => v.remap_glyphs(f),
 			Self::Format3(v) => v.remap_glyphs(f),
 			Self::Format4(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
+			Self::Format3(v) => v.visit_mut(f),
+			Self::Format4(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -2793,6 +2984,15 @@ impl OtTable for AxisValueArray {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.axis_value.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `AxisValueMap`.
@@ -2872,6 +3072,10 @@ impl OtTable for AxisValueMap {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `AxisValueRecord`.
@@ -2942,6 +3146,10 @@ impl OtTable for AxisValueRecord {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -3073,6 +3281,30 @@ impl OtTable for BASE {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.horiz_axis;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.vert_axis;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		if (self.version as i64) >= 0x00010001 {
+			{
+				let v = &mut self.var_store;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `BaseArray`.
@@ -3158,6 +3390,13 @@ impl OtTable for BaseArray {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		for v in self.base_record.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.base_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -3249,6 +3488,13 @@ impl OtTable for BaseArray2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.base_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `BaseCoord` format 1.
@@ -3311,6 +3557,10 @@ impl OtTable for BaseCoordFormat1 {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -3404,6 +3654,10 @@ impl OtTable for BaseCoordFormat2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `BaseCoord` format 3.
@@ -3491,6 +3745,16 @@ impl OtTable for BaseCoordFormat3 {
 			let v = &mut self.device_table;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.device_table;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -3586,6 +3850,10 @@ impl OtTable for BaseCoordFormat4 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `BaseCoord` (format-switching).
@@ -3677,6 +3945,15 @@ impl OtTable for BaseCoord {
 			Self::Format2(v) => v.remap_glyphs(f),
 			Self::Format3(v) => v.remap_glyphs(f),
 			Self::Format4(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
+			Self::Format3(v) => v.visit_mut(f),
+			Self::Format4(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -3812,6 +4089,13 @@ impl OtTable for BaseGlyphList {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.base_glyph_paint_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `BaseGlyphPaintRecord`.
@@ -3895,6 +4179,16 @@ impl OtTable for BaseGlyphPaintRecord {
 			let v = &mut self.paint;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -3984,6 +4278,10 @@ impl OtTable for BaseGlyphRecord {
 			let v = &mut self.base_glyph;
 			*v = f(*v)?;
 		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -4079,6 +4377,13 @@ impl OtTable for BaseGlyphRecordArray {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.base_glyph_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `BaseLangSysRecord`.
@@ -4158,6 +4463,16 @@ impl OtTable for BaseLangSysRecord {
 			let v = &mut self.min_max;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.min_max;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -4252,6 +4567,15 @@ impl OtTable for BaseRecord {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.base_anchor.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `BaseRecord2`.
@@ -4338,6 +4662,15 @@ impl OtTable for BaseRecord2 {
 		for v in self.base_anchor.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.base_anchor.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -4485,6 +4818,25 @@ impl OtTable for BaseScript {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.base_values;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.default_min_max;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.base_lang_sys_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `BaseScriptList`.
@@ -4573,6 +4925,13 @@ impl OtTable for BaseScriptList {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.base_script_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `BaseScriptRecord`.
@@ -4654,6 +5013,16 @@ impl OtTable for BaseScriptRecord {
 			let v = &mut self.base_script;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.base_script;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -4740,6 +5109,10 @@ impl OtTable for BaseTagList {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -4844,6 +5217,15 @@ impl OtTable for BaseValues {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.base_coord.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Baseline` format 0.
@@ -4941,6 +5323,10 @@ impl OtTable for BaselineFormat0 {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -5058,6 +5444,10 @@ impl OtTable for BaselineFormat1 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `Baseline` format 2.
@@ -5170,6 +5560,10 @@ impl OtTable for BaselineFormat2 {
 			let v = &mut self.standard_glyph;
 			*v = f(*v)?;
 		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -5303,6 +5697,10 @@ impl OtTable for BaselineFormat3 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `Baseline` (format-switching).
@@ -5394,6 +5792,15 @@ impl OtTable for Baseline {
 			Self::Format1(v) => v.remap_glyphs(f),
 			Self::Format2(v) => v.remap_glyphs(f),
 			Self::Format3(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format0(v) => v.visit_mut(f),
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
+			Self::Format3(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -5574,6 +5981,10 @@ impl OtTable for CIDGlyphMappingFormat0 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `CIDGlyphMapping` (format-switching).
@@ -5638,6 +6049,12 @@ impl OtTable for CIDGlyphMapping {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		match self {
 			Self::Format0(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format0(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -5982,6 +6399,62 @@ impl OtTable for COLR {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.base_glyph_record_array;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.layer_record_array;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		if (self.version as i64) >= 1 {
+			{
+				let v = &mut self.base_glyph_list;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 1 {
+			{
+				let v = &mut self.layer_list;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 1 {
+			{
+				let v = &mut self.clip_list;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 1 {
+			{
+				let v = &mut self.var_index_map;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 1 {
+			{
+				let v = &mut self.var_store;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["BaseGlyphRecordCount", "LayerRecordCount"]
 	}
@@ -6064,6 +6537,10 @@ impl OtTable for CaretValueFormat1 {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `CaretValue` format 2.
@@ -6131,6 +6608,10 @@ impl OtTable for CaretValueFormat2 {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -6224,6 +6705,16 @@ impl OtTable for CaretValueFormat3 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.device_table;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `CaretValue` (format-switching).
@@ -6306,6 +6797,14 @@ impl OtTable for CaretValue {
 			Self::Format1(v) => v.remap_glyphs(f),
 			Self::Format2(v) => v.remap_glyphs(f),
 			Self::Format3(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
+			Self::Format3(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -6472,6 +6971,21 @@ impl OtTable for ChainContextPosFormat1 {
 		for v in self.chain_pos_rule_set.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.chain_pos_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -6691,6 +7205,39 @@ impl OtTable for ChainContextPosFormat2 {
 		for v in self.chain_pos_class_set.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.backtrack_class_def;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.input_class_def;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.look_ahead_class_def;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.chain_pos_class_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -6929,6 +7476,28 @@ impl OtTable for ChainContextPosFormat3 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.backtrack_coverage.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.input_coverage.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.look_ahead_coverage.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.pos_lookup_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ChainContextPos` format 4.
@@ -7064,6 +7633,21 @@ impl OtTable for ChainContextPosFormat4 {
 		for v in self.chained_seq_rule_set.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.chained_seq_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -7305,6 +7889,39 @@ impl OtTable for ChainContextPosFormat5 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.backtrack_class_def;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.input_class_def;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.look_ahead_class_def;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.chained_class_seq_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ChainContextPos` (format-switching).
@@ -7405,6 +8022,16 @@ impl OtTable for ChainContextPos {
 			Self::Format3(v) => v.remap_glyphs(f),
 			Self::Format4(v) => v.remap_glyphs(f),
 			Self::Format5(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
+			Self::Format3(v) => v.visit_mut(f),
+			Self::Format4(v) => v.visit_mut(f),
+			Self::Format5(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -7599,6 +8226,21 @@ impl OtTable for ChainContextSubstFormat1 {
 		for v in self.chain_sub_rule_set.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.chain_sub_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -7818,6 +8460,39 @@ impl OtTable for ChainContextSubstFormat2 {
 		for v in self.chain_sub_class_set.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.backtrack_class_def;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.input_class_def;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.look_ahead_class_def;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.chain_sub_class_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -8056,6 +8731,28 @@ impl OtTable for ChainContextSubstFormat3 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.backtrack_coverage.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.input_coverage.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.look_ahead_coverage.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.subst_lookup_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ChainContextSubst` format 4.
@@ -8191,6 +8888,21 @@ impl OtTable for ChainContextSubstFormat4 {
 		for v in self.chained_seq_rule_set.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.chained_seq_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -8432,6 +9144,39 @@ impl OtTable for ChainContextSubstFormat5 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.backtrack_class_def;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.input_class_def;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.look_ahead_class_def;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.chained_class_seq_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ChainContextSubst` (format-switching).
@@ -8532,6 +9277,16 @@ impl OtTable for ChainContextSubst {
 			Self::Format3(v) => v.remap_glyphs(f),
 			Self::Format4(v) => v.remap_glyphs(f),
 			Self::Format5(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
+			Self::Format3(v) => v.visit_mut(f),
+			Self::Format4(v) => v.visit_mut(f),
+			Self::Format5(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -8797,6 +9552,13 @@ impl OtTable for ChainPosClassRule {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.pos_lookup_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ChainPosClassSet`.
@@ -8895,6 +9657,15 @@ impl OtTable for ChainPosClassSet {
 		for v in self.chain_pos_class_rule.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.chain_pos_class_rule.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -9110,6 +9881,13 @@ impl OtTable for ChainPosRule {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.pos_lookup_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ChainPosRuleSet`.
@@ -9202,6 +9980,15 @@ impl OtTable for ChainPosRuleSet {
 		for v in self.chain_pos_rule.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.chain_pos_rule.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -9408,6 +10195,13 @@ impl OtTable for ChainSubClassRule {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.subst_lookup_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ChainSubClassSet`.
@@ -9506,6 +10300,15 @@ impl OtTable for ChainSubClassSet {
 		for v in self.chain_sub_class_rule.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.chain_sub_class_rule.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -9721,6 +10524,13 @@ impl OtTable for ChainSubRule {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.subst_lookup_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ChainSubRuleSet`.
@@ -9813,6 +10623,15 @@ impl OtTable for ChainSubRuleSet {
 		for v in self.chain_sub_rule.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.chain_sub_rule.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -10025,6 +10844,13 @@ impl OtTable for ChainedClassSeqRule {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.seq_lookup_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ChainedClassSeqRuleSet2`.
@@ -10129,6 +10955,15 @@ impl OtTable for ChainedClassSeqRuleSet2 {
 		for v in self.chained_class_seq_rule.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.chained_class_seq_rule.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -10348,6 +11183,13 @@ impl OtTable for ChainedSeqRule2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.seq_lookup_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ChainedSeqRuleSet2`.
@@ -10444,6 +11286,15 @@ impl OtTable for ChainedSeqRuleSet2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.chained_seq_rule.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Class1Record`.
@@ -10532,6 +11383,13 @@ impl OtTable for Class1Record {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.class2_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `Class2Record`.
@@ -10601,6 +11459,22 @@ impl OtTable for Class2Record {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.value1;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.value2;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -10712,6 +11586,10 @@ impl OtTable for ClassDefRawFormat1 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `ClassDef` format 2.
@@ -10802,6 +11680,13 @@ impl OtTable for ClassDefRawFormat2 {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		for v in self.class_range_record.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.class_range_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -10911,6 +11796,10 @@ impl OtTable for ClassDefRawFormat3 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `ClassDef` format 4.
@@ -11001,6 +11890,13 @@ impl OtTable for ClassDefRawFormat4 {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		for v in self.class_range_record.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.class_range_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -11095,6 +11991,15 @@ impl OtTable for ClassDefRaw {
 			Self::Format2(v) => v.remap_glyphs(f),
 			Self::Format3(v) => v.remap_glyphs(f),
 			Self::Format4(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
+			Self::Format3(v) => v.visit_mut(f),
+			Self::Format4(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -11215,6 +12120,10 @@ impl OtTable for ClassRangeRecord {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `ClassRangeRecord2`.
@@ -11294,6 +12203,10 @@ impl OtTable for ClassRangeRecord2 {
 			let v = &mut self.end;
 			*v = f(*v)?;
 		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -11418,6 +12331,13 @@ impl OtTable for ClassSeqRule {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.seq_lookup_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ClassSeqRuleSet2`.
@@ -11514,6 +12434,15 @@ impl OtTable for ClassSeqRuleSet2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.class_seq_rule.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ClipBox` format 1.
@@ -11597,6 +12526,10 @@ impl OtTable for ClipBoxFormat1 {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -11691,6 +12624,10 @@ impl OtTable for ClipBoxFormat2 {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `ClipBox` (format-switching).
@@ -11764,6 +12701,13 @@ impl OtTable for ClipBox {
 		match self {
 			Self::Format1(v) => v.remap_glyphs(f),
 			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -11888,6 +12832,13 @@ impl OtTable for ClipListRawFormat1 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.clip_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ClipList` (format-switching).
@@ -11952,6 +12903,12 @@ impl OtTable for ClipListRaw {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		match self {
 			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -12074,6 +13031,16 @@ impl OtTable for ClipRecord {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.clip_box;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ColorLine`.
@@ -12174,6 +13141,13 @@ impl OtTable for ColorLine {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.color_stop.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ColorStop`.
@@ -12263,6 +13237,10 @@ impl OtTable for ColorStop {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `ComponentRecord`.
@@ -12349,6 +13327,15 @@ impl OtTable for ComponentRecord {
 		for v in self.ligature_anchor.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.ligature_anchor.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -12443,6 +13430,15 @@ impl OtTable for ComponentRecord2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.ligature_anchor.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ConditionList`.
@@ -12533,6 +13529,15 @@ impl OtTable for ConditionList {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.condition_table.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ConditionSet`.
@@ -12619,6 +13624,15 @@ impl OtTable for ConditionSet {
 		for v in self.condition_table.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.condition_table.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -12715,6 +13729,10 @@ impl OtTable for ConditionTableFormat1 {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `ConditionTable` format 2.
@@ -12789,6 +13807,10 @@ impl OtTable for ConditionTableFormat2 {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -12881,6 +13903,15 @@ impl OtTable for ConditionTableFormat3 {
 		for v in self.condition_table.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.condition_table.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -12979,6 +14010,15 @@ impl OtTable for ConditionTableFormat4 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.condition_table.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ConditionTable` format 5.
@@ -13060,6 +14100,16 @@ impl OtTable for ConditionTableFormat5 {
 			let v = &mut self.condition_table;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.condition_table;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -13164,6 +14214,16 @@ impl OtTable for ConditionTable {
 			Self::Format3(v) => v.remap_glyphs(f),
 			Self::Format4(v) => v.remap_glyphs(f),
 			Self::Format5(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
+			Self::Format3(v) => v.visit_mut(f),
+			Self::Format4(v) => v.visit_mut(f),
+			Self::Format5(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -13334,6 +14394,21 @@ impl OtTable for ContextPosFormat1 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.pos_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ContextPos` format 2.
@@ -13486,6 +14561,27 @@ impl OtTable for ContextPosFormat2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.class_def;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.pos_class_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ContextPos` format 3.
@@ -13630,6 +14726,18 @@ impl OtTable for ContextPosFormat3 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.coverage.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.pos_lookup_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ContextPos` format 4.
@@ -13753,6 +14861,21 @@ impl OtTable for ContextPosFormat4 {
 		for v in self.seq_rule_set.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.seq_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -13911,6 +15034,27 @@ impl OtTable for ContextPosFormat5 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.class_def;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.class_seq_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ContextPos` format 6.
@@ -14055,6 +15199,18 @@ impl OtTable for ContextPosFormat6 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.coverage.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.seq_lookup_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ContextPos` (format-switching).
@@ -14164,6 +15320,17 @@ impl OtTable for ContextPos {
 			Self::Format4(v) => v.remap_glyphs(f),
 			Self::Format5(v) => v.remap_glyphs(f),
 			Self::Format6(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
+			Self::Format3(v) => v.visit_mut(f),
+			Self::Format4(v) => v.visit_mut(f),
+			Self::Format5(v) => v.visit_mut(f),
+			Self::Format6(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -14360,6 +15527,21 @@ impl OtTable for ContextSubstFormat1 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.sub_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ContextSubst` format 2.
@@ -14512,6 +15694,27 @@ impl OtTable for ContextSubstFormat2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.class_def;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.sub_class_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ContextSubst` format 3.
@@ -14656,6 +15859,18 @@ impl OtTable for ContextSubstFormat3 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.coverage.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.subst_lookup_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ContextSubst` format 4.
@@ -14779,6 +15994,21 @@ impl OtTable for ContextSubstFormat4 {
 		for v in self.seq_rule_set.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.seq_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -14937,6 +16167,27 @@ impl OtTable for ContextSubstFormat5 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.class_def;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.class_seq_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ContextSubst` format 6.
@@ -15081,6 +16332,18 @@ impl OtTable for ContextSubstFormat6 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.coverage.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.seq_lookup_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ContextSubst` (format-switching).
@@ -15190,6 +16453,17 @@ impl OtTable for ContextSubst {
 			Self::Format4(v) => v.remap_glyphs(f),
 			Self::Format5(v) => v.remap_glyphs(f),
 			Self::Format6(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
+			Self::Format3(v) => v.visit_mut(f),
+			Self::Format4(v) => v.visit_mut(f),
+			Self::Format5(v) => v.visit_mut(f),
+			Self::Format6(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -15325,6 +16599,10 @@ impl OtTable for ContextualMorph {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `Coverage` format 1.
@@ -15419,6 +16697,10 @@ impl OtTable for CoverageRawFormat1 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `Coverage` format 2.
@@ -15509,6 +16791,13 @@ impl OtTable for CoverageRawFormat2 {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		for v in self.range_record.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.range_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -15606,6 +16895,10 @@ impl OtTable for CoverageRawFormat3 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `Coverage` format 4.
@@ -15696,6 +16989,13 @@ impl OtTable for CoverageRawFormat4 {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		for v in self.range_record.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.range_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -15790,6 +17090,15 @@ impl OtTable for CoverageRaw {
 			Self::Format2(v) => v.remap_glyphs(f),
 			Self::Format3(v) => v.remap_glyphs(f),
 			Self::Format4(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
+			Self::Format3(v) => v.visit_mut(f),
+			Self::Format4(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -15954,6 +17263,19 @@ impl OtTable for CursivePosFormat1 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.entry_exit_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `CursivePos` format 2.
@@ -16079,6 +17401,19 @@ impl OtTable for CursivePosFormat2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.entry_exit_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `CursivePos` (format-switching).
@@ -16152,6 +17487,13 @@ impl OtTable for CursivePos {
 		match self {
 			Self::Format1(v) => v.remap_glyphs(f),
 			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -16290,6 +17632,10 @@ impl OtTable for DeltaSetIndexMapRawFormat0 {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["MappingCount"]
 	}
@@ -16396,6 +17742,10 @@ impl OtTable for DeltaSetIndexMapRawFormat1 {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["MappingCount"]
 	}
@@ -16482,6 +17832,13 @@ impl OtTable for DeltaSetIndexMapRaw {
 		match self {
 			Self::Format0(v) => v.remap_glyphs(f),
 			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format0(v) => v.visit_mut(f),
+			Self::Format1(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -16616,6 +17973,10 @@ impl OtTable for Device {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `EntryExit2`.
@@ -16713,6 +18074,22 @@ impl OtTable for EntryExit2 {
 			let v = &mut self.exit_anchor;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.entry_anchor;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.exit_anchor;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -16818,6 +18195,22 @@ impl OtTable for EntryExitRecord {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.entry_anchor;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.exit_anchor;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `EntryIdStringData`.
@@ -16865,6 +18258,10 @@ impl OtTable for EntryIdStringDataRaw {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -16956,6 +18353,10 @@ impl OtTable for ExtenderGlyph {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `ExtenderGlyph2`.
@@ -17043,6 +18444,10 @@ impl OtTable for ExtenderGlyph2 {
 		for v in self.extender_glyph.iter_mut() {
 			*v = f(*v)?;
 		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -17179,6 +18584,16 @@ impl OtTable for ExtensionPosFormat1 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.ext_sub_table;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ExtensionPos` (format-switching).
@@ -17243,6 +18658,12 @@ impl OtTable for ExtensionPos {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		match self {
 			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -17416,6 +18837,16 @@ impl OtTable for ExtensionSubstFormat1 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.ext_sub_table;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ExtensionSubst` (format-switching).
@@ -17480,6 +18911,12 @@ impl OtTable for ExtensionSubst {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		match self {
 			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -17625,6 +19062,22 @@ impl OtTable for FeatMinMaxRecord {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.min_coord;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.max_coord;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Feature`.
@@ -17744,6 +19197,16 @@ impl OtTable for Feature {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.feature_params;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `FeatureList`.
@@ -17829,6 +19292,13 @@ impl OtTable for FeatureList {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		for v in self.feature_record.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.feature_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -17944,6 +19414,13 @@ impl OtTable for FeatureLookupsTable {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		for v in self.lookup_condition_record.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.lookup_condition_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -18071,6 +19548,16 @@ impl OtTable for FeatureName {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.settings;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["SettingsCount"]
 	}
@@ -18190,6 +19677,13 @@ impl OtTable for FeatureNames {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.feature_name.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `FeatureParams`.
@@ -18236,6 +19730,10 @@ impl OtTable for FeatureParams {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -18406,6 +19904,10 @@ impl OtTable for FeatureParamsCharacterVariants {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `FeatureParamsSize`.
@@ -18520,6 +20022,10 @@ impl OtTable for FeatureParamsSize {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `FeatureParamsStylisticSet`.
@@ -18585,6 +20091,10 @@ impl OtTable for FeatureParamsStylisticSet {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -18668,6 +20178,16 @@ impl OtTable for FeatureRecord {
 			let v = &mut self.feature;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.feature;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -18779,6 +20299,13 @@ impl OtTable for FeatureTableSubstitution {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.substitution_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `FeatureTableSubstitutionRecord`.
@@ -18866,6 +20393,16 @@ impl OtTable for FeatureTableSubstitutionRecord {
 			let v = &mut self.feature;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.feature;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -18975,6 +20512,22 @@ impl OtTable for FeatureVariationRecord {
 			let v = &mut self.feature_table_substitution;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.condition_set;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.feature_table_substitution;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -19141,6 +20694,18 @@ impl OtTable for FeatureVariations {
 		if (self.version as i64) >= 0x00010001 {
 			for v in self.lookup_variation_record.iter_mut() {
 				v.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.feature_variation_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		if (self.version as i64) >= 0x00010001 {
+			for v in self.lookup_variation_record.iter_mut() {
+				v.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -19561,6 +21126,90 @@ impl OtTable for GDEF {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.glyph_class_def;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.attach_list;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.lig_caret_list;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark_attach_class_def;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		if (self.version as i64) >= 0x00010002 {
+			{
+				let v = &mut self.mark_glyph_sets_def;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010003 {
+			{
+				let v = &mut self.var_store;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010004 {
+			{
+				let v = &mut self.glyph_class_def2;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010004 {
+			{
+				let v = &mut self.attach_list2;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010004 {
+			{
+				let v = &mut self.lig_caret_list2;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010004 {
+			{
+				let v = &mut self.mark_attach_class_def2;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010004 {
+			{
+				let v = &mut self.mark_glyph_sets_def2;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `GPOS`.
@@ -19842,6 +21491,60 @@ impl OtTable for GPOS {
 				let v = &mut self.lookup_list2;
 				if let Some(x) = v {
 					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.script_list;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.feature_list;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.lookup_list;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		if (self.version as i64) >= 0x00010001 {
+			{
+				let v = &mut self.feature_variations;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010002 {
+			{
+				let v = &mut self.script_list2;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010002 {
+			{
+				let v = &mut self.feature_list2;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010002 {
+			{
+				let v = &mut self.lookup_list2;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
 				}
 			}
 		}
@@ -20133,6 +21836,60 @@ impl OtTable for GSUB {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.script_list;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.feature_list;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.lookup_list;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		if (self.version as i64) >= 0x00010001 {
+			{
+				let v = &mut self.feature_variations;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010002 {
+			{
+				let v = &mut self.script_list2;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010002 {
+			{
+				let v = &mut self.feature_list2;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010002 {
+			{
+				let v = &mut self.lookup_list2;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `GlyphAssembly`.
@@ -20238,6 +21995,17 @@ impl OtTable for GlyphAssembly {
 		}
 		for v in self.part_records.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.italics_correction;
+			v.visit_mut(&mut *f)?;
+		}
+		for v in self.part_records.iter_mut() {
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -20380,6 +22148,10 @@ impl OtTable for GlyphCIDMappingFormat0 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `GlyphCIDMapping` (format-switching).
@@ -20444,6 +22216,12 @@ impl OtTable for GlyphCIDMapping {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		match self {
 			Self::Format0(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format0(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -20579,6 +22357,10 @@ impl OtTable for GlyphPartRecord {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `GlyphProperties` format 0.
@@ -20646,6 +22428,10 @@ impl OtTable for GlyphPropertiesFormat0 {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -20727,6 +22513,10 @@ impl OtTable for GlyphPropertiesFormat1 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `GlyphProperties` (format-switching).
@@ -20800,6 +22590,13 @@ impl OtTable for GlyphProperties {
 		match self {
 			Self::Format0(v) => v.remap_glyphs(f),
 			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format0(v) => v.visit_mut(f),
+			Self::Format1(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -20980,6 +22777,34 @@ impl OtTable for HVAR {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.var_store;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.adv_width_map;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.lsb_map;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.rsb_map;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `InsertionMorph`.
@@ -21044,6 +22869,10 @@ impl OtTable for InsertionMorph {
 			let v = &mut self.state_table;
 			v.remap_glyphs(&mut *f)?;
 		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -21211,6 +23040,18 @@ impl OtTable for JSTF {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.jstf_script_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		if (self.version as i64) >= 0x00010001 {
+			for v in self.jstf_script_record2.iter_mut() {
+				v.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `JstfGPOSModList`.
@@ -21300,6 +23141,10 @@ impl OtTable for JstfGPOSModList {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `JstfGSUBModList`.
@@ -21387,6 +23232,10 @@ impl OtTable for JstfGSUBModList {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -21485,6 +23334,15 @@ impl OtTable for JstfLangSys {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.jstf_priority.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `JstfLangSysRecord`.
@@ -21577,6 +23435,16 @@ impl OtTable for JstfLangSysRecord {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.jstf_lang_sys;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `JstfMax`.
@@ -21663,6 +23531,15 @@ impl OtTable for JstfMax {
 		for v in self.lookup.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.lookup.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -22007,6 +23884,70 @@ impl OtTable for JstfPriority {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.shrinkage_enable_gsub;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.shrinkage_disable_gsub;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.shrinkage_enable_gpos;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.shrinkage_disable_gpos;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.shrinkage_jstf_max;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.extension_enable_gsub;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.extension_disable_gsub;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.extension_enable_gpos;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.extension_disable_gpos;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.extension_jstf_max;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `JstfScript`.
@@ -22154,6 +24095,25 @@ impl OtTable for JstfScript {
 		}
 		for v in self.jstf_lang_sys_record.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.extender_glyph;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.def_jstf_lang_sys;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.jstf_lang_sys_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -22307,6 +24267,25 @@ impl OtTable for JstfScript2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.extender_glyph;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.def_jstf_lang_sys;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.jstf_lang_sys_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `JstfScriptRecord`.
@@ -22392,6 +24371,16 @@ impl OtTable for JstfScriptRecord {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.jstf_script;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `JstfScriptRecord2`.
@@ -22473,6 +24462,16 @@ impl OtTable for JstfScriptRecord2 {
 			let v = &mut self.jstf_script;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.jstf_script;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -22603,6 +24602,16 @@ impl OtTable for LangSys {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.lookup_order;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LangSysRecord`.
@@ -22682,6 +24691,16 @@ impl OtTable for LangSysRecord {
 			let v = &mut self.lang_sys;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.lang_sys;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -22776,6 +24795,15 @@ impl OtTable for LayerList {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.paint.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LayerRecord`.
@@ -22854,6 +24882,10 @@ impl OtTable for LayerRecord {
 			let v = &mut self.layer_glyph;
 			*v = f(*v)?;
 		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -22941,6 +24973,13 @@ impl OtTable for LayerRecordArray {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		for v in self.layer_record.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.layer_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -23035,6 +25074,10 @@ impl OtTable for LigCaretDistances {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -23142,6 +25185,21 @@ impl OtTable for LigCaretList {
 		for v in self.lig_glyph.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.lig_glyph.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -23255,6 +25313,21 @@ impl OtTable for LigCaretList2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.lig_glyph.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LigCaretPoints`.
@@ -23348,6 +25421,10 @@ impl OtTable for LigCaretPoints {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `LigGlyph`.
@@ -23434,6 +25511,15 @@ impl OtTable for LigGlyph {
 		for v in self.caret_value.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.caret_value.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -23543,6 +25629,10 @@ impl OtTable for Ligature {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `Ligature2`.
@@ -23648,6 +25738,10 @@ impl OtTable for Ligature2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `LigatureArray`.
@@ -23734,6 +25828,15 @@ impl OtTable for LigatureArray {
 		for v in self.ligature_attach.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.ligature_attach.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -23828,6 +25931,15 @@ impl OtTable for LigatureArray2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.ligature_attach.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LigatureAttach`.
@@ -23913,6 +26025,13 @@ impl OtTable for LigatureAttach {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		for v in self.component_record.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.component_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -24004,6 +26123,13 @@ impl OtTable for LigatureAttach2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.component_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `LigatureCarets` format 0.
@@ -24073,6 +26199,10 @@ impl OtTable for LigatureCaretsFormat0 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `LigatureCarets` format 1.
@@ -24140,6 +26270,10 @@ impl OtTable for LigatureCaretsFormat1 {
 			let v = &mut self.carets;
 			remap_aat_lookup(v, &mut *f)?;
 		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -24215,6 +26349,13 @@ impl OtTable for LigatureCarets {
 		match self {
 			Self::Format0(v) => v.remap_glyphs(f),
 			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format0(v) => v.visit_mut(f),
+			Self::Format1(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -24312,6 +26453,10 @@ impl OtTable for LigatureMorph {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `LigatureSet`.
@@ -24402,6 +26547,15 @@ impl OtTable for LigatureSet {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.ligature.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LigatureSet2`.
@@ -24488,6 +26642,15 @@ impl OtTable for LigatureSet2 {
 		for v in self.ligature.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.ligature.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -24607,6 +26770,21 @@ impl OtTable for LigatureSubstRawFormat1 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.ligature_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LigatureSubst` format 2.
@@ -24722,6 +26900,21 @@ impl OtTable for LigatureSubstRawFormat2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.ligature_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LigatureSubst` (format-switching).
@@ -24795,6 +26988,13 @@ impl OtTable for LigatureSubstRaw {
 		match self {
 			Self::Format1(v) => v.remap_glyphs(f),
 			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -24907,6 +27107,10 @@ impl OtTable for LocationRecord {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -25061,6 +27265,15 @@ impl OtTable for Lookup {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.sub_table.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LookupConditionRecord`.
@@ -25171,6 +27384,22 @@ impl OtTable for LookupConditionRecord {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.condition_table;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.lookup_index_list;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LookupIndexList`.
@@ -25262,6 +27491,10 @@ impl OtTable for LookupIndexList {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `LookupList`.
@@ -25348,6 +27581,15 @@ impl OtTable for LookupList {
 		for v in self.lookup.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.lookup.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -25442,6 +27684,15 @@ impl OtTable for LookupList2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.lookup.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LookupOrder`.
@@ -25488,6 +27739,10 @@ impl OtTable for LookupOrder {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -25579,6 +27834,16 @@ impl OtTable for LookupVariationRecord {
 			let v = &mut self.feature_lookups_table;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.feature_lookups_table;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -25727,6 +27992,28 @@ impl OtTable for MATH {
 			let v = &mut self.math_variants;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.math_constants;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.math_glyph_info;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.math_variants;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -25883,6 +28170,19 @@ impl OtTable for MVAR {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.var_store;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.value_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["ValueRecordSize"]
 	}
@@ -25954,6 +28254,10 @@ impl OtTable for MappingEntries {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -26041,6 +28345,13 @@ impl OtTable for Mark2Array {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		for v in self.mark2_record.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.mark2_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -26132,6 +28443,13 @@ impl OtTable for Mark2Array2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.mark2_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `Mark2Record`.
@@ -26218,6 +28536,15 @@ impl OtTable for Mark2Record {
 		for v in self.mark2_anchor.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.mark2_anchor.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -26312,6 +28639,15 @@ impl OtTable for Mark2Record2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.mark2_anchor.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `MarkArray`.
@@ -26400,6 +28736,13 @@ impl OtTable for MarkArray {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.mark_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `MarkArray2`.
@@ -26485,6 +28828,13 @@ impl OtTable for MarkArray2 {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		for v in self.mark_record.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.mark_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -26665,6 +29015,34 @@ impl OtTable for MarkBasePosFormat1 {
 			let v = &mut self.base_array;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.mark_coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.base_coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark_array;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.base_array;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -26863,6 +29241,34 @@ impl OtTable for MarkBasePosFormat2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.mark_coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.base_coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark_array;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.base_array;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["ClassCount"]
 	}
@@ -26949,6 +29355,13 @@ impl OtTable for MarkBasePos {
 		match self {
 			Self::Format1(v) => v.remap_glyphs(f),
 			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -27092,6 +29505,15 @@ impl OtTable for MarkGlyphSetsDef {
 		for v in self.coverage.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.coverage.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -27280,6 +29702,34 @@ impl OtTable for MarkLigPosFormat1 {
 			let v = &mut self.ligature_array;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.mark_coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.ligature_coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark_array;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.ligature_array;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -27485,6 +29935,34 @@ impl OtTable for MarkLigPosFormat2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.mark_coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.ligature_coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark_array;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.ligature_array;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["ClassCount"]
 	}
@@ -27571,6 +30049,13 @@ impl OtTable for MarkLigPos {
 		match self {
 			Self::Format1(v) => v.remap_glyphs(f),
 			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -27797,6 +30282,34 @@ impl OtTable for MarkMarkPosFormat1 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.mark1_coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark2_coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark1_array;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark2_array;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["ClassCount"]
 	}
@@ -27991,6 +30504,34 @@ impl OtTable for MarkMarkPosFormat2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.mark1_coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark2_coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark1_array;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark2_array;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["ClassCount"]
 	}
@@ -28077,6 +30618,13 @@ impl OtTable for MarkMarkPos {
 		match self {
 			Self::Format1(v) => v.remap_glyphs(f),
 			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -28202,6 +30750,16 @@ impl OtTable for MarkRecord {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.mark_anchor;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `MarkRecord2`.
@@ -28278,6 +30836,16 @@ impl OtTable for MarkRecord2 {
 			let v = &mut self.mark_anchor;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.mark_anchor;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -29428,6 +31996,214 @@ impl OtTable for MathConstants {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.math_leading;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.axis_height;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.accent_base_height;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.flattened_accent_base_height;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.subscript_shift_down;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.subscript_top_max;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.subscript_baseline_drop_min;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.superscript_shift_up;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.superscript_shift_up_cramped;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.superscript_bottom_min;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.superscript_baseline_drop_max;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.sub_superscript_gap_min;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.superscript_bottom_max_with_subscript;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.space_after_script;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.upper_limit_gap_min;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.upper_limit_baseline_rise_min;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.lower_limit_gap_min;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.lower_limit_baseline_drop_min;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.stack_top_shift_up;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.stack_top_display_style_shift_up;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.stack_bottom_shift_down;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.stack_bottom_display_style_shift_down;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.stack_gap_min;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.stack_display_style_gap_min;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.stretch_stack_top_shift_up;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.stretch_stack_bottom_shift_down;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.stretch_stack_gap_above_min;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.stretch_stack_gap_below_min;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.fraction_numerator_shift_up;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.fraction_numerator_display_style_shift_up;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.fraction_denominator_shift_down;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.fraction_denominator_display_style_shift_down;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.fraction_numerator_gap_min;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.fraction_num_display_style_gap_min;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.fraction_rule_thickness;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.fraction_denominator_gap_min;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.fraction_denom_display_style_gap_min;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.skewed_fraction_horizontal_gap;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.skewed_fraction_vertical_gap;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.overbar_vertical_gap;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.overbar_rule_thickness;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.overbar_extra_ascender;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.underbar_vertical_gap;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.underbar_rule_thickness;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.underbar_extra_descender;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.radical_vertical_gap;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.radical_display_style_vertical_gap;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.radical_rule_thickness;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.radical_extra_ascender;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.radical_kern_before_degree;
+			v.visit_mut(&mut *f)?;
+		}
+		{
+			let v = &mut self.radical_kern_after_degree;
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `MathGlyphConstruction`.
@@ -29541,6 +32317,19 @@ impl OtTable for MathGlyphConstruction {
 		}
 		for v in self.math_glyph_variant_record.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.glyph_assembly;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.math_glyph_variant_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -29711,6 +32500,34 @@ impl OtTable for MathGlyphInfo {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.math_italics_correction_info;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.math_top_accent_attachment;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.extended_shape_coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.math_kern_info;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `MathGlyphVariantRecord`.
@@ -29789,6 +32606,10 @@ impl OtTable for MathGlyphVariantRecord {
 			let v = &mut self.variant_glyph;
 			*v = f(*v)?;
 		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -29903,6 +32724,19 @@ impl OtTable for MathItalicsCorrectionInfo {
 		}
 		for v in self.italics_correction.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.italics_correction.iter_mut() {
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -30022,6 +32856,16 @@ impl OtTable for MathKern {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.correction_height.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		for v in self.kern_value.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `MathKernInfo`.
@@ -30135,6 +32979,19 @@ impl OtTable for MathKernInfo {
 		}
 		for v in self.math_kern_info_records.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.math_kern_coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.math_kern_info_records.iter_mut() {
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -30304,6 +33161,34 @@ impl OtTable for MathKernInfoRecord {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.top_right_math_kern;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.top_left_math_kern;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.bottom_right_math_kern;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.bottom_left_math_kern;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `MathTopAccentAttachment`.
@@ -30432,6 +33317,19 @@ impl OtTable for MathTopAccentAttachment {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.top_accent_coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.top_accent_attachment.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `MathValueRecord`.
@@ -30515,6 +33413,16 @@ impl OtTable for MathValueRecord {
 			let v = &mut self.device_table;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.device_table;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -30743,6 +33651,32 @@ impl OtTable for MathVariants {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.vert_glyph_coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.horiz_glyph_coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.vert_glyph_construction.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.horiz_glyph_construction.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `MetricsValueRecord`.
@@ -30842,6 +33776,10 @@ impl OtTable for MetricsValueRecord {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -30974,6 +33912,25 @@ impl OtTable for MinMax {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.min_coord;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.max_coord;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.feat_min_max_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `MorphClass`.
@@ -31037,6 +33994,10 @@ impl OtTable for MorphClass {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -31138,6 +34099,10 @@ impl OtTable for MorphFeature {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -31301,6 +34266,13 @@ impl OtTable for MortChain {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.morph_feature.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `MortSubtable`.
@@ -31407,6 +34379,10 @@ impl OtTable for MortSubtableRaw {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -31570,6 +34546,13 @@ impl OtTable for MorxChain {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.morph_feature.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `MorxSubtable`.
@@ -31683,6 +34666,10 @@ impl OtTable for MorxSubtableRaw {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -31803,6 +34790,10 @@ impl OtTable for MultiVarData {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -31959,6 +34950,21 @@ impl OtTable for MultiVarStore {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.sparse_var_region_list;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.multi_var_data.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `MultipleSubst` format 1.
@@ -32070,6 +35076,21 @@ impl OtTable for MultipleSubstRawFormat1 {
 		for v in self.sequence.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.sequence.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -32189,6 +35210,21 @@ impl OtTable for MultipleSubstRawFormat2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.sequence.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `MultipleSubst` (format-switching).
@@ -32262,6 +35298,13 @@ impl OtTable for MultipleSubstRaw {
 		match self {
 			Self::Format1(v) => v.remap_glyphs(f),
 			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -32357,6 +35400,10 @@ impl OtTable for NoncontextualMorph {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `OpticalBounds` format 0.
@@ -32431,6 +35478,10 @@ impl OtTable for OpticalBoundsFormat0 {
 			let v = &mut self.optical_bounds_deltas;
 			remap_aat_lookup(v, &mut *f)?;
 		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -32509,6 +35560,10 @@ impl OtTable for OpticalBoundsFormat1 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `OpticalBounds` (format-switching).
@@ -32582,6 +35637,13 @@ impl OtTable for OpticalBounds {
 		match self {
 			Self::Format0(v) => v.remap_glyphs(f),
 			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format0(v) => v.visit_mut(f),
+			Self::Format1(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -32694,6 +35756,10 @@ impl OtTable for OpticalBoundsDeltas {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `OpticalBoundsPoints`.
@@ -32775,6 +35841,10 @@ impl OtTable for OpticalBoundsPoints {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `Paint` format 1.
@@ -32849,6 +35919,10 @@ impl OtTable for PaintFormat1 {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -32937,6 +36011,16 @@ impl OtTable for PaintFormat10 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Paint` format 11.
@@ -33002,6 +36086,10 @@ impl OtTable for PaintFormat11 {
 			let v = &mut self.glyph;
 			*v = f(*v)?;
 		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -33096,6 +36184,22 @@ impl OtTable for PaintFormat12 {
 			let v = &mut self.transform;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.transform;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -33196,6 +36300,22 @@ impl OtTable for PaintFormat13 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.transform;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Paint` format 14.
@@ -33281,6 +36401,16 @@ impl OtTable for PaintFormat14 {
 			let v = &mut self.paint;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -33381,6 +36511,16 @@ impl OtTable for PaintFormat15 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Paint` format 16.
@@ -33476,6 +36616,16 @@ impl OtTable for PaintFormat16 {
 			let v = &mut self.paint;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -33582,6 +36732,16 @@ impl OtTable for PaintFormat17 {
 			let v = &mut self.paint;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -33695,6 +36855,16 @@ impl OtTable for PaintFormat18 {
 			let v = &mut self.paint;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -33819,6 +36989,16 @@ impl OtTable for PaintFormat19 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Paint` format 2.
@@ -33898,6 +37078,10 @@ impl OtTable for PaintFormat2 {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -33983,6 +37167,16 @@ impl OtTable for PaintFormat20 {
 			let v = &mut self.paint;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -34077,6 +37271,16 @@ impl OtTable for PaintFormat21 {
 			let v = &mut self.paint;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -34178,6 +37382,16 @@ impl OtTable for PaintFormat22 {
 			let v = &mut self.paint;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -34290,6 +37504,16 @@ impl OtTable for PaintFormat23 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Paint` format 24.
@@ -34373,6 +37597,16 @@ impl OtTable for PaintFormat24 {
 			let v = &mut self.paint;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -34467,6 +37701,16 @@ impl OtTable for PaintFormat25 {
 			let v = &mut self.paint;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -34568,6 +37812,16 @@ impl OtTable for PaintFormat26 {
 			let v = &mut self.paint;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -34680,6 +37934,16 @@ impl OtTable for PaintFormat27 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Paint` format 28.
@@ -34775,6 +38039,16 @@ impl OtTable for PaintFormat28 {
 			let v = &mut self.paint;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -34885,6 +38159,16 @@ impl OtTable for PaintFormat29 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Paint` format 3.
@@ -34971,6 +38255,10 @@ impl OtTable for PaintFormat3 {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -35082,6 +38370,16 @@ impl OtTable for PaintFormat30 {
 			let v = &mut self.paint;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -35202,6 +38500,16 @@ impl OtTable for PaintFormat31 {
 			let v = &mut self.paint;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -35332,6 +38640,22 @@ impl OtTable for PaintFormat32 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.source_paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.backdrop_paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Paint` format 33.
@@ -35415,6 +38739,16 @@ impl OtTable for PaintFormat33 {
 		{
 			let v = &mut self.glyph;
 			*v = f(*v)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
 		}
 		Ok(())
 	}
@@ -35533,6 +38867,16 @@ impl OtTable for PaintFormat4 {
 			let v = &mut self.color_line;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.color_line;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -35663,6 +39007,16 @@ impl OtTable for PaintFormat5 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.color_line;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Paint` format 6.
@@ -35778,6 +39132,16 @@ impl OtTable for PaintFormat6 {
 			let v = &mut self.color_line;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.color_line;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -35908,6 +39272,16 @@ impl OtTable for PaintFormat7 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.color_line;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Paint` format 8.
@@ -36019,6 +39393,16 @@ impl OtTable for PaintFormat8 {
 			let v = &mut self.color_line;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.color_line;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -36141,6 +39525,16 @@ impl OtTable for PaintFormat9 {
 			let v = &mut self.color_line;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.color_line;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -36509,6 +39903,44 @@ impl OtTable for Paint {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format10(v) => v.visit_mut(f),
+			Self::Format11(v) => v.visit_mut(f),
+			Self::Format12(v) => v.visit_mut(f),
+			Self::Format13(v) => v.visit_mut(f),
+			Self::Format14(v) => v.visit_mut(f),
+			Self::Format15(v) => v.visit_mut(f),
+			Self::Format16(v) => v.visit_mut(f),
+			Self::Format17(v) => v.visit_mut(f),
+			Self::Format18(v) => v.visit_mut(f),
+			Self::Format19(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
+			Self::Format20(v) => v.visit_mut(f),
+			Self::Format21(v) => v.visit_mut(f),
+			Self::Format22(v) => v.visit_mut(f),
+			Self::Format23(v) => v.visit_mut(f),
+			Self::Format24(v) => v.visit_mut(f),
+			Self::Format25(v) => v.visit_mut(f),
+			Self::Format26(v) => v.visit_mut(f),
+			Self::Format27(v) => v.visit_mut(f),
+			Self::Format28(v) => v.visit_mut(f),
+			Self::Format29(v) => v.visit_mut(f),
+			Self::Format3(v) => v.visit_mut(f),
+			Self::Format30(v) => v.visit_mut(f),
+			Self::Format31(v) => v.visit_mut(f),
+			Self::Format32(v) => v.visit_mut(f),
+			Self::Format33(v) => v.visit_mut(f),
+			Self::Format4(v) => v.visit_mut(f),
+			Self::Format5(v) => v.visit_mut(f),
+			Self::Format6(v) => v.visit_mut(f),
+			Self::Format7(v) => v.visit_mut(f),
+			Self::Format8(v) => v.visit_mut(f),
+			Self::Format9(v) => v.visit_mut(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
 	fn struct_length(&self) -> Option<StructLength> {
 		match self {
 			Self::Format1(v) => v.struct_length(),
@@ -36822,6 +40254,21 @@ impl OtTable for PairPosFormat1 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.pair_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `PairPos` format 2.
@@ -37036,6 +40483,31 @@ impl OtTable for PairPosFormat2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.class_def1;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.class_def2;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.class1_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["Class2Count"]
 	}
@@ -37206,6 +40678,21 @@ impl OtTable for PairPosFormat3 {
 		for v in self.pair_set.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.pair_set.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -37424,6 +40911,31 @@ impl OtTable for PairPosFormat4 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.class_def1;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.class_def2;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.class1_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["Class2Count"]
 	}
@@ -37528,6 +41040,15 @@ impl OtTable for PairPos {
 			Self::Format2(v) => v.remap_glyphs(f),
 			Self::Format3(v) => v.remap_glyphs(f),
 			Self::Format4(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
+			Self::Format3(v) => v.visit_mut(f),
+			Self::Format4(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -37673,6 +41194,13 @@ impl OtTable for PairSet {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.pair_value_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `PairSet2`.
@@ -37758,6 +41286,13 @@ impl OtTable for PairSet2 {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		for v in self.pair_value_record.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.pair_value_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -37847,6 +41382,22 @@ impl OtTable for PairValue2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.value1;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.value2;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `PairValueRecord`.
@@ -37930,6 +41481,22 @@ impl OtTable for PairValueRecord {
 		{
 			let v = &mut self.second_glyph;
 			*v = f(*v)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.value1;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.value2;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
 		}
 		Ok(())
 	}
@@ -38206,6 +41773,22 @@ impl OtTable for PatchMapFormat2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.mapping_entries;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.entry_id_string_data;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `PatchMap` (format-switching).
@@ -38270,6 +41853,12 @@ impl OtTable for PatchMap {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		match self {
 			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format2(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -38419,6 +42008,13 @@ impl OtTable for PosClassRule {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.pos_lookup_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `PosClassSet`.
@@ -38515,6 +42111,15 @@ impl OtTable for PosClassSet {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.pos_class_rule.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `PosLookupRecord`.
@@ -38590,6 +42195,10 @@ impl OtTable for PosLookupRecord {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -38717,6 +42326,13 @@ impl OtTable for PosRule {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.pos_lookup_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `PosRuleSet`.
@@ -38807,6 +42423,15 @@ impl OtTable for PosRuleSet {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.pos_rule.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `RangeRecord`.
@@ -38891,6 +42516,10 @@ impl OtTable for RangeRecord {
 			let v = &mut self.end;
 			*v = f(*v)?;
 		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -38979,6 +42608,10 @@ impl OtTable for RangeRecord2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `RearrangementMorph`.
@@ -39043,6 +42676,10 @@ impl OtTable for RearrangementMorph {
 			let v = &mut self.state_table;
 			v.remap_glyphs(&mut *f)?;
 		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -39258,6 +42895,26 @@ impl OtTable for ReverseChainSingleSubstFormat1 {
 		}
 		for v in self.substitute.iter_mut() {
 			*v = f(*v)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.backtrack_coverage.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.look_ahead_coverage.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
 		}
 		Ok(())
 	}
@@ -39477,6 +43134,26 @@ impl OtTable for ReverseChainSingleSubstFormat2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.backtrack_coverage.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.look_ahead_coverage.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ReverseChainSingleSubst` (format-switching).
@@ -39550,6 +43227,13 @@ impl OtTable for ReverseChainSingleSubst {
 		match self {
 			Self::Format1(v) => v.remap_glyphs(f),
 			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -39794,6 +43478,22 @@ impl OtTable for STAT {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.design_axis_record;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.axis_value_array;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["DesignAxisRecordSize", "DesignAxisCount", "AxisValueCount"]
 	}
@@ -39933,6 +43633,19 @@ impl OtTable for Script {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.default_lang_sys;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.lang_sys_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ScriptList`.
@@ -40021,6 +43734,13 @@ impl OtTable for ScriptList {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.script_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ScriptRecord`.
@@ -40095,6 +43815,16 @@ impl OtTable for ScriptRecord {
 			let v = &mut self.script;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.script;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -40174,6 +43904,10 @@ impl OtTable for SeqLookup {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -40301,6 +44035,13 @@ impl OtTable for SeqRule2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.seq_lookup_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `SeqRuleSet2`.
@@ -40387,6 +44128,15 @@ impl OtTable for SeqRuleSet2 {
 		for v in self.seq_rule.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.seq_rule.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -40480,6 +44230,10 @@ impl OtTable for Sequence {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `Sequence2`.
@@ -40569,6 +44323,10 @@ impl OtTable for Sequence2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `Setting`.
@@ -40645,6 +44403,10 @@ impl OtTable for Setting {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -40732,6 +44494,13 @@ impl OtTable for Settings {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		for v in self.setting.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.setting.iter_mut() {
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -40846,6 +44615,22 @@ impl OtTable for SinglePosFormat1 {
 			let v = &mut self.coverage;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.value;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -40989,6 +44774,21 @@ impl OtTable for SinglePosFormat2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.value.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `SinglePos` format 3.
@@ -41100,6 +44900,22 @@ impl OtTable for SinglePosFormat3 {
 			let v = &mut self.coverage;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.value;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -41243,6 +45059,21 @@ impl OtTable for SinglePosFormat4 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.value.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `SinglePos` (format-switching).
@@ -41334,6 +45165,15 @@ impl OtTable for SinglePos {
 			Self::Format2(v) => v.remap_glyphs(f),
 			Self::Format3(v) => v.remap_glyphs(f),
 			Self::Format4(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
+			Self::Format3(v) => v.visit_mut(f),
+			Self::Format4(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -41480,6 +45320,16 @@ impl OtTable for SingleSubstRawFormat1 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `SingleSubst` format 2.
@@ -41594,6 +45444,16 @@ impl OtTable for SingleSubstRawFormat2 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `SingleSubst` format 3.
@@ -41679,6 +45539,16 @@ impl OtTable for SingleSubstRawFormat3 {
 			let v = &mut self.coverage;
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -41797,6 +45667,16 @@ impl OtTable for SingleSubstRawFormat4 {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `SingleSubst` (format-switching).
@@ -41888,6 +45768,15 @@ impl OtTable for SingleSubstRaw {
 			Self::Format2(v) => v.remap_glyphs(f),
 			Self::Format3(v) => v.remap_glyphs(f),
 			Self::Format4(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.visit_mut(f),
+			Self::Format2(v) => v.visit_mut(f),
+			Self::Format3(v) => v.visit_mut(f),
+			Self::Format4(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -42031,6 +45920,15 @@ impl OtTable for SparseVarRegion {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.sparse_var_region_axis.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `SparseVarRegionAxis`.
@@ -42127,6 +46025,10 @@ impl OtTable for SparseVarRegionAxis {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `SparseVarRegionList`.
@@ -42213,6 +46115,15 @@ impl OtTable for SparseVarRegionList {
 		for v in self.region.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.region.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -42317,6 +46228,10 @@ impl OtTable for StateHeader {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -42454,6 +46369,13 @@ impl OtTable for SubClassRule {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.subst_lookup_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `SubClassSet`.
@@ -42546,6 +46468,15 @@ impl OtTable for SubClassSet {
 		for v in self.sub_class_rule.iter_mut() {
 			if let Some(x) = v {
 				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.sub_class_rule.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
 			}
 		}
 		Ok(())
@@ -42675,6 +46606,13 @@ impl OtTable for SubRule {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.subst_lookup_record.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `SubRuleSet`.
@@ -42765,6 +46703,15 @@ impl OtTable for SubRuleSet {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.sub_rule.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `SubstLookupRecord`.
@@ -42840,6 +46787,10 @@ impl OtTable for SubstLookupRecord {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -43017,6 +46968,16 @@ impl OtTable for TSIC {
 		}
 		for v in self.record.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.record_locations.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		for v in self.record.iter_mut() {
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -43222,6 +47183,10 @@ impl OtTable for TSICRecord {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `VARC`.
@@ -43422,6 +47387,40 @@ impl OtTable for VARC {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.multi_var_store;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.condition_list;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.axis_indices_list;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.var_composite_glyphs;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `VVAR`.
@@ -43590,6 +47589,40 @@ impl OtTable for VVAR {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.var_store;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.adv_height_map;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.tsb_map;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.bsb_map;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.v_org_map;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `VarAffine2x3`.
@@ -43692,6 +47725,10 @@ impl OtTable for VarAffine2x3 {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `VarColorLine`.
@@ -43792,6 +47829,13 @@ impl OtTable for VarColorLine {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.color_stop.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `VarColorStop`.
@@ -43888,6 +47932,10 @@ impl OtTable for VarColorStop {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `VarCompositeGlyphs`.
@@ -43953,6 +48001,10 @@ impl OtTable for VarCompositeGlyphs {
 				g.remap_glyphs(&mut *f)?;
 			}
 		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -44090,6 +48142,10 @@ impl OtTable for VarData {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["VarRegionCount"]
 	}
@@ -44194,6 +48250,10 @@ impl OtTable for VarIdxMapRawFormat0 {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -44302,6 +48362,10 @@ impl OtTable for VarIdxMapRawFormat1 {
 		let _ = f;
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["MappingCount"]
 	}
@@ -44388,6 +48452,13 @@ impl OtTable for VarIdxMapRaw {
 		match self {
 			Self::Format0(v) => v.remap_glyphs(f),
 			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::Format0(v) => v.visit_mut(f),
+			Self::Format1(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -44507,6 +48578,13 @@ impl OtTable for VarRegion {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.var_region_axis.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `VarRegionAxis`.
@@ -44594,6 +48672,10 @@ impl OtTable for VarRegionAxis {
 	}
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -44701,6 +48783,13 @@ impl OtTable for VarRegionList {
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		for v in self.region.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.region.iter_mut() {
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -44851,6 +48940,21 @@ impl OtTable for VarStore {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.var_region_list;
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		for v in self.var_data.iter_mut() {
+			if let Some(x) = v {
+				x.visit_mut(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ankr`.
@@ -44920,6 +49024,14 @@ impl OtTable for Ankr {
 		{
 			let v = &mut self.anchor_points;
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.anchor_points;
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -45091,6 +49203,29 @@ impl OtTable for Avar {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		for v in self.axis_segment_map.iter_mut() {
+			v.visit_mut(&mut *f)?;
+		}
+		if (self.version as i64) >= 0x00020000 {
+			{
+				let v = &mut self.var_idx_map;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00020000 {
+			{
+				let v = &mut self.var_store;
+				if let Some(x) = v {
+					x.visit_mut(&mut *f)?;
+				}
+			}
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["AxisCount"]
 	}
@@ -45187,6 +49322,14 @@ impl OtTable for Bsln {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.baseline;
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `cidg`.
@@ -45257,6 +49400,10 @@ impl OtTable for Cidg {
 			let v = &mut self.cid_glyph_mapping;
 			v.remap_glyphs(&mut *f)?;
 		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -45343,6 +49490,14 @@ impl OtTable for Feat {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.feature_names;
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `gcid`.
@@ -45413,6 +49568,10 @@ impl OtTable for Gcid {
 			let v = &mut self.glyph_cid_mapping;
 			v.remap_glyphs(&mut *f)?;
 		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -45496,6 +49655,14 @@ impl OtTable for Lcar {
 		{
 			let v = &mut self.ligature_carets;
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.ligature_carets;
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -45597,6 +49764,10 @@ impl OtTable for Mort {
 		for v in self.morph_chain.iter_mut() {
 			v.remap_glyphs(&mut *f)?;
 		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		Ok(())
 	}
 }
@@ -45701,6 +49872,10 @@ impl OtTable for Morx {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		Ok(())
+	}
 }
 
 /// `opbd`.
@@ -45785,6 +49960,14 @@ impl OtTable for Opbd {
 		}
 		Ok(())
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.optical_bounds;
+			v.visit_mut(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `prop`.
@@ -45866,6 +50049,14 @@ impl OtTable for Prop {
 		{
 			let v = &mut self.glyph_properties;
 			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
+		{
+			let v = &mut self.glyph_properties;
+			v.visit_mut(&mut *f)?;
 		}
 		Ok(())
 	}
@@ -46325,6 +50516,32 @@ impl OtTable for LookupSubTable {
 			Self::SingleSubst(v) => v.remap_glyphs(f),
 		}
 	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::AlternateSubst(v) => v.visit_mut(f),
+			Self::ChainContextPos(v) => v.visit_mut(f),
+			Self::ChainContextSubst(v) => v.visit_mut(f),
+			Self::ContextPos(v) => v.visit_mut(f),
+			Self::ContextSubst(v) => v.visit_mut(f),
+			Self::ContextualMorph(v) => v.visit_mut(f),
+			Self::CursivePos(v) => v.visit_mut(f),
+			Self::ExtensionPos(v) => v.visit_mut(f),
+			Self::ExtensionSubst(v) => v.visit_mut(f),
+			Self::InsertionMorph(v) => v.visit_mut(f),
+			Self::LigatureMorph(v) => v.visit_mut(f),
+			Self::LigatureSubst(v) => v.visit_mut(f),
+			Self::MarkBasePos(v) => v.visit_mut(f),
+			Self::MarkLigPos(v) => v.visit_mut(f),
+			Self::MarkMarkPos(v) => v.visit_mut(f),
+			Self::MultipleSubst(v) => v.visit_mut(f),
+			Self::NoncontextualMorph(v) => v.visit_mut(f),
+			Self::PairPos(v) => v.visit_mut(f),
+			Self::RearrangementMorph(v) => v.visit_mut(f),
+			Self::ReverseChainSingleSubst(v) => v.visit_mut(f),
+			Self::SinglePos(v) => v.visit_mut(f),
+			Self::SingleSubst(v) => v.visit_mut(f),
+		}
+	}
 }
 
 /// Feature parameters of any kind (`FeatureParams`), dispatched on the
@@ -46624,6 +50841,14 @@ impl OtTable for FeatureParamsAny {
 			Self::FeatureParamsCharacterVariants(v) => v.remap_glyphs(f),
 			Self::FeatureParamsSize(v) => v.remap_glyphs(f),
 			Self::FeatureParamsStylisticSet(v) => v.remap_glyphs(f),
+		}
+	}
+	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		match self {
+			Self::FeatureParams(v) => v.visit_mut(f),
+			Self::FeatureParamsCharacterVariants(v) => v.visit_mut(f),
+			Self::FeatureParamsSize(v) => v.visit_mut(f),
+			Self::FeatureParamsStylisticSet(v) => v.visit_mut(f),
 		}
 	}
 }

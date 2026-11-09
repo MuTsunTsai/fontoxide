@@ -1241,6 +1241,38 @@ impl Gen<'_> {
 		self.line("\t\tOk(())");
 	}
 
+	/// `visit_mut`: the table, then its subtables, depth-first.
+	fn visit_body(&mut self, fields: &[Field]) {
+		self.line("\t\tf(self)?;");
+		for f in fields {
+			let stmt = match &f.kind {
+				Kind::Struct(_) => "v.visit_mut(&mut *f)?;",
+				Kind::Offset(..)
+				| Kind::SubTable(_)
+				| Kind::FeatureParams
+				| Kind::FeatureVariations
+				| Kind::AlternateFeature(_)
+				| Kind::ValueRecord => "if let Some(x) = v { x.visit_mut(&mut *f)?; }",
+				_ => continue,
+			};
+			let body = if f.repeat.is_some() {
+				format!("for v in self.{}.iter_mut() {{ {stmt} }}", f.ident)
+			} else {
+				format!("{{ let v = &mut self.{}; {stmt} }}", f.ident)
+			};
+			match &f.cond {
+				Some(c) => {
+					let c = c.replace("t.", "self.");
+					let _ = writeln!(self.out, "\t\tif {c} {{ {body} }}");
+				}
+				None => {
+					let _ = writeln!(self.out, "\t\t{body}");
+				}
+			}
+		}
+		self.line("\t\tOk(())");
+	}
+
 	fn propagated(&mut self, fields: &[Field]) {
 		let names: Vec<&Field> = fields
 			.iter()
@@ -1386,6 +1418,11 @@ impl Gen<'_> {
 		);
 		self.remap_body(&fields);
 		self.line("\t}");
+		self.line(
+			"\tfn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {",
+		);
+		self.visit_body(&fields);
+		self.line("\t}");
 		self.propagated(&fields);
 		self.line("}");
 		self.line("");
@@ -1497,6 +1534,11 @@ impl Gen<'_> {
 				"remap_glyphs",
 				"&mut self, f: &mut dyn FnMut(u32) -> Result<u32>",
 				"remap_glyphs(f)",
+			),
+			(
+				"visit_mut",
+				"&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>",
+				"visit_mut(f)",
 			),
 		] {
 			let _ = writeln!(self.out, "\tfn {method}({args}) -> Result<()> {{");
@@ -1828,6 +1870,11 @@ impl Gen<'_> {
 				"remap_glyphs",
 				"&mut self, f: &mut dyn FnMut(u32) -> Result<u32>",
 				"remap_glyphs(f)",
+			),
+			(
+				"visit_mut",
+				"&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>",
+				"visit_mut(f)",
 			),
 		] {
 			let _ = writeln!(self.out, "\tfn {method}({args}) -> Result<()> {{");
