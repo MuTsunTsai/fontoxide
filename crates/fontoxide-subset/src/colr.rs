@@ -245,13 +245,7 @@ pub(crate) fn closure_glyphs(s: &mut Subsetter, font: &mut Font) -> Result<()> {
 				&& let Some(Some(paint)) = paints.get(g)
 			{
 				traversal.walk(paint, &mut |paint| {
-					// `_paint_glyph_names`.
-					match paint {
-						Paint::Format10(t) => layers.insert(t.glyph),
-						Paint::Format11(t) => layers.insert(t.glyph),
-						Paint::Format33(t) => layers.insert(t.glyph),
-						_ => false,
-					};
+					layers.extend(paint_glyph(paint));
 					Ok(())
 				})?;
 			}
@@ -262,6 +256,16 @@ pub(crate) fn closure_glyphs(s: &mut Subsetter, font: &mut Font) -> Result<()> {
 	}
 	s.glyphs = glyphs;
 	Ok(())
+}
+
+/// `_paint_glyph_names`, for one paint: the glyph it refers to, if it does.
+fn paint_glyph(paint: &Paint) -> Option<u32> {
+	match paint {
+		Paint::Format10(t) => Some(t.glyph),
+		Paint::Format11(t) => Some(t.glyph),
+		Paint::Format33(t) => Some(t.glyph),
+		_ => None,
+	}
 }
 
 /// The errors that `LayerListUnbuilder.unbuildPaint` gives.
@@ -693,6 +697,21 @@ pub(crate) fn cpal_prune_post_subset(s: &Subsetter, font: &mut Font) -> Result<b
 
 #[cfg(test)]
 mod tests {
+	/// `Tests/subset/subset_test.py::test_colr_paint_glyph2_closure`.
+	#[test]
+	fn test_colr_paint_glyph2_closure() {
+		let paint = Paint::Format33(fontoxide_ttlib::ot::types::PaintFormat33 {
+			paint: Some(Box::new(Paint::Format2(
+				fontoxide_ttlib::ot::types::PaintFormat2 {
+					palette_index: 0,
+					alpha: 1.0,
+				},
+			))),
+			glyph: 0x10000,
+		});
+		assert_eq!(super::paint_glyph(&paint), Some(0x10000));
+	}
+
 	use super::*;
 
 	/// The shape of a tree: the number of leaves or a list of shapes.

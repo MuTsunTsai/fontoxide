@@ -63,9 +63,9 @@ fn num_points(glyph: &Glyph) -> usize {
 	}
 }
 
-fn glyph_points(font: &mut Font, gid: u32) -> Result<usize> {
+fn glyph_points(font: &mut Font, gid: u32, extended: bool) -> Result<usize> {
 	let order = font.glyph_order()?;
-	let glyf = font.require::<Glyf>()?;
+	let glyf = font.require_locked::<Glyf>(extended)?;
 	let glyph = glyf
 		.glyphs
 		.get(&gid)
@@ -73,8 +73,10 @@ fn glyph_points(font: &mut Font, gid: u32) -> Result<usize> {
 	Ok(num_points(glyph))
 }
 
-/// The size of the header, with its 16-bit glyph count.
-const GVAR_HEADER_SIZE: usize = 20;
+/// The size of the header, with its glyph count: 16 bits in `gvar`, 24 bits in `GVAR`.
+fn header_size(extended: bool) -> usize {
+	if extended { 21 } else { 20 }
+}
 
 /// Glyph Variations table (`table__g_v_a_r`).
 ///
@@ -92,6 +94,8 @@ pub struct Gvar {
 	pub variations: Vec<(u32, Vec<TupleVariation>)>,
 	/// Whether the TTX numbered the axes, which it does without `fvar`.
 	pub numeric_axis_tags: bool,
+	/// Whether this is `GVAR`, the beyond-64k companion of the table.
+	pub extended: bool,
 }
 
 impl Default for Gvar {
@@ -102,6 +106,7 @@ impl Default for Gvar {
 			axis_count: 0,
 			variations: Vec::new(),
 			numeric_axis_tags: false,
+			extended: false,
 		}
 	}
 }
@@ -132,18 +137,57 @@ impl Gvar {
 	}
 }
 
+/// `compileOffsets_`: the packed offsets, as short offsets (halved) if they fit, and the
+/// table format that goes in the flags of the header: 0 for short, 1 for long.
+pub fn compile_offsets(offsets: &[usize]) -> Result<(Vec<u8>, u16)> {
+	let long = offsets.iter().any(|&o| o > 0xFFFF * 2);
+	let mut packed = Vec::with_capacity(offsets.len() * if long { 4 } else { 2 });
+	for &o in offsets {
+		if long {
+			packed.extend_from_slice(&ulong(o)?);
+		} else {
+			packed.extend_from_slice(&((o >> 1) as u16).to_be_bytes());
+		}
+	}
+	Ok((packed, u16::from(long)))
+}
+
+/// `decompileOffsets_`: the offsets of `glyph_count` glyphs and the end, as far as `data`
+/// has them.
+pub fn decompile_offsets(data: &[u8], table_format: u16, glyph_count: usize) -> Vec<usize> {
+	let count = glyph_count + 1;
+	if table_format == 0 {
+		// In the short format, offsets need to be multiplied by 2.
+		data.as_chunks::<2>()
+			.0
+			.iter()
+			.take(count)
+			.map(|&b| 2 * u16::from_be_bytes(b) as usize)
+			.collect()
+	} else {
+		data.as_chunks::<4>()
+			.0
+			.iter()
+			.take(count)
+			.map(|&b| u32::from_be_bytes(b) as usize)
+			.collect()
+	}
+}
+
 /// `compileGlyph_`.
 fn compile_glyph(
 	variations: &[TupleVariation],
 	axis_tags: &[String],
 	shared: &HashMap<Vec<u8>, usize>,
+	extended: bool,
 ) -> Result<Vec<u8>> {
 	let (count, tuples, data) =
 		compile_tuple_variation_store(variations, axis_tags, shared, true, true)?;
 	if count == 0 {
 		return Ok(Vec::new());
 	}
-	let offset_to_data = 4 + tuples.len();
+	let offset_size = if extended { 3 } else { 2 };
+	let offset_to_data = 2 + offset_size + tuples.len();
 	let mut out = Vec::with_capacity(offset_to_data + data.len() + 1);
 	let int = |v: usize| {
 		u16::try_from(v)
@@ -151,7 +195,14 @@ fn compile_glyph(
 			.map_err(|_| Error::value("OverflowError: int too big to convert"))
 	};
 	out.extend_from_slice(&int(count as usize)?);
-	out.extend_from_slice(&int(offset_to_data)?);
+	if extended {
+		if offset_to_data > 0xFF_FFFF {
+			return Err(Error::value("OverflowError: int too big to convert"));
+		}
+		out.extend_from_slice(&(offset_to_data as u32).to_be_bytes()[1..]);
+	} else {
+		out.extend_from_slice(&int(offset_to_data)?);
+	}
 	out.extend(tuples);
 	let odd = (offset_to_data + data.len()) % 2 != 0;
 	out.extend(data);
@@ -163,8 +214,24 @@ fn compile_glyph(
 
 impl TableType for Gvar {
 	const TAG: Tag = Tag::new(b"gvar");
+	const COMPANION: Option<Tag> = Some(Tag::new(b"GVAR"));
 
 	fn decompile(data: &[u8], font: &mut Font) -> Result<Self> {
+		Self::decompile_as(Self::TAG, data, font)
+	}
+
+	fn new_as(tag: Tag) -> Self {
+		Gvar {
+			extended: tag == Tag::new(b"GVAR"),
+			..Default::default()
+		}
+	}
+
+	fn decompile_as(tag: Tag, data: &[u8], font: &mut Font) -> Result<Self> {
+		let extended = tag == Tag::new(b"GVAR");
+		// What follows the glyph count moves with its size.
+		let gid_size = if extended { 3 } else { 2 };
+		let tail = 12 + gid_size;
 		let order = font.glyph_order()?;
 		let version = be16(data, 0)? as i64;
 		let reserved = be16(data, 2)? as i64;
@@ -172,14 +239,15 @@ impl TableType for Gvar {
 		let shared_count = be16(data, 6)? as usize;
 		let shared_offset = be32(data, 8)? as usize;
 		let glyph_count = data
-			.get(12..14)
+			.get(12..tail)
 			.map_or(0, |b| b.iter().fold(0usize, |a, &x| a << 8 | x as usize));
-		let flags = be16(data, 14)?;
-		let data_offset = be32(data, 16)? as usize;
+		let flags = be16(data, tail)?;
+		let data_offset = be32(data, tail + 2)? as usize;
 		let mut table = Gvar {
 			version,
 			reserved,
 			axis_count,
+			extended,
 			..Default::default()
 		};
 		let axis_tags = table.axis_tags(font)?;
@@ -196,34 +264,30 @@ impl TableType for Gvar {
 			)));
 		}
 		let shared = decompile_shared_tuples(&axis_tags, shared_count, data, shared_offset)?;
-		font.require::<Glyf>()?;
-		let long = flags & 1 != 0;
-		let size = if long { 4 } else { 2 };
+		font.require_locked::<Glyf>(extended)?;
+		let offsets = decompile_offsets(
+			data.get(header_size(extended)..).unwrap_or_default(),
+			flags & 1,
+			glyph_count,
+		);
 		for gid in 0..glyph_count {
-			let start = GVAR_HEADER_SIZE + size * gid;
-			let index = || Error::ttlib("IndexError: array index out of range");
-			let at = |i: usize| -> Result<usize> {
-				let from = start + i * size;
-				let b = data.get(from..from + size).ok_or_else(index)?;
-				Ok(if long {
-					u32::from_be_bytes([b[0], b[1], b[2], b[3]]) as usize
-				} else {
-					2 * u16::from_be_bytes([b[0], b[1]]) as usize
-				})
+			let (Some(&o0), Some(&o1)) = (offsets.get(gid), offsets.get(gid + 1)) else {
+				return Err(Error::ttlib("IndexError: array index out of range"));
 			};
-			let (o0, o1) = (at(0)?, at(1)?);
 			let from = (data_offset + o0).min(data.len());
 			let to = (data_offset + o1).min(data.len()).max(from);
 			let glyph_data = &data[from..to];
 			let variations = if glyph_data.is_empty() {
 				Vec::new()
 			} else {
-				let points = glyph_points(font, gid as u32)?;
-				if glyph_data.len() < 4 {
+				let points = glyph_points(font, gid as u32, extended)?;
+				if glyph_data.len() < 2 + gid_size {
 					Vec::new()
 				} else {
 					let count = u16::from_be_bytes([glyph_data[0], glyph_data[1]]);
-					let offset = u16::from_be_bytes([glyph_data[2], glyph_data[3]]) as usize;
+					let offset = glyph_data[2..2 + gid_size]
+						.iter()
+						.fold(0usize, |a, &x| a << 8 | x as usize);
 					decompile_tuple_variation_store(
 						"gvar",
 						&axis_tags,
@@ -231,7 +295,7 @@ impl TableType for Gvar {
 						points,
 						Some(&shared),
 						glyph_data,
-						4,
+						2 + gid_size,
 						offset,
 					)?
 				}
@@ -252,7 +316,7 @@ impl Table for Gvar {
 	}
 
 	fn tag(&self) -> Tag {
-		Self::TAG
+		Font::locked_tag::<Self>(self.extended)
 	}
 
 	fn compile(&mut self, font: &mut Font) -> Result<Vec<u8>> {
@@ -268,13 +332,13 @@ impl Table for Gvar {
 			.collect();
 		let shared_size: usize = shared.iter().map(Vec::len).sum();
 		let order = font.glyph_order()?;
-		font.require::<Glyf>()?;
+		font.require_locked::<Glyf>(self.extended)?;
 		let by_gid: HashMap<u32, &Vec<TupleVariation>> =
 			self.variations.iter().map(|(g, v)| (*g, v)).collect();
 		let mut glyphs = Vec::with_capacity(order.len());
 		for gid in 0..order.len() as u32 {
 			glyphs.push(match by_gid.get(&gid) {
-				Some(v) if !v.is_empty() => compile_glyph(v, &axis_tags, &indices)?,
+				Some(v) if !v.is_empty() => compile_glyph(v, &axis_tags, &indices, self.extended)?,
 				_ => Vec::new(),
 			});
 		}
@@ -285,29 +349,27 @@ impl Table for Gvar {
 			at += g.len();
 		}
 		offsets.push(at);
-		// `compileOffsets_`: short offsets (halved) when they fit.
-		let long = at > 0xFFFF * 2;
-		let mut packed = Vec::with_capacity(offsets.len() * if long { 4 } else { 2 });
-		for &o in &offsets {
-			if long {
-				packed.extend_from_slice(&ulong(o)?);
-			} else {
-				packed.extend_from_slice(&((o >> 1) as u16).to_be_bytes());
-			}
-		}
-		let shared_offset = GVAR_HEADER_SIZE + packed.len();
+		let (packed, table_format) = compile_offsets(&offsets)?;
+		let shared_offset = header_size(self.extended) + packed.len();
 		let mut out = Vec::new();
 		out.extend_from_slice(&ushort(self.version, "version")?);
 		out.extend_from_slice(&ushort(self.reserved, "reserved")?);
 		out.extend_from_slice(&ushort(axis_tags.len() as i64, "axisCount")?);
 		out.extend_from_slice(&ushort(shared.len() as i64, "sharedTupleCount")?);
 		out.extend_from_slice(&ulong(shared_offset)?);
-		out.extend_from_slice(
-			&u16::try_from(glyphs.len())
-				.map_err(|_| Error::value("OverflowError: int too big to convert"))?
-				.to_be_bytes(),
-		);
-		out.extend_from_slice(&(long as u16).to_be_bytes());
+		if self.extended {
+			if glyphs.len() > 0xFF_FFFF {
+				return Err(Error::value("OverflowError: int too big to convert"));
+			}
+			out.extend_from_slice(&(glyphs.len() as u32).to_be_bytes()[1..]);
+		} else {
+			out.extend_from_slice(
+				&u16::try_from(glyphs.len())
+					.map_err(|_| Error::value("OverflowError: int too big to convert"))?
+					.to_be_bytes(),
+			);
+		}
+		out.extend_from_slice(&table_format.to_be_bytes());
 		out.extend_from_slice(&ulong(shared_offset + shared_size)?);
 		out.extend(packed);
 		for s in shared {
@@ -372,7 +434,7 @@ impl Table for Gvar {
 					.attr("glyph")
 					.ok_or_else(|| Error::ttx("KeyError: 'glyph'"))?;
 				let gid = font.glyph_id(name)?;
-				let points = glyph_points(font, gid)?;
+				let points = glyph_points(font, gid, self.extended)?;
 				let mut variations = Vec::new();
 				for t in element.elements().filter(|e| e.name == "tuple") {
 					let mut v = TupleVariation::new(points);

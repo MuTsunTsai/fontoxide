@@ -28,7 +28,7 @@ use fontoxide_ttlib::remove_overlaps::{RemoveOverlapsOptions, remove_overlaps};
 use fontoxide_ttlib::tables::metrics::Metric;
 use fontoxide_ttlib::tables::tuple_variation::Delta;
 use fontoxide_ttlib::tables::{
-	Avar, Cff2, Cvar, Cvt, Fvar, Gdef, Glyf, Gpos, Gsub, Gvar, Hmtx, Name, Os2, Post, Stat, Vmtx,
+	Avar, Cff2, Cvar, Cvt, Fvar, Glyf, Gvar, Hmtx, Name, Os2, Post, Stat, Vmtx,
 };
 use fontoxide_ttlib::{Error, Font, ReadOptions, Result, Tag, WriteOptions};
 
@@ -68,8 +68,6 @@ const CFF2: Tag = Tag::new(b"CFF2");
 const VARC: Tag = Tag::new(b"VARC");
 const DSIG: Tag = Tag::new(b"DSIG");
 const FVAR: Tag = Tag::new(b"fvar");
-const GLYF: Tag = Tag::new(b"glyf");
-const GVAR: Tag = Tag::new(b"gvar");
 const CVAR: Tag = Tag::new(b"cvar");
 const LTAG: Tag = Tag::new(b"ltag");
 const NAME: Tag = Tag::new(b"name");
@@ -177,12 +175,18 @@ impl Default for InstancerOptions {
 #[doc(hidden)]
 pub fn instantiate_gvar(font: &mut Font, limits: &NormalizedLimits, optimize: bool) -> Result<()> {
 	log::info!("Instantiating glyf/gvar tables");
-	if !font.contains(GLYF) {
-		return Err(Error::ttlib("KeyError: 'glyf'"));
+	// `gvarTag`, and what goes with it.
+	let extended = font.require::<Gvar>()?.extended;
+	if !font.contains(Font::locked_tag::<Glyf>(extended)) {
+		return Err(Error::ttlib(format!(
+			"KeyError: '{}'",
+			Font::locked_tag::<Glyf>(extended)
+		)));
 	}
 	let order = font.glyph_order()?;
-	let mut h_metrics: BTreeMap<u32, Metric> = std::mem::take(&mut font.require::<Hmtx>()?.metrics);
-	let mut v_metrics = match font.get::<Vmtx>()? {
+	let mut h_metrics: BTreeMap<u32, Metric> =
+		std::mem::take(&mut font.require_locked::<Hmtx>(extended)?.metrics);
+	let mut v_metrics = match font.get_locked::<Vmtx>(extended)? {
 		Some(vmtx) => Some(std::mem::take(&mut vmtx.metrics)),
 		None => None,
 	};
@@ -271,7 +275,7 @@ pub fn instantiate_gvar(font: &mut Font, limits: &NormalizedLimits, optimize: bo
 		.filter_map(|g| variations.remove(&g).map(|v| (g, v)))
 		.collect();
 	if gvar.variations.is_empty() {
-		font.remove(GVAR);
+		font.remove(font.family_tag::<Gvar>());
 	}
 	Ok(())
 }
@@ -583,7 +587,7 @@ fn instantiate_variation_tables(
 	if font.contains(CFF2) {
 		downgrade_cff2 = cff::instantiate_cff2(font, limits, true, downgrade_cff2, None)?;
 	}
-	if font.contains(GVAR) {
+	if font.has::<Gvar>() {
 		instantiate_gvar(font, limits, optimize)?;
 	}
 	if font.contains(CVAR) {
@@ -642,38 +646,14 @@ fn downgrade_cff2_to_cff(font: &mut Font) -> Result<()> {
 	Ok(())
 }
 
-/// The 24-bit layout formats are not supported yet.
-fn check_compact_layout(font: &mut Font) -> Result<()> {
-	let unsupported = |what: &str| {
-		Err(Error::ttlib(format!(
-			"NotImplementedError: instancing {what} (beyond 64k glyphs)"
-		)))
-	};
-	if let Some(t) = font.get::<Gdef>()?
-		&& t.version >= 0x0001_0004
-	{
-		return unsupported("GDEF 1.4");
-	}
-	if let Some(t) = font.get::<Gsub>()?
-		&& t.version >= 0x0001_0002
-	{
-		return unsupported("GSUB 1.2");
-	}
-	if let Some(t) = font.get::<Gpos>()?
-		&& t.version >= 0x0001_0002
-	{
-		return unsupported("GPOS 1.2");
-	}
-	Ok(())
-}
-
 /// `sanityCheckVariableTables`.
 #[doc(hidden)]
 pub fn sanity_check_variable_tables(font: &Font) -> Result<()> {
 	if !font.contains(FVAR) {
 		return Err(Error::value("Missing required table fvar"));
 	}
-	if font.contains(GVAR) && !font.contains(GLYF) {
+	let gvar_tag = font.family_tag::<Gvar>();
+	if font.contains(gvar_tag) && !font.contains(Font::locked_tag::<Glyf>(gvar_tag == *b"GVAR")) {
 		return Err(Error::value("Can't have gvar without glyf"));
 	}
 	Ok(())
@@ -688,7 +668,6 @@ pub fn instantiate_variable_font(
 ) -> Result<()> {
 	sanity_check_variable_tables(font)?;
 	feature_vars::check_conditions(font)?;
-	check_compact_layout(font)?;
 
 	let mut limits = limits.clone();
 	if options.make_static {
@@ -835,7 +814,7 @@ pub fn instantiate_variable_font(
 	if !font.contains(FVAR) {
 		match options.overlap {
 			OverlapMode::KeepAndSetFlags => {
-				if font.contains(GLYF) {
+				if font.has::<Glyf>() {
 					set_mac_overlap_flags(font)?;
 				}
 			}

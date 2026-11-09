@@ -505,6 +505,7 @@ mod instantiate_cvar_test {
 
 mod instantiate_mvar_test {
 	use fontoxide_ttlib::Font;
+	use fontoxide_ttlib::beyond64k::{ConvertOptions, upper_tables};
 	use fontoxide_ttlib::ot::types as ot;
 	use fontoxide_ttlib::ot::var_store::{build_var_data, build_var_region_list, build_var_store};
 	use fontoxide_ttlib::tables::{Hhea, Mvar, Os2, Post, Vhea};
@@ -533,37 +534,43 @@ mod instantiate_mvar_test {
 		})
 	}
 
-	/// The `uppercase` cases need the tables of beyond-64k fonts, which are not ported yet.
 	#[test]
 	fn test_metric_header_companions() -> TestResult {
 		for value_tag in [
 			"hcrs", "hcrn", "hcof", "vasc", "vdsc", "vlgp", "vcrs", "vcrn", "vcof",
 		] {
-			for fully_instanced in [false, true] {
-				let mut font = varfont()?;
-				let original = metric(&mut font, value_tag)?;
-				let mvar = font.require::<Mvar>()?;
-				mvar.value_record = vec![ot::MetricsValueRecord {
-					value_tag: tag(value_tag),
-					var_idx: 0,
-					..Default::default()
-				}];
-				mvar.value_record_count = Some(1);
-				mvar.var_store = Some(Box::new(build_var_store(
-					build_var_region_list(
-						&[region(&[("wght", (0.0, 1.0, 1.0))])],
-						&["wght".to_owned(), "wdth".to_owned()],
-					)?,
-					vec![build_var_data(vec![0], vec![vec![20]], true)],
-				)));
-				let mut location = vec![("wght", pin(900.0))];
-				if fully_instanced {
-					location.push(("wdth", pin(100.0)));
+			for uppercase in [false, true] {
+				for fully_instanced in [false, true] {
+					let mut font = varfont()?;
+					if uppercase {
+						upper_tables(&mut font, &ConvertOptions::default())?;
+					}
+					let original = metric(&mut font, value_tag)?;
+					let mvar = font.require::<Mvar>()?;
+					mvar.value_record = vec![ot::MetricsValueRecord {
+						value_tag: tag(value_tag),
+						var_idx: 0,
+						..Default::default()
+					}];
+					mvar.value_record_count = Some(1);
+					mvar.var_store = Some(Box::new(build_var_store(
+						build_var_region_list(
+							&[region(&[("wght", (0.0, 1.0, 1.0))])],
+							&["wght".to_owned(), "wdth".to_owned()],
+						)?,
+						vec![build_var_data(vec![0], vec![vec![20]], true)],
+					)));
+					let mut location = vec![("wght", pin(900.0))];
+					if fully_instanced {
+						location.push(("wdth", pin(100.0)));
+					}
+					let mut instance = instantiated(&font, &location)?;
+					assert_eq!(metric(&mut instance, value_tag)?, original + 20);
+					let mut reloaded = reload(&mut instance)?;
+					assert_eq!(metric(&mut reloaded, value_tag)?, original + 20);
+					// The metrics are those of the family of the font.
+					assert_eq!(reloaded.require::<Hhea>()?.extended, uppercase);
 				}
-				let mut instance = instantiated(&font, &location)?;
-				assert_eq!(metric(&mut instance, value_tag)?, original + 20);
-				let mut reloaded = reload(&mut instance)?;
-				assert_eq!(metric(&mut reloaded, value_tag)?, original + 20);
 			}
 		}
 		Ok(())

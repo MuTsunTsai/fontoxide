@@ -60,8 +60,9 @@ pub(crate) fn subset_glyphs(s: &mut Subsetter, font: &mut Font) -> Result<bool> 
 /// `glyf.prune_post_subset`: trims padding, and hinting unless kept.
 pub(crate) fn prune_post_subset(s: &mut Subsetter, font: &mut Font) -> Result<bool> {
 	let glyf = font.require::<Glyf>()?;
+	let extended = glyf.extended;
 	for g in glyf.glyphs.values_mut() {
-		g.trim(!s.options.hinting)?;
+		g.trim_ext(!s.options.hinting, extended)?;
 	}
 	Ok(true)
 }

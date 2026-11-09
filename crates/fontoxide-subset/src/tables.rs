@@ -38,8 +38,8 @@ pub(crate) fn prune_pre_subset(
 ) -> Result<Option<bool>> {
 	Ok(Some(match &tag.0 {
 		b"cmap" | b"DMAP" => cmap::prune_pre_subset(s, font, tag)?,
-		b"glyf" => glyf::prune_pre_subset(s, font)?,
-		b"gvar" => {
+		b"glyf" | b"GLYF" => glyf::prune_pre_subset(s, font)?,
+		b"gvar" | b"GVAR" => {
 			if s.options.notdef_glyph && !s.options.notdef_outline {
 				let gvar = font.require::<Gvar>()?;
 				match gvar.variations.iter_mut().find(|(g, _)| *g == 0) {
@@ -51,7 +51,7 @@ pub(crate) fn prune_pre_subset(
 			}
 			true
 		}
-		b"maxp" => {
+		b"maxp" | b"MAXP" => {
 			let maxp = font.require::<Maxp>()?;
 			if !s.options.hinting && maxp.table_version == 0x0001_0000 {
 				let v1 = &mut maxp.v1;
@@ -96,7 +96,7 @@ pub(crate) fn prune_pre_subset(
 /// `closure_glyphs`.
 pub(crate) fn closure_glyphs(s: &mut Subsetter, font: &mut Font, tag: Tag) -> Result<()> {
 	match &tag.0 {
-		b"glyf" => glyf::closure_glyphs(s, font),
+		b"glyf" | b"GLYF" => glyf::closure_glyphs(s, font),
 		b"GSUB" => layout::gsub_closure_glyphs(s, font),
 		b"CFF " => cff::closure_glyphs(s, font),
 		b"COLR" => colr::closure_glyphs(s, font),
@@ -116,8 +116,8 @@ fn retain_glyphs<V>(map: &mut std::collections::BTreeMap<u32, V>, glyphs: &BTree
 pub(crate) fn subset_glyphs(s: &mut Subsetter, font: &mut Font, tag: Tag) -> Result<Option<bool>> {
 	Ok(Some(match &tag.0 {
 		b"cmap" | b"DMAP" => cmap::subset_glyphs(s, font, tag)?,
-		b"glyf" => glyf::subset_glyphs(s, font)?,
-		b"hmtx" => {
+		b"glyf" | b"GLYF" => glyf::subset_glyphs(s, font)?,
+		b"hmtx" | b"HMTX" => {
 			let t = font.require::<Hmtx>()?;
 			retain_glyphs(&mut t.metrics, &s.glyphs);
 			for &g in &s.glyphs_emptied {
@@ -126,7 +126,7 @@ pub(crate) fn subset_glyphs(s: &mut Subsetter, font: &mut Font, tag: Tag) -> Res
 			// A required table.
 			true
 		}
-		b"vmtx" => {
+		b"vmtx" | b"VMTX" => {
 			let t = font.require::<Vmtx>()?;
 			retain_glyphs(&mut t.metrics, &s.glyphs);
 			for &g in &s.glyphs_emptied {
@@ -144,7 +144,7 @@ pub(crate) fn subset_glyphs(s: &mut Subsetter, font: &mut Font, tag: Tag) -> Res
 			}
 			!t.hdmx.is_empty()
 		}
-		b"gvar" => {
+		b"gvar" | b"GVAR" => {
 			let t = font.require::<Gvar>()?;
 			t.variations.retain(|(g, _)| s.glyphs.contains(g));
 			!t.variations.is_empty()
@@ -207,7 +207,7 @@ pub(crate) fn prune_post_subset(
 	tag: Tag,
 ) -> Result<Option<bool>> {
 	Ok(Some(match &tag.0 {
-		b"glyf" => glyf::prune_post_subset(s, font)?,
+		b"glyf" | b"GLYF" => glyf::prune_post_subset(s, font)?,
 		b"name" => name_prune_post_subset(s, font)?,
 		b"head" => {
 			// Loaded so that it is compiled again with the recalculated values.

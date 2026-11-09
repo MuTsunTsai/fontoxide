@@ -39,7 +39,8 @@ impl TableType for Hdmx {
 	const TAG: Tag = Tag::new(b"hdmx");
 
 	fn decompile(data: &[u8], font: &mut Font) -> Result<Self> {
-		let num_glyphs = font.require::<Maxp>()?.num_glyphs as usize;
+		// UPSTREAM-BUG(B27): `hdmx` only knows `maxp`, even in a font with `MAXP`.
+		let num_glyphs = font.require_locked::<Maxp>(false)?.num_glyphs as usize;
 		let glyph_count = font.glyph_order()?.len();
 		let (header, mut rest) = HdmxHeader::unpack2(data)?;
 		let mut hdmx = BTreeMap::new();
@@ -78,7 +79,8 @@ impl Table for Hdmx {
 	}
 
 	fn compile(&mut self, font: &mut Font) -> Result<Vec<u8>> {
-		let num_glyphs = font.require::<Maxp>()?.num_glyphs as usize;
+		// UPSTREAM-BUG(B27): `hdmx` only knows `maxp`, even in a font with `MAXP`.
+		let num_glyphs = font.require_locked::<Maxp>(false)?.num_glyphs as usize;
 		let order = font.glyph_order()?;
 		let record_size = 4 * (2 + num_glyphs).div_ceil(4);
 		let pad = record_size - 2 - num_glyphs;

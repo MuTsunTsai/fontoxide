@@ -16,6 +16,8 @@ use crate::{Error, Font, Result};
 pub struct Loca {
 	/// The glyph offsets (`locations`), if set.
 	pub locations: Option<Vec<u32>>,
+	/// Whether this is `LOCA`, the beyond-64k companion of the table.
+	pub extended: bool,
 }
 
 impl Loca {
@@ -32,8 +34,21 @@ impl Loca {
 
 impl TableType for Loca {
 	const TAG: Tag = Tag::new(b"loca");
+	const COMPANION: Option<Tag> = Some(Tag::new(b"LOCA"));
 
 	fn decompile(data: &[u8], font: &mut Font) -> Result<Self> {
+		Self::decompile_as(Self::TAG, data, font)
+	}
+
+	fn new_as(tag: Tag) -> Self {
+		Loca {
+			locations: None,
+			extended: tag == Tag::new(b"LOCA"),
+		}
+	}
+
+	fn decompile_as(tag: Tag, data: &[u8], font: &mut Font) -> Result<Self> {
+		let extended = tag == Tag::new(b"LOCA");
 		let long = font.require::<Head>()?.index_to_loc_format != 0;
 		let size = if long { 4 } else { 2 };
 		if !data.len().is_multiple_of(size) {
@@ -52,7 +67,7 @@ impl TableType for Loca {
 				.map(|&c| 2 * u16::from_be_bytes(c) as u32)
 				.collect()
 		};
-		let num_glyphs = font.require::<Maxp>()?.num_glyphs as usize;
+		let num_glyphs = font.require_locked::<Maxp>(extended)?.num_glyphs as usize;
 		if locations.len() < num_glyphs + 1 {
 			log::warn!(
 				"corrupt 'loca' table, or wrong numGlyphs in 'maxp': {} {num_glyphs}",
@@ -61,6 +76,7 @@ impl TableType for Loca {
 		}
 		Ok(Loca {
 			locations: Some(locations),
+			extended,
 		})
 	}
 }
@@ -73,7 +89,7 @@ impl Table for Loca {
 	}
 
 	fn tag(&self) -> Tag {
-		Self::TAG
+		Font::locked_tag::<Self>(self.extended)
 	}
 
 	fn compile(&mut self, font: &mut Font) -> Result<Vec<u8>> {

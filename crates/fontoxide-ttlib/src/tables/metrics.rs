@@ -25,7 +25,7 @@ pub type Metric = (u16, i16);
 macro_rules! metrics_table {
 	(
 		$(#[$meta:meta])*
-		$ty:ident, $tag:literal, $header:ty, $header_field:ident, $advance:literal, $side_bearing:literal
+		$ty:ident, $tag:literal, $upper:literal, $header:ty, $header_field:ident, $advance:literal, $side_bearing:literal
 	) => {
 		$(#[$meta])*
 		#[derive(Debug, Clone, PartialEq, Default)]
@@ -33,6 +33,8 @@ macro_rules! metrics_table {
 			/// Advance and side bearing by glyph ID (`metrics`, which fontTools keys
 			/// by glyph name).
 			pub metrics: BTreeMap<u32, Metric>,
+			/// Whether this is the beyond-64k companion of the table.
+			pub extended: bool,
 		}
 
 		impl $ty {
@@ -49,17 +51,30 @@ macro_rules! metrics_table {
 
 		impl TableType for $ty {
 			const TAG: Tag = Tag::new($tag);
+			const COMPANION: Option<Tag> = Some(Tag::new($upper));
 
 			fn decompile(data: &[u8], font: &mut Font) -> Result<Self> {
-				let num_glyphs = font.require::<Maxp>()?.num_glyphs as usize;
-				let mut number_of_metrics = match font.get::<$header>()? {
+				Self::decompile_as(Self::TAG, data, font)
+			}
+
+			fn new_as(tag: Tag) -> Self {
+				Self {
+					extended: tag == Tag::new($upper),
+					..Default::default()
+				}
+			}
+
+			fn decompile_as(tag: Tag, data: &[u8], font: &mut Font) -> Result<Self> {
+				let extended = tag == Tag::new($upper);
+				let num_glyphs = font.require_locked::<Maxp>(extended)?.num_glyphs as usize;
+				let mut number_of_metrics = match font.get_locked::<$header>(extended)? {
 					Some(h) => h.$header_field as usize,
 					None => num_glyphs,
 				};
 				if number_of_metrics > num_glyphs {
 					log::warn!(
 						"The {}.{} exceeds the maxp.numGlyphs",
-						<$header>::TAG,
+						Font::locked_tag::<$header>(extended),
 						stringify!($header_field)
 					);
 					number_of_metrics = num_glyphs;
@@ -68,8 +83,7 @@ macro_rules! metrics_table {
 				let table_size = 4 * number_of_metrics + 2 * number_of_side_bearings;
 				if data.len() < table_size {
 					return Err(Error::ttlib(format!(
-						"not enough '{}' table data: expected {table_size} bytes, got {}",
-						Self::TAG,
+						"not enough '{tag}' table data: expected {table_size} bytes, got {}",
 						data.len()
 					)));
 				}
@@ -90,15 +104,15 @@ macro_rules! metrics_table {
 				}
 				// fontTools reads metrics[-2], which fails without long metrics.
 				let last_advance = last_advance
-					.ok_or_else(|| Error::ttlib(format!("'{}' table has no long metrics", Self::TAG)))?;
+					.ok_or_else(|| Error::ttlib(format!("'{tag}' table has no long metrics")))?;
 				for i in 0..number_of_side_bearings {
 					let side_bearing = r.i16()?;
 					metrics.insert((number_of_metrics + i) as u32, (last_advance, side_bearing));
 				}
 				if r.remaining() > 0 {
-					log::warn!("too much '{}' table data", Self::TAG);
+					log::warn!("too much '{tag}' table data");
 				}
-				Ok($ty { metrics })
+				Ok($ty { metrics, extended })
 			}
 		}
 
@@ -109,7 +123,7 @@ macro_rules! metrics_table {
 			}
 
 			fn tag(&self) -> Tag {
-				Self::TAG
+				Font::locked_tag::<Self>(self.extended)
 			}
 
 			fn compile(&mut self, font: &mut Font) -> Result<Vec<u8>> {
@@ -124,7 +138,7 @@ macro_rules! metrics_table {
 				}
 				let number_of_metrics;
 				let mut additional: Vec<i16> = Vec::new();
-				if let Some(header) = font.get::<$header>()? {
+				if let Some(header) = font.get_locked::<$header>(self.extended)? {
 					let len = metrics.len();
 					let last_advance = metrics
 						.last()
@@ -147,7 +161,7 @@ macro_rules! metrics_table {
 					header.$header_field = crate::binary::fit(number_of_metrics, stringify!($header_field))?;
 				} else {
 					// Without a header, numberOfMetrics is assumed to equal numGlyphs.
-					number_of_metrics = font.require::<Maxp>()?.num_glyphs as usize;
+					number_of_metrics = font.require_locked::<Maxp>(self.extended)?.num_glyphs as usize;
 				}
 				if number_of_metrics != metrics.len() {
 					return Err(Error::Struct(format!(
@@ -222,14 +236,14 @@ metrics_table!(
 	/// Horizontal Metrics table (`table__h_m_t_x`).
 	///
 	/// See <https://learn.microsoft.com/en-us/typography/opentype/spec/hmtx>.
-	Hmtx, b"hmtx", Hhea, number_of_h_metrics, "width", "lsb"
+	Hmtx, b"hmtx", b"HMTX", Hhea, number_of_h_metrics, "width", "lsb"
 );
 
 metrics_table!(
 	/// Vertical Metrics table (`table__v_m_t_x`).
 	///
 	/// See <https://learn.microsoft.com/en-us/typography/opentype/spec/vmtx>.
-	Vmtx, b"vmtx", Vhea, number_of_v_metrics, "height", "tsb"
+	Vmtx, b"vmtx", b"VMTX", Vhea, number_of_v_metrics, "height", "tsb"
 );
 
 /// Results of `hhea.recalc` / `vhea.recalc`.
@@ -246,8 +260,16 @@ pub(crate) struct HeaderRecalc {
 ///
 /// The extents come from the outlines: of the glyph set with `VARC`, else of
 /// `glyf`, `CFF ` or `CFF2`.
-pub(crate) fn recalc_header(font: &mut Font, vertical: bool) -> Result<Option<HeaderRecalc>> {
-	let metrics_tag = Tag::new(if vertical { b"vmtx" } else { b"hmtx" });
+pub(crate) fn recalc_header(
+	font: &mut Font,
+	vertical: bool,
+	extended: bool,
+) -> Result<Option<HeaderRecalc>> {
+	let metrics_tag = if vertical {
+		Font::locked_tag::<Vmtx>(extended)
+	} else {
+		Font::locked_tag::<Hmtx>(extended)
+	};
 	if !font.contains(metrics_tag) {
 		return Ok(None);
 	}
@@ -267,7 +289,7 @@ pub(crate) fn recalc_header(font: &mut Font, vertical: bool) -> Result<Option<He
 				extents.push((gid as u32, size));
 			}
 		}
-	} else if !font.contains(Glyf::TAG) {
+	} else if !font.contains(Font::locked_tag::<Glyf>(extended)) {
 		let cff = if font.contains(Cff::TAG) {
 			&mut font.require::<Cff>()?.cff
 		} else if font.contains(Cff2::TAG) {
@@ -289,7 +311,7 @@ pub(crate) fn recalc_header(font: &mut Font, vertical: bool) -> Result<Option<He
 			}
 		}
 	} else {
-		let glyf = font.require::<Glyf>()?;
+		let glyf = font.require_locked::<Glyf>(extended)?;
 		for gid in 0..order.len() as u32 {
 			let g = glyf
 				.glyphs
@@ -309,9 +331,9 @@ pub(crate) fn recalc_header(font: &mut Font, vertical: bool) -> Result<Option<He
 		}
 	}
 	let metrics: BTreeMap<u32, Metric> = if vertical {
-		font.require::<Vmtx>()?.metrics.clone()
+		font.require_locked::<Vmtx>(extended)?.metrics.clone()
 	} else {
-		font.require::<Hmtx>()?.metrics.clone()
+		font.require_locked::<Hmtx>(extended)?.metrics.clone()
 	};
 	let advance_max = metrics
 		.values()
@@ -359,7 +381,7 @@ pub(crate) fn recalc_maxp(maxp: &mut Maxp, font: &mut Font) -> Result<()> {
 	let (mut max_component_elements, mut max_component_depth) = (0, 0i64);
 	let num_glyphs;
 	{
-		let glyf = font.require::<Glyf>()?;
+		let glyf = font.require_locked::<Glyf>(maxp.extended)?;
 		if glyf.glyphs.len() != order.len() {
 			return Err(Error::Assertion(
 				"len(self.glyphOrder) == len(self.glyphs)".into(),
@@ -391,7 +413,7 @@ pub(crate) fn recalc_maxp(maxp: &mut Maxp, font: &mut Font) -> Result<()> {
 	}
 	let mut all_x_min_is_lsb = true;
 	{
-		let hmtx = font.require::<Hmtx>()?;
+		let hmtx = font.require_locked::<Hmtx>(maxp.extended)?;
 		for &(gid, b) in &glyphs {
 			let (_, lsb) = hmtx
 				.get(gid)
@@ -424,7 +446,7 @@ pub(crate) fn recalc_maxp(maxp: &mut Maxp, font: &mut Font) -> Result<()> {
 	} else {
 		head.flags &= !0x2;
 	}
-	maxp.num_glyphs = fit(num_glyphs, "numGlyphs")?;
+	maxp.num_glyphs = crate::binary::fit(num_glyphs, "numGlyphs")?;
 	maxp.v1.max_points = fit(max_points, "maxPoints")?;
 	maxp.v1.max_contours = fit(max_contours, "maxContours")?;
 	maxp.v1.max_composite_points = fit(max_composite_points, "maxCompositePoints")?;

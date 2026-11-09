@@ -79,10 +79,7 @@ impl std::fmt::Debug for GlyphSet<'_> {
 	}
 }
 
-const HMTX: Tag = Tag::new(b"hmtx");
-const VMTX: Tag = Tag::new(b"vmtx");
 const FVAR: Tag = Tag::new(b"fvar");
-const GVAR: Tag = Tag::new(b"gvar");
 const VARC: Tag = Tag::new(b"VARC");
 
 impl<'f> GlyphSet<'f> {
@@ -99,13 +96,18 @@ impl<'f> GlyphSet<'f> {
 			None
 		};
 		if cff.is_none() {
-			if !font.contains(Glyf::TAG) {
+			if !font.has::<Glyf>() {
 				return Err(Error::ttlib("Font contains no outlines"));
 			}
-			font.load(Glyf::TAG)?;
-			font.load(GVAR)?;
+			font.load(font.family_tag::<Glyf>())?;
+			font.load(font.family_tag::<Gvar>())?;
 		}
-		for tag in [HMTX, VMTX, FVAR, VARC] {
+		for tag in [
+			font.family_tag::<Hmtx>(),
+			font.family_tag::<Vmtx>(),
+			FVAR,
+			VARC,
+		] {
 			font.load(tag)?;
 		}
 		let gvar_axis_count = match font.get::<Gvar>()? {
@@ -141,7 +143,7 @@ impl<'f> GlyphSet<'f> {
 		};
 		let h_metrics = &font
 			.loaded::<Hmtx>()
-			.ok_or(Error::TableNotFound(HMTX))?
+			.ok_or(Error::TableNotFound(Hmtx::TAG))?
 			.metrics;
 		let v_metrics = font.loaded::<Vmtx>().map(|t| &t.metrics);
 		let outlines = match cff {
@@ -192,6 +194,19 @@ impl<'f> GlyphSet<'f> {
 			Outlines::Glyf { glyf, .. } => Some(glyf),
 			Outlines::Cff { .. } => None,
 		}
+	}
+
+	/// The `gvar` table that this draws from, if it does (`gvarTable`).
+	pub fn gvar_table(&self) -> Option<&'f Gvar> {
+		match self.outlines {
+			Outlines::Glyf { gvar, .. } => gvar,
+			Outlines::Cff { .. } => None,
+		}
+	}
+
+	/// The horizontal metrics by glyph ID (`hMetrics`).
+	pub fn h_metrics(&self) -> &'f BTreeMap<u32, Metric> {
+		self.h_metrics
 	}
 
 	/// The glyph order.

@@ -6,7 +6,8 @@ use fontoxide_misc::fixed_tools::{ensure_version_is_long, version_to_fixed};
 use fontoxide_misc::xml_reader::Element;
 use fontoxide_misc::xml_writer::XmlWriter;
 
-use crate::sstruct::{I16, U16, U32, eval};
+use crate::binary::WriteBytes;
+use crate::sstruct::{I16, U16, U16Wide, U32, eval};
 use crate::table::{Table, TableType};
 use crate::{Error, Font, Result};
 
@@ -48,7 +49,11 @@ crate::sstruct! {
 		/// 0.
 		pub metric_data_format: i16 = "metricDataFormat" as I16,
 		/// Number of long metrics in `hmtx`.
-		pub number_of_h_metrics: u16 = "numberOfHMetrics" as U16,
+		pub number_of_h_metrics: u32 = "numberOfHMetrics" as U16Wide,
+	}
+	extra {
+		/// Whether this is `HHEA`, with a 32-bit `numberOfHMetrics`.
+		pub extended: bool,
 	}
 }
 
@@ -90,7 +95,11 @@ crate::sstruct! {
 		/// 0.
 		pub metric_data_format: i16 = "metricDataFormat" as I16,
 		/// Number of long metrics in `vmtx`.
-		pub number_of_v_metrics: u16 = "numberOfVMetrics" as U16,
+		pub number_of_v_metrics: u32 = "numberOfVMetrics" as U16Wide,
+	}
+	extra {
+		/// Whether this is `VHEA`, with a 32-bit `numberOfVMetrics`.
+		pub extended: bool,
 	}
 }
 
@@ -112,19 +121,42 @@ fn version_as_long(v: u32) -> Result<u32> {
 }
 
 macro_rules! header_table {
-	($ty:ident, $tag:literal, $metrics:literal) => {
+	($ty:ident, $tag:literal, $upper:literal, $count:ident) => {
 		impl TableType for $ty {
 			const TAG: Tag = Tag::new($tag);
+			const COMPANION: Option<Tag> = Some(Tag::new($upper));
 
-			fn decompile(data: &[u8], _font: &mut Font) -> Result<Self> {
+			fn decompile(data: &[u8], font: &mut Font) -> Result<Self> {
+				Self::decompile_as(Self::TAG, data, font)
+			}
+
+			fn decompile_as(tag: Tag, data: &[u8], _font: &mut Font) -> Result<Self> {
 				// sstruct.unpack requires the exact size.
-				if data.len() != Self::SIZE {
+				let extended = tag == Tag::new($upper);
+				let size = if extended { Self::SIZE + 2 } else { Self::SIZE };
+				if data.len() != size {
 					return Err(Error::Struct(format!(
-						"unpack requires a buffer of {} bytes",
-						Self::SIZE
+						"unpack requires a buffer of {size} bytes"
 					)));
 				}
-				Self::unpack2(data).map(|(t, _)| t)
+				if !extended {
+					return Self::unpack2(data).map(|(t, _)| t);
+				}
+				// The count is the last field; the others are the same.
+				let (head, tail) = data.split_at(Self::SIZE - 2);
+				let mut packed = head.to_vec();
+				packed.extend_from_slice(&[0, 0]);
+				let (mut table, _) = Self::unpack2(&packed)?;
+				table.$count = u32::from_be_bytes([tail[0], tail[1], tail[2], tail[3]]);
+				table.extended = true;
+				Ok(table)
+			}
+
+			fn new_as(tag: Tag) -> Self {
+				Self {
+					extended: tag == Tag::new($upper),
+					..Default::default()
+				}
 			}
 		}
 
@@ -135,19 +167,31 @@ macro_rules! header_table {
 			}
 
 			fn tag(&self) -> Tag {
-				Self::TAG
+				Font::locked_tag::<Self>(self.extended)
 			}
 
 			fn compile(&mut self, font: &mut Font) -> Result<Vec<u8>> {
-				let outline_loaded = [b"glyf", b"CFF ", b"CFF2"]
+				let glyf: &[u8; 4] = if self.extended { b"GLYF" } else { b"glyf" };
+				let outline_loaded = [glyf, b"CFF ", b"CFF2"]
 					.iter()
 					.any(|t| font.is_loaded(Tag::new(t)));
 				if font.recalc_bboxes && outline_loaded {
 					self.recalc(font)?;
 				}
 				self.table_version = version_as_long(self.table_version)?;
-				let mut data = Vec::with_capacity(Self::SIZE);
-				self.pack(&mut data)?;
+				let mut data = Vec::with_capacity(Self::SIZE + 2);
+				if self.extended {
+					// `L` instead of `H` for the last field.
+					let count = self.$count;
+					self.$count = 0;
+					let packed = self.pack(&mut data);
+					self.$count = count;
+					packed?;
+					data.truncate(Self::SIZE - 2);
+					data.put_u32(count);
+				} else {
+					self.pack(&mut data)?;
+				}
 				Ok(data)
 			}
 
@@ -176,13 +220,16 @@ macro_rules! header_table {
 					return Ok(());
 				}
 				// The legacy alias `reserved0` of vhea's caretOffset.
-				let name = if $tag == b"vhea" && name == "reserved0" {
+				let name = if self.tag().0.eq_ignore_ascii_case(b"vhea") && name == "reserved0" {
 					"caretOffset"
 				} else {
 					name
 				};
 				if !self.set_literal(name, &eval(value)?)? {
-					return Err(Error::ttx(format!("unknown '{}' field: {name}", Self::TAG)));
+					return Err(Error::ttx(format!(
+						"unknown '{}' field: {name}",
+						self.tag()
+					)));
 				}
 				Ok(())
 			}
@@ -194,14 +241,14 @@ macro_rules! header_table {
 	};
 }
 
-header_table!(Hhea, b"hhea", b"hmtx");
-header_table!(Vhea, b"vhea", b"vmtx");
+header_table!(Hhea, b"hhea", b"HHEA", number_of_h_metrics);
+header_table!(Vhea, b"vhea", b"VHEA", number_of_v_metrics);
 
 impl Hhea {
 	/// Recalculates `advanceWidthMax`, the side bearing minima and `xMaxExtent`
 	/// from `hmtx` and the outlines (`recalc`).
 	pub fn recalc(&mut self, font: &mut Font) -> Result<()> {
-		let Some(r) = crate::tables::metrics::recalc_header(font, false)? else {
+		let Some(r) = crate::tables::metrics::recalc_header(font, false, self.extended)? else {
 			return Ok(());
 		};
 		self.advance_width_max = r.advance_max;
@@ -216,7 +263,7 @@ impl Vhea {
 	/// Recalculates `advanceHeightMax`, the side bearing minima and `yMaxExtent`
 	/// from `vmtx` and the outlines (`recalc`).
 	pub fn recalc(&mut self, font: &mut Font) -> Result<()> {
-		let Some(r) = crate::tables::metrics::recalc_header(font, true)? else {
+		let Some(r) = crate::tables::metrics::recalc_header(font, true, self.extended)? else {
 			return Ok(());
 		};
 		self.advance_height_max = r.advance_max;

@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont sfntVersion="\x00\x01\x00\x00" ttLibVersion="4.68">
+
+  <GlyphOrder>
+    <!-- The 'id' attribute is only for humans; it is ignored when parsed. -->
+    <GlyphID id="0" name=".notdef"/>
+    <GlyphID id="1" name="a"/>
+    <GlyphID id="2" name="b"/>
+    <GlyphID id="3" name="c"/>
+    <GlyphID id="4" name="d"/>
+  </GlyphOrder>
+
+  <GPOS>
+    <Version value="0x00010000"/>
+    <LookupList>
+      <!-- LookupCount=5 -->
+      <Lookup index="0">
+        <LookupType value="7"/>
+        <LookupFlag value="0"/>
+        <!-- SubTableCount=1 -->
+        <ContextPos index="0" Format="1">
+          <Coverage>
+            <Glyph value="b"/>
+          </Coverage>
+          <!-- PosRuleSetCount=1 -->
+          <PosRuleSet index="0">
+            <!-- PosRuleCount=1 -->
+            <PosRule index="0">
+              <!-- GlyphCount=2 -->
+              <!-- PosCount=1 -->
+              <Input index="0" value="c"/>
+              <PosLookupRecord index="0">
+                <SequenceIndex value="0"/>
+                <LookupListIndex value="3"/>
+              </PosLookupRecord>
+            </PosRule>
+          </PosRuleSet>
+        </ContextPos>
+      </Lookup>
+      <Lookup index="1">
+        <LookupType value="7"/>
+        <LookupFlag value="0"/>
+        <!-- SubTableCount=1 -->
+        <ContextPos index="0" Format="2">
+          <Coverage>
+            <Glyph value="b"/>
+          </Coverage>
+          <ClassDef>
+            <ClassDef glyph="b" class="1"/>
+            <ClassDef glyph="c" class="2"/>
+          </ClassDef>
+          <!-- PosClassSetCount=3 -->
+          <PosClassSet index="0" empty="1"/>
+          <PosClassSet index="1">
+            <!-- PosClassRuleCount=1 -->
+            <PosClassRule index="0">
+              <!-- GlyphCount=2 -->
+              <!-- PosCount=1 -->
+              <Class index="0" value="2"/>
+              <PosLookupRecord index="0">
+                <SequenceIndex value="0"/>
+                <LookupListIndex value="3"/>
+              </PosLookupRecord>
+            </PosClassRule>
+          </PosClassSet>
+          <PosClassSet index="2" empty="1"/>
+        </ContextPos>
+      </Lookup>
+      <Lookup index="2">
+        <LookupType value="7"/>
+        <LookupFlag value="0"/>
+        <!-- SubTableCount=1 -->
+        <ContextPos index="0" Format="3">
+          <!-- GlyphCount=2 -->
+          <!-- PosCount=1 -->
+          <Coverage index="0">
+            <Glyph value="b"/>
+          </Coverage>
+          <Coverage index="1">
+            <Glyph value="c"/>
+          </Coverage>
+          <PosLookupRecord index="0">
+            <SequenceIndex value="0"/>
+            <LookupListIndex value="3"/>
+          </PosLookupRecord>
+        </ContextPos>
+      </Lookup>
+      <Lookup index="3">
+        <LookupType value="8"/>
+        <LookupFlag value="0"/>
+        <!-- SubTableCount=1 -->
+        <ChainContextPos index="0" Format="1">
+          <Coverage>
+            <Glyph value="b"/>
+          </Coverage>
+          <!-- ChainPosRuleSetCount=1 -->
+          <ChainPosRuleSet index="0">
+            <!-- ChainPosRuleCount=1 -->
+            <ChainPosRule index="0">
+              <!-- BacktrackGlyphCount=1 -->
+              <Backtrack index="0" value="a"/>
+              <!-- InputGlyphCount=2 -->
+              <Input index="0" value="c"/>
+              <!-- LookAheadGlyphCount=1 -->
+              <LookAhead index="0" value="d"/>
+              <!-- PosCount=1 -->
+              <PosLookupRecord index="0">
+                <SequenceIndex value="0"/>
+                <LookupListIndex value="3"/>
+              </PosLookupRecord>
+            </ChainPosRule>
+          </ChainPosRuleSet>
+        </ChainContextPos>
+      </Lookup>
+      <Lookup index="4">
+        <LookupType value="8"/>
+        <LookupFlag value="0"/>
+        <!-- SubTableCount=1 -->
+        <ChainContextPos index="0" Format="2">
+          <Coverage>
+            <Glyph value="b"/>
+          </Coverage>
+          <BacktrackClassDef>
+            <ClassDef glyph="a" class="1"/>
+          </BacktrackClassDef>
+          <InputClassDef>
+            <ClassDef glyph="b" class="1"/>
+            <ClassDef glyph="c" class="2"/>
+          </InputClassDef>
+          <LookAheadClassDef>
+            <ClassDef glyph="d" class="1"/>
+          </LookAheadClassDef>
+          <!-- ChainPosClassSetCount=3 -->
+          <ChainPosClassSet index="0" empty="1"/>
+          <ChainPosClassSet index="1">
+            <!-- ChainPosClassRuleCount=1 -->
+            <ChainPosClassRule index="0">
+              <!-- BacktrackGlyphCount=1 -->
+              <Backtrack index="0" value="1"/>
+              <!-- InputGlyphCount=2 -->
+              <Input index="0" value="2"/>
+              <!-- LookAheadGlyphCount=1 -->
+              <LookAhead index="0" value="1"/>
+              <!-- PosCount=1 -->
+              <PosLookupRecord index="0">
+                <SequenceIndex value="0"/>
+                <LookupListIndex value="3"/>
+              </PosLookupRecord>
+            </ChainPosClassRule>
+          </ChainPosClassSet>
+          <ChainPosClassSet index="2" empty="1"/>
+        </ChainContextPos>
+      </Lookup>
+    </LookupList>
+  </GPOS>
+
+  <GSUB>
+    <Version value="0x00010000"/>
+    <LookupList>
+      <!-- LookupCount=5 -->
+      <Lookup index="0">
+        <LookupType value="5"/>
+        <LookupFlag value="0"/>
+        <!-- SubTableCount=1 -->
+        <ContextSubst index="0" Format="1">
+          <Coverage>
+            <Glyph value="b"/>
+          </Coverage>
+          <!-- SubRuleSetCount=1 -->
+          <SubRuleSet index="0">
+            <!-- SubRuleCount=1 -->
+            <SubRule index="0">
+              <!-- GlyphCount=2 -->
+              <!-- SubstCount=1 -->
+              <Input index="0" value="c"/>
+              <SubstLookupRecord index="0">
+                <SequenceIndex value="0"/>
+                <LookupListIndex value="3"/>
+              </SubstLookupRecord>
+            </SubRule>
+          </SubRuleSet>
+        </ContextSubst>
+      </Lookup>
+      <Lookup index="1">
+        <LookupType value="5"/>
+        <LookupFlag value="0"/>
+        <!-- SubTableCount=1 -->
+        <ContextSubst index="0" Format="2">
+          <Coverage>
+            <Glyph value="b"/>
+          </Coverage>
+          <ClassDef>
+            <ClassDef glyph="b" class="1"/>
+            <ClassDef glyph="c" class="2"/>
+          </ClassDef>
+          <!-- SubClassSetCount=3 -->
+          <SubClassSet index="0" empty="1"/>
+          <SubClassSet index="1">
+            <!-- SubClassRuleCount=1 -->
+            <SubClassRule index="0">
+              <!-- GlyphCount=2 -->
+              <!-- SubstCount=1 -->
+              <Class index="0" value="2"/>
+              <SubstLookupRecord index="0">
+                <SequenceIndex value="0"/>
+                <LookupListIndex value="3"/>
+              </SubstLookupRecord>
+            </SubClassRule>
+          </SubClassSet>
+          <SubClassSet index="2" empty="1"/>
+        </ContextSubst>
+      </Lookup>
+      <Lookup index="2">
+        <LookupType value="5"/>
+        <LookupFlag value="0"/>
+        <!-- SubTableCount=1 -->
+        <ContextSubst index="0" Format="3">
+          <!-- GlyphCount=2 -->
+          <!-- SubstCount=1 -->
+          <Coverage index="0">
+            <Glyph value="b"/>
+          </Coverage>
+          <Coverage index="1">
+            <Glyph value="c"/>
+          </Coverage>
+          <SubstLookupRecord index="0">
+            <SequenceIndex value="0"/>
+            <LookupListIndex value="3"/>
+          </SubstLookupRecord>
+        </ContextSubst>
+      </Lookup>
+      <Lookup index="3">
+        <LookupType value="6"/>
+        <LookupFlag value="0"/>
+        <!-- SubTableCount=1 -->
+        <ChainContextSubst index="0" Format="1">
+          <Coverage>
+            <Glyph value="b"/>
+          </Coverage>
+          <!-- ChainSubRuleSetCount=1 -->
+          <ChainSubRuleSet index="0">
+            <!-- ChainSubRuleCount=1 -->
+            <ChainSubRule index="0">
+              <!-- BacktrackGlyphCount=1 -->
+              <Backtrack index="0" value="a"/>
+              <!-- InputGlyphCount=2 -->
+              <Input index="0" value="c"/>
+              <!-- LookAheadGlyphCount=1 -->
+              <LookAhead index="0" value="d"/>
+              <!-- SubstCount=1 -->
+              <SubstLookupRecord index="0">
+                <SequenceIndex value="0"/>
+                <LookupListIndex value="3"/>
+              </SubstLookupRecord>
+            </ChainSubRule>
+          </ChainSubRuleSet>
+        </ChainContextSubst>
+      </Lookup>
+      <Lookup index="4">
+        <LookupType value="6"/>
+        <LookupFlag value="0"/>
+        <!-- SubTableCount=1 -->
+        <ChainContextSubst index="0" Format="2">
+          <Coverage>
+            <Glyph value="b"/>
+          </Coverage>
+          <BacktrackClassDef>
+            <ClassDef glyph="a" class="1"/>
+          </BacktrackClassDef>
+          <InputClassDef>
+            <ClassDef glyph="b" class="1"/>
+            <ClassDef glyph="c" class="2"/>
+          </InputClassDef>
+          <LookAheadClassDef>
+            <ClassDef glyph="d" class="1"/>
+          </LookAheadClassDef>
+          <!-- ChainSubClassSetCount=3 -->
+          <ChainSubClassSet index="0" empty="1"/>
+          <ChainSubClassSet index="1">
+            <!-- ChainSubClassRuleCount=1 -->
+            <ChainSubClassRule index="0">
+              <!-- BacktrackGlyphCount=1 -->
+              <Backtrack index="0" value="1"/>
+              <!-- InputGlyphCount=2 -->
+              <Input index="0" value="2"/>
+              <!-- LookAheadGlyphCount=1 -->
+              <LookAhead index="0" value="1"/>
+              <!-- SubstCount=1 -->
+              <SubstLookupRecord index="0">
+                <SequenceIndex value="0"/>
+                <LookupListIndex value="3"/>
+              </SubstLookupRecord>
+            </ChainSubClassRule>
+          </ChainSubClassSet>
+          <ChainSubClassSet index="2" empty="1"/>
+        </ChainContextSubst>
+      </Lookup>
+    </LookupList>
+  </GSUB>
+
+</ttFont>

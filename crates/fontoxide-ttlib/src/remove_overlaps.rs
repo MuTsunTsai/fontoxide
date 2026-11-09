@@ -20,11 +20,11 @@ use crate::cff::specializer::{
 	Arg, Command, SpecializeOptions, commands_to_program, specialize_commands,
 };
 use crate::glyph_set::GlyphSet;
+use crate::table::TableType;
 use crate::tables::glyf::Glyph;
 use crate::tables::{Cff, Cff2, Glyf, Hmtx};
 use crate::{Error, Font, Result, Tag};
 
-const GLYF: Tag = Tag::new(b"glyf");
 const CFF: Tag = Tag::new(b"CFF ");
 const CFF2: Tag = Tag::new(b"CFF2");
 
@@ -444,6 +444,7 @@ fn remove_glyf_overlaps(
 	sorted.sort();
 	font.require::<Hmtx>()?;
 
+	let extended = font.require::<Glyf>()?.extended;
 	let mut modified = 0;
 	for (_, name, gid) in sorted {
 		let new_glyph = {
@@ -498,7 +499,7 @@ fn remove_glyf_overlaps(
 				if options.remove_hinting
 					&& let Some(glyph) = font.require::<Glyf>()?.glyphs.get_mut(&gid)
 				{
-					glyph.trim(true)?;
+					glyph.trim_ext(true, extended)?;
 				}
 			}
 		}
@@ -509,7 +510,9 @@ fn remove_glyf_overlaps(
 
 /// The `glyf` table of a glyph set, which draws from it.
 fn font_glyf<'a>(glyph_set: &GlyphSet<'a>) -> Result<&'a Glyf> {
-	glyph_set.glyf_table().ok_or(Error::TableNotFound(GLYF))
+	glyph_set
+		.glyf_table()
+		.ok_or(Error::TableNotFound(Glyf::TAG))
 }
 
 /// The program of `T2CharStringPen.getCharString`.
@@ -665,7 +668,7 @@ fn remove_cff_overlaps(
 /// Currently this only works for fonts with `glyf`, `CFF ` or `CFF2` tables. Note that
 /// removing overlaps invalidates the hinting.
 pub fn remove_overlaps(font: &mut Font, options: &RemoveOverlapsOptions) -> Result<()> {
-	let has_glyf = font.contains(GLYF);
+	let has_glyf = font.has::<Glyf>();
 	let has_cff = font.contains(CFF) || font.contains(CFF2);
 	if !has_glyf && !has_cff {
 		return Err(Error::ttlib(

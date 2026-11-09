@@ -60,23 +60,38 @@ pub struct Maxp {
 	/// 0x00005000 for CFF fonts, 0x00010000 for TrueType.
 	pub table_version: u32,
 	/// Number of glyphs. Set from the glyph order when compiling.
-	pub num_glyphs: u16,
+	pub num_glyphs: u32,
 	/// The version 1.0 fields. fontTools leaves them unset for version 0.5; here
 	/// they are kept (as zeros) but not written.
 	pub v1: MaxpV1,
+	/// Whether this is `MAXP`, with a 24-bit `numGlyphs`.
+	pub extended: bool,
 }
 
 const VERSION_0_5: u32 = 0x0000_5000;
 
 impl TableType for Maxp {
 	const TAG: Tag = Tag::new(b"maxp");
+	const COMPANION: Option<Tag> = Some(Tag::new(b"MAXP"));
 
-	fn decompile(data: &[u8], _font: &mut Font) -> Result<Self> {
-		let header_size = 6;
+	fn decompile(data: &[u8], font: &mut Font) -> Result<Self> {
+		Self::decompile_as(Self::TAG, data, font)
+	}
+
+	fn new_as(tag: Tag) -> Self {
+		Maxp {
+			extended: tag == Tag::new(b"MAXP"),
+			..Default::default()
+		}
+	}
+
+	fn decompile_as(tag: Tag, data: &[u8], _font: &mut Font) -> Result<Self> {
+		let extended = tag == Tag::new(b"MAXP");
+		let header_size = if extended { 7 } else { 6 };
 		// int.from_bytes() on short data gives whatever is there.
 		let int = |bytes: &[u8]| bytes.iter().fold(0u64, |acc, &b| acc << 8 | b as u64);
 		let table_version = int(&data[..data.len().min(4)]) as u32;
-		let num_glyphs = int(data.get(4..data.len().min(header_size)).unwrap_or_default()) as u16;
+		let num_glyphs = int(data.get(4..data.len().min(header_size)).unwrap_or_default()) as u32;
 		let mut rest = data.get(header_size..).unwrap_or_default();
 		let mut v1 = MaxpV1::default();
 		if table_version != VERSION_0_5 {
@@ -91,6 +106,7 @@ impl TableType for Maxp {
 			table_version,
 			num_glyphs,
 			v1,
+			extended,
 		})
 	}
 }
@@ -102,11 +118,11 @@ impl Table for Maxp {
 	}
 
 	fn tag(&self) -> Tag {
-		Self::TAG
+		Font::locked_tag::<Self>(self.extended)
 	}
 
 	fn compile(&mut self, font: &mut Font) -> Result<Vec<u8>> {
-		let glyf = Tag::new(b"glyf");
+		let glyf = Font::locked_tag::<crate::tables::Glyf>(self.extended);
 		if font.contains(glyf) && font.is_loaded(glyf) && font.recalc_bboxes {
 			self.recalc(font)?;
 		}
@@ -119,7 +135,14 @@ impl Table for Maxp {
 		}
 		let mut data = Vec::new();
 		data.put_u32(self.table_version);
-		data.put_u16(self.num_glyphs);
+		if self.extended {
+			if self.num_glyphs > 0xFF_FFFF {
+				return Err(Error::value("OverflowError: int too big to convert"));
+			}
+			data.extend_from_slice(&self.num_glyphs.to_be_bytes()[1..]);
+		} else {
+			data.put_u16(crate::binary::fit(self.num_glyphs, "numGlyphs")?);
+		}
 		if self.table_version == 0x0001_0000 {
 			self.v1.pack(&mut data)?;
 		}

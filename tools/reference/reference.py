@@ -119,6 +119,20 @@ def run_job(job: dict) -> None:
 		subsetter.subset(font)
 		font.save(output, reorderTables=True)
 		return
+	if op in ("upper", "lower"):
+		from fontTools.ttLib import beyond64k
+
+		font = TTFont(
+			job["input"],
+			recalcTimestamp=False,
+			fontNumber=job.get("font_number", 0),
+		)
+		font.cfg[otBase.USE_HARFBUZZ_REPACKER] = bool(job.get("repacker", False))
+		beyond64k.upper_tables(font)
+		if op == "lower":
+			beyond64k.lower_tables(font)
+		font.save(output, reorderTables=True)
+		return
 	if op == "instance":
 		from fontTools.varLib import instancer
 

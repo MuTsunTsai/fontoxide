@@ -82,8 +82,28 @@ pub trait TableType: Table + Sized {
 	/// The tag of this table type.
 	const TAG: Tag;
 
+	/// The tag of the beyond-64k companion that this type also implements, as
+	/// `GLYF` for `glyf`. [`Font::get`] prefers it, as fontTools does with its
+	/// `"GLYF" if "GLYF" in font else "glyf"`.
+	const COMPANION: Option<Tag> = None;
+
 	/// Parses the table (`decompile`).
 	fn decompile(data: &[u8], font: &mut Font) -> Result<Self>;
+
+	/// Parses the table under one of its tags.
+	fn decompile_as(tag: Tag, data: &[u8], font: &mut Font) -> Result<Self> {
+		let _ = tag;
+		Self::decompile(data, font)
+	}
+
+	/// An empty table with one of its tags (`newTable`).
+	fn new_as(tag: Tag) -> Self
+	where
+		Self: Default,
+	{
+		let _ = tag;
+		Self::default()
+	}
 }
 
 /// A table kept as raw bytes (`DefaultTable`): used for tables fontoxide does not
@@ -186,7 +206,7 @@ macro_rules! registry {
 		/// [`DefaultTable`] if there is none (`getTableClass(tag)().decompile(...)`).
 		pub fn decompile_table(tag: Tag, data: &[u8], font: &mut Font) -> Result<Box<dyn Table>> {
 			match &tag.0 {
-				$($tag => Ok(Box::new(<$ty as TableType>::decompile(data, font)?)),)*
+				$($tag => Ok(Box::new(<$ty as TableType>::decompile_as(tag, data, font)?)),)*
 				_ => Ok(Box::new(DefaultTable::new(tag, data.to_vec()))),
 			}
 		}
@@ -195,7 +215,7 @@ macro_rules! registry {
 		/// (`newTable`).
 		pub fn new_table(tag: Tag) -> Box<dyn Table> {
 			match &tag.0 {
-				$($tag => Box::new(<$ty>::default()),)*
+				$($tag => Box::new(<$ty as TableType>::new_as(tag)),)*
 				_ => Box::new(DefaultTable::new(tag, Vec::new())),
 			}
 		}
@@ -248,9 +268,12 @@ registry! {
 	b"fvar" => crate::tables::Fvar,
 	b"gasp" => crate::tables::Gasp,
 	b"glyf" => crate::tables::Glyf,
+	b"GLYF" => crate::tables::Glyf,
 	b"gvar" => crate::tables::Gvar,
+	b"GVAR" => crate::tables::Gvar,
 	b"cvar" => crate::tables::Cvar,
 	b"loca" => crate::tables::Loca,
+	b"LOCA" => crate::tables::Loca,
 	b"cmap" => crate::tables::Cmap,
 	b"DMAP" => crate::tables::Dmap,
 	b"DSIG" => crate::tables::Dsig,
@@ -260,15 +283,20 @@ registry! {
 	b"head" => crate::tables::Head,
 	b"LTSH" => crate::tables::Ltsh,
 	b"hhea" => crate::tables::Hhea,
+	b"HHEA" => crate::tables::Hhea,
 	b"hmtx" => crate::tables::Hmtx,
+	b"HMTX" => crate::tables::Hmtx,
 	b"ltag" => crate::tables::Ltag,
 	b"maxp" => crate::tables::Maxp,
+	b"MAXP" => crate::tables::Maxp,
 	b"name" => crate::tables::Name,
 	b"OS/2" => crate::tables::Os2,
 	b"post" => crate::tables::Post,
 	b"sbix" => crate::tables::Sbix,
 	b"vhea" => crate::tables::Vhea,
+	b"VHEA" => crate::tables::Vhea,
 	b"vmtx" => crate::tables::Vmtx,
+	b"VMTX" => crate::tables::Vmtx,
 	b"VORG" => crate::tables::Vorg,
 }
 

@@ -295,6 +295,42 @@ mod tests {
 		Ok(())
 	}
 
+	/// `Tests/ttLib/beyond64k_test.py::test_max_context_extended_layout`: the tables that
+	/// the test adds to `TestTTF-Regular.ttx` are made by
+	/// `tools/reference/beyond64k_fixtures.py`.
+	#[test]
+	fn test_max_context_extended_layout() -> Result<()> {
+		use fontoxide_ttlib::beyond64k::{ConvertOptions, convert_layout_formats, upper_tables};
+
+		for extended_header in [false, true] {
+			let mut font = import(
+				manifest_dir()
+					.join("../../upstream/fonttools/Tests/ttLib/data/TestTTF-Regular.ttx"),
+			)?;
+			font.import_ttx(
+				&std::fs::read_to_string(
+					manifest_dir().join("tests/data/beyond64k_contextual_layout.ttx"),
+				)
+				.map_err(fontoxide_ttlib::Error::from)?,
+			)?;
+			assert_eq!(max_ctx_font(&mut font)?, 3);
+			if extended_header {
+				upper_tables(
+					&mut font,
+					&ConvertOptions {
+						tables: Some(&["GSUB", "GPOS"]),
+						..Default::default()
+					},
+				)?;
+			} else {
+				convert_layout_formats(&mut font.require::<Gsub>()?.table, true)?;
+				convert_layout_formats(&mut font.require::<Gpos>()?.table, true)?;
+			}
+			assert_eq!(max_ctx_font(&mut font)?, 3);
+		}
+		Ok(())
+	}
+
 	#[test]
 	fn test_max_ctx_calc_features_ttx() -> Result<()> {
 		let data = manifest_dir().join("../../upstream/fonttools/Tests/otlLib/data");

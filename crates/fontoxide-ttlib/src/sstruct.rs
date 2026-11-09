@@ -101,6 +101,29 @@ macro_rules! int_kind {
 int_kind!(U8, u8, "B", u8, put_u8);
 int_kind!(I8, i8, "b", i8, put_i8);
 int_kind!(U16, u16, "H", u16, put_u16);
+
+/// `H`, held as `u32` for a table whose extended form widens the field.
+#[derive(Debug)]
+pub enum U16Wide {}
+impl Kind for U16Wide {
+	type Value = u32;
+	const CODE: &'static str = "H";
+	const SIZE: usize = 2;
+	fn read(r: &mut Reader<'_>) -> Result<u32> {
+		Ok(u32::from(r.u16()?))
+	}
+	fn write(v: &u32, out: &mut Vec<u8>, field: &str) -> Result<()> {
+		out.put_u16(crate::binary::fit(*v, field)?);
+		Ok(())
+	}
+	fn value(v: &u32) -> Value {
+		Value::Int(i64::from(*v))
+	}
+	fn from_literal(lit: &fontoxide_misc::text_tools::Literal, field: &str) -> Result<u32> {
+		let i = lit.as_int().ok_or_else(|| bad_literal(field))?;
+		crate::binary::fit(i, field)
+	}
+}
 int_kind!(I16, i16, "h", i16, put_i16);
 int_kind!(U32, u32, "L", u32, put_u32);
 int_kind!(I32, i32, "l", i32, put_i32);
@@ -209,6 +232,12 @@ macro_rules! sstruct {
 				$fvis:vis $field:ident : $ty:ty = $py:literal as $kind:ty
 			),* $(,)?
 		}
+		$(extra {
+			$(
+				$(#[$xmeta:meta])*
+				$xvis:vis $xfield:ident : $xty:ty
+			),* $(,)?
+		})?
 	) => {
 		$(#[$meta])*
 		#[derive(Debug, Clone, PartialEq, Default)]
@@ -218,6 +247,10 @@ macro_rules! sstruct {
 				#[doc = concat!("\n\nfontTools: `", $py, "`.")]
 				$fvis $field: $ty,
 			)*
+			$($(
+				$(#[$xmeta])*
+				$xvis $xfield: $xty,
+			)*)?
 		}
 
 		impl $name {
@@ -239,6 +272,7 @@ macro_rules! sstruct {
 			pub fn unpack(r: &mut $crate::binary::Reader<'_>) -> $crate::Result<Self> {
 				Ok($name {
 					$($field: <$kind as $crate::sstruct::Kind>::read(r)?,)*
+					$($($xfield: Default::default(),)*)?
 				})
 			}
 

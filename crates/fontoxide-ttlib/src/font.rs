@@ -339,31 +339,72 @@ impl Font {
 		Ok(true)
 	}
 
+	/// The tag of a table type in this font: its beyond-64k companion if the font has
+	/// that (`"GLYF" if "GLYF" in font else "glyf"`).
+	pub fn family_tag<T: TableType>(&self) -> Tag {
+		match T::COMPANION {
+			Some(upper) if self.contains(upper) => upper,
+			_ => T::TAG,
+		}
+	}
+
+	/// Whether the font has a table of a type, under either of its tags.
+	pub fn has<T: TableType>(&self) -> bool {
+		self.contains(self.family_tag::<T>())
+	}
+
 	/// A table by type, decompiling it if necessary (`font[tag]`); `None` if the
-	/// font does not have it.
+	/// font does not have it. A table with a beyond-64k companion can be either.
 	pub fn get<T: TableType>(&mut self) -> Result<Option<&mut T>> {
-		if !self.load(T::TAG)? {
+		let tag = self.family_tag::<T>();
+		self.get_at::<T>(tag)
+	}
+
+	/// A table of a type under a tag.
+	pub fn get_at<T: TableType>(&mut self, tag: Tag) -> Result<Option<&mut T>> {
+		if !self.load(tag)? {
 			return Ok(None);
 		}
-		match self.tables.get_mut(&T::TAG) {
+		match self.tables.get_mut(&tag) {
 			Some(Slot::Loaded(t)) => (**t)
 				.as_any_mut()
 				.downcast_mut::<T>()
 				.map(Some)
-				.ok_or(Error::WrongTableType(T::TAG)),
-			Some(Slot::Busy) => Err(Error::TableBusy(T::TAG)),
+				.ok_or(Error::WrongTableType(tag)),
+			Some(Slot::Busy) => Err(Error::TableBusy(tag)),
 			None => Ok(None),
 		}
 	}
 
+	/// The tag of a table type in the compact or the extended family, as the
+	/// `locaTag` and such of a table of that family.
+	pub fn locked_tag<T: TableType>(extended: bool) -> Tag {
+		match T::COMPANION {
+			Some(upper) if extended => upper,
+			_ => T::TAG,
+		}
+	}
+
+	/// A table of a type in the compact or the extended family.
+	pub fn get_locked<T: TableType>(&mut self, extended: bool) -> Result<Option<&mut T>> {
+		self.get_at::<T>(Self::locked_tag::<T>(extended))
+	}
+
+	/// [`Font::get_locked`], failing if the font does not have it.
+	pub fn require_locked<T: TableType>(&mut self, extended: bool) -> Result<&mut T> {
+		let tag = Self::locked_tag::<T>(extended);
+		self.get_at::<T>(tag)?.ok_or(Error::TableNotFound(tag))
+	}
+
 	/// A table by type, failing if the font does not have it (`font[tag]`).
 	pub fn require<T: TableType>(&mut self) -> Result<&mut T> {
-		self.get::<T>()?.ok_or(Error::TableNotFound(T::TAG))
+		let tag = self.family_tag::<T>();
+		self.get_at::<T>(tag)?.ok_or(Error::TableNotFound(tag))
 	}
 
 	/// An already decompiled table by type, without decompiling.
 	pub fn loaded<T: TableType>(&self) -> Option<&T> {
-		match self.tables.get(&T::TAG) {
+		match self.tables.get(&self.family_tag::<T>()) {
 			Some(Slot::Loaded(t)) => (**t).as_any().downcast_ref::<T>(),
 			_ => None,
 		}
@@ -446,10 +487,6 @@ impl Font {
 
 	/// The number of glyphs, from `maxp` (`getGlyphCount`).
 	pub fn glyph_count(&mut self) -> Result<usize> {
-		if self.contains(MAXP_32) {
-			// The 32-bit `MAXP` table is not implemented yet.
-			return Err(Error::ttlib("'MAXP' table is not supported yet"));
-		}
 		Ok(self.require::<crate::tables::maxp::Maxp>()?.num_glyphs as usize)
 	}
 

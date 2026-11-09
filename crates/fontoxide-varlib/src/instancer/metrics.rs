@@ -6,17 +6,14 @@ use fontoxide_misc::round_tools::ot_round;
 use fontoxide_ttlib::binary::fit;
 use fontoxide_ttlib::ot::types as ot;
 use fontoxide_ttlib::ot::var_store;
-use fontoxide_ttlib::tables::{Hhea, Hmtx, Hvar, Mvar, Os2, Post, Vhea, Vmtx, Vorg, Vvar};
+use fontoxide_ttlib::tables::{Glyf, Hhea, Hmtx, Hvar, Mvar, Os2, Post, Vhea, Vmtx, Vorg, Vvar};
 use fontoxide_ttlib::{Error, Font, Result, Tag};
 
 use super::item_store::{DefaultDeltas, instantiate_item_variation_store};
 use super::limits::{NormalizedLimits, fvar_axes};
 
-const GLYF: Tag = Tag::new(b"glyf");
-const HMTX: Tag = Tag::new(b"hmtx");
 const HVAR: Tag = Tag::new(b"HVAR");
 const MVAR: Tag = Tag::new(b"MVAR");
-const VMTX: Tag = Tag::new(b"vmtx");
 const VORG: Tag = Tag::new(b"VORG");
 const VVAR: Tag = Tag::new(b"VVAR");
 
@@ -245,7 +242,7 @@ pub fn instantiate_hvar(font: &mut Font, limits: &NormalizedLimits) -> Result<()
 	let pinned = limits.pinned_location();
 	let full = all_axes.iter().all(|(t, _)| pinned.contains_key(t));
 	let axes: Vec<String> = all_axes.into_iter().map(|a| a.0).collect();
-	let has_glyf = font.contains(GLYF);
+	let has_glyf = font.has::<Glyf>();
 	// Deltas from gvar have already been applied to hmtx: full instances can drop
 	// the table.
 	if has_glyf && full {
@@ -259,7 +256,7 @@ pub fn instantiate_hvar(font: &mut Font, limits: &NormalizedLimits) -> Result<()
 		.as_mut()
 		.ok_or_else(|| Error::ttlib("AttributeError: no attribute 'VarRegionList'"))?;
 	let deltas = instantiate_item_variation_store(store, &axes, limits)?;
-	if !has_glyf && font.contains(HMTX) {
+	if !has_glyf && font.has::<Hmtx>() {
 		let advance_map = font.require::<Hvar>()?.adv_width_map.clone();
 		let hmtx = font.require::<Hmtx>()?;
 		apply_metric_deltas(&mut hmtx.metrics, advance_map.as_deref(), &deltas)?;
@@ -300,7 +297,7 @@ pub fn instantiate_vvar(font: &mut Font, limits: &NormalizedLimits) -> Result<()
 	let pinned = limits.pinned_location();
 	let full = all_axes.iter().all(|(t, _)| pinned.contains_key(t));
 	let axes: Vec<String> = all_axes.into_iter().map(|a| a.0).collect();
-	let has_glyf = font.contains(GLYF);
+	let has_glyf = font.has::<Glyf>();
 	if has_glyf && full {
 		log::info!("Dropping VVAR table");
 		font.remove(VVAR);
@@ -312,7 +309,7 @@ pub fn instantiate_vvar(font: &mut Font, limits: &NormalizedLimits) -> Result<()
 		.as_mut()
 		.ok_or_else(|| Error::ttlib("AttributeError: no attribute 'VarRegionList'"))?;
 	let deltas = instantiate_item_variation_store(store, &axes, limits)?;
-	if !has_glyf && font.contains(VMTX) {
+	if !has_glyf && font.has::<Vmtx>() {
 		let table = &mut font.require::<Vvar>()?.table;
 		let advance_map = table.adv_height_map.clone();
 		let origin_map = table.v_org_map.clone();

@@ -1,6 +1,5 @@
 //! `InstantiateFeatureVariationsTest` of fontTools' `Tests/varLib/instancer/instancer_test.py`.
 //!
-//! `test_extended_layout_header` needs the tables of beyond-64k fonts, which are not ported yet.
 //! fontTools runs `test_null_substitution` on lazily and fully loaded tables too, which are the
 //! same here.
 
@@ -12,6 +11,7 @@ mod instancer_common;
 use std::collections::{BTreeMap, BTreeSet};
 
 use common::*;
+use fontoxide_ttlib::beyond64k::{ConvertOptions, lower_tables, upper_tables};
 use fontoxide_ttlib::ot::conv::ValueRecord;
 use fontoxide_ttlib::ot::types as ot;
 use fontoxide_ttlib::ot::var_store::{build_var_data, build_var_region_list, build_var_store};
@@ -1721,6 +1721,63 @@ mod instantiate_feature_variations_test {
 		);
 		instantiate_feature_variations(&mut varfont, &limits)?;
 		assert_no_feature_variations(&mut varfont)?;
+		Ok(())
+	}
+
+	#[test]
+	fn test_extended_layout_header() -> TestResult {
+		for lookup_variations in [false, true] {
+			for table_tag in ["GSUB", "GPOS"] {
+				for partial in [false, true] {
+					// The fonts of the test, with its changes for the GPOS case.
+					let name = match (table_tag, lookup_variations) {
+						("GSUB", false) => "extended_layout_gsub_0",
+						("GSUB", true) => "lookup_variations",
+						(_, false) => "extended_layout_gpos_0",
+						(_, true) => "extended_layout_gpos_1",
+					};
+					let mut font = fixture(name)?;
+					let wght: &[f64] = if partial {
+						&[0.25, 0.3, 0.75]
+					} else if lookup_variations {
+						&[0.3]
+					} else {
+						&[0.75]
+					};
+					let location = if lookup_variations {
+						normalized(&[("wght", wght), ("wdth", &[0.8])])
+					} else {
+						normalized(&[("wght", wght)])
+					};
+					let mut reference = font.clone();
+					let tables = [table_tag];
+					let options = ConvertOptions {
+						tables: Some(&tables),
+						..Default::default()
+					};
+					upper_tables(&mut font, &options)?;
+
+					for target in [&mut reference, &mut font] {
+						instantiate_feature_variations(target, &location)?;
+					}
+					let (version, variations) = if table_tag == "GSUB" {
+						let table = font.require::<Gsub>()?;
+						(table.version, table.feature_variations.is_some())
+					} else {
+						let table = font.require::<Gpos>()?;
+						(table.version, table.feature_variations.is_some())
+					};
+					assert_eq!(version, 0x0001_0002);
+					assert_eq!(variations, partial, "{name} {partial}");
+					lower_tables(&mut font, &options)?;
+					assert_eq!(
+						to_ttx(&mut font, &[table_tag])?,
+						to_ttx(&mut reference, &[table_tag])?,
+						"{name} {partial}"
+					);
+				}
+			}
+		}
 		Ok(())
 	}
 }

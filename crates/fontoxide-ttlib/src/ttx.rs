@@ -103,10 +103,10 @@ fn import_table(font: &mut Font, tag: Tag, element: &Element) -> Result<()> {
 			.attr("raw")
 			.and_then(safe_eval)
 			.is_some_and(|v| v.is_truthy());
-	let loca = Tag::new(b"loca");
-	if tag == loca && font.contains(loca) {
+	let is_loca = tag == Tag::new(b"loca") || tag == Tag::new(b"LOCA");
+	if is_loca && font.contains(tag) {
 		// The original 'loca' is needed if 'glyf' isn't recompiled.
-		font.load(loca)?;
+		font.load(tag)?;
 	} else if raw {
 		font.insert(Box::new(DefaultTable::new(tag, Vec::new())));
 	} else {

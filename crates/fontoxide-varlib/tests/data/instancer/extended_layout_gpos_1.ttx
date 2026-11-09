@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont sfntVersion="\x00\x01\x00\x00" ttLibVersion="4.68">
+
+  <GlyphOrder>
+    <!-- The 'id' attribute is only for humans; it is ignored when parsed. -->
+    <GlyphID id="0" name=".notdef"/>
+    <GlyphID id="1" name="A"/>
+    <GlyphID id="2" name="A.alt"/>
+    <GlyphID id="3" name="B"/>
+    <GlyphID id="4" name="B.alt"/>
+    <GlyphID id="5" name="C"/>
+    <GlyphID id="6" name="C.alt"/>
+    <GlyphID id="7" name="D"/>
+    <GlyphID id="8" name="D.alt"/>
+  </GlyphOrder>
+
+  <name>
+  </name>
+
+  <GPOS>
+    <Version value="0x00010001"/>
+    <ScriptList>
+      <!-- ScriptCount=1 -->
+      <ScriptRecord index="0">
+        <ScriptTag value="DFLT"/>
+        <Script>
+          <DefaultLangSys>
+            <ReqFeatureIndex value="65535"/>
+            <!-- FeatureCount=2 -->
+            <FeatureIndex index="0" value="0"/>
+            <FeatureIndex index="1" value="1"/>
+          </DefaultLangSys>
+          <!-- LangSysCount=0 -->
+        </Script>
+      </ScriptRecord>
+    </ScriptList>
+    <FeatureList>
+      <!-- FeatureCount=2 -->
+      <FeatureRecord index="0">
+        <FeatureTag value="kern"/>
+        <Feature>
+          <!-- LookupCount=1 -->
+          <LookupListIndex index="0" value="0"/>
+        </Feature>
+      </FeatureRecord>
+      <FeatureRecord index="1">
+        <FeatureTag value="zzzz"/>
+        <Feature>
+          <!-- LookupCount=1 -->
+          <LookupListIndex index="0" value="1"/>
+        </Feature>
+      </FeatureRecord>
+    </FeatureList>
+    <LookupList>
+      <!-- LookupCount=2 -->
+      <Lookup index="0">
+        <LookupType value="1"/>
+        <LookupFlag value="0"/>
+        <!-- SubTableCount=1 -->
+        <SinglePos index="0" Format="1">
+          <Coverage>
+            <Glyph value="A"/>
+          </Coverage>
+          <ValueFormat value="4"/>
+          <Value XAdvance="10"/>
+        </SinglePos>
+      </Lookup>
+      <Lookup index="1">
+        <LookupType value="1"/>
+        <LookupFlag value="0"/>
+        <!-- SubTableCount=1 -->
+        <SinglePos index="0" Format="1">
+          <Coverage>
+            <Glyph value="B"/>
+          </Coverage>
+          <ValueFormat value="4"/>
+          <Value XAdvance="20"/>
+        </SinglePos>
+      </Lookup>
+    </LookupList>
+    <FeatureVariations>
+      <Version value="0x00010001"/>
+      <!-- FeatureVariationCount=0 -->
+      <!-- LookupVariationCount=1 -->
+      <LookupVariationRecord index="0">
+        <FeatureIndex value="0"/>
+        <FeatureLookupsTable>
+          <Version value="0x00010000"/>
+          <Flags value="1"/>
+          <!-- LookupConditionCount=1 -->
+          <LookupConditionRecord index="0">
+            <ConditionTable Format="1">
+              <AxisIndex value="0"/>
+              <FilterRangeMinValue value="0.25"/>
+              <FilterRangeMaxValue value="0.5"/>
+            </ConditionTable>
+            <LookupIndexList>
+              <!-- LookupIndexCount=1 -->
+              <LookupIndex index="0" value="1"/>
+            </LookupIndexList>
+          </LookupConditionRecord>
+        </FeatureLookupsTable>
+      </LookupVariationRecord>
+    </FeatureVariations>
+  </GPOS>
+
+  <fvar>
+    <Axis>
+      <AxisTag>wght</AxisTag>
+      <Flags>0x0</Flags>
+      <MinValue>-1.0</MinValue>
+      <DefaultValue>0.0</DefaultValue>
+      <MaxValue>1.0</MaxValue>
+      <AxisNameID>256</AxisNameID>
+    </Axis>
+    <Axis>
+      <AxisTag>wdth</AxisTag>
+      <Flags>0x0</Flags>
+      <MinValue>-1.0</MinValue>
+      <DefaultValue>0.0</DefaultValue>
+      <MaxValue>1.0</MaxValue>
+      <AxisNameID>257</AxisNameID>
+    </Axis>
+  </fvar>
+
+</ttFont>

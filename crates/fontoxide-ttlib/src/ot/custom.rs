@@ -26,7 +26,8 @@ pub use super::morph::{MortSubtable, MorxSubtable};
 pub use super::varc::{DecomposedTransform, VarComponent, VarCompositeGlyph};
 pub use super::varmap::{DeltaSetIndexMap, VarIdxMap};
 
-pub(crate) fn has_extended_glyph_ids(font: &mut Font) -> Result<bool> {
+/// Whether the font has glyph IDs above 65535 (`hasExtendedGlyphIDs`).
+pub fn has_extended_glyph_ids(font: &mut Font) -> Result<bool> {
 	Ok(font.glyph_order()?.len() > 0x10000)
 }
 
@@ -66,8 +67,8 @@ impl Coverage {
 		Coverage { glyphs }
 	}
 
-	/// `preWrite`.
-	fn to_raw(&self, font: &mut Font) -> Result<CoverageRaw> {
+	/// `preWrite`: the table as it is written, with its format.
+	pub fn to_raw(&self, font: &mut Font) -> Result<CoverageRaw> {
 		let glyphs = &self.glyphs;
 		let Some(&first) = glyphs.first() else {
 			return Ok(CoverageRaw::Format1(CoverageRawFormat1 {

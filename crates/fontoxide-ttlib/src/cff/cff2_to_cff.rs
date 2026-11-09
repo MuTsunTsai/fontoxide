@@ -8,7 +8,6 @@ use super::font::{
 use super::specializer::{SpecializeOptions, specialize_program};
 use super::transforms::private_of;
 use super::width::optimize_widths;
-use crate::table::TableType;
 use crate::tables::{Cff, Cff2, Hmtx, Post};
 use crate::{Error, Font, Result, Tag};
 
@@ -388,10 +387,6 @@ pub fn convert_cff2_to_cff(font: &mut Font, update_post_table: bool) -> Result<(
 	let cff2 = Tag::new(b"CFF2");
 	if !font.contains(cff2) {
 		return Err(Error::value("Input font does not contain a CFF2 table."));
-	}
-	if get_hmtx_tag(font) != Hmtx::TAG {
-		// There is no class for the `HMTX` table yet to read the widths from.
-		return Err(Error::ttlib("NotImplementedError: the HMTX table"));
 	}
 	let widths: Vec<i64> = {
 		let hmtx = font.require::<Hmtx>()?;

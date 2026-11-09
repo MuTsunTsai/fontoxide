@@ -610,8 +610,8 @@ impl LigatureSubst {
 		})
 	}
 
-	/// `preWrite`.
-	fn to_raw(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<LigatureSubstRaw> {
+	/// `preWrite`: the table as it is written, with its format.
+	pub fn to_raw(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<LigatureSubstRaw> {
 		let extended =
 			any_extended(
 				font,

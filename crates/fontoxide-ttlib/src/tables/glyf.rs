@@ -171,18 +171,34 @@ impl GlyphComponent {
 		data: &[u8],
 		num_glyph_names: usize,
 	) -> Result<(Self, bool, bool, usize)> {
+		Self::decompile_ext(data, num_glyph_names, false)
+	}
+
+	/// [`GlyphComponent::decompile`] for `glyf` or the `extended` `GLYF`.
+	pub fn decompile_ext(
+		data: &[u8],
+		num_glyph_names: usize,
+		extended: bool,
+	) -> Result<(Self, bool, bool, usize)> {
 		let short = |n: usize| Error::Struct(format!("unpack requires a buffer of {n} bytes"));
 		let take = |pos: usize, n: usize| data.get(pos..pos + n).ok_or_else(|| short(n));
 		let b = take(0, 2)?;
 		let raw_flags = u16::from_be_bytes([b[0], b[1]]) as i64;
 		// glyf (not GLYF) always uses 16-bit glyph IDs.
+		let gid_size = if extended && raw_flags & GID_IS_24_BIT != 0 {
+			3
+		} else {
+			2
+		};
 		let gid = data
-			.get(2..4)
-			.map_or(0, |b| u16::from_be_bytes([b[0], b[1]]) as u32);
+			.get(2..(2 + gid_size).min(data.len()))
+			.unwrap_or_default()
+			.iter()
+			.fold(0u32, |acc, &b| acc << 8 | u32::from(b));
 		if gid as usize >= num_glyph_names {
 			return Err(Error::ttlib("IndexError: list index out of range"));
 		}
-		let mut pos = 4.min(data.len());
+		let mut pos = (2 + gid_size).min(data.len());
 		let placement = if raw_flags & ARG_1_AND_2_ARE_WORDS != 0 {
 			let b = take(pos, 4)?;
 			pos += 4;
@@ -251,6 +267,17 @@ impl GlyphComponent {
 		have_instructions: bool,
 		num_glyphs: usize,
 	) -> Result<Vec<u8>> {
+		self.compile_ext(more, have_instructions, num_glyphs, false)
+	}
+
+	/// [`GlyphComponent::compile`] for `glyf` or the `extended` `GLYF`.
+	pub fn compile_ext(
+		&self,
+		more: bool,
+		have_instructions: bool,
+		num_glyphs: usize,
+		extended: bool,
+	) -> Result<Vec<u8>> {
 		let mut data = Vec::new();
 		let mut flags = self.flags & KEPT_COMPONENT_FLAGS;
 		if more {
@@ -301,12 +328,21 @@ impl GlyphComponent {
 		if self.glyph as usize >= num_glyphs {
 			return Err(Error::value(format!("{}", self.glyph)));
 		}
-		flags &= !GID_IS_24_BIT;
-		let gid = u16::try_from(self.glyph)
-			.map_err(|_| Error::Struct("int too big to convert".into()))?;
-		let mut out = Vec::with_capacity(4 + data.len());
-		out.extend_from_slice(&u16_of(flags)?.to_be_bytes());
-		out.extend_from_slice(&gid.to_be_bytes());
+		let mut out = Vec::with_capacity(5 + data.len());
+		if extended && self.glyph > 0xFFFF {
+			if self.glyph > 0xFF_FFFF {
+				return Err(Error::Struct("int too big to convert".into()));
+			}
+			flags |= GID_IS_24_BIT;
+			out.extend_from_slice(&u16_of(flags)?.to_be_bytes());
+			out.extend_from_slice(&self.glyph.to_be_bytes()[1..]);
+		} else {
+			flags &= !GID_IS_24_BIT;
+			let gid = u16::try_from(self.glyph)
+				.map_err(|_| Error::Struct("int too big to convert".into()))?;
+			out.extend_from_slice(&u16_of(flags)?.to_be_bytes());
+			out.extend_from_slice(&gid.to_be_bytes());
+		}
 		out.extend(data);
 		Ok(out)
 	}
@@ -595,6 +631,11 @@ impl Glyph {
 	/// Parses a glyph (`Glyph(data)` + `expand`). Component glyph IDs must be
 	/// below `num_glyph_names`.
 	pub fn decompile(data: &[u8], num_glyph_names: usize) -> Result<Self> {
+		Self::decompile_ext(data, num_glyph_names, false)
+	}
+
+	/// [`Glyph::decompile`] for `glyf` or the `extended` `GLYF`.
+	pub fn decompile_ext(data: &[u8], num_glyph_names: usize, extended: bool) -> Result<Self> {
 		let mut g = Glyph::default();
 		if data.is_empty() {
 			return Ok(g);
@@ -618,7 +659,7 @@ impl Glyph {
 			return Ok(g);
 		}
 		if g.is_composite() {
-			g.decompile_components(data, num_glyph_names)?;
+			g.decompile_components(data, num_glyph_names, extended)?;
 		} else if g.number_of_contours < 0 {
 			// LENIENT(L11): fontTools reads such a glyph as a simple glyph with
 			// Python slicing on negative sizes, which yields garbage or fails.
@@ -627,16 +668,22 @@ impl Glyph {
 				g.number_of_contours
 			)));
 		} else {
-			g.decompile_coordinates(data)?;
+			g.decompile_coordinates(data, extended)?;
 		}
 		Ok(g)
 	}
 
-	fn decompile_components(&mut self, data: &[u8], num_glyph_names: usize) -> Result<()> {
+	fn decompile_components(
+		&mut self,
+		data: &[u8],
+		num_glyph_names: usize,
+		extended: bool,
+	) -> Result<()> {
 		let mut pos = 0;
 		let mut have_instructions = false;
 		loop {
-			let (c, more, instr, used) = GlyphComponent::decompile(&data[pos..], num_glyph_names)?;
+			let (c, more, instr, used) =
+				GlyphComponent::decompile_ext(&data[pos..], num_glyph_names, extended)?;
 			pos += used;
 			have_instructions |= instr;
 			self.components.push(c);
@@ -662,7 +709,7 @@ impl Glyph {
 		Ok(())
 	}
 
-	fn decompile_coordinates(&mut self, data: &[u8]) -> Result<()> {
+	fn decompile_coordinates(&mut self, data: &[u8], extended: bool) -> Result<()> {
 		let n = self.number_of_contours as usize;
 		let end_bytes = &data[..(2 * n).min(data.len())];
 		if !end_bytes.len().is_multiple_of(2) {
@@ -762,7 +809,13 @@ impl Glyph {
 			coordinates.push((x, y));
 		}
 		self.coordinates = coordinates;
-		self.flags = flags.into_iter().map(|f| f & KEEP_FLAGS).collect();
+		// Discard all flags except these.
+		let kept = if extended {
+			KEEP_FLAGS | FLAG_CUBIC
+		} else {
+			KEEP_FLAGS
+		};
+		self.flags = flags.into_iter().map(|f| f & kept).collect();
 		Ok(())
 	}
 
@@ -771,7 +824,7 @@ impl Glyph {
 		(self.coordinates.len(), self.end_pts_of_contours.len())
 	}
 
-	fn compile_coordinates(&self) -> Result<Vec<u8>> {
+	fn compile_coordinates(&self, extended: bool) -> Result<Vec<u8>> {
 		if self.coordinates.len() != self.flags.len() {
 			return Err(Error::Assertion(
 				"len(self.coordinates) == len(self.flags)".into(),
@@ -791,6 +844,9 @@ impl Glyph {
 		})?;
 		data.extend_from_slice(&u16_of(program.bytecode.len() as i64)?.to_be_bytes());
 		data.extend_from_slice(&program.bytecode);
+		if !extended && self.flags.iter().any(|f| f & FLAG_CUBIC != 0) {
+			return Err(Error::ttlib("Cubic flags require the extended GLYF table"));
+		}
 		// Deltas of the rounded coordinates, packed greedily.
 		let mut last = (0i64, 0i64);
 		let mut out_flags: Vec<u8> = Vec::new();
@@ -840,7 +896,7 @@ impl Glyph {
 		Ok(data)
 	}
 
-	fn compile_components(&self, num_glyphs: usize) -> Result<Vec<u8>> {
+	fn compile_components(&self, num_glyphs: usize, extended: bool) -> Result<Vec<u8>> {
 		let mut data = Vec::new();
 		let mut have_instructions = false;
 		let last = self.components.len().wrapping_sub(1);
@@ -849,7 +905,7 @@ impl Glyph {
 			if !more {
 				have_instructions = self.program.is_some();
 			}
-			data.extend(c.compile(more, have_instructions, num_glyphs)?);
+			data.extend(c.compile_ext(more, have_instructions, num_glyphs, extended)?);
 		}
 		if have_instructions && let Some(p) = &self.program {
 			data.extend_from_slice(&u16_of(p.bytecode.len() as i64)?.to_be_bytes());
@@ -859,7 +915,10 @@ impl Glyph {
 	}
 
 	/// `toXML`.
-	fn to_xml(&self, writer: &mut XmlWriter, order: &GlyphOrder) -> Result<()> {
+	fn to_xml(&self, writer: &mut XmlWriter, order: &GlyphOrder, extended: bool) -> Result<()> {
+		if !extended && self.flags.iter().any(|f| f & FLAG_CUBIC != 0) {
+			return Err(Error::ttlib("Cubic flags require the extended GLYF table"));
+		}
 		if self.is_composite() {
 			for c in &self.components {
 				c.to_xml(writer, order);
@@ -885,6 +944,9 @@ impl Glyph {
 					if flag & FLAG_OVERLAP_SIMPLE != 0 {
 						attrs.push(("overlap", &1));
 					}
+					if extended && flag & FLAG_CUBIC != 0 {
+						attrs.push(("cubic", &1));
+					}
 					writer.simpletag_ordered("pt", &attrs);
 					writer.newline();
 				}
@@ -908,7 +970,7 @@ impl Glyph {
 	}
 
 	/// `fromXML` for one child element of `TTGlyph`.
-	fn read_xml(&mut self, e: &Element, font: &mut Font) -> Result<()> {
+	fn read_xml(&mut self, e: &Element, font: &mut Font, extended: bool) -> Result<()> {
 		match e.name.as_str() {
 			"contour" => {
 				if self.number_of_contours < 0 {
@@ -938,7 +1000,12 @@ impl Glyph {
 					if let Some(v) = pt.attr("cubic")
 						&& eval(v)?.is_truthy()
 					{
-						return Err(Error::ttlib("Cubic flags require the extended GLYF table"));
+						if !extended {
+							return Err(Error::ttlib(
+								"Cubic flags require the extended GLYF table",
+							));
+						}
+						flag |= FLAG_CUBIC;
 					}
 					flags.push(flag);
 				}
@@ -988,6 +1055,8 @@ pub struct Glyf {
 	/// Glyphs are padded to multiples of this (`padding`): 0, 1, 2 or 4; 1 pads
 	/// only when that allows short `loca` offsets.
 	pub padding: u8,
+	/// Whether this is `GLYF`, the beyond-64k companion of the table (`extended`).
+	pub extended: bool,
 }
 
 impl Default for Glyf {
@@ -995,6 +1064,7 @@ impl Default for Glyf {
 		Glyf {
 			glyphs: BTreeMap::new(),
 			padding: 1,
+			extended: false,
 		}
 	}
 }
@@ -1341,7 +1411,7 @@ impl Glyf {
 			data.extend_from_slice(&i16_of(v)?.to_be_bytes());
 		}
 		if g.is_composite() {
-			data.extend(g.compile_components(order.len())?);
+			data.extend(g.compile_components(order.len(), self.extended)?);
 		} else if g.number_of_contours == 0 {
 			let p = g
 				.program
@@ -1351,7 +1421,7 @@ impl Glyf {
 			data.extend_from_slice(&u16_of(p.len() as i64)?.to_be_bytes());
 			data.extend_from_slice(p);
 		} else {
-			data.extend(g.compile_coordinates()?);
+			data.extend(g.compile_coordinates(self.extended)?);
 		}
 		Ok(data)
 	}
@@ -1441,7 +1511,11 @@ fn calc_bounds(coords: &[(f64, f64)]) -> [f64; 4] {
 }
 
 /// `remapComponentsFast`: maps the component glyphs of compact glyph data.
-fn remap_components_fast(data: &mut [u8], f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+fn remap_components_fast(
+	data: &mut [u8],
+	extended: bool,
+	f: &mut dyn FnMut(u32) -> Result<u32>,
+) -> Result<()> {
 	if data.len() < 2 || i16::from_be_bytes([data[0], data[1]]) >= 0 {
 		// Not composite.
 		return Ok(());
@@ -1455,11 +1529,22 @@ fn remap_components_fast(data: &mut [u8], f: &mut dyn FnMut(u32) -> Result<u32>)
 	loop {
 		let flags = (byte(data, i)? << 8) | byte(data, i + 1)?;
 		let start = i + 2;
-		let gid = (byte(data, start)? << 8) | byte(data, start + 1)?;
+		// The size of the glyph ID stays, whatever the new glyph ID is.
+		let size = if extended && flags & GID_IS_24_BIT != 0 {
+			3
+		} else {
+			2
+		};
+		let mut gid = 0;
+		for k in 0..size {
+			gid = (gid << 8) | byte(data, start + k)?;
+		}
 		let new = f(gid as u32)?;
-		let new = u16::try_from(new).map_err(|_| Error::Struct("int too big to convert".into()))?;
-		data[start..start + 2].copy_from_slice(&new.to_be_bytes());
-		i = start + 2;
+		if new >> (8 * size) != 0 {
+			return Err(Error::value("OverflowError: int too big to convert"));
+		}
+		data[start..start + size].copy_from_slice(&new.to_be_bytes()[4 - size..]);
+		i = start + size;
 		i += if flags & ARG_1_AND_2_ARE_WORDS != 0 {
 			4
 		} else {
@@ -1482,6 +1567,11 @@ impl Glyph {
 	/// `trim`: removes padding and, if asked, hinting, without expanding the
 	/// glyph.
 	pub fn trim(&mut self, remove_hinting: bool) -> Result<()> {
+		self.trim_ext(remove_hinting, false)
+	}
+
+	/// [`Glyph::trim`] for `glyf` or the `extended` `GLYF`.
+	pub fn trim_ext(&mut self, remove_hinting: bool, extended: bool) -> Result<()> {
 		let Some(data) = self.data.as_mut() else {
 			if remove_hinting {
 				if self.is_composite() {
@@ -1573,7 +1663,11 @@ impl Glyph {
 				}
 				data[i] = (flags >> 8) as u8;
 				data[i + 1] = flags as u8;
-				i += 4;
+				i += if extended && flags & GID_IS_24_BIT != 0 {
+					5
+				} else {
+					4
+				};
 				i += if flags & ARG_1_AND_2_ARE_WORDS != 0 {
 					4
 				} else {
@@ -1603,9 +1697,22 @@ impl Glyph {
 
 impl TableType for Glyf {
 	const TAG: Tag = Tag::new(b"glyf");
+	const COMPANION: Option<Tag> = Some(Tag::new(b"GLYF"));
 
 	fn decompile(data: &[u8], font: &mut Font) -> Result<Self> {
-		let locations = font.require::<Loca>()?.locations().to_vec();
+		Self::decompile_as(Self::TAG, data, font)
+	}
+
+	fn new_as(tag: Tag) -> Self {
+		Glyf {
+			extended: tag == Tag::new(b"GLYF"),
+			..Default::default()
+		}
+	}
+
+	fn decompile_as(tag: Tag, data: &[u8], font: &mut Font) -> Result<Self> {
+		let extended = tag == Tag::new(b"GLYF");
+		let locations = font.require_locked::<Loca>(extended)?.locations().to_vec();
 		let order = font.glyph_order()?;
 		let mut pos = *locations
 			.first()
@@ -1625,7 +1732,7 @@ impl TableType for Glyf {
 				None if next == pos => &[][..],
 				None => return Err(Error::ttlib("not enough 'glyf' table data")),
 			};
-			let mut glyph = Glyph::decompile(glyph_data, order.len())?;
+			let mut glyph = Glyph::decompile_ext(glyph_data, order.len(), extended)?;
 			glyph.data = Some(glyph_data.to_vec());
 			glyphs.insert(i as u32, glyph);
 			pos = next;
@@ -1639,7 +1746,11 @@ impl TableType for Glyf {
 		if noname > 0 {
 			log::warn!("{noname} glyphs have no name");
 		}
-		Ok(Glyf { glyphs, padding: 1 })
+		Ok(Glyf {
+			glyphs,
+			padding: 1,
+			extended,
+		})
 	}
 }
 
@@ -1658,7 +1769,7 @@ impl Table for Glyf {
 				c.glyph = f(c.glyph)?;
 			}
 			if let Some(data) = &mut glyph.data {
-				remap_components_fast(data, f)?;
+				remap_components_fast(data, self.extended, f)?;
 			}
 			glyphs.insert(f(g)?, glyph);
 		}
@@ -1667,7 +1778,7 @@ impl Table for Glyf {
 	}
 
 	fn tag(&self) -> Tag {
-		Self::TAG
+		Font::locked_tag::<Self>(self.extended)
 	}
 
 	fn compile(&mut self, font: &mut Font) -> Result<Vec<u8>> {
@@ -1704,13 +1815,14 @@ impl Table for Glyf {
 		}
 		locations.push(at);
 		let mut data = data_list.concat();
-		if font.contains(Loca::TAG) {
-			font.require::<Loca>()?.set(locations);
+		let extended = self.extended;
+		if let Some(loca) = font.get_locked::<Loca>(extended)? {
+			loca.set(locations);
 		}
-		if font.contains(Maxp::TAG)
-			&& let Ok(n) = u16::try_from(self.glyphs.len())
+		if let Some(maxp) = font.get_locked::<Maxp>(extended)?
+			&& let Ok(n) = u32::try_from(self.glyphs.len())
 		{
-			font.require::<Maxp>()?.num_glyphs = n;
+			maxp.num_glyphs = n;
 		}
 		if data.is_empty() {
 			// An empty table would be rejected by OTS and Windows.
@@ -1752,7 +1864,7 @@ impl Table for Glyf {
 					],
 				);
 				writer.newline();
-				glyph.to_xml(writer, &order)?;
+				glyph.to_xml(writer, &order, self.extended)?;
 				writer.endtag("TTGlyph");
 				writer.newline();
 			} else {
@@ -1788,7 +1900,7 @@ impl Table for Glyf {
 				.and_then(int64)?;
 		}
 		for e in element.elements() {
-			glyph.read_xml(e, font)?;
+			glyph.read_xml(e, font, self.extended)?;
 		}
 		self.glyphs.insert(gid, glyph);
 		Ok(())

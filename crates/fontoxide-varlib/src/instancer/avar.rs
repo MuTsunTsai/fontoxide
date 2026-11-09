@@ -731,7 +731,7 @@ pub(super) fn cull_tuple_var_store(store: &mut TupleVarStore, ranges: &Reachable
 /// variation store lose region columns.
 pub fn cull_variations(font: &mut Font, ranges: &ReachableRanges) -> Result<()> {
 	let axes: Vec<String> = fvar_axes(font)?.into_iter().map(|a| a.0).collect();
-	if font.contains(Tag::new(b"gvar")) {
+	if font.has::<Gvar>() {
 		for (_, variations) in &mut font.require::<Gvar>()?.variations {
 			variations.retain(|v| !is_dead(v, ranges));
 		}

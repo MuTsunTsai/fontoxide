@@ -14,6 +14,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod beyond64k;
 pub mod binary;
 pub mod cff;
 pub mod collection;

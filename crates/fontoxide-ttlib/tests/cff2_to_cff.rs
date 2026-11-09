@@ -12,8 +12,7 @@ use fontoxide_ttlib::cff::cff2_to_cff::{convert_cff2_to_cff, get_hmtx_tag};
 use fontoxide_ttlib::cff::dict::Value;
 use fontoxide_ttlib::tables::{Cff, Hmtx};
 use fontoxide_ttlib::{
-	DefaultTable, Error, Font, GlyphSet, ReadOptions, Result, TableKey, Tag, TtxOptions,
-	WriteOptions,
+	DefaultTable, Font, GlyphSet, ReadOptions, Result, TableKey, Tag, TtxOptions, WriteOptions,
 };
 
 fn data(name: &str) -> String {
@@ -212,14 +211,19 @@ fn test_get_hmtx_uses_lowercase_without_companion() {
 	assert_eq!(get_hmtx_tag(&font), HMTX);
 }
 
-/// The metrics of a font with `HMTX` can't be read yet: not the wrong ones either.
+/// The widths come from `HMTX` in a font with the companion tables.
 #[test]
 fn uppercase_companion_is_not_ignored() -> Result<()> {
+	use fontoxide_ttlib::beyond64k::{ConvertOptions, upper_tables};
 	let mut font = make_cff2_font("cff2_single_fontdict")?;
-	font.insert(Box::new(DefaultTable::new(UPPERCASE_HMTX, Vec::new())));
-	assert!(matches!(
-		convert_cff2_to_cff(&mut font, true),
-		Err(Error::TtLib(_))
-	));
+	let mut expected = make_cff2_font("cff2_single_fontdict")?;
+	convert_cff2_to_cff(&mut expected, true)?;
+	upper_tables(&mut font, &ConvertOptions::default())?;
+	assert!(font.contains(UPPERCASE_HMTX));
+	convert_cff2_to_cff(&mut font, true)?;
+	assert_eq!(
+		font.require::<fontoxide_ttlib::tables::Cff>()?.cff,
+		expected.require::<fontoxide_ttlib::tables::Cff>()?.cff
+	);
 	Ok(())
 }

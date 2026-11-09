@@ -582,30 +582,33 @@ mod instantiate_avar2_test {
 		assert!(is_dead(&dead, &ranges(0.0, 0.25)));
 	}
 
-	/// The `GVAR` case needs the tables of beyond-64k fonts, which are not ported yet.
 	#[test]
 	fn test_cull_glyph_variations() -> TestResult {
-		let mut font = Font::new();
-		font.set_glyph_order(vec!["A".to_owned()]);
-		let mut fvar = Fvar::default();
-		fvar.axes.push(Axis::new(tag("wght")));
-		font.insert(Box::new(fvar));
-		let variation = |support, (x, y)| TupleVariation {
-			axes: region(&[("wght", support)]),
-			coordinates: vec![point_delta(x, y); 4],
-		};
-		let live = variation((0.0, 0.25, 0.5), (10, 20));
-		let dead = variation((0.5, 0.75, 1.0), (30, 40));
-		let gvar = Gvar {
-			variations: vec![(0, vec![live.clone(), dead])],
-			..Default::default()
-		};
-		font.insert(Box::new(gvar));
+		for extended in [false, true] {
+			let mut font = Font::new();
+			font.set_glyph_order(vec!["A".to_owned()]);
+			let mut fvar = Fvar::default();
+			fvar.axes.push(Axis::new(tag("wght")));
+			font.insert(Box::new(fvar));
+			let variation = |support, (x, y)| TupleVariation {
+				axes: region(&[("wght", support)]),
+				coordinates: vec![point_delta(x, y); 4],
+			};
+			let live = variation((0.0, 0.25, 0.5), (10, 20));
+			let dead = variation((0.5, 0.75, 1.0), (30, 40));
+			let gvar = Gvar {
+				variations: vec![(0, vec![live.clone(), dead])],
+				extended,
+				..Default::default()
+			};
+			font.insert(Box::new(gvar));
 
-		let ranges: ReachableRanges = [("wght".to_owned(), (0.0, 0.25))].into_iter().collect();
-		cull_variations(&mut font, &ranges)?;
+			let ranges: ReachableRanges = [("wght".to_owned(), (0.0, 0.25))].into_iter().collect();
+			cull_variations(&mut font, &ranges)?;
 
-		assert_eq!(font.require::<Gvar>()?.variations, [(0, vec![live])]);
+			let gvar = font.require_locked::<Gvar>(extended)?;
+			assert_eq!(gvar.variations, [(0, vec![live])]);
+		}
 		Ok(())
 	}
 

@@ -157,12 +157,12 @@ impl Subsetter {
 
 	/// Subsets the font in place (`subset`).
 	pub fn subset(&mut self, font: &mut Font) -> Result<()> {
-		check_compact_layout(font)?;
-		self.prune_pre_subset(font)?;
-		self.closure_glyphs(font)?;
-		self.subset_glyphs(font)?;
-		self.prune_post_subset(font)?;
-		Ok(())
+		fontoxide_ttlib::beyond64k::with_compact_layout_tables(font, |font| {
+			self.prune_pre_subset(font)?;
+			self.closure_glyphs(font)?;
+			self.subset_glyphs(font)?;
+			self.prune_post_subset(font)
+		})
 	}
 
 	/// `_prune_pre_subset`.
@@ -389,26 +389,4 @@ impl Subsetter {
 		}
 		Ok(())
 	}
-}
-
-/// `_compact_layout_tables`: only needed for the 24-bit layout formats, which
-/// are not supported yet.
-fn check_compact_layout(font: &mut Font) -> Result<()> {
-	use fontoxide_ttlib::tables::otl::{Gdef, Gpos, Gsub};
-	if let Some(t) = font.get::<Gdef>()?
-		&& t.version >= 0x0001_0004
-	{
-		return Err(Error::Unsupported("GDEF 1.4".into()));
-	}
-	if let Some(t) = font.get::<Gsub>()?
-		&& t.version >= 0x0001_0002
-	{
-		return Err(Error::Unsupported("GSUB 1.2".into()));
-	}
-	if let Some(t) = font.get::<Gpos>()?
-		&& t.version >= 0x0001_0002
-	{
-		return Err(Error::Unsupported("GPOS 1.2".into()));
-	}
-	Ok(())
 }

@@ -622,6 +622,16 @@ fn prune_lookups(font: &mut Font, tag: Tag) -> Result<()> {
 /// `instantiateFeatureVariations`.
 pub fn instantiate_feature_variations(font: &mut Font, limits: &NormalizedLimits) -> Result<()> {
 	check_conditions(font)?;
+	fontoxide_ttlib::beyond64k::with_compact_layout_tables(font, |font| {
+		instantiate_feature_variations_in_font(font, limits)
+	})
+}
+
+/// `_instantiateFeatureVariationsInFont`.
+fn instantiate_feature_variations_in_font(
+	font: &mut Font,
+	limits: &NormalizedLimits,
+) -> Result<()> {
 	let axes: Vec<String> = fvar_axes(font)?.into_iter().map(|a| a.0).collect();
 	let store = match font.get::<Gdef>()? {
 		Some(gdef) => gdef.var_store.clone(),

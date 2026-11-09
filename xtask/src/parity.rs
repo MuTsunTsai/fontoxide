@@ -76,6 +76,12 @@ pub enum Op {
 	/// Instantiate a variable font at `--instance-limits`. Not run unless asked for
 	/// (`--op instance`).
 	Instance,
+	/// Convert to the beyond-64k companion tables (`ttLib.beyond64k.upper_tables`). Not
+	/// run unless asked for (`--op upper`).
+	Upper,
+	/// Convert to the beyond-64k companion tables and back. Not run unless asked for
+	/// (`--op lower`).
+	Lower,
 }
 
 /// See [`Args::instance_options`].
@@ -192,13 +198,21 @@ impl Op {
 			Op::Fromttx => "fromttx",
 			Op::Subset => "subset",
 			Op::Instance => "instance",
+			Op::Upper => "upper",
+			Op::Lower => "lower",
 		}
 	}
 
 	fn extension(self) -> &'static str {
 		match self {
 			Op::Ttx | Op::TtcTtx => "ttx",
-			Op::Roundtrip | Op::TtcRoundtrip | Op::Fromttx | Op::Subset | Op::Instance => "bin",
+			Op::Roundtrip
+			| Op::TtcRoundtrip
+			| Op::Fromttx
+			| Op::Subset
+			| Op::Instance
+			| Op::Upper
+			| Op::Lower => "bin",
 		}
 	}
 
@@ -527,6 +541,17 @@ fn ours(
 			.write(&WriteOptions::default())
 			.map_err(|e| e.to_string());
 	}
+	if matches!(op, Op::Upper | Op::Lower) {
+		use fontoxide_ttlib::beyond64k::{ConvertOptions, lower_tables, upper_tables};
+		let mut font = Font::read(input.to_vec(), options).map_err(|e| e.to_string())?;
+		upper_tables(&mut font, &ConvertOptions::default()).map_err(|e| e.to_string())?;
+		if op == Op::Lower {
+			lower_tables(&mut font, &ConvertOptions::default()).map_err(|e| e.to_string())?;
+		}
+		return font
+			.write(&WriteOptions::default())
+			.map_err(|e| e.to_string());
+	}
 	if op == Op::Instance {
 		let mut font = Font::read(input.to_vec(), options).map_err(|e| e.to_string())?;
 		fontoxide_varlib::instancer::instantiate_variable_font(
@@ -555,7 +580,14 @@ fn ours(
 			.to_ttx(&TtxOptions::default())
 			.map(String::into_bytes)
 			.map_err(|e| e.to_string()),
-		Op::Roundtrip | Op::TtcTtx | Op::TtcRoundtrip | Op::Fromttx | Op::Subset | Op::Instance => {
+		Op::Roundtrip
+		| Op::TtcTtx
+		| Op::TtcRoundtrip
+		| Op::Fromttx
+		| Op::Subset
+		| Op::Instance
+		| Op::Upper
+		| Op::Lower => {
 			font.ensure_decompiled().map_err(|e| e.to_string())?;
 			font.write(&WriteOptions::default())
 				.map_err(|e| e.to_string())
@@ -623,14 +655,18 @@ fn compare(op: Op, ours: &[u8], reference: &[u8]) -> Vec<(String, Outcome, Optio
 	}
 	let (a, b) = match op {
 		Op::Ttx | Op::TtcTtx => (split_ttx(ours), split_ttx(reference)),
-		Op::Roundtrip | Op::TtcRoundtrip | Op::Fromttx | Op::Subset | Op::Instance => {
-			match (split_sfnt(ours), split_sfnt(reference)) {
-				(Ok(a), Ok(b)) => (a, b),
-				(Err(e), _) | (_, Err(e)) => {
-					return vec![(FILE.into(), Outcome::OursFailed, Some(e))];
-				}
+		Op::Roundtrip
+		| Op::TtcRoundtrip
+		| Op::Fromttx
+		| Op::Subset
+		| Op::Instance
+		| Op::Upper
+		| Op::Lower => match (split_sfnt(ours), split_sfnt(reference)) {
+			(Ok(a), Ok(b)) => (a, b),
+			(Err(e), _) | (_, Err(e)) => {
+				return vec![(FILE.into(), Outcome::OursFailed, Some(e))];
 			}
-		}
+		},
 	};
 	let mut out = Vec::new();
 	let mut keys: std::collections::BTreeSet<&String> = a.keys().chain(b.keys()).collect();
@@ -646,9 +682,13 @@ fn compare(op: Op, ours: &[u8], reference: &[u8]) -> Vec<(String, Outcome, Optio
 				Outcome::Mismatch,
 				Some(match op {
 					Op::Ttx | Op::TtcTtx => first_line_difference(x, y),
-					Op::Roundtrip | Op::TtcRoundtrip | Op::Fromttx | Op::Subset | Op::Instance => {
-						first_difference(x, y)
-					}
+					Op::Roundtrip
+					| Op::TtcRoundtrip
+					| Op::Fromttx
+					| Op::Subset
+					| Op::Instance
+					| Op::Upper
+					| Op::Lower => first_difference(x, y),
 				}),
 			),
 			(Some(_), None) => (Outcome::Missing, Some("only in fontoxide".into())),

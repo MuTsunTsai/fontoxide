@@ -8,6 +8,7 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use fontoxide_misc::round_tools::ot_round;
+use fontoxide_ttlib::beyond64k::convert_layout_formats;
 use fontoxide_ttlib::binary::fit;
 use fontoxide_ttlib::ot::conv::ValueRecord;
 use fontoxide_ttlib::ot::table::OtTable;
@@ -29,6 +30,33 @@ struct Mutator<'a> {
 	deltas: &'a DefaultDeltas,
 	delete_variations: bool,
 	order: &'a GlyphOrder,
+}
+
+/// `_BEYOND64K_GPOS_TYPES`: `_convert_beyond64k_GPOS` of a subtable.
+fn convert_beyond64k_gpos(st: &mut Option<Box<St>>, extended: bool) -> Result<()> {
+	match st.as_deref_mut() {
+		Some(St::SinglePos(t)) => convert_layout_formats(t, extended)?,
+		Some(St::PairPos(t)) => convert_layout_formats(t, extended)?,
+		Some(St::CursivePos(t)) => convert_layout_formats(t, extended)?,
+		Some(St::MarkBasePos(t)) => convert_layout_formats(t, extended)?,
+		Some(St::MarkMarkPos(t)) => convert_layout_formats(t, extended)?,
+		_ => false,
+	};
+	Ok(())
+}
+
+/// Whether a subtable has one of the extended formats that the merger handles.
+fn is_extended_gpos(st: &Option<Box<St>>) -> bool {
+	matches!(
+		st.as_deref(),
+		Some(St::SinglePos(
+			ot::SinglePos::Format3(_) | ot::SinglePos::Format4(_)
+		)) | Some(St::PairPos(
+			ot::PairPos::Format3(_) | ot::PairPos::Format4(_)
+		)) | Some(St::CursivePos(ot::CursivePos::Format2(_)))
+			| Some(St::MarkBasePos(ot::MarkBasePos::Format2(_)))
+			| Some(St::MarkMarkPos(ot::MarkMarkPos::Format2(_)))
+	)
 }
 
 fn inconsistent_glyph_order() -> Error {
@@ -760,6 +788,16 @@ fn merge_lookup(m: &Mutator<'_>, lookup: &mut ot::Lookup) -> Result<()> {
 		}
 	}
 
+	// Beyond-64k: demote extended GPOS subtables to format 1/2 so the mergers can handle
+	// them; the merged output is promoted back at the end. Explicit extended formats remain
+	// valid below the 64k glyph threshold.
+	let extended = m.order.len() > 0x10000 || lookup.sub_table.iter().any(is_extended_gpos);
+	if extended {
+		for st in &mut lookup.sub_table {
+			convert_beyond64k_gpos(st, false)?;
+		}
+	}
+
 	let is_pair_pos = matches!(
 		lookup.sub_table.first().and_then(|s| s.as_deref()),
 		Some(St::PairPos(_))
@@ -838,6 +876,11 @@ fn merge_lookup(m: &Mutator<'_>, lookup: &mut ot::Lookup) -> Result<()> {
 		}
 	}
 	lookup.sub_table_count = Some(lookup.sub_table.len() as u32);
+	if extended {
+		for st in &mut lookup.sub_table {
+			convert_beyond64k_gpos(st, true)?;
+		}
+	}
 	Ok(())
 }
 
@@ -1002,6 +1045,15 @@ fn instantiate_condition_value_rows(
 	Ok(())
 }
 
+/// Whether a `GDEF` has any of the fields of version 1.4.
+fn has_extended_gdef_fields(gdef: &Gdef) -> bool {
+	gdef.glyph_class_def2.is_some()
+		|| gdef.attach_list2.is_some()
+		|| gdef.lig_caret_list2.is_some()
+		|| gdef.mark_attach_class_def2.is_some()
+		|| gdef.mark_glyph_sets_def2.is_some()
+}
+
 /// `instantiateOTL`.
 pub fn instantiate_otl(font: &mut Font, limits: &NormalizedLimits) -> Result<()> {
 	let axes: Vec<String> = fvar_axes(font)?.into_iter().map(|a| a.0).collect();
@@ -1112,6 +1164,11 @@ pub fn instantiate_otl(font: &mut Font, limits: &NormalizedLimits) -> Result<()>
 		if let Some(t) = font.get::<Jstf>()? {
 			remap_devices(&mut t.table, &map)?;
 		}
+	} else if has_extended_gdef_fields(font.require::<Gdef>()?) {
+		// A beyond-64k GDEF: keep version 1.4 and NULL the store; don't drop the *2 fields.
+		let gdef = font.require::<Gdef>()?;
+		gdef.var_store = None;
+		gdef.version = 0x0001_0004;
 	} else {
 		// Downgrade GDEF.
 		let gdef = font.require::<Gdef>()?;

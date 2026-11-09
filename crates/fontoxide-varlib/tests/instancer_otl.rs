@@ -1,7 +1,7 @@
 //! `InstantiateOTLTest` of fontTools' `Tests/varLib/instancer/instancer_test.py`.
 //!
-//! The tests of beyond-64k fonts (`test_full_instance_save_beyond64k` and
-//! `test_partial_instance_save_beyond64k`) need the tables of those, which are not ported yet.
+//! The variable font of `test_full_instance_save_beyond64k`, built by `varLib` there, is made
+//! with the same code by `tools/reference/beyond64k_fixtures.py`.
 
 #![allow(clippy::type_complexity)]
 
@@ -9,10 +9,12 @@ mod common;
 mod instancer_common;
 
 use common::*;
+use fontoxide_ttlib::beyond64k::{ConvertOptions, upper_tables};
 use fontoxide_ttlib::ot::conv::ValueRecord;
+use fontoxide_ttlib::ot::custom::has_extended_glyph_ids;
 use fontoxide_ttlib::ot::types as ot;
-use fontoxide_ttlib::tables::{Base, Gdef, Gpos};
-use fontoxide_ttlib::{Font, Tag};
+use fontoxide_ttlib::tables::{Base, Fvar, Gdef, Glyf, Gpos, Gvar};
+use fontoxide_ttlib::{Font, ReadOptions, Tag};
 use fontoxide_varlib::instancer::{NormalizedLimits, instantiate_otl};
 use instancer_common::*;
 
@@ -508,6 +510,134 @@ mod instantiate_otl_test {
 			};
 			assert_eq!(coord.coordinate, expected);
 		}
+		Ok(())
+	}
+
+	/// A fully-instanced beyond-64k VF can be saved and reloaded.
+	///
+	/// The variation tables use the uppercase companion spelling (GVAR, GLYF, HMTX, ...). Full
+	/// instancing must instance and drop GVAR/HVAR -- which it only does once it resolves their
+	/// uppercase tags -- and keep the extended GDEF at v1.4, NULLing its VarStore once the
+	/// instance consumes it rather than downgrading the table and dropping the extended *2
+	/// fields like GlyphClassDef2.
+	#[test]
+	fn test_full_instance_save_beyond64k() -> TestResult {
+		// "g65536": a glyph id > 0xFFFF, the point of beyond-64k.
+		const HI: u32 = 65536;
+		// "g65530".
+		const ACUTE: u32 = 65530;
+
+		// The fixture is the font after `varLib.build` and `upper_tables`, in WOFF2.
+		let path = format!(
+			"{}/tests/data/instancer/beyond64k_vf.woff2",
+			env!("CARGO_MANIFEST_DIR")
+		);
+		let mut vf = Font::read(std::fs::read(path)?, ReadOptions::default())?;
+		vf.flavor = None;
+		vf.flavor_data = None;
+		assert!(has_extended_glyph_ids(&mut vf)?);
+		assert!(vf.contains(Tag::new(b"GVAR")) && !vf.contains(Tag::new(b"gvar")));
+		let gvar = vf.require::<Gvar>()?;
+		// The beyond-64k glyph carries a delta.
+		assert!(!gvar.get(HI).ok_or("no variations of the glyph")?.is_empty());
+		let gdef = vf.require::<Gdef>()?;
+		assert_eq!(gdef.version, 0x0001_0004);
+		// Consumed by the full instance.
+		assert!(gdef.var_store.is_some());
+
+		// The single axis: pinning it is a full instance.
+		instantiate(&mut vf, &[("wght", pin(500.0))])?;
+
+		// GVAR/HVAR instanced then dropped; GDEF stays extended (v1.4).
+		assert!(!vf.contains(Tag::new(b"GVAR")) && !vf.contains(Tag::new(b"gvar")));
+		assert!(!vf.contains(Tag::new(b"HVAR")));
+		assert_eq!(vf.require::<Gdef>()?.version, 0x0001_0004);
+
+		// The step that used to crash: save the fully-instanced font.
+		let mut reloaded = reload(&mut vf)?;
+		reloaded.ensure_decompiled()?;
+
+		assert_eq!(reloaded.glyph_count()?, 65537);
+		assert!(reloaded.contains(Tag::new(b"GLYF")) && reloaded.contains(Tag::new(b"LOCA")));
+		let gdef = reloaded.require::<Gdef>()?;
+		assert_eq!(gdef.version, 0x0001_0004);
+		// NULLed, not removed.
+		assert!(gdef.var_store.is_none());
+		// The extended field is kept, and the beyond-64k mark-class value (3) survives at v1.4.
+		let class_def = gdef.glyph_class_def2.as_ref().ok_or("no GlyphClassDef2")?;
+		assert_eq!(class_def.class_defs[&ACUTE], 3);
+
+		// The gvar delta for the beyond-64k glyph was applied to its outline at the pinned
+		// location: each master triangle scales 1x <-> 2x, so 500 (normalized 0.5) interpolates
+		// the coordinates halfway.
+		let glyph = &reloaded.require::<Glyf>()?.glyphs[&HI];
+		assert_eq!(
+			glyph.coordinates,
+			[(150.0, 0.0), (150.0, 150.0), (0.0, 150.0)]
+		);
+
+		// The GPOS mark anchor interpolated at the pinned location: 10 <-> 20 -> 15.
+		let gpos = reloaded.require::<Gpos>()?;
+		let lookup = gpos.lookup_list2.as_ref().ok_or("no LookupList2")?.lookup[0]
+			.as_ref()
+			.ok_or("no Lookup")?;
+		// Extended MarkBasePos.
+		let Some(ot::LookupSubTable::MarkBasePos(ot::MarkBasePos::Format2(mark_base_pos))) =
+			lookup.sub_table[0].as_deref()
+		else {
+			return Err("not MarkBasePos format 2".into());
+		};
+		let anchor = mark_base_pos
+			.base_array
+			.as_ref()
+			.ok_or("no BaseArray")?
+			.base_record[0]
+			.base_anchor[0]
+			.as_deref()
+			.ok_or("no Anchor")?;
+		let ot::Anchor::Format1(anchor) = anchor else {
+			return Err("not Anchor format 1".into());
+		};
+		assert_eq!((anchor.x_coordinate, anchor.y_coordinate), (15, 15));
+		Ok(())
+	}
+
+	/// Partially instancing a beyond-64k VF retains and rewrites GVAR.
+	///
+	/// Pinning one of two axes leaves residual variations, so the uppercase GVAR (and the
+	/// companion metric tables) must be instanced in place and the font must still save and
+	/// reload.
+	#[test]
+	fn test_partial_instance_save_beyond64k() -> TestResult {
+		let mut vf = font_from_ttx(&instancer_data("PartialInstancerTest-VF.ttx"))?;
+		upper_tables(&mut vf, &ConvertOptions::default())?;
+		for table in [b"GVAR", b"GLYF", b"HMTX"] {
+			assert!(vf.contains(Tag::new(table)));
+		}
+
+		let wght = vf
+			.require::<Fvar>()?
+			.axes
+			.iter()
+			.find(|a| a.tag_text() == "wght")
+			.ok_or("no wght")?
+			.default_value;
+		instantiate(&mut vf, &[("wght", pin(wght))])?;
+
+		// The wdth axis survives, so GVAR keeps residual variations.
+		let axes: Vec<String> = vf
+			.require::<Fvar>()?
+			.axes
+			.iter()
+			.map(|a| a.tag_text())
+			.collect();
+		assert_eq!(axes, ["wdth"]);
+		assert!(vf.contains(Tag::new(b"GVAR")));
+
+		let mut reloaded = reload(&mut vf)?;
+		reloaded.ensure_decompiled()?;
+		assert!(reloaded.contains(Tag::new(b"GVAR")) && reloaded.contains(Tag::new(b"GLYF")));
+		assert_eq!(reloaded.glyph_order()?.names(), vf.glyph_order()?.names());
 		Ok(())
 	}
 }

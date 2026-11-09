@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont sfntVersion="\x00\x01\x00\x00" ttLibVersion="4.68">
+
+  <GDEF>
+    <Version value="0x00010000"/>
+    <GlyphClassDef>
+      <ClassDef glyph="ellipsis" class="2"/>
+      <ClassDef glyph="period" class="1"/>
+    </GlyphClassDef>
+    <LigCaretList>
+      <Coverage>
+        <Glyph value="ellipsis"/>
+      </Coverage>
+      <!-- LigGlyphCount=1 -->
+      <LigGlyph index="0">
+        <!-- CaretCount=1 -->
+        <CaretValue index="0" Format="1">
+          <Coordinate value="300"/>
+        </CaretValue>
+      </LigGlyph>
+    </LigCaretList>
+  </GDEF>
+
+</ttFont>
