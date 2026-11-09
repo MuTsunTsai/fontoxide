@@ -37,9 +37,11 @@ macro_rules! cff_table {
 		}
 
 		impl Table for $name {
+			/// The charstrings are kept by glyph name, as in fontTools, so they
+			/// follow the glyph order by name: dropping glyphs is up to the caller.
 			fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 				let _ = f;
-				Err(Error::ttlib("remapping the glyphs of CFF tables is not supported yet"))
+				Ok(())
 			}
 
 			fn tag(&self) -> Tag {

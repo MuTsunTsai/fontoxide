@@ -17,7 +17,9 @@ fn err(msg: impl Into<String>) -> Error {
 }
 
 fn none_attr(attr: &str) -> Error {
-	err(format!("AttributeError: 'NoneType' object has no attribute '{attr}'"))
+	err(format!(
+		"AttributeError: 'NoneType' object has no attribute '{attr}'"
+	))
 }
 
 fn unknown_format(format: u16) -> Error {
@@ -63,7 +65,11 @@ fn cov_intersect(c: &Coverage, glyphs: &GlyphSet) -> Vec<usize> {
 
 /// `Coverage.intersect_glyphs`.
 fn cov_intersect_glyphs(c: &Coverage, glyphs: &GlyphSet) -> GlyphSet {
-	c.glyphs.iter().copied().filter(|g| glyphs.contains(g)).collect()
+	c.glyphs
+		.iter()
+		.copied()
+		.filter(|g| glyphs.contains(g))
+		.collect()
 }
 
 /// `Coverage.subset`: keeps the glyphs in `glyphs`; returns their old indices.
@@ -180,14 +186,70 @@ macro_rules! rule {
 		}
 	};
 }
-rule!(ot::SubRule, u32, ot::SubstLookupRecord, subst_lookup_record, [input], input);
-rule!(ot::SubClassRule, u16, ot::SubstLookupRecord, subst_lookup_record, [class], class);
-rule!(ot::ChainSubRule, u32, ot::SubstLookupRecord, subst_lookup_record, [backtrack, input, look_ahead], input);
-rule!(ot::ChainSubClassRule, u16, ot::SubstLookupRecord, subst_lookup_record, [backtrack, input, look_ahead], input);
-rule!(ot::PosRule, u32, ot::PosLookupRecord, pos_lookup_record, [input], input);
-rule!(ot::PosClassRule, u16, ot::PosLookupRecord, pos_lookup_record, [class], class);
-rule!(ot::ChainPosRule, u32, ot::PosLookupRecord, pos_lookup_record, [backtrack, input, look_ahead], input);
-rule!(ot::ChainPosClassRule, u16, ot::PosLookupRecord, pos_lookup_record, [backtrack, input, look_ahead], input);
+rule!(
+	ot::SubRule,
+	u32,
+	ot::SubstLookupRecord,
+	subst_lookup_record,
+	[input],
+	input
+);
+rule!(
+	ot::SubClassRule,
+	u16,
+	ot::SubstLookupRecord,
+	subst_lookup_record,
+	[class],
+	class
+);
+rule!(
+	ot::ChainSubRule,
+	u32,
+	ot::SubstLookupRecord,
+	subst_lookup_record,
+	[backtrack, input, look_ahead],
+	input
+);
+rule!(
+	ot::ChainSubClassRule,
+	u16,
+	ot::SubstLookupRecord,
+	subst_lookup_record,
+	[backtrack, input, look_ahead],
+	input
+);
+rule!(
+	ot::PosRule,
+	u32,
+	ot::PosLookupRecord,
+	pos_lookup_record,
+	[input],
+	input
+);
+rule!(
+	ot::PosClassRule,
+	u16,
+	ot::PosLookupRecord,
+	pos_lookup_record,
+	[class],
+	class
+);
+rule!(
+	ot::ChainPosRule,
+	u32,
+	ot::PosLookupRecord,
+	pos_lookup_record,
+	[backtrack, input, look_ahead],
+	input
+);
+rule!(
+	ot::ChainPosClassRule,
+	u16,
+	ot::PosLookupRecord,
+	pos_lookup_record,
+	[backtrack, input, look_ahead],
+	input
+);
 
 trait RuleSet {
 	type Rule: Rule;
@@ -199,19 +261,31 @@ macro_rules! rule_set {
 	($t:ty, $rule:ty, $f:ident) => {
 		impl RuleSet for $t {
 			type Rule = $rule;
-			fn rules(&self) -> &Vec<Option<Box<$rule>>> { &self.$f }
-			fn rules_mut(&mut self) -> &mut Vec<Option<Box<$rule>>> { &mut self.$f }
+			fn rules(&self) -> &Vec<Option<Box<$rule>>> {
+				&self.$f
+			}
+			fn rules_mut(&mut self) -> &mut Vec<Option<Box<$rule>>> {
+				&mut self.$f
+			}
 		}
 	};
 }
 rule_set!(ot::SubRuleSet, ot::SubRule, sub_rule);
 rule_set!(ot::SubClassSet, ot::SubClassRule, sub_class_rule);
 rule_set!(ot::ChainSubRuleSet, ot::ChainSubRule, chain_sub_rule);
-rule_set!(ot::ChainSubClassSet, ot::ChainSubClassRule, chain_sub_class_rule);
+rule_set!(
+	ot::ChainSubClassSet,
+	ot::ChainSubClassRule,
+	chain_sub_class_rule
+);
 rule_set!(ot::PosRuleSet, ot::PosRule, pos_rule);
 rule_set!(ot::PosClassSet, ot::PosClassRule, pos_class_rule);
 rule_set!(ot::ChainPosRuleSet, ot::ChainPosRule, chain_pos_rule);
-rule_set!(ot::ChainPosClassSet, ot::ChainPosClassRule, chain_pos_class_rule);
+rule_set!(
+	ot::ChainPosClassSet,
+	ot::ChainPosClassRule,
+	chain_pos_class_rule
+);
 
 /// A format 1 or 2 context subtable.
 trait RuleContext {
@@ -260,11 +334,40 @@ macro_rules! rule_context {
 		}
 	};
 }
-rule_context!(1, ot::ContextSubstFormat1, ot::SubRuleSet, sub_rule_set, 1, 0);
-rule_context!(1, ot::ChainContextSubstFormat1, ot::ChainSubRuleSet, chain_sub_rule_set, 3, 1);
+rule_context!(
+	1,
+	ot::ContextSubstFormat1,
+	ot::SubRuleSet,
+	sub_rule_set,
+	1,
+	0
+);
+rule_context!(
+	1,
+	ot::ChainContextSubstFormat1,
+	ot::ChainSubRuleSet,
+	chain_sub_rule_set,
+	3,
+	1
+);
 rule_context!(1, ot::ContextPosFormat1, ot::PosRuleSet, pos_rule_set, 1, 0);
-rule_context!(1, ot::ChainContextPosFormat1, ot::ChainPosRuleSet, chain_pos_rule_set, 3, 1);
-rule_context!(2, ot::ContextSubstFormat2, ot::SubClassSet, sub_class_set, [class_def], class_def, 0);
+rule_context!(
+	1,
+	ot::ChainContextPosFormat1,
+	ot::ChainPosRuleSet,
+	chain_pos_rule_set,
+	3,
+	1
+);
+rule_context!(
+	2,
+	ot::ContextSubstFormat2,
+	ot::SubClassSet,
+	sub_class_set,
+	[class_def],
+	class_def,
+	0
+);
 rule_context!(
 	2,
 	ot::ChainContextSubstFormat2,
@@ -274,7 +377,15 @@ rule_context!(
 	input_class_def,
 	1
 );
-rule_context!(2, ot::ContextPosFormat2, ot::PosClassSet, pos_class_set, [class_def], class_def, 0);
+rule_context!(
+	2,
+	ot::ContextPosFormat2,
+	ot::PosClassSet,
+	pos_class_set,
+	[class_def],
+	class_def,
+	0
+);
 rule_context!(
 	2,
 	ot::ChainContextPosFormat2,
@@ -317,7 +428,13 @@ macro_rules! coverage_context {
 		}
 	};
 }
-coverage_context!(ot::ContextSubstFormat3, ot::SubstLookupRecord, subst_lookup_record, [coverage], coverage);
+coverage_context!(
+	ot::ContextSubstFormat3,
+	ot::SubstLookupRecord,
+	subst_lookup_record,
+	[coverage],
+	coverage
+);
 coverage_context!(
 	ot::ChainContextSubstFormat3,
 	ot::SubstLookupRecord,
@@ -325,7 +442,13 @@ coverage_context!(
 	[backtrack_coverage, input_coverage, look_ahead_coverage],
 	input_coverage
 );
-coverage_context!(ot::ContextPosFormat3, ot::PosLookupRecord, pos_lookup_record, [coverage], coverage);
+coverage_context!(
+	ot::ContextPosFormat3,
+	ot::PosLookupRecord,
+	pos_lookup_record,
+	[coverage],
+	coverage
+);
 coverage_context!(
 	ot::ChainContextPosFormat3,
 	ot::PosLookupRecord,
@@ -438,7 +561,9 @@ impl Closure<'_> {
 			St::ChainContextSubst(ot::ChainContextSubst::Format1(t)) => {
 				self.rule_closure(t, cur, true)?;
 			}
-			St::ChainContextSubst(ot::ChainContextSubst::Format2(t)) => self.class_closure(t, cur)?,
+			St::ChainContextSubst(ot::ChainContextSubst::Format2(t)) => {
+				self.class_closure(t, cur)?
+			}
 			St::ChainContextSubst(ot::ChainContextSubst::Format3(t)) => {
 				self.coverage_closure(t, t.input_coverage.first(), cur)?;
 			}
@@ -624,9 +749,10 @@ fn may_have_non_1to1(lookup: &ot::Lookup) -> Result<bool> {
 fn subtable_non_1to1(st: &St) -> Result<bool> {
 	Ok(match st {
 		St::SingleSubst(_) | St::AlternateSubst(_) | St::ReverseChainSingleSubst(_) => false,
-		St::MultipleSubst(_) | St::LigatureSubst(_) | St::ContextSubst(_) | St::ChainContextSubst(_) => {
-			true
-		}
+		St::MultipleSubst(_)
+		| St::LigatureSubst(_)
+		| St::ContextSubst(_)
+		| St::ChainContextSubst(_) => true,
 		St::ExtensionSubst(ot::ExtensionSubst::Format1(t)) => subtable_non_1to1(
 			t.ext_sub_table
 				.as_deref()
@@ -651,7 +777,9 @@ fn value_prune_hints(v: &mut ValueRecord) {
 		&mut v.x_adv_device,
 		&mut v.y_adv_device,
 	] {
-		if d.as_ref().is_some_and(|d| d.as_deref().is_some_and(is_hinting)) {
+		if d.as_ref()
+			.is_some_and(|d| d.as_deref().is_some_and(is_hinting))
+		{
 			*d = None;
 		}
 	}
@@ -772,7 +900,8 @@ fn subtable_subset(st: &mut St, glyphs: &GlyphSet) -> Result<bool> {
 			t.ligatures.retain(|g, _| glyphs.contains(g));
 			for seqs in t.ligatures.values_mut() {
 				seqs.retain(|seq| {
-					glyphs.contains(&seq.lig_glyph) && seq.component.iter().all(|c| glyphs.contains(c))
+					glyphs.contains(&seq.lig_glyph)
+						&& seq.component.iter().all(|c| glyphs.contains(c))
 				});
 			}
 			t.ligatures.retain(|_, v| !v.is_empty());
@@ -794,14 +923,20 @@ fn subtable_subset(st: &mut St, glyphs: &GlyphSet) -> Result<bool> {
 			if t.substitute.is_empty() {
 				return Ok(false);
 			}
-			for c in t.look_ahead_coverage.iter_mut().chain(&mut t.backtrack_coverage) {
+			for c in t
+				.look_ahead_coverage
+				.iter_mut()
+				.chain(&mut t.backtrack_coverage)
+			{
 				if cov_subset(cov_mut(c)?, glyphs).is_empty() {
 					return Ok(false);
 				}
 			}
 			true
 		}
-		St::SinglePos(ot::SinglePos::Format1(t)) => !cov_subset(cov_mut(&mut t.coverage)?, glyphs).is_empty(),
+		St::SinglePos(ot::SinglePos::Format1(t)) => {
+			!cov_subset(cov_mut(&mut t.coverage)?, glyphs).is_empty()
+		}
 		St::SinglePos(ot::SinglePos::Format2(t)) => {
 			let indices = cov_subset(cov_mut(&mut t.coverage)?, glyphs);
 			t.value = list_subset(&t.value, &indices);
@@ -811,7 +946,9 @@ fn subtable_subset(st: &mut St, glyphs: &GlyphSet) -> Result<bool> {
 			let indices = cov_subset(cov_mut(&mut t.coverage)?, glyphs);
 			t.pair_set = list_subset(&t.pair_set, &indices);
 			for p in &mut t.pair_set {
-				let p = p.as_deref_mut().ok_or_else(|| none_attr("PairValueRecord"))?;
+				let p = p
+					.as_deref_mut()
+					.ok_or_else(|| none_attr("PairValueRecord"))?;
 				p.pair_value_record
 					.retain(|r| glyphs.contains(&r.second_glyph));
 			}
@@ -836,12 +973,18 @@ fn subtable_subset(st: &mut St, glyphs: &GlyphSet) -> Result<bool> {
 				.copied()
 				.filter(|g| glyphs.contains(g))
 				.collect();
-			let cd1 = t.class_def1.as_deref_mut().ok_or_else(|| none_attr("subset"))?;
+			let cd1 = t
+				.class_def1
+				.as_deref_mut()
+				.ok_or_else(|| none_attr("subset"))?;
 			let class1_map: Vec<u32> = cd_subset(cd1, &covered, true, true)
 				.into_iter()
 				.filter(|&c| c < class1_count)
 				.collect();
-			let cd2 = t.class_def2.as_deref_mut().ok_or_else(|| none_attr("subset"))?;
+			let cd2 = t
+				.class_def2
+				.as_deref_mut()
+				.ok_or_else(|| none_attr("subset"))?;
 			let class2_map: Vec<u32> = cd_subset(cd2, glyphs, true, false)
 				.into_iter()
 				.filter(|&c| c < class2_count)
@@ -864,7 +1007,10 @@ fn subtable_subset(st: &mut St, glyphs: &GlyphSet) -> Result<bool> {
 		}
 		St::MarkBasePos(ot::MarkBasePos::Format1(t)) => {
 			let mark_indices = cov_subset(cov_mut(&mut t.mark_coverage)?, glyphs);
-			let marks = t.mark_array.as_deref_mut().ok_or_else(|| none_attr("MarkRecord"))?;
+			let marks = t
+				.mark_array
+				.as_deref_mut()
+				.ok_or_else(|| none_attr("MarkRecord"))?;
 			marks.mark_record = list_subset(&marks.mark_record, &mark_indices);
 			let class_indices = uniq_sort(marks.mark_record.iter().map(|m| m.class));
 			let base = cov(&t.base_coverage)?;
@@ -884,20 +1030,31 @@ fn subtable_subset(st: &mut St, glyphs: &GlyphSet) -> Result<bool> {
 				return Ok(false);
 			}
 			cov_remap(cov_mut(&mut t.base_coverage)?, &base_indices)?;
-			let base_array = t.base_array.as_deref_mut().ok_or_else(|| none_attr("BaseRecord"))?;
+			let base_array = t
+				.base_array
+				.as_deref_mut()
+				.ok_or_else(|| none_attr("BaseRecord"))?;
 			base_array.base_record = list_subset(&base_array.base_record, &base_indices);
 			// Prune empty classes.
-			let marks = t.mark_array.as_deref_mut().ok_or_else(|| none_attr("MarkRecord"))?;
+			let marks = t
+				.mark_array
+				.as_deref_mut()
+				.ok_or_else(|| none_attr("MarkRecord"))?;
 			prune_mark_classes(marks)?;
 			t.class_count = Some(class_indices.len() as u32);
 			for b in &mut base_array.base_record {
 				subset_anchors(&mut b.base_anchor, &class_indices);
 			}
-			!class_indices.is_empty() && !marks.mark_record.is_empty() && !base_array.base_record.is_empty()
+			!class_indices.is_empty()
+				&& !marks.mark_record.is_empty()
+				&& !base_array.base_record.is_empty()
 		}
 		St::MarkLigPos(ot::MarkLigPos::Format1(t)) => {
 			let mark_indices = cov_subset(cov_mut(&mut t.mark_coverage)?, glyphs);
-			let marks = t.mark_array.as_deref_mut().ok_or_else(|| none_attr("MarkRecord"))?;
+			let marks = t
+				.mark_array
+				.as_deref_mut()
+				.ok_or_else(|| none_attr("MarkRecord"))?;
 			marks.mark_record = list_subset(&marks.mark_record, &mark_indices);
 			let class_indices = uniq_sort(marks.mark_record.iter().map(|m| m.class));
 			let intersect = cov_intersect(cov(&t.ligature_coverage)?, glyphs);
@@ -934,7 +1091,10 @@ fn subtable_subset(st: &mut St, glyphs: &GlyphSet) -> Result<bool> {
 				.as_deref_mut()
 				.ok_or_else(|| none_attr("LigatureAttach"))?;
 			ligatures.ligature_attach = list_subset(&ligatures.ligature_attach, &ligature_indices);
-			let marks = t.mark_array.as_deref_mut().ok_or_else(|| none_attr("MarkRecord"))?;
+			let marks = t
+				.mark_array
+				.as_deref_mut()
+				.ok_or_else(|| none_attr("MarkRecord"))?;
 			prune_mark_classes(marks)?;
 			t.class_count = Some(class_indices.len() as u32);
 			for l in ligatures.ligature_attach.iter_mut().flatten() {
@@ -948,7 +1108,10 @@ fn subtable_subset(st: &mut St, glyphs: &GlyphSet) -> Result<bool> {
 		}
 		St::MarkMarkPos(ot::MarkMarkPos::Format1(t)) => {
 			let mark1_indices = cov_subset(cov_mut(&mut t.mark1_coverage)?, glyphs);
-			let marks = t.mark1_array.as_deref_mut().ok_or_else(|| none_attr("MarkRecord"))?;
+			let marks = t
+				.mark1_array
+				.as_deref_mut()
+				.ok_or_else(|| none_attr("MarkRecord"))?;
 			marks.mark_record = list_subset(&marks.mark_record, &mark1_indices);
 			let class_indices = uniq_sort(marks.mark_record.iter().map(|m| m.class));
 			let intersect = cov_intersect(cov(&t.mark2_coverage)?, glyphs);
@@ -967,15 +1130,23 @@ fn subtable_subset(st: &mut St, glyphs: &GlyphSet) -> Result<bool> {
 				return Ok(false);
 			}
 			cov_remap(cov_mut(&mut t.mark2_coverage)?, &mark2_indices)?;
-			let mark2 = t.mark2_array.as_deref_mut().ok_or_else(|| none_attr("Mark2Record"))?;
+			let mark2 = t
+				.mark2_array
+				.as_deref_mut()
+				.ok_or_else(|| none_attr("Mark2Record"))?;
 			mark2.mark2_record = list_subset(&mark2.mark2_record, &mark2_indices);
-			let marks = t.mark1_array.as_deref_mut().ok_or_else(|| none_attr("MarkRecord"))?;
+			let marks = t
+				.mark1_array
+				.as_deref_mut()
+				.ok_or_else(|| none_attr("MarkRecord"))?;
 			prune_mark_classes(marks)?;
 			t.class_count = Some(class_indices.len() as u32);
 			for b in &mut mark2.mark2_record {
 				subset_anchors(&mut b.mark2_anchor, &class_indices);
 			}
-			!class_indices.is_empty() && !marks.mark_record.is_empty() && !mark2.mark2_record.is_empty()
+			!class_indices.is_empty()
+				&& !marks.mark_record.is_empty()
+				&& !mark2.mark2_record.is_empty()
 		}
 		St::ContextSubst(ot::ContextSubst::Format1(t)) => rule_subset(t, glyphs)?,
 		St::ContextSubst(ot::ContextSubst::Format2(t)) => class_subset(t, glyphs)?,
@@ -993,14 +1164,15 @@ fn subtable_subset(st: &mut St, glyphs: &GlyphSet) -> Result<bool> {
 			ext_sub_table,
 			..
 		}))
-		| St::ExtensionPos(ot::ExtensionPos::Format1(ot::ExtensionPosFormat1 { ext_sub_table, .. })) => {
-			subtable_subset(
-				ext_sub_table
-					.as_deref_mut()
-					.ok_or_else(|| none_attr("subset_glyphs"))?,
-				glyphs,
-			)?
-		}
+		| St::ExtensionPos(ot::ExtensionPos::Format1(ot::ExtensionPosFormat1 {
+			ext_sub_table,
+			..
+		})) => subtable_subset(
+			ext_sub_table
+				.as_deref_mut()
+				.ok_or_else(|| none_attr("subset_glyphs"))?,
+			glyphs,
+		)?,
 		other => return Err(unsupported_subtable(other)),
 	})
 }
@@ -1055,7 +1227,13 @@ fn class_subset<C: RuleContext>(t: &mut C, glyphs: &GlyphSet) -> Result<bool> {
 	let mut rss: Vec<_> = rss
 		.into_iter()
 		.enumerate()
-		.map(|(i, rs)| if reachable.contains(&(i as u32)) { rs } else { None })
+		.map(|(i, rs)| {
+			if reachable.contains(&(i as u32)) {
+				rs
+			} else {
+				None
+			}
+		})
 		.collect();
 	for rs in rss.iter_mut().flatten() {
 		let mut kept = Vec::new();
@@ -1070,7 +1248,9 @@ fn class_subset<C: RuleContext>(t: &mut C, glyphs: &GlyphSet) -> Result<bool> {
 						Some(m) if m.contains(&k.into()) => {}
 						Some(_) => ok = false,
 						None => {
-							return Err(err("TypeError: argument of type 'NoneType' is not iterable"));
+							return Err(err(
+								"TypeError: argument of type 'NoneType' is not iterable",
+							));
 						}
 					}
 				}
@@ -1148,25 +1328,30 @@ fn subtable_subset_lookups(st: &mut St, lookup_indices: &[u16]) -> Result<()> {
 		St::ContextSubst(ot::ContextSubst::Format3(t)) => records(t.records_mut(), lookup_indices),
 		St::ChainContextSubst(ot::ChainContextSubst::Format1(t)) => rules(t, lookup_indices),
 		St::ChainContextSubst(ot::ChainContextSubst::Format2(t)) => rules(t, lookup_indices),
-		St::ChainContextSubst(ot::ChainContextSubst::Format3(t)) => records(t.records_mut(), lookup_indices),
+		St::ChainContextSubst(ot::ChainContextSubst::Format3(t)) => {
+			records(t.records_mut(), lookup_indices)
+		}
 		St::ContextPos(ot::ContextPos::Format1(t)) => rules(t, lookup_indices),
 		St::ContextPos(ot::ContextPos::Format2(t)) => rules(t, lookup_indices),
 		St::ContextPos(ot::ContextPos::Format3(t)) => records(t.records_mut(), lookup_indices),
 		St::ChainContextPos(ot::ChainContextPos::Format1(t)) => rules(t, lookup_indices),
 		St::ChainContextPos(ot::ChainContextPos::Format2(t)) => rules(t, lookup_indices),
-		St::ChainContextPos(ot::ChainContextPos::Format3(t)) => records(t.records_mut(), lookup_indices),
+		St::ChainContextPos(ot::ChainContextPos::Format3(t)) => {
+			records(t.records_mut(), lookup_indices)
+		}
 		St::ExtensionSubst(ot::ExtensionSubst::Format1(ot::ExtensionSubstFormat1 {
 			ext_sub_table,
 			..
 		}))
-		| St::ExtensionPos(ot::ExtensionPos::Format1(ot::ExtensionPosFormat1 { ext_sub_table, .. })) => {
-			subtable_subset_lookups(
-				ext_sub_table
-					.as_deref_mut()
-					.ok_or_else(|| none_attr("subset_lookups"))?,
-				lookup_indices,
-			)
-		}
+		| St::ExtensionPos(ot::ExtensionPos::Format1(ot::ExtensionPosFormat1 {
+			ext_sub_table,
+			..
+		})) => subtable_subset_lookups(
+			ext_sub_table
+				.as_deref_mut()
+				.ok_or_else(|| none_attr("subset_lookups"))?,
+			lookup_indices,
+		),
 		St::SingleSubst(_)
 		| St::MultipleSubst(_)
 		| St::AlternateSubst(_)
@@ -1212,13 +1397,14 @@ fn subtable_collect_lookups(st: &St) -> Result<Vec<u16>> {
 			ext_sub_table,
 			..
 		}))
-		| St::ExtensionPos(ot::ExtensionPos::Format1(ot::ExtensionPosFormat1 { ext_sub_table, .. })) => {
-			subtable_collect_lookups(
-				ext_sub_table
-					.as_deref()
-					.ok_or_else(|| none_attr("collect_lookups"))?,
-			)?
-		}
+		| St::ExtensionPos(ot::ExtensionPos::Format1(ot::ExtensionPosFormat1 {
+			ext_sub_table,
+			..
+		})) => subtable_collect_lookups(
+			ext_sub_table
+				.as_deref()
+				.ok_or_else(|| none_attr("collect_lookups"))?,
+		)?,
 		St::SingleSubst(_)
 		| St::MultipleSubst(_)
 		| St::AlternateSubst(_)
@@ -1372,7 +1558,9 @@ fn subtable_prune_post_subset(st: &mut St, options: &Options) -> Result<bool> {
 					anchors_prune_hints(m.mark_record.iter_mut().map(|m| &mut m.mark_anchor));
 				}
 				if let Some(m) = &mut t.mark2_array {
-					anchors_prune_hints(m.mark2_record.iter_mut().flat_map(|b| &mut b.mark2_anchor));
+					anchors_prune_hints(
+						m.mark2_record.iter_mut().flat_map(|b| &mut b.mark2_anchor),
+					);
 				}
 			}
 			true
@@ -1390,14 +1578,15 @@ fn subtable_prune_post_subset(st: &mut St, options: &Options) -> Result<bool> {
 			ext_sub_table,
 			..
 		}))
-		| St::ExtensionPos(ot::ExtensionPos::Format1(ot::ExtensionPosFormat1 { ext_sub_table, .. })) => {
-			subtable_prune_post_subset(
-				ext_sub_table
-					.as_deref_mut()
-					.ok_or_else(|| none_attr("prune_post_subset"))?,
-				options,
-			)?
-		}
+		| St::ExtensionPos(ot::ExtensionPos::Format1(ot::ExtensionPosFormat1 {
+			ext_sub_table,
+			..
+		})) => subtable_prune_post_subset(
+			ext_sub_table
+				.as_deref_mut()
+				.ok_or_else(|| none_attr("prune_post_subset"))?,
+			options,
+		)?,
 		other => return Err(unsupported_subtable(other)),
 	})
 }
@@ -1415,7 +1604,11 @@ fn pair_format(p: &ot::PairPos) -> u16 {
 // Lookups and lookup lists.
 
 /// `Lookup.subset_glyphs`.
-fn lookup_subset_glyphs(l: &mut ot::Lookup, glyphs: &GlyphSet, used_mark_sets: &[u32]) -> Result<bool> {
+fn lookup_subset_glyphs(
+	l: &mut ot::Lookup,
+	glyphs: &GlyphSet,
+	used_mark_sets: &[u32],
+) -> Result<bool> {
 	let mut kept = Vec::new();
 	for st in std::mem::take(&mut l.sub_table) {
 		if let Some(mut st) = st
@@ -1552,10 +1745,18 @@ macro_rules! layout {
 	($t:ty, $gsub:literal) => {
 		impl Layout for $t {
 			const IS_GSUB: bool = $gsub;
-			fn version(&mut self) -> &mut u32 { &mut self.version }
-			fn script_list(&mut self) -> &mut Option<Box<ot::ScriptList>> { &mut self.script_list }
-			fn feature_list(&mut self) -> &mut Option<Box<ot::FeatureList>> { &mut self.feature_list }
-			fn lookup_list(&mut self) -> &mut Option<Box<ot::LookupList>> { &mut self.lookup_list }
+			fn version(&mut self) -> &mut u32 {
+				&mut self.version
+			}
+			fn script_list(&mut self) -> &mut Option<Box<ot::ScriptList>> {
+				&mut self.script_list
+			}
+			fn feature_list(&mut self) -> &mut Option<Box<ot::FeatureList>> {
+				&mut self.feature_list
+			}
+			fn lookup_list(&mut self) -> &mut Option<Box<ot::LookupList>> {
+				&mut self.lookup_list
+			}
 			fn feature_variations(&mut self) -> &mut Option<Box<ot::FeatureVariations>> {
 				&mut self.feature_variations
 			}
@@ -1633,7 +1834,10 @@ fn script_list_subset_features<T: Layout>(t: &mut T, feature_indices: &[u16]) ->
 	let mut kept = Vec::new();
 	for mut s in std::mem::take(&mut sl.script_record) {
 		let keep_empty_default = s.script_tag == *b"DFLT";
-		let script = s.script.as_deref_mut().ok_or_else(|| none_attr("subset_features"))?;
+		let script = s
+			.script
+			.as_deref_mut()
+			.ok_or_else(|| none_attr("subset_features"))?;
 		if let Some(d) = &mut script.default_lang_sys
 			&& !langsys_subset_features(d, feature_indices)
 			&& !keep_empty_default
@@ -1642,7 +1846,10 @@ fn script_list_subset_features<T: Layout>(t: &mut T, feature_indices: &[u16]) ->
 		}
 		let mut langs = Vec::new();
 		for mut l in std::mem::take(&mut script.lang_sys_record) {
-			let ls = l.lang_sys.as_deref_mut().ok_or_else(|| none_attr("subset_features"))?;
+			let ls = l
+				.lang_sys
+				.as_deref_mut()
+				.ok_or_else(|| none_attr("subset_features"))?;
 			if langsys_subset_features(ls, feature_indices) {
 				langs.push(l);
 			}
@@ -1669,7 +1876,10 @@ fn script_list_prune_features<T: Layout>(
 	let mut kept = Vec::new();
 	for mut s in std::mem::take(&mut sl.script_record) {
 		let keep_empty_default = s.script_tag == *b"DFLT";
-		let script = s.script.as_deref_mut().ok_or_else(|| none_attr("prune_features"))?;
+		let script = s
+			.script
+			.as_deref_mut()
+			.ok_or_else(|| none_attr("prune_features"))?;
 		if let Some(d) = &mut script.default_lang_sys
 			&& !langsys_prune_features(d, map)
 			&& !keep_empty_default
@@ -1678,7 +1888,10 @@ fn script_list_prune_features<T: Layout>(
 		}
 		let mut langs = Vec::new();
 		for mut l in std::mem::take(&mut script.lang_sys_record) {
-			let ls = l.lang_sys.as_deref_mut().ok_or_else(|| none_attr("prune_features"))?;
+			let ls = l
+				.lang_sys
+				.as_deref_mut()
+				.ok_or_else(|| none_attr("prune_features"))?;
 			if langsys_prune_features(ls, map) {
 				langs.push(l);
 			}
@@ -1756,9 +1969,13 @@ fn table_subset_lookups<T: Layout>(t: &mut T, lookup_indices: &[u16]) -> Result<
 			}
 		}
 		for l in lookups.iter_mut() {
-			let l = l.as_deref_mut().ok_or_else(|| none_attr("subset_lookups"))?;
+			let l = l
+				.as_deref_mut()
+				.ok_or_else(|| none_attr("subset_lookups"))?;
 			for st in &mut l.sub_table {
-				let st = st.as_deref_mut().ok_or_else(|| none_attr("subset_lookups"))?;
+				let st = st
+					.as_deref_mut()
+					.ok_or_else(|| none_attr("subset_lookups"))?;
 				subtable_subset_lookups(st, lookup_indices)?;
 			}
 		}
@@ -1767,7 +1984,10 @@ fn table_subset_lookups<T: Layout>(t: &mut T, lookup_indices: &[u16]) -> Result<
 	let mut feature_indices = Vec::new();
 	if let Some(fl) = t.feature_list() {
 		for (i, f) in fl.feature_record.iter_mut().enumerate() {
-			let feature = f.feature.as_deref_mut().ok_or_else(|| none_attr("subset_lookups"))?;
+			let feature = f
+				.feature
+				.as_deref_mut()
+				.ok_or_else(|| none_attr("subset_lookups"))?;
 			if feature_subset_lookups(feature, lookup_indices) || f.feature_tag == *b"pref" {
 				feature_indices.push(i as u16);
 			}
@@ -1777,7 +1997,10 @@ fn table_subset_lookups<T: Layout>(t: &mut T, lookup_indices: &[u16]) -> Result<
 		for r in &mut fv.feature_variation_record {
 			if let Some(sub) = &mut r.feature_table_substitution {
 				for r in &mut sub.substitution_record {
-					let f = r.feature.as_deref_mut().ok_or_else(|| none_attr("subset_lookups"))?;
+					let f = r
+						.feature
+						.as_deref_mut()
+						.ok_or_else(|| none_attr("subset_lookups"))?;
 					if feature_subset_lookups(f, lookup_indices) {
 						feature_indices.push(r.feature_index);
 					}
@@ -1889,7 +2112,10 @@ fn subset_script_tags<T: Layout>(t: &mut T, tags: &[crate::Item]) -> Result<()> 
 		if langs.contains("*   ") {
 			continue;
 		}
-		let script = record.script.as_deref_mut().ok_or_else(|| none_attr("LangSysRecord"))?;
+		let script = record
+			.script
+			.as_deref_mut()
+			.ok_or_else(|| none_attr("LangSysRecord"))?;
 		script
 			.lang_sys_record
 			.retain(|l| langs.contains(&l.lang_sys_tag.to_string()));
@@ -1909,9 +2135,17 @@ fn remap_duplicate_features<T: Layout>(
 	let lookup_variation_features: BTreeSet<u16> = t
 		.feature_variations()
 		.as_ref()
-		.map(|fv| fv.lookup_variation_record.iter().map(|r| r.feature_index).collect())
+		.map(|fv| {
+			fv.lookup_variation_record
+				.iter()
+				.map(|r| r.feature_index)
+				.collect()
+		})
 		.unwrap_or_default();
-	let fl = t.feature_list().as_ref().ok_or_else(|| none_attr("FeatureRecord"))?;
+	let fl = t
+		.feature_list()
+		.as_ref()
+		.ok_or_else(|| none_attr("FeatureRecord"))?;
 	let features = &fl.feature_record;
 	let feature = |i: u16| {
 		features
@@ -2012,7 +2246,10 @@ fn remove_redundant_langsys<T: Layout>(t: &mut T) -> Result<()> {
 		};
 		let mut kept = Vec::new();
 		for lr in std::mem::take(&mut script.lang_sys_record) {
-			let l = lr.lang_sys.as_deref().ok_or_else(|| none_attr("FeatureIndex"))?;
+			let l = lr
+				.lang_sys
+				.as_deref()
+				.ok_or_else(|| none_attr("FeatureIndex"))?;
 			let mut equal = d.feature_index.len() == l.feature_index.len()
 				&& (d.req_feature_index == 65535) == (l.req_feature_index == 65535);
 			if equal && d.req_feature_index != 65535 {
@@ -2157,7 +2394,9 @@ pub(crate) fn prune_pre_subset(s: &Subsetter, font: &mut Font, tag: Tag) -> Resu
 }
 
 pub(crate) fn subset_glyphs(s: &Subsetter, font: &mut Font, tag: Tag) -> Result<bool> {
-	with_layout(font, tag, |t| t.subset_glyphs(&s.glyphs_gsubed, &s.used_mark_sets))
+	with_layout(font, tag, |t| {
+		t.subset_glyphs(&s.glyphs_gsubed, &s.used_mark_sets)
+	})
 }
 
 pub(crate) fn prune_post_subset(s: &Subsetter, font: &mut Font, tag: Tag) -> Result<bool> {
@@ -2188,9 +2427,8 @@ pub(crate) fn gdef_subset_glyphs(s: &mut Subsetter, font: &mut Font) -> Result<b
 		for c in m.coverage.iter_mut().flatten() {
 			cov_subset(c, glyphs);
 		}
-		let has_glyphs = |c: &Option<Box<Coverage>>| {
-			c.as_ref().is_some_and(|c| !c.glyphs.is_empty())
-		};
+		let has_glyphs =
+			|c: &Option<Box<Coverage>>| c.as_ref().is_some_and(|c| !c.glyphs.is_empty());
 		s.used_mark_sets = m
 			.coverage
 			.iter()
@@ -2206,20 +2444,28 @@ pub(crate) fn gdef_subset_glyphs(s: &mut Subsetter, font: &mut Font) -> Result<b
 /// `GDEF.prune_post_subset`.
 pub(crate) fn gdef_prune_post_subset(font: &mut Font) -> Result<bool> {
 	let t = &mut font.require::<Gdef>()?.table;
-	if t.lig_caret_list.as_ref().is_some_and(|l| l.lig_glyph.is_empty()) {
+	if t.lig_caret_list
+		.as_ref()
+		.is_some_and(|l| l.lig_glyph.is_empty())
+	{
 		t.lig_caret_list = None;
 	}
-	if t
-		.mark_attach_class_def
+	if t.mark_attach_class_def
 		.as_ref()
 		.is_some_and(|c| c.class_defs.is_empty())
 	{
 		t.mark_attach_class_def = None;
 	}
-	if t.glyph_class_def.as_ref().is_some_and(|c| c.class_defs.is_empty()) {
+	if t.glyph_class_def
+		.as_ref()
+		.is_some_and(|c| c.class_defs.is_empty())
+	{
 		t.glyph_class_def = None;
 	}
-	if t.attach_list.as_ref().is_some_and(|a| a.attach_point.is_empty()) {
+	if t.attach_list
+		.as_ref()
+		.is_some_and(|a| a.attach_point.is_empty())
+	{
 		t.attach_list = None;
 	}
 	if t.version >= 0x0001_0003 && t.var_store.is_some() {
@@ -2228,8 +2474,7 @@ pub(crate) fn gdef_prune_post_subset(font: &mut Font) -> Result<bool> {
 	if t.version >= 0x0001_0003 && t.var_store.is_none() && t.version == 0x0001_0003 {
 		t.version = 0x0001_0002;
 	}
-	if t
-		.mark_glyph_sets_def
+	if t.mark_glyph_sets_def
 		.as_ref()
 		.is_none_or(|m| m.coverage.is_empty())
 		|| t.version < 0x0001_0002

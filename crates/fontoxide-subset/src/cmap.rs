@@ -116,9 +116,8 @@ pub(crate) fn subset_glyphs(s: &mut Subsetter, font: &mut Font) -> Result<bool> 
 				uvs.retain(|_, l| !l.is_empty());
 			}
 		} else if t.is_unicode() {
-			t.cmap_mut().retain(|u, g| {
-				s.glyphs_requested.contains(g) || s.unicodes_requested.contains(u)
-			});
+			t.cmap_mut()
+				.retain(|u, g| s.glyphs_requested.contains(g) || s.unicodes_requested.contains(u));
 			// Format 12 subtables with only BMP characters.
 			if t.format == 12 && t.cmap.last_key_value().is_some_and(|(&u, _)| u < 0x10000) {
 				format12_bmp.push(i);

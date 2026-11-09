@@ -1214,7 +1214,9 @@ impl Gen<'_> {
 				}
 				Kind::CidGlyphMap => "for g in v.values_mut() { *g = f(*g)?; }",
 				Kind::GlyphCidMap => "*v = remap_keys(std::mem::take(v), &mut *f)?;",
-				Kind::VarCompositeGlyphList => "for g in v.iter_mut() { g.remap_glyphs(&mut *f)?; }",
+				Kind::VarCompositeGlyphList => {
+					"for g in v.iter_mut() { g.remap_glyphs(&mut *f)?; }"
+				}
 				_ => continue,
 			};
 			any = true;
@@ -1379,7 +1381,9 @@ impl Gen<'_> {
 		self.line("\tfn populate_defaults(&mut self, ctx: &mut XmlCtx) -> Result<()> {");
 		self.populate_body(&fields);
 		self.line("\t}");
-		self.line("\tfn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {");
+		self.line(
+			"\tfn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {",
+		);
 		self.remap_body(&fields);
 		self.line("\t}");
 		self.propagated(&fields);

@@ -80,7 +80,9 @@ pub(crate) fn coverage_sanitize(data: &[u8]) -> Result<()> {
 pub(crate) fn coverage_glyphs(data: &[u8]) -> Vec<u32> {
 	let count = get16(data, 2) as usize;
 	match get16(data, 0) {
-		1 => (0..count).map(|i| u32::from(get16(data, 4 + 2 * i))).collect(),
+		1 => (0..count)
+			.map(|i| u32::from(get16(data, 4 + 2 * i)))
+			.collect(),
 		2 => {
 			// `CoverageFormat2_4::iter_t`, which stops at broken ranges.
 			let range = |i: usize| {
@@ -142,7 +144,11 @@ fn coverage_serialize(glyphs: &[u32]) -> Vec<u8> {
 		}
 		last = g;
 	}
-	let format = if !unsorted && count <= num_ranges * 3 { 1 } else { 2 };
+	let format = if !unsorted && count <= num_ranges * 3 {
+		1
+	} else {
+		2
+	};
 	let mut out = Vec::new();
 	out.extend_from_slice(&(format as u16).to_be_bytes());
 	if format == 1 {
@@ -181,7 +187,12 @@ fn coverage_serialize(glyphs: &[u32]) -> Vec<u8> {
 
 /// `Coverage::make_coverage`: replaces the data of `dest_obj` with a coverage
 /// of `glyphs`, failing if it is larger than `max_size`.
-pub(crate) fn make_coverage(g: &mut Graph, glyphs: &[u32], dest_obj: u32, max_size: usize) -> Result<()> {
+pub(crate) fn make_coverage(
+	g: &mut Graph,
+	glyphs: &[u32],
+	dest_obj: u32,
+	max_size: usize,
+) -> Result<()> {
 	let data = coverage_serialize(glyphs);
 	if data.len() > max_size {
 		return Err(Error::AllocationFailure);
@@ -234,7 +245,12 @@ pub(crate) fn clone_coverage(
 }
 
 /// `Coverage::filter_coverage`: keeps the glyphs at indices `[start, end)`.
-pub(crate) fn filter_coverage(g: &mut Graph, existing_coverage: u32, start: u32, end: u32) -> Result<()> {
+pub(crate) fn filter_coverage(
+	g: &mut Graph,
+	existing_coverage: u32,
+	start: u32,
+	end: u32,
+) -> Result<()> {
 	let data = &g.v(existing_coverage).data;
 	let coverage_size = data.len();
 	coverage_sanitize(data)?;
@@ -485,7 +501,8 @@ impl ClassDefSizeEstimator {
 				// Class 0 is not encoded.
 				continue;
 			}
-			e.num_ranges_per_class.insert(klass, num_glyph_ranges(glyphs));
+			e.num_ranges_per_class
+				.insert(klass, num_glyph_ranges(glyphs));
 		}
 		e
 	}
@@ -519,7 +536,8 @@ impl ClassDefSizeEstimator {
 				}
 			}
 			if klass != 0 {
-				self.class_def_range_count += self.num_ranges_per_class.get(&klass).copied().unwrap_or(0);
+				self.class_def_range_count +=
+					self.num_ranges_per_class.get(&klass).copied().unwrap_or(0);
 				if self.glyphs_per_class.contains_key(&klass) && klass > self.class_max {
 					self.class_max = klass;
 				}
@@ -534,7 +552,8 @@ impl ClassDefSizeEstimator {
 		let coverage_base_size = 2 + glyph_size;
 		let range_size = 3 * glyph_size;
 		let format1_size = coverage_base_size + glyph_size * self.included_glyphs.len() as u32;
-		let format2_size = coverage_base_size + range_size * num_glyph_ranges(&self.included_glyphs);
+		let format2_size =
+			coverage_base_size + range_size * num_glyph_ranges(&self.included_glyphs);
 		format1_size.min(format2_size)
 	}
 

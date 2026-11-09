@@ -20,6 +20,7 @@
 
 #![forbid(unsafe_code)]
 
+mod cff;
 mod cmap;
 mod glyf;
 mod layout;
@@ -103,12 +104,7 @@ fn sort_tables(font: &Font) -> Vec<Tag> {
 	const ORDER: [&[u8; 4]; 10] = [
 		b"GDEF", b"GPOS", b"GSUB", b"fvar", b"avar", b"gvar", b"GVAR", b"name", b"glyf", b"GLYF",
 	];
-	let key = |t: &Tag| {
-		ORDER
-			.iter()
-			.position(|o| t.0 == **o)
-			.map_or(0, |i| i + 1)
-	};
+	let key = |t: &Tag| ORDER.iter().position(|o| t.0 == **o).map_or(0, |i| i + 1);
 	let mut tags = font.tags();
 	// A stable sort, as Python's `sorted`.
 	tags.sort_by_key(key);
@@ -159,7 +155,9 @@ impl Subsetter {
 			let name = strip(tag);
 			if options::has_str(&self.options.drop_tables, &name)
 				|| (options::has_str(&self.options.hinting_tables, &name) && !self.options.hinting)
-				|| (tag == *b"kern" && !self.options.legacy_kern && font.contains(Tag::new(b"GPOS")))
+				|| (tag == *b"kern"
+					&& !self.options.legacy_kern
+					&& font.contains(Tag::new(b"GPOS")))
 			{
 				log::info!("{tag} dropped");
 				font.remove(tag);
@@ -245,7 +243,9 @@ impl Subsetter {
 			log::info!("Added first four glyphs to subset");
 		}
 
-		for tag in [b"MATH", b"GSUB", b"COLR", b"bsln", b"VARC", b"glyf", b"GLYF", b"CFF "] {
+		for tag in [
+			b"MATH", b"GSUB", b"COLR", b"bsln", b"VARC", b"glyf", b"GLYF", b"CFF ",
+		] {
 			let tag = Tag::new(tag);
 			let close = font.contains(tag) && (tag != *b"GSUB" || self.options.layout_closure);
 			if close {
@@ -272,9 +272,11 @@ impl Subsetter {
 		}
 
 		self.glyphs_retained = std::mem::take(&mut self.glyphs);
-		self.last_retained_order = self.glyphs_retained.last().copied().ok_or_else(|| {
-			fontoxide_ttlib::Error::value("max() arg is an empty sequence")
-		})?;
+		self.last_retained_order = self
+			.glyphs_retained
+			.last()
+			.copied()
+			.ok_or_else(|| fontoxide_ttlib::Error::value("max() arg is an empty sequence"))?;
 		self.glyphs_emptied = GlyphSet::new();
 		if self.options.retain_gids {
 			self.glyphs_emptied = (0..=self.last_retained_order)

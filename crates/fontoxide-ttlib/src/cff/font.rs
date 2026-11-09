@@ -1,7 +1,7 @@
 //! CFF font sets and their DICTs (`fontTools.cffLib`): reading.
 
 use std::cell::{Cell, RefCell};
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::sync::OnceLock;
 
 use fontoxide_misc::Tag;
@@ -203,7 +203,7 @@ pub struct FdSelect {
 }
 
 /// Which private DICT a charstring uses.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum PrivateRef {
 	/// The Top DICT's.
 	Top,
@@ -295,6 +295,9 @@ pub struct PrivateDict {
 	pub values: BTreeMap<&'static str, Value>,
 	/// The local subroutines (`Subrs`).
 	pub subrs: Option<Vec<T2CharString>>,
+	/// Entries set to `None`, which hides their defaults too (as
+	/// `remove_hints` does).
+	pub cleared: BTreeSet<&'static str>,
 }
 
 /// A font DICT of the FDArray (`FontDict`).
@@ -454,11 +457,15 @@ impl PrivateDict {
 			raw,
 			values,
 			subrs,
+			cleared: BTreeSet::new(),
 		})
 	}
 
 	/// A value, or its default (`getattr`).
 	pub fn get(&self, name: &str) -> Option<Value> {
+		if self.cleared.contains(name) {
+			return None;
+		}
 		self.values
 			.get(name)
 			.cloned()

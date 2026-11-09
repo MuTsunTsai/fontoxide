@@ -2100,7 +2100,9 @@ impl MortSubtable {
 	/// Not supported: fontTools cannot subset `mort` either, so it never needs to
 	/// follow a new glyph order.
 	pub fn remap_glyphs(&mut self, _f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		Err(Error::ttlib("remapping the glyphs of 'mort' subtables is not supported"))
+		Err(Error::ttlib(
+			"remapping the glyphs of 'mort' subtables is not supported",
+		))
 	}
 }
 
@@ -2108,6 +2110,8 @@ impl MorxSubtable {
 	/// Not supported: fontTools cannot subset `morx` either, so it never needs to
 	/// follow a new glyph order.
 	pub fn remap_glyphs(&mut self, _f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		Err(Error::ttlib("remapping the glyphs of 'morx' subtables is not supported"))
+		Err(Error::ttlib(
+			"remapping the glyphs of 'morx' subtables is not supported",
+		))
 	}
 }

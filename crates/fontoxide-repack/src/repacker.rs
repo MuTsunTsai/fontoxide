@@ -95,7 +95,10 @@ fn promote_extensions_if_needed(c: &mut Context, g: &mut Graph) -> Result<()> {
 				.find_subgraph_size(p.lookup_index, &mut visited, 1)
 				.unwrap_or(0)
 				.wrapping_sub(lookup_size);
-			let remaining_size = p.size.wrapping_sub(subtables_size).wrapping_sub(lookup_size);
+			let remaining_size = p
+				.size
+				.wrapping_sub(subtables_size)
+				.wrapping_sub(lookup_size);
 			l3_l4_size = l3_l4_size.wrapping_add(subtables_size);
 			l3_l4_size = l3_l4_size.wrapping_sub(p.num_subtables as usize * 8);
 			l4_plus_size = l4_plus_size
@@ -268,7 +271,10 @@ fn resolve_graph_overflows(
 		if !will_overflow(g, Some(&mut overflows)) {
 			break;
 		}
-		log::debug!("overflow resolution round {round}: {} overflows", overflows.len());
+		log::debug!(
+			"overflow resolution round {round}: {} overflows",
+			overflows.len()
+		);
 		total_iterations += 1;
 		let mut priority_bumped_parents = BTreeSet::new();
 		if !try_isolating_subgraphs(&overflows, g)? {

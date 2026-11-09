@@ -241,7 +241,9 @@ impl Table for Ltsh {
 	/// The values are by position; fontTools does not subset `LTSH` either.
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		let _ = f;
-		Err(Error::ttlib("remapping the glyphs of 'LTSH' is not supported"))
+		Err(Error::ttlib(
+			"remapping the glyphs of 'LTSH' is not supported",
+		))
 	}
 
 	fn tag(&self) -> Tag {

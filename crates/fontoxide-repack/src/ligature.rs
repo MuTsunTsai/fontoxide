@@ -27,7 +27,9 @@ pub(crate) fn split_subtable(c: &mut Context, g: &mut Graph, objidx: u32) -> Res
 /// `LigatureSubstFormat1::sanitize`.
 fn format1_sanitize(data: &[u8]) -> Result<()> {
 	let len = data.len();
-	if len < FORMAT1_MIN_SIZE as usize || len < (FORMAT1_MIN_SIZE + 2 * u32::from(get16(data, 4))) as usize {
+	if len < FORMAT1_MIN_SIZE as usize
+		|| len < (FORMAT1_MIN_SIZE + 2 * u32::from(get16(data, 4))) as usize
+	{
 		return Err(Error::SanitizeFailure);
 	}
 	Ok(())
@@ -62,11 +64,21 @@ fn split_subtables(c: &mut Context, g: &mut Graph, this_index: u32) -> Result<Ve
 	let mut liga_counts = Vec::new();
 	let count = u32::from(get16(&g.v(this_index).data, 4));
 	for i in 0..count {
-		let liga_set = as_table(g, this_index, ligature_set_position(i), ligature_set_sanitize)?;
+		let liga_set = as_table(
+			g,
+			this_index,
+			ligature_set_position(i),
+			ligature_set_sanitize,
+		)?;
 		total += ligature_count(g, liga_set);
 	}
 	for i in 0..count {
-		let liga_set = as_table(g, this_index, ligature_set_position(i), ligature_set_sanitize)?;
+		let liga_set = as_table(
+			g,
+			this_index,
+			ligature_set_position(i),
+			ligature_set_sanitize,
+		)?;
 		liga_counts.push(ligature_count(g, liga_set));
 	}
 	let mut sc = Split {
@@ -103,7 +115,12 @@ fn compute_split_points(g: &mut Graph, this_index: u32) -> Result<Vec<u32>> {
 	for i in 0..count {
 		// The ligature set offset and table.
 		accumulated += 2 + LIGATURE_SET_MIN_SIZE;
-		let liga_set = as_table(g, this_index, ligature_set_position(i), ligature_set_sanitize)?;
+		let liga_set = as_table(
+			g,
+			this_index,
+			ligature_set_position(i),
+			ligature_set_sanitize,
+		)?;
 		let index_to_id = ligature_index_to_object_id(g, liga_set);
 		for liga_id in index_to_id {
 			if liga_id == INVALID {
@@ -232,8 +249,12 @@ impl SplitContext for Split {
 				count += num_ligas;
 				continue;
 			}
-			let liga_set_index =
-				as_mutable_table(g, this_index, ligature_set_position(i), ligature_set_sanitize)?;
+			let liga_set_index = as_mutable_table(
+				g,
+				this_index,
+				ligature_set_position(i),
+				ligature_set_sanitize,
+			)?;
 			// Some ligatures may have been removed already.
 			let liga_bounds = current_liga_set_bounds(g, liga_set_index);
 			current_start = count.wrapping_add(liga_bounds.0).max(current_start);
@@ -311,8 +332,12 @@ impl SplitContext for Split {
 		let mut retained_indices = BTreeSet::new();
 		let mut new_liga_set_count = 0;
 		for i in 0..self.liga_counts.len() as u32 {
-			let liga_set =
-				as_mutable_table(g, this_index, ligature_set_position(i), ligature_set_sanitize)?;
+			let liga_set = as_mutable_table(
+				g,
+				this_index,
+				ligature_set_position(i),
+				ligature_set_sanitize,
+			)?;
 			// The virtual links to the coverage are removed from all descendants
 			// (else the coverage would be duplicated when it is changed), and added
 			// back to the retained ones below.

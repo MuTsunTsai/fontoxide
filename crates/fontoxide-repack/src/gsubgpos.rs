@@ -84,13 +84,21 @@ fn uses_lookup_list2(data: &[u8]) -> bool {
 /// `get_lookup_list_index`.
 fn lookup_list_index(g: &Graph) -> Result<u32> {
 	let root = g.root_idx();
-	let position = if uses_lookup_list2(&g.v(root).data) { 22 } else { 8 };
+	let position = if uses_lookup_list2(&g.v(root).data) {
+		22
+	} else {
+		8
+	};
 	g.index_for_offset(root, position)
 }
 
 /// `GSTAR::find_lookups`.
 fn find_lookups(g: &mut Graph, lookups: &mut BTreeSet<u32>) -> Result<()> {
-	let item_size = if uses_lookup_list2(&g.v(g.root_idx()).data) { 3 } else { 2 };
+	let item_size = if uses_lookup_list2(&g.v(g.root_idx()).data) {
+		3
+	} else {
+		2
+	};
 	let lookup_list_idx = lookup_list_index(g)?;
 	let data = &g.v(lookup_list_idx).data;
 	let count = get16(data, 0) as usize;
@@ -178,7 +186,12 @@ pub(crate) fn make_extension(c: &mut Context, g: &mut Graph, this_index: u32) ->
 
 /// `Lookup::create_extension_subtable`: an Extension subtable pointing at
 /// `subtable_index` (without adding it as a parent).
-fn create_extension_subtable(c: &mut Context, g: &mut Graph, subtable_index: u32, lookup_type: u16) -> Result<u32> {
+fn create_extension_subtable(
+	c: &mut Context,
+	g: &mut Graph,
+	subtable_index: u32,
+	lookup_type: u16,
+) -> Result<u32> {
 	let ext_index = c.create_node(g, EXTENSION_SIZE)?;
 	let data = &mut g.vm(ext_index).data;
 	set16(data, 0, 1);
@@ -188,7 +201,12 @@ fn create_extension_subtable(c: &mut Context, g: &mut Graph, subtable_index: u32
 }
 
 /// `Lookup::make_subtable_extension`.
-fn make_subtable_extension(c: &mut Context, g: &mut Graph, lookup_index: u32, subtable_index: u32) -> Result<()> {
+fn make_subtable_extension(
+	c: &mut Context,
+	g: &mut Graph,
+	lookup_index: u32,
+	subtable_index: u32,
+) -> Result<()> {
 	let lookup_type = lookup_type(&g.v(lookup_index).data);
 	let existing = c.subtable_to_extension.get(&subtable_index).copied();
 	let ext_index = match existing {
@@ -221,13 +239,18 @@ fn make_subtable_extension(c: &mut Context, g: &mut Graph, lookup_index: u32, su
 type NewSubtables = Vec<(u32, Vec<u32>)>;
 
 /// `Lookup::split_subtables_if_needed`.
-pub(crate) fn split_subtables_if_needed(c: &mut Context, g: &mut Graph, this_index: u32) -> Result<()> {
+pub(crate) fn split_subtables_if_needed(
+	c: &mut Context,
+	g: &mut Graph,
+	this_index: u32,
+) -> Result<()> {
 	let mut lookup_type = lookup_type(&g.v(this_index).data);
 	let is_ext = is_extension(g, this_index, c.table_tag);
 	if c.table_tag != GPOS && c.table_tag != GSUB {
 		return Ok(());
 	}
-	if !is_ext && !is_supported_gpos_type(lookup_type, c) && !is_supported_gsub_type(lookup_type, c) {
+	if !is_ext && !is_supported_gpos_type(lookup_type, c) && !is_supported_gsub_type(lookup_type, c)
+	{
 		return Ok(());
 	}
 	let mut all_new_subtables: NewSubtables = Vec::new();
@@ -291,7 +314,11 @@ fn add_sub_tables(
 	if use_mark_filtering_set(&old) && old.len() >= 2 {
 		buffer[new_size - 2..].copy_from_slice(&old[old.len() - 2..]);
 	}
-	set16(&mut buffer, 4, get16(&old, 4).wrapping_add(new_subtable_count as u16));
+	set16(
+		&mut buffer,
+		4,
+		get16(&old, 4).wrapping_add(new_subtable_count as u16),
+	);
 	g.vm(this_index).data = buffer;
 
 	let mut shift = 0;

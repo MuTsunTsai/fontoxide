@@ -6,4 +6,5 @@ pub mod compile;
 pub mod dict;
 pub mod font;
 mod from_xml;
+pub mod transforms;
 mod xml;

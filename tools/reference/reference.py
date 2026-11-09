@@ -101,7 +101,7 @@ def run_job(job: dict) -> None:
 		font.save(output, reorderTables=True)
 		return
 	if op == "subset":
-		# Subset to the given characters with the default options, as
+		# Subset to the given characters with the given options, as
 		# `pyftsubset --unicodes=...` does (without the glyph name hack).
 		from fontTools import subset
 
@@ -112,7 +112,9 @@ def run_job(job: dict) -> None:
 			recalcBBoxes=False,
 		)
 		font.cfg[otBase.USE_HARFBUZZ_REPACKER] = bool(job.get("repacker", False))
-		subsetter = subset.Subsetter(subset.Options())
+		options = subset.Options()
+		options.parse_opts(job.get("options", []))
+		subsetter = subset.Subsetter(options)
 		subsetter.populate(unicodes=job["unicodes"])
 		subsetter.subset(font)
 		font.save(output, reorderTables=True)

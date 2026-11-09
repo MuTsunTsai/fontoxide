@@ -113,19 +113,13 @@ impl HbMap {
 			self.successful = false;
 			return false;
 		}
-		if new_population != 0
-			&& new_population.wrapping_add(new_population / 2) < self.mask
-		{
+		if new_population != 0 && new_population.wrapping_add(new_population / 2) < self.mask {
 			return true;
 		}
-		let power = bit_storage(
-			self.population
-				.max(new_population)
-				.wrapping_mul(2)
-				.max(4),
-		);
+		let power = bit_storage(self.population.max(new_population).wrapping_mul(2).max(4));
 		let new_size = 1u32 << power;
-		let old_items = std::mem::replace(&mut self.items, vec![Item::default(); new_size as usize]);
+		let old_items =
+			std::mem::replace(&mut self.items, vec![Item::default(); new_size as usize]);
 		self.population = 0;
 		self.occupancy = 0;
 		self.mask = new_size - 1;
@@ -282,8 +276,15 @@ mod tests {
 		let mut m = HbMap::default();
 		m.set(1, 0);
 		m.set(2, 0);
-		let buckets = [(hb_hash(1) & 0x3FFF_FFFF) % 7, (hb_hash(2) & 0x3FFF_FFFF) % 7];
-		let expected = if buckets[0] < buckets[1] { [1, 2] } else { [2, 1] };
+		let buckets = [
+			(hb_hash(1) & 0x3FFF_FFFF) % 7,
+			(hb_hash(2) & 0x3FFF_FFFF) % 7,
+		];
+		let expected = if buckets[0] < buckets[1] {
+			[1, 2]
+		} else {
+			[2, 1]
+		};
 		assert_eq!(m.keys().collect::<Vec<_>>(), expected);
 	}
 }

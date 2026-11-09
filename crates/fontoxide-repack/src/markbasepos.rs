@@ -4,7 +4,10 @@ use std::collections::{BTreeSet, HashMap};
 
 use crate::graph::Graph;
 use crate::gsubgpos::{Context, SplitContext, actuate_subtable_split};
-use crate::layout::{add_coverage, as_mutable_table, as_table, coverage_glyphs, coverage_sanitize, get16, make_coverage, set16};
+use crate::layout::{
+	add_coverage, as_mutable_table, as_table, coverage_glyphs, coverage_sanitize, get16,
+	make_coverage, set16,
+};
 use crate::{Error, Result};
 
 /// `MarkBasePosFormat1_2<SmallTypes>::static_size`.
@@ -28,7 +31,9 @@ pub(crate) fn split_subtable(c: &mut Context, g: &mut Graph, objidx: u32) -> Res
 fn anchor_matrix_sanitize(data: &[u8], class_count: u32) -> Result<()> {
 	let len = data.len();
 	let rows = get16(data, 0) as usize;
-	if len < ARRAY_MIN_SIZE as usize || len < ARRAY_MIN_SIZE as usize + 2 * class_count as usize * rows {
+	if len < ARRAY_MIN_SIZE as usize
+		|| len < ARRAY_MIN_SIZE as usize + 2 * class_count as usize * rows
+	{
 		return Err(Error::SanitizeFailure);
 	}
 	Ok(())
@@ -50,7 +55,10 @@ fn mark_class(data: &[u8], mark: u32) -> u32 {
 	if mark >= u32::from(get16(data, 0)) {
 		return 0;
 	}
-	u32::from(get16(data, (ARRAY_MIN_SIZE + MARK_RECORD_SIZE * mark) as usize))
+	u32::from(get16(
+		data,
+		(ARRAY_MIN_SIZE + MARK_RECORD_SIZE * mark) as usize,
+	))
 }
 
 /// The position of the anchor offset of a mark record.
@@ -69,10 +77,13 @@ struct ClassInfo {
 fn split_subtables(c: &mut Context, g: &mut Graph, this_index: u32) -> Result<Vec<u32>> {
 	let mut visited = BTreeSet::new();
 	let base_coverage_id = g.index_for_offset(this_index, 4)?;
-	let base_size = FORMAT1_SIZE + ARRAY_MIN_SIZE + ARRAY_MIN_SIZE + g.v(base_coverage_id).table_size() as u32;
+	let base_size =
+		FORMAT1_SIZE + ARRAY_MIN_SIZE + ARRAY_MIN_SIZE + g.v(base_coverage_id).table_size() as u32;
 	let class_to_info = get_class_info(g, this_index)?;
 	let class_count = u32::from(get16(&g.v(this_index).data, 6));
-	let base_array = as_table(g, this_index, 10, |d| anchor_matrix_sanitize(d, class_count))?;
+	let base_array = as_table(g, this_index, 10, |d| {
+		anchor_matrix_sanitize(d, class_count)
+	})?;
 	let base_count = u32::from(get16(&g.v(base_array).data, 0));
 
 	let mut partial_coverage_size = 4;
@@ -133,13 +144,17 @@ fn get_class_info(g: &Graph, this_index: u32) -> Result<Vec<ClassInfo>> {
 		if klass >= class_count {
 			continue;
 		}
-		class_to_info[klass as usize].child_indices.push(link.objidx);
+		class_to_info[klass as usize]
+			.child_indices
+			.push(link.objidx);
 	}
 	let base_array_id = g.index_for_offset(this_index, 10)?;
 	for link in &g.v(base_array_id).real_links {
 		let index = link.position.wrapping_sub(2) / 2;
 		let klass = index % class_count;
-		class_to_info[klass as usize].child_indices.push(link.objidx);
+		class_to_info[klass as usize]
+			.child_indices
+			.push(link.objidx);
 	}
 	Ok(class_to_info)
 }
@@ -193,11 +208,14 @@ impl SplitContext for Split {
 		add_coverage(g, prime_id, 2, &new_coverage, marks.len() * 2 + 4)?;
 
 		let mark_array = as_mutable_table(g, this_index, 8, mark_array_sanitize)?;
-		let new_mark_array = clone_mark_array(c, g, mark_array, &self.mark_array_links, &marks, start)?;
+		let new_mark_array =
+			clone_mark_array(c, g, mark_array, &self.mark_array_links, &marks, start)?;
 		g.add_link(8, prime_id, new_mark_array)?;
 
 		let class_count = u32::from(get16(&g.v(this_index).data, 6));
-		let base_array = as_mutable_table(g, this_index, 10, |d| anchor_matrix_sanitize(d, class_count))?;
+		let base_array = as_mutable_table(g, this_index, 10, |d| {
+			anchor_matrix_sanitize(d, class_count)
+		})?;
 		let new_base_array = clone_anchor_matrix(c, g, base_array, start, end, class_count)?;
 		g.add_link(10, prime_id, new_base_array)?;
 		Ok(prime_id)
@@ -217,7 +235,8 @@ impl SplitContext for Split {
 		let new_coverage = coverage_of_marks(&g.v(mark_coverage).data, &marks);
 		make_coverage(g, &new_coverage, mark_coverage, 4 + 2 * marks.len())?;
 
-		let base_array = as_mutable_table(g, this_index, 10, |d| anchor_matrix_sanitize(d, old_count))?;
+		let base_array =
+			as_mutable_table(g, this_index, 10, |d| anchor_matrix_sanitize(d, old_count))?;
 		shrink_anchor_matrix(g, base_array, old_count, count)?;
 
 		let mark_array = as_mutable_table(g, this_index, 8, mark_array_sanitize)?;
@@ -226,7 +245,12 @@ impl SplitContext for Split {
 }
 
 /// `AnchorMatrix::shrink`: keeps the columns of the classes `[0, new_class_count)`.
-fn shrink_anchor_matrix(g: &mut Graph, this_index: u32, old_class_count: u32, new_class_count: u32) -> Result<()> {
+fn shrink_anchor_matrix(
+	g: &mut Graph,
+	this_index: u32,
+	old_class_count: u32,
+	new_class_count: u32,
+) -> Result<()> {
 	if new_class_count >= old_class_count {
 		return Err(Error::InvalidArgument);
 	}

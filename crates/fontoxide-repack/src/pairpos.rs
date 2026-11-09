@@ -303,14 +303,22 @@ struct Format2Split {
 
 impl Format2Split {
 	/// `PairPosFormat2::clone_class1_records`.
-	fn clone_class1_records(&self, g: &mut Graph, prime_id: u32, start: u32, end: u32) -> Result<()> {
+	fn clone_class1_records(
+		&self,
+		g: &mut Graph,
+		prime_id: u32,
+		start: u32,
+		end: u32,
+	) -> Result<()> {
 		let this_index = self.this_index;
 		let start_addr = (FORMAT2_MIN_SIZE + start * self.class1_record_size) as usize;
 		let len = ((end - start) * self.class1_record_size) as usize;
 		let records = g.v(this_index).data[start_addr..start_addr + len].to_vec();
 		let base = FORMAT2_MIN_SIZE as usize;
 		g.vm(prime_id).data[base..base + len].copy_from_slice(&records);
-		if self.format1_device_table_indices.is_empty() && self.format2_device_table_indices.is_empty() {
+		if self.format1_device_table_indices.is_empty()
+			&& self.format2_device_table_indices.is_empty()
+		{
 			// No device tables to move over.
 			return Ok(());
 		}

@@ -336,7 +336,9 @@ impl Os2 {
 		let mut ul = [0u32; 2];
 		for bit in bits {
 			if bit >= 64 {
-				return Err(Error::value(format!("expected 0 <= int <= 63, found: {bit}")));
+				return Err(Error::value(format!(
+					"expected 0 <= int <= 63, found: {bit}"
+				)));
 			}
 			ul[(bit / 32) as usize] |= 1 << (bit % 32);
 		}
@@ -830,7 +832,10 @@ mod range_tests {
 
 	#[test]
 	fn doctests() {
-		assert_eq!(intersect_unicode_ranges(&[0x0410].into(), false), [9].into());
+		assert_eq!(
+			intersect_unicode_ranges(&[0x0410].into(), false),
+			[9].into()
+		);
 		assert_eq!(
 			intersect_unicode_ranges(&[0x0410, 0x1F000].into(), false),
 			[9, 57, 122].into()

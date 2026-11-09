@@ -44,14 +44,12 @@ fn strs(items: &[&str]) -> List {
 
 /// Spaces in tags (`SVG `, `cvt `) are stripped by the argument parser.
 const DROP_TABLES_DEFAULT: &[&str] = &[
-	"JSTF", "DSIG", "EBDT", "EBLC", "EBSC", "PCLT", "LTSH", "Feat", "Glat", "Gloc", "Silf",
-	"Sill",
+	"JSTF", "DSIG", "EBDT", "EBLC", "EBSC", "PCLT", "LTSH", "Feat", "Glat", "Gloc", "Silf", "Sill",
 ];
 
 const NO_SUBSET_TABLES_DEFAULT: &[&str] = &[
-	"avar", "BASE", "fvar", "gasp", "head", "hhea", "HHEA", "maxp", "MAXP", "vhea", "VHEA",
-	"OS/2", "loca", "LOCA", "name", "cvt", "fpgm", "prep", "VDMX", "DSIG", "CPAL", "MVAR",
-	"cvar", "STAT",
+	"avar", "BASE", "fvar", "gasp", "head", "hhea", "HHEA", "maxp", "MAXP", "vhea", "VHEA", "OS/2",
+	"loca", "LOCA", "name", "cvt", "fpgm", "prep", "VDMX", "DSIG", "CPAL", "MVAR", "cvar", "STAT",
 ];
 
 const HINTING_TABLES_DEFAULT: &[&str] = &["cvt", "cvar", "fpgm", "prep", "hdmx", "VDMX"];
@@ -60,7 +58,10 @@ const HINTING_TABLES_DEFAULT: &[&str] = &["cvt", "cvar", "fpgm", "prep", "hdmx",
 /// (`_layout_features_groups`).
 pub const LAYOUT_FEATURES_GROUPS: &[(&str, &[&str])] = &[
 	// Default shaper.
-	("common", &["rvrn", "ccmp", "liga", "locl", "mark", "mkmk", "rlig"]),
+	(
+		"common",
+		&["rvrn", "ccmp", "liga", "locl", "mark", "mkmk", "rlig"],
+	),
 	("fractions", &["frac", "numr", "dnom"]),
 	("horizontal", &["calt", "clig", "curs", "kern", "rclt"]),
 	("vertical", &["valt", "vert", "vkrn", "vpal", "vrt2"]),
@@ -69,11 +70,16 @@ pub const LAYOUT_FEATURES_GROUPS: &[(&str, &[&str])] = &[
 	("rand", &["rand"]),
 	("justify", &["jalt"]),
 	("private", &["Harf", "HARF", "Buzz", "BUZZ"]),
-	("east_asian_spacing", &["chws", "vchw", "halt", "vhal", "palt"]),
+	(
+		"east_asian_spacing",
+		&["chws", "vchw", "halt", "vhal", "palt"],
+	),
 	// Complex shapers.
 	(
 		"arabic",
-		&["init", "medi", "fina", "isol", "med2", "fin2", "fin3", "cswh", "mset", "stch"],
+		&[
+			"init", "medi", "fina", "isol", "med2", "fin2", "fin3", "cswh", "mset", "stch",
+		],
 	),
 	("hangul", &["ljmo", "vjmo", "tjmo"]),
 	("tibetan", &["abvs", "blws", "abvm", "blwm"]),
@@ -418,7 +424,9 @@ fn parse_item(x: &str) -> Result<Item> {
 		i64::from_str_radix(b, 2)
 	} else if lower.len() > 1 && lower.starts_with('0') && lower.bytes().any(|c| c != b'0') {
 		// `int("010", 0)` is an error in Python 3.
-		return Err(Error::Option(format!("invalid literal for int() with base 0: '{x}'")));
+		return Err(Error::Option(format!(
+			"invalid literal for int() with base 0: '{x}'"
+		)));
 	} else {
 		lower.parse()
 	};

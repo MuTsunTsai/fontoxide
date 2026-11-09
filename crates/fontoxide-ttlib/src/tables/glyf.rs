@@ -1343,7 +1343,11 @@ fn remap_components_fast(data: &mut [u8], f: &mut dyn FnMut(u32) -> Result<u32>)
 		let new = u16::try_from(new).map_err(|_| Error::Struct("int too big to convert".into()))?;
 		data[start..start + 2].copy_from_slice(&new.to_be_bytes());
 		i = start + 2;
-		i += if flags & ARG_1_AND_2_ARE_WORDS != 0 { 4 } else { 2 };
+		i += if flags & ARG_1_AND_2_ARE_WORDS != 0 {
+			4
+		} else {
+			2
+		};
 		if flags & WE_HAVE_A_SCALE != 0 {
 			i += 2;
 		} else if flags & WE_HAVE_AN_X_AND_Y_SCALE != 0 {
@@ -1453,7 +1457,11 @@ impl Glyph {
 				data[i] = (flags >> 8) as u8;
 				data[i + 1] = flags as u8;
 				i += 4;
-				i += if flags & ARG_1_AND_2_ARE_WORDS != 0 { 4 } else { 2 };
+				i += if flags & ARG_1_AND_2_ARE_WORDS != 0 {
+					4
+				} else {
+					2
+				};
 				if flags & WE_HAVE_A_SCALE != 0 {
 					i += 2;
 				} else if flags & WE_HAVE_AN_X_AND_Y_SCALE != 0 {

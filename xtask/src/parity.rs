@@ -26,6 +26,10 @@ pub struct Args {
 	/// Compare against fontTools with the HarfBuzz repacker enabled.
 	#[arg(long)]
 	repacker: bool,
+	/// Options of the `subset` op, as `pyftsubset` takes them (e.g.
+	/// `--subset-option=--desubroutinize`).
+	#[arg(long = "subset-option", allow_hyphen_values = true)]
+	subset_options: Vec<String>,
 	/// Ignore cached reference outputs and regenerate them.
 	#[arg(long)]
 	rebuild_reference: bool,
@@ -163,7 +167,13 @@ pub fn run(args: &Args) -> Result<()> {
 		return Ok(());
 	}
 
-	let flavor = if args.repacker { "-hb" } else { "" };
+	let mut flavor = if args.repacker { "-hb" } else { "" }.to_owned();
+	if !args.subset_options.is_empty() {
+		// Outputs with other subset options are cached apart.
+		let digest = Sha256::digest(args.subset_options.join("\0").as_bytes());
+		flavor.push_str("-s");
+		flavor.extend(digest[..4].iter().map(|b| format!("{b:02x}")));
+	}
 	let ref_dir = root()
 		.join("target")
 		.join("parity")
@@ -219,6 +229,7 @@ pub fn run(args: &Args) -> Result<()> {
 				});
 				if op == Op::Subset {
 					job["unicodes"] = serde_json::json!(subset_unicodes(&std::fs::read(font)?));
+					job["options"] = serde_json::json!(args.subset_options);
 				}
 				jobs.push(job);
 				if op == Op::Ttx {
@@ -255,7 +266,10 @@ pub fn run(args: &Args) -> Result<()> {
 				detail,
 			});
 		};
-		match (ours(op, &input, args.repacker), reference) {
+		match (
+			ours(op, &input, args.repacker, &args.subset_options),
+			reference,
+		) {
 			(Ok(a), Ok(b)) => {
 				let results = compare(op, &a, &b);
 				if args.save_mismatches && results.iter().any(|r| r.1 == Outcome::Mismatch) {
@@ -298,7 +312,12 @@ fn save_mismatch(font: &Path, op: Op, ours: &[u8], reference: &[u8]) -> Result<(
 }
 
 /// fontoxide's side of each operation, with the same options as `reference.py`.
-fn ours(op: Op, input: &[u8], repacker: bool) -> Result<Vec<u8>, String> {
+fn ours(
+	op: Op,
+	input: &[u8],
+	repacker: bool,
+	subset_options: &[String],
+) -> Result<Vec<u8>, String> {
 	let options = ReadOptions {
 		font_number: Some(0),
 		recalc_timestamp: false,
@@ -346,7 +365,12 @@ fn ours(op: Op, input: &[u8], repacker: bool) -> Result<Vec<u8>, String> {
 			},
 		)
 		.map_err(|e| e.to_string())?;
-		let mut subsetter = fontoxide_subset::Subsetter::new(fontoxide_subset::Options::default());
+		let mut subset_opts = fontoxide_subset::Options::default();
+		let argv: Vec<&str> = subset_options.iter().map(String::as_str).collect();
+		subset_opts
+			.parse_opts(&argv, &[])
+			.map_err(|e| e.to_string())?;
+		let mut subsetter = fontoxide_subset::Subsetter::new(subset_opts);
 		subsetter.populate(&[], &[], &subset_unicodes(input), "");
 		subsetter.subset(&mut font).map_err(|e| e.to_string())?;
 		return font

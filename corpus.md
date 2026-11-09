@@ -21,6 +21,9 @@ Suggested sources:
 
 The `subset` operation is not run by default (`cargo xtask parity --op subset`): both sides
 subset each font to every third character of its Unicode `cmap`, with the default options.
+Other options are passed as `pyftsubset` takes them, e.g.
+`cargo xtask parity --op subset --subset-option=--desubroutinize --subset-option=--no-hinting`;
+their reference outputs are cached apart.
 
 Besides fonts, the corpus may hold TTX files named `*.parity.ttx`: for these, only the
 `fromttx` operation runs, compiling the file itself on both sides.

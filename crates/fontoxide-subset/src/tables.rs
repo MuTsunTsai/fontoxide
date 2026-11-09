@@ -13,14 +13,18 @@ use fontoxide_ttlib::tables::{
 use fontoxide_ttlib::{Font, Tag};
 
 use crate::options::{has_int, has_str};
-use crate::{Error, Result, Subsetter, cmap, glyf, layout, strip};
+use crate::{Error, Result, Subsetter, cff, cmap, glyf, layout, strip};
 
 fn unsupported<T>(tag: Tag) -> Result<T> {
 	Err(Error::Unsupported(strip(tag)))
 }
 
 /// `prune_pre_subset`.
-pub(crate) fn prune_pre_subset(s: &mut Subsetter, font: &mut Font, tag: Tag) -> Result<Option<bool>> {
+pub(crate) fn prune_pre_subset(
+	s: &mut Subsetter,
+	font: &mut Font,
+	tag: Tag,
+) -> Result<Option<bool>> {
 	Ok(Some(match &tag.0 {
 		b"cmap" => cmap::prune_pre_subset(s, font)?,
 		b"glyf" => glyf::prune_pre_subset(s, font)?,
@@ -59,7 +63,8 @@ pub(crate) fn prune_pre_subset(s: &mut Subsetter, font: &mut Font, tag: Tag) -> 
 			true
 		}
 		b"GSUB" | b"GPOS" => layout::prune_pre_subset(s, font, tag)?,
-		b"DMAP" | b"DSIG" | b"kern" | b"CFF " => return unsupported(tag),
+		b"CFF " | b"CFF2" => cff::prune_pre_subset(s, font, tag)?,
+		b"DMAP" | b"DSIG" | b"kern" => return unsupported(tag),
 		_ => return Ok(None),
 	}))
 }
@@ -69,6 +74,7 @@ pub(crate) fn closure_glyphs(s: &mut Subsetter, font: &mut Font, tag: Tag) -> Re
 	match &tag.0 {
 		b"glyf" => glyf::closure_glyphs(s, font),
 		b"GSUB" => layout::gsub_closure_glyphs(s, font),
+		b"CFF " => cff::closure_glyphs(s, font),
 		_ => unsupported(tag),
 	}
 }
@@ -129,9 +135,10 @@ pub(crate) fn subset_glyphs(s: &mut Subsetter, font: &mut Font, tag: Tag) -> Res
 		}
 		b"GSUB" | b"GPOS" => layout::subset_glyphs(s, font, tag)?,
 		b"GDEF" => layout::gdef_subset_glyphs(s, font)?,
-		b"EBLC" | b"EBDT" | b"CBLC" | b"CBDT" | b"sbix" | b"kern"
-		| b"ankr" | b"bsln" | b"lcar" | b"HVAR" | b"VVAR" | b"opbd" | b"prop" | b"COLR"
-		| b"MATH" | b"VARC" | b"DMAP" | b"CFF " | b"CFF2" | b"SVG " => return unsupported(tag),
+		b"EBLC" | b"EBDT" | b"CBLC" | b"CBDT" | b"sbix" | b"kern" | b"ankr" | b"bsln" | b"lcar"
+		| b"HVAR" | b"VVAR" | b"opbd" | b"prop" | b"COLR" | b"MATH" | b"VARC" | b"DMAP"
+		| b"SVG " => return unsupported(tag),
+		b"CFF " | b"CFF2" => cff::subset_glyphs(s, font, tag)?,
 		_ => return Ok(None),
 	}))
 }
@@ -152,7 +159,8 @@ pub(crate) fn prune_post_subset(
 		}
 		b"GSUB" | b"GPOS" => layout::prune_post_subset(s, font, tag)?,
 		b"GDEF" => layout::gdef_prune_post_subset(font)?,
-		b"CPAL" | b"VARC" | b"CFF " | b"CFF2" => return unsupported(tag),
+		b"CFF " | b"CFF2" => cff::prune_post_subset(s, font, tag)?,
+		b"CPAL" | b"VARC" => return unsupported(tag),
 		_ => return Ok(None),
 	}))
 }
@@ -213,8 +221,8 @@ const NAME_IDS_TO_OBFUSCATE: [u16; 8] = [1, 2, 3, 4, 6, 16, 17, 18];
 fn name_ids_used(font: &mut Font) -> Result<BTreeSet<u16>> {
 	let mut seen = BTreeSet::new();
 	let features = |list: &Option<Box<ot::FeatureList>>,
-	                    variations: &Option<Box<ot::FeatureVariations>>,
-	                    seen: &mut BTreeSet<u16>| {
+	                variations: &Option<Box<ot::FeatureVariations>>,
+	                seen: &mut BTreeSet<u16>| {
 		let mut visit = |f: &Option<Box<ot::Feature>>| {
 			let Some(params) = f.as_ref().and_then(|f| f.feature_params.as_deref()) else {
 				return;
@@ -385,7 +393,13 @@ fn remap_select_name_ids(font: &mut Font, need_remapping: &BTreeSet<u16>) -> Res
 		.iter()
 		.filter_map(|r| {
 			remapping.get(&r.name_id).map(|&id| {
-				NameRecord::new(r.string.clone(), id, r.platform_id, r.plat_enc_id, r.lang_id)
+				NameRecord::new(
+					r.string.clone(),
+					id,
+					r.platform_id,
+					r.plat_enc_id,
+					r.lang_id,
+				)
 			})
 		})
 		.collect();

@@ -405,8 +405,7 @@ impl Graph {
 				}
 				removed_edges[link.objidx as usize] += 1;
 				let v = self.v(link.objidx);
-				if v
-					.incoming_edges()
+				if v.incoming_edges()
 					.wrapping_sub(removed_edges[link.objidx as usize])
 					== 0
 				{
@@ -712,7 +711,8 @@ impl Graph {
 		if child_id >= self.len() {
 			return Err(Error::OutOfBounds);
 		}
-		self.vm(new_parent_idx).add_real_link(2, child_id, new_position);
+		self.vm(new_parent_idx)
+			.add_real_link(2, child_id, new_position);
 		self.vm(child_id).add_parent(new_parent_idx, false)?;
 		self.vm(old_parent_idx)
 			.remove_real_link_unordered(child_id, old_position);
@@ -865,7 +865,11 @@ impl Graph {
 
 	/// `duplicate (parents, child_idx)`: a copy of the child, linked from all of
 	/// `parents` instead of the original.
-	pub fn duplicate_for_parents(&mut self, parents: &BTreeSet<u32>, child_idx: u32) -> Result<u32> {
+	pub fn duplicate_for_parents(
+		&mut self,
+		parents: &BTreeSet<u32>,
+		child_idx: u32,
+	) -> Result<u32> {
 		if parents.is_empty() {
 			return Err(Error::InvalidArgument);
 		}
@@ -1128,7 +1132,12 @@ impl Graph {
 
 	/// `remap_obj_indices`: points the links of the `subgraph` nodes found in
 	/// `id_map` at the mapped nodes.
-	fn remap_obj_indices(&mut self, id_map: &HbMap, subgraph: &[u32], only_wide: bool) -> Result<()> {
+	fn remap_obj_indices(
+		&mut self,
+		id_map: &HbMap,
+		subgraph: &[u32],
+		only_wide: bool,
+	) -> Result<()> {
 		if id_map.is_empty() {
 			return Ok(());
 		}

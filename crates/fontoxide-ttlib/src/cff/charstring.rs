@@ -420,7 +420,7 @@ impl Num {
 		}
 	}
 
-	fn int(self) -> Result<i64> {
+	pub(crate) fn int(self) -> Result<i64> {
 		match self {
 			Num::Int(i) => Ok(i),
 			Num::Float(_) => Err(Error::ttlib(

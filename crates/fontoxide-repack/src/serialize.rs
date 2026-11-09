@@ -28,7 +28,10 @@ fn is_valid_offset(offset: i64, link: &Link) -> bool {
 
 /// `will_overflow`: whether any offset overflows in the current ordering. With
 /// `overflows`, collects the overflowing links (once per parent and child).
-pub(crate) fn will_overflow(graph: &mut Graph, mut overflows: Option<&mut Vec<OverflowRecord>>) -> bool {
+pub(crate) fn will_overflow(
+	graph: &mut Graph,
+	mut overflows: Option<&mut Vec<OverflowRecord>>,
+) -> bool {
 	if let Some(o) = overflows.as_deref_mut() {
 		o.clear();
 	}
