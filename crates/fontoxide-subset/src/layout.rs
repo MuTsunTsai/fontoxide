@@ -33,7 +33,7 @@ fn uniq_sort<T: Ord + Copy>(v: impl IntoIterator<Item = T>) -> Vec<T> {
 }
 
 /// `_list_subset`.
-fn list_subset<T: Clone>(l: &[T], indices: &[usize]) -> Vec<T> {
+pub(crate) fn list_subset<T: Clone>(l: &[T], indices: &[usize]) -> Vec<T> {
 	indices.iter().filter_map(|&i| l.get(i).cloned()).collect()
 }
 
@@ -43,18 +43,18 @@ fn index_of<T: Ord>(l: &[T], v: &T) -> Result<usize> {
 		.map_err(|_| fontoxide_ttlib::Error::value("ValueError: x not in list").into())
 }
 
-fn cov(c: &Option<Box<Coverage>>) -> Result<&Coverage> {
+pub(crate) fn cov(c: &Option<Box<Coverage>>) -> Result<&Coverage> {
 	c.as_deref().ok_or_else(|| none_attr("glyphs"))
 }
 
-fn cov_mut(c: &mut Option<Box<Coverage>>) -> Result<&mut Coverage> {
+pub(crate) fn cov_mut(c: &mut Option<Box<Coverage>>) -> Result<&mut Coverage> {
 	c.as_deref_mut().ok_or_else(|| none_attr("glyphs"))
 }
 
 // Coverage and ClassDef.
 
 /// `Coverage.intersect`: the coverage indices of the glyphs in `glyphs`.
-fn cov_intersect(c: &Coverage, glyphs: &GlyphSet) -> Vec<usize> {
+pub(crate) fn cov_intersect(c: &Coverage, glyphs: &GlyphSet) -> Vec<usize> {
 	c.glyphs
 		.iter()
 		.enumerate()
@@ -73,7 +73,7 @@ fn cov_intersect_glyphs(c: &Coverage, glyphs: &GlyphSet) -> GlyphSet {
 }
 
 /// `Coverage.subset`: keeps the glyphs in `glyphs`; returns their old indices.
-fn cov_subset(c: &mut Coverage, glyphs: &GlyphSet) -> Vec<usize> {
+pub(crate) fn cov_subset(c: &mut Coverage, glyphs: &GlyphSet) -> Vec<usize> {
 	let indices = cov_intersect(c, glyphs);
 	c.glyphs.retain(|g| glyphs.contains(g));
 	indices

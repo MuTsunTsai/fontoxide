@@ -228,7 +228,9 @@ pub fn run(args: &Args) -> Result<()> {
 					"repacker": args.repacker,
 				});
 				if op == Op::Subset {
-					job["unicodes"] = serde_json::json!(subset_unicodes(&std::fs::read(font)?));
+					let (unicodes, gids) = subset_request(&std::fs::read(font)?);
+					job["unicodes"] = serde_json::json!(unicodes);
+					job["gids"] = serde_json::json!(gids);
 					job["options"] = serde_json::json!(args.subset_options);
 				}
 				jobs.push(job);
@@ -371,7 +373,8 @@ fn ours(
 			.parse_opts(&argv, &[])
 			.map_err(|e| e.to_string())?;
 		let mut subsetter = fontoxide_subset::Subsetter::new(subset_opts);
-		subsetter.populate(&[], &[], &subset_unicodes(input), "");
+		let (unicodes, gids) = subset_request(input);
+		subsetter.populate(&[], &gids, &unicodes, "");
 		subsetter.subset(&mut font).map_err(|e| e.to_string())?;
 		return font
 			.write(&WriteOptions::default())
@@ -393,8 +396,8 @@ fn ours(
 
 /// The characters the `subset` op keeps: every third code point of the Unicode
 /// `cmap` subtables. Empty if the font cannot be read.
-fn subset_unicodes(data: &[u8]) -> Vec<u32> {
-	let read = || -> fontoxide_ttlib::Result<Vec<u32>> {
+fn subset_request(data: &[u8]) -> (Vec<u32>, Vec<u32>) {
+	let read = || -> fontoxide_ttlib::Result<(Vec<u32>, Vec<u32>)> {
 		let mut font = Font::read(
 			data.to_vec(),
 			ReadOptions {
@@ -402,16 +405,21 @@ fn subset_unicodes(data: &[u8]) -> Vec<u32> {
 				..Default::default()
 			},
 		)?;
-		let Some(cmap) = font.get::<fontoxide_ttlib::tables::Cmap>()? else {
-			return Ok(Vec::new());
-		};
-		let all: std::collections::BTreeSet<u32> = cmap
-			.tables
-			.iter()
-			.filter(|t| t.is_unicode())
-			.flat_map(|t| t.cmap.keys().copied())
-			.collect();
-		Ok(all.into_iter().step_by(3).collect())
+		let all: std::collections::BTreeSet<u32> =
+			match font.get::<fontoxide_ttlib::tables::Cmap>()? {
+				Some(cmap) => cmap
+					.tables
+					.iter()
+					.filter(|t| t.is_unicode())
+					.flat_map(|t| t.cmap.keys().copied())
+					.collect(),
+				None => Default::default(),
+			};
+		if !all.is_empty() {
+			return Ok((all.into_iter().step_by(3).collect(), Vec::new()));
+		}
+		let num_glyphs = font.glyph_order()?.len() as u32;
+		Ok((Vec::new(), (0..num_glyphs).step_by(3).collect()))
 	};
 	read().unwrap_or_default()
 }

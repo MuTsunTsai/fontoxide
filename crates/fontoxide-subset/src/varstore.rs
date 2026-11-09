@@ -188,6 +188,75 @@ fn prune_regions(store: &mut ot::VarStore) -> Result<()> {
 	Ok(())
 }
 
+/// `MultiVarStore.subset_varidxes`: `VarStore.subset_varidxes` without the
+/// parts for the first data and without `calculateNumShorts`.
+pub(crate) fn multi_subset_varidxes(
+	store: &mut ot::MultiVarStore,
+	var_idxes: &BTreeSet<u64>,
+) -> Result<BTreeMap<u64, u64>> {
+	let mut used: BTreeMap<u64, BTreeSet<u64>> = BTreeMap::new();
+	for &v in var_idxes {
+		if v != NO_VARIATION_INDEX {
+			used.entry(v >> 16).or_default().insert(v & 0xFFFF);
+		}
+	}
+
+	let mut new_var_data = Vec::new();
+	let mut map = BTreeMap::from([(NO_VARIATION_INDEX, NO_VARIATION_INDEX)]);
+	for (major, data) in std::mem::take(&mut store.multi_var_data)
+		.into_iter()
+		.enumerate()
+	{
+		let major = major as u64;
+		let Some(used_minors) = used.get(&major) else {
+			continue;
+		};
+		let new_major = new_var_data.len() as u64;
+		let mut data = data.ok_or_else(|| {
+			TtError::ttlib("AttributeError: 'NoneType' object has no attribute 'Item'")
+		})?;
+		let items = std::mem::take(&mut data.item);
+		let mut new_items = Vec::with_capacity(used_minors.len());
+		for &minor in used_minors {
+			let new_minor = new_items.len() as u64;
+			new_items.push(items.get(minor as usize).cloned().ok_or_else(index_error)?);
+			map.insert((major << 16) + minor, (new_major << 16) + new_minor);
+		}
+		data.item = new_items;
+		new_var_data.push(Some(data));
+	}
+	store.multi_var_data_count = Some(new_var_data.len() as u32);
+	store.multi_var_data = new_var_data;
+
+	// prune_regions.
+	let mut used_regions = BTreeSet::new();
+	for data in store.multi_var_data.iter().flatten() {
+		used_regions.extend(data.var_region_index.iter().copied());
+	}
+	let list = store.sparse_var_region_list.as_mut().ok_or_else(|| {
+		TtError::ttlib("AttributeError: 'NoneType' object has no attribute 'Region'")
+	})?;
+	let mut region_map = BTreeMap::new();
+	let mut regions = Vec::with_capacity(used_regions.len());
+	for &i in &used_regions {
+		region_map.insert(i, regions.len() as u16);
+		regions.push(
+			list.region
+				.get(usize::from(i))
+				.cloned()
+				.ok_or_else(index_error)?,
+		);
+	}
+	list.region = regions;
+	list.region_count = Some(list.region.len() as u32);
+	for data in store.multi_var_data.iter_mut().flatten() {
+		for i in &mut data.var_region_index {
+			*i = region_map[i];
+		}
+	}
+	Ok(map)
+}
+
 /// The variation indices of the `Device` tables (`DeltaFormat` 0x8000) and
 /// the format 2 condition tables (`collect_device_varidxes`).
 fn collect_device_varidxes<T: OtTable>(table: &mut T, used: &mut BTreeSet<u64>) -> Result<()> {

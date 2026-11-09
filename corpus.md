@@ -20,7 +20,8 @@ Suggested sources:
 | Legacy Big5 CJK fonts | Non-Unicode cmaps, broken legacy tables |
 
 The `subset` operation is not run by default (`cargo xtask parity --op subset`): both sides
-subset each font to every third character of its Unicode `cmap`, with the default options.
+subset each font to every third character of its Unicode `cmap` (or to every third glyph, if
+it has no such `cmap`), with the default options.
 Other options are passed as `pyftsubset` takes them, e.g.
 `cargo xtask parity --op subset --subset-option=--desubroutinize --subset-option=--no-hinting`;
 their reference outputs are cached apart.

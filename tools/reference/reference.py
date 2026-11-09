@@ -115,7 +115,7 @@ def run_job(job: dict) -> None:
 		options = subset.Options()
 		options.parse_opts(job.get("options", []))
 		subsetter = subset.Subsetter(options)
-		subsetter.populate(unicodes=job["unicodes"])
+		subsetter.populate(unicodes=job["unicodes"], gids=job.get("gids", []))
 		subsetter.subset(font)
 		font.save(output, reorderTables=True)
 		return

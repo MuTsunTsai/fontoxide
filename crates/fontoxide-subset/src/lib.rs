@@ -20,13 +20,16 @@
 
 #![forbid(unsafe_code)]
 
+mod aat;
 mod cff;
 mod cmap;
 mod colr;
 mod glyf;
 mod layout;
+mod math;
 pub mod options;
 mod tables;
+mod varc;
 mod varstore;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -81,6 +84,7 @@ pub struct Subsetter {
 	pub(crate) unicodes_dmaped: BTreeSet<u32>,
 	pub(crate) uvs_dmaped: BTreeSet<(u32, u32)>,
 	pub(crate) glyphs_cmaped: GlyphSet,
+	pub(crate) glyphs_wo_math_closure: GlyphSet,
 	pub(crate) glyphs_mathed: GlyphSet,
 	pub(crate) glyphs_gsubed: GlyphSet,
 	pub(crate) glyphs_colred: GlyphSet,
@@ -245,6 +249,7 @@ impl Subsetter {
 			log::info!("Added first four glyphs to subset");
 		}
 
+		self.glyphs_wo_math_closure = self.glyphs.clone();
 		for tag in [
 			b"MATH", b"GSUB", b"COLR", b"bsln", b"VARC", b"glyf", b"GLYF", b"CFF ",
 		] {
