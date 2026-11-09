@@ -48,7 +48,7 @@ type Point = (f64, f64);
 
 /// `iup_segment`: interpolates the deltas of `coords` between two reference
 /// points.
-fn iup_segment(coords: &[Point], rc1: Point, rd1: Point, rc2: Point, rd2: Point) -> Vec<Point> {
+pub fn iup_segment(coords: &[Point], rc1: Point, rd1: Point, rc2: Point, rd2: Point) -> Vec<Point> {
 	let mut out = [Vec::new(), Vec::new()];
 	for (j, out) in out.iter_mut().enumerate() {
 		let pick = |p: Point| if j == 0 { p.0 } else { p.1 };
@@ -182,6 +182,12 @@ impl<'a> VarStoreInstancer<'a> {
 			location,
 			scalars: RefCell::new(HashMap::new()),
 		}
+	}
+
+	/// Moves to another location (`setLocation`).
+	pub fn set_location(&mut self, location: Location) {
+		self.location = location;
+		self.scalars.borrow_mut().clear();
 	}
 
 	fn var_data(&self, major: usize) -> Result<&'a ot::VarData> {

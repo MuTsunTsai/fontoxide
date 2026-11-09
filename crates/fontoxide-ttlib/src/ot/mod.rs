@@ -23,6 +23,7 @@ pub mod types {
 	pub use crate::generated::ot::*;
 }
 
+pub mod var_store;
 pub mod varc;
 pub mod varmap;
 pub mod writer;

@@ -46,7 +46,7 @@ enum CsId {
 }
 
 /// The private DICT of a charstring.
-fn private_of(top: &TopDict, r: PrivateRef) -> Option<&PrivateDict> {
+pub fn private_of(top: &TopDict, r: PrivateRef) -> Option<&PrivateDict> {
 	match r {
 		PrivateRef::Top => top.private.as_deref(),
 		PrivateRef::Fd(i) => top
@@ -58,7 +58,7 @@ fn private_of(top: &TopDict, r: PrivateRef) -> Option<&PrivateDict> {
 	}
 }
 
-fn private_of_mut(top: &mut TopDict, r: PrivateRef) -> Option<&mut PrivateDict> {
+pub fn private_of_mut(top: &mut TopDict, r: PrivateRef) -> Option<&mut PrivateDict> {
 	match r {
 		PrivateRef::Top => top.private.as_deref_mut(),
 		PrivateRef::Fd(i) => top
@@ -71,7 +71,7 @@ fn private_of_mut(top: &mut TopDict, r: PrivateRef) -> Option<&mut PrivateDict> 
 }
 
 /// The Private DICTs of a font: the FDArray's, or the Top DICT's.
-fn all_privates(top: &TopDict) -> Vec<PrivateRef> {
+pub fn all_privates(top: &TopDict) -> Vec<PrivateRef> {
 	match &top.fd_array {
 		Some(fds) => (0..fds.len()).map(PrivateRef::Fd).collect(),
 		None => vec![PrivateRef::Top],
@@ -82,7 +82,7 @@ fn glyph_count(top: &TopDict) -> usize {
 	top.char_strings.as_ref().map_or(0, |c| c.items.len())
 }
 
-fn glyph_private(top: &TopDict, gid: usize) -> Result<PrivateRef> {
+pub fn glyph_private(top: &TopDict, gid: usize) -> Result<PrivateRef> {
 	top.char_strings
 		.as_ref()
 		.ok_or_else(index_error)?
@@ -135,7 +135,7 @@ fn widths(private: Option<&PrivateDict>) -> Result<(Option<Num>, Option<Num>)> {
 	let p = private.ok_or_else(|| {
 		Error::ttlib("AttributeError: 'NoneType' object has no attribute 'nominalWidthX'")
 	})?;
-	if p.cff2 {
+	if p.cff2 && !p.cff1_order {
 		return Ok((None, None));
 	}
 	let get = |name: &str| p.get(name).as_ref().and_then(num);
@@ -153,7 +153,7 @@ fn py_index(i: i64, len: usize) -> Result<usize> {
 
 /// Decompiles a glyph's charstring and the subroutines it calls
 /// (`T2CharString.decompile`).
-fn decompile(top: &mut TopDict, global: &mut [T2CharString], gid: usize) -> Result<()> {
+pub(crate) fn decompile(top: &mut TopDict, global: &mut [T2CharString], gid: usize) -> Result<()> {
 	run_char_string(top, global, gid, None, None)
 }
 
@@ -1174,4 +1174,32 @@ impl CffFontSet {
 		}
 		Ok(())
 	}
+}
+
+/// `desubroutinizeCharString`: desubroutinizes a charstring in place.
+pub(crate) fn desubroutinize_char_string(
+	top: &mut TopDict,
+	global: &mut [T2CharString],
+	gid: usize,
+) -> Result<()> {
+	decompile(top, global, gid)?;
+	let private_ref = glyph_private(top, gid)?;
+	let private = private_of(top, private_ref);
+	let subrs = Subrs {
+		glyphs: top
+			.char_strings
+			.as_ref()
+			.map_or(&[][..], |c| c.items.as_slice()),
+		local: private.and_then(|p| p.subrs.as_deref()).unwrap_or(&[]),
+		private_ref,
+		global,
+		cff2: private
+			.ok_or_else(|| {
+				Error::ttlib("AttributeError: 'NoneType' object has no attribute 'in_cff2'")
+			})?
+			.cff2,
+	};
+	let program = subrs.desubroutinized(CsId::Glyph(gid), &mut HashMap::new(), 0)?;
+	*program_mut(top, global, CsId::Glyph(gid))? = program;
+	Ok(())
 }

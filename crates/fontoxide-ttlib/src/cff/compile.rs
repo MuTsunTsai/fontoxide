@@ -100,10 +100,21 @@ impl DictComp {
 	/// `DictCompiler.__init__`: the entries that differ from the defaults, with
 	/// the converters' values.
 	fn new(kind: DictKind, cff2: bool, entries: Vec<(&'static str, Value)>) -> Self {
+		Self::with_defaults(kind, cff2, cff2, entries)
+	}
+
+	/// With the defaults of another format than the order, as in a CFF2 Private DICT
+	/// that was converted to CFF.
+	fn with_defaults(
+		kind: DictKind,
+		cff2: bool,
+		defaults_cff2: bool,
+		entries: Vec<(&'static str, Value)>,
+	) -> Self {
 		let mut raw = HashMap::new();
 		for (name, value) in entries {
 			if kind != DictKind::Font
-				&& let Some(default) = dict_default(kind, cff2, name)
+				&& let Some(default) = dict_default(kind, defaults_cff2, name)
 				&& default.py_eq(&value)
 			{
 				continue;
@@ -664,13 +675,14 @@ fn plain_entries(
 }
 
 fn private_comp(private: &PrivateDict) -> DictComp {
+	let order_cff2 = private.cff2 && !private.cff1_order;
 	let entries = plain_entries(
 		DictKind::Private,
-		private.cff2,
+		order_cff2,
 		|n| private.get(n),
 		|_, conv| (conv == Conv::Subrs && private.subrs.is_some()).then_some(Value::Int(0)),
 	);
-	DictComp::new(DictKind::Private, private.cff2, entries)
+	DictComp::with_defaults(DictKind::Private, order_cff2, private.cff2, entries)
 }
 
 fn font_dict_comp(fd: &FontDict) -> DictComp {

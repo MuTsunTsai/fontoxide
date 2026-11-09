@@ -64,6 +64,8 @@ pub struct GlyphSet<'f> {
 	/// The coverage index of each glyph of `VARC`.
 	varc_index: HashMap<u32, usize>,
 	state: RefCell<State>,
+	/// The location of the glyph set (`originalLocation`).
+	original_location: Location,
 	nesting: Cell<usize>,
 }
 
@@ -170,8 +172,26 @@ impl<'f> GlyphSet<'f> {
 			varc,
 			varc_index,
 			state: RefCell::new(State::default()),
+			original_location: Location::new(),
 			nesting: Cell::new(0),
 		})
+	}
+
+	/// The glyph set of a font at a normalized location
+	/// (`TTFont.getGlyphSet(location=location, normalized=True)`).
+	pub fn with_location(font: &'f mut Font, location: Location) -> Result<Self> {
+		let mut glyph_set = Self::new(font)?;
+		glyph_set.state.borrow_mut().location = location.clone();
+		glyph_set.original_location = location;
+		Ok(glyph_set)
+	}
+
+	/// The `glyf` table that this draws from, if it does.
+	pub fn glyf_table(&self) -> Option<&'f Glyf> {
+		match self.outlines {
+			Outlines::Glyf { glyf, .. } => Some(glyf),
+			Outlines::Cff { .. } => None,
+		}
 	}
 
 	/// The glyph order.
@@ -528,7 +548,7 @@ impl<'f> GlyphSet<'f> {
 			let saved = {
 				let mut state = self.state.borrow_mut();
 				let mut new = if reset {
-					Location::new()
+					self.original_location.clone()
 				} else {
 					state.location.clone()
 				};

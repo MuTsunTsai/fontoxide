@@ -15,6 +15,7 @@ use fontoxide_misc::xml_writer::{AttrValue, XmlWriter};
 
 use fontoxide_pens::Pen;
 
+use crate::binary::fit;
 use crate::glyph_order::GlyphOrder;
 use crate::sstruct::eval;
 use crate::table::{Table, TableType};
@@ -1111,6 +1112,122 @@ impl Glyf {
 		Ok((all, ends, flags))
 	}
 
+	/// `_getCoordinatesAndControls`: the coordinates of a glyph for `gvar`, rounded
+	/// and with the four phantom points, and its contour ends (the indices of the
+	/// components, for a composite glyph). `h_metrics` and `v_metrics` are the
+	/// metrics of `hmtx` and `vmtx`.
+	#[allow(clippy::type_complexity)]
+	pub fn coordinates_and_controls(
+		&mut self,
+		gid: u32,
+		order: &GlyphOrder,
+		h_metrics: &BTreeMap<u32, (u16, i16)>,
+		v_metrics: Option<&BTreeMap<u32, (u16, i16)>>,
+	) -> Result<(Vec<(f64, f64)>, Vec<i64>)> {
+		// The bounds are as they are, also those read from TTX: `_getPhantomPoints`
+		// only calculates them for a glyph without any, which are all 0 here.
+		let g = self.glyph(gid, order)?;
+		let (mut coords, end_pts) = if g.is_composite() {
+			let coords = g
+				.components
+				.iter()
+				.map(|c| match c.placement {
+					ComponentPlacement::Offset { x, y } => (x.value(), y.value()),
+					ComponentPlacement::Points { .. } => (0.0, 0.0),
+				})
+				.collect();
+			(coords, (0..g.components.len() as i64).collect())
+		} else {
+			let (coords, end_pts, _) = self.coordinates(gid, order, false)?;
+			(coords, end_pts)
+		};
+		// `_getPhantomPoints`.
+		let g = self.glyph(gid, order)?;
+		let missing = || key_error(order, gid);
+		let &(advance, lsb) = h_metrics.get(&gid).ok_or_else(missing)?;
+		let left = (g.x_min - i64::from(lsb)) as f64;
+		let right = left + f64::from(advance);
+		let (top, bottom) = match v_metrics.filter(|m| !m.is_empty()) {
+			Some(metrics) => {
+				let &(advance, tsb) = metrics.get(&gid).ok_or_else(missing)?;
+				let top = (i64::from(tsb) + g.y_max) as f64;
+				(top, top - f64::from(advance))
+			}
+			None => (0.0, 0.0),
+		};
+		coords.extend([(left, 0.0), (right, 0.0), (0.0, top), (0.0, bottom)]);
+		for c in &mut coords {
+			*c = (ot_round(c.0) as f64, ot_round(c.1) as f64);
+		}
+		Ok((coords, end_pts))
+	}
+
+	/// `_setCoordinates`: sets the coordinates of a glyph, which end with the four
+	/// phantom points, and from those and its bounds the metrics.
+	pub fn set_coordinates(
+		&mut self,
+		gid: u32,
+		order: &GlyphOrder,
+		coords: &[(f64, f64)],
+		h_metrics: &mut BTreeMap<u32, (u16, i16)>,
+		v_metrics: Option<&mut BTreeMap<u32, (u16, i16)>>,
+	) -> Result<()> {
+		let Some(split) = coords.len().checked_sub(4) else {
+			return Err(Error::Assertion("len(coord) >= 4".into()));
+		};
+		let (points, phantoms) = coords.split_at(split);
+		let (left, right, top, bottom) =
+			(phantoms[0].0, phantoms[1].0, phantoms[2].1, phantoms[3].1);
+		// Whole numbers are integers, as `GlyphCoordinates.__getitem__` gives them.
+		let number = |v: f64| {
+			if v.fract() == 0.0 {
+				Number::Int(v as i64)
+			} else {
+				Number::Float(v)
+			}
+		};
+		let g = self
+			.glyphs
+			.get_mut(&gid)
+			.ok_or_else(|| key_error(order, gid))?;
+		g.data = None;
+		if g.is_composite() {
+			if points.len() != g.components.len() {
+				return Err(Error::Assertion(
+					"len(coord) == len(glyph.components)".into(),
+				));
+			}
+			for (p, c) in points.iter().zip(&mut g.components) {
+				if let ComponentPlacement::Offset { x, y } = &mut c.placement {
+					*x = number(p.0);
+					*y = number(p.1);
+				}
+			}
+		} else if g.number_of_contours == 0 {
+			if !points.is_empty() {
+				return Err(Error::Assertion("len(coord) == 0".into()));
+			}
+		} else {
+			if points.len() != g.coordinates.len() {
+				return Err(Error::Assertion(
+					"len(coord) == len(glyph.coordinates)".into(),
+				));
+			}
+			g.coordinates = points.to_vec();
+		}
+		self.recalc_bounds(gid, order, &mut HashSet::new(), &mut vec![gid])?;
+		let g = self.glyph(gid, order)?;
+		let advance = ot_round(right - left).max(0);
+		let lsb = ot_round(g.x_min as f64 - left);
+		h_metrics.insert(gid, (fit(advance, "advanceWidth")?, fit(lsb, "lsb")?));
+		if let Some(metrics) = v_metrics {
+			let advance = ot_round(top - bottom).max(0);
+			let tsb = ot_round(top - g.y_max as f64);
+			metrics.insert(gid, (fit(advance, "advanceHeight")?, fit(tsb, "tsb")?));
+		}
+		Ok(())
+	}
+
 	/// `recalcBounds`.
 	fn recalc_bounds(
 		&mut self,
@@ -1241,7 +1358,7 @@ impl Glyf {
 
 	/// `getCompositeMaxpValues`: points, contours and component depth of a
 	/// flattened composite glyph.
-	pub(crate) fn composite_maxp_values(
+	pub fn composite_maxp_values(
 		&self,
 		gid: u32,
 		order: &GlyphOrder,

@@ -30,6 +30,15 @@ pub struct Args {
 	/// `--subset-option=--desubroutinize`).
 	#[arg(long = "subset-option", allow_hyphen_values = true)]
 	subset_options: Vec<String>,
+	/// The limits of the `instance` op: `pin` pins all axes halfway between their
+	/// default and maximum, `drop` pins them at their defaults, `first` pins the
+	/// first axis only, `range` limits the upper half of each axis, and `move`
+	/// also moves the default of each axis.
+	#[arg(long = "instance-limits", value_enum, default_value = "pin")]
+	instance_limits: InstanceLimits,
+	/// An option of the `instance` op, in addition to the defaults; repeatable.
+	#[arg(long = "instance-option", value_enum)]
+	instance_options: Vec<InstanceOption>,
 	/// Ignore cached reference outputs and regenerate them.
 	#[arg(long)]
 	rebuild_reference: bool,
@@ -64,6 +73,105 @@ pub enum Op {
 	/// Subset the font to every third character of its `cmap`, with the default
 	/// options. Not run unless asked for (`--op subset`).
 	Subset,
+	/// Instantiate a variable font at `--instance-limits`. Not run unless asked for
+	/// (`--op instance`).
+	Instance,
+}
+
+/// See [`Args::instance_options`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+pub enum InstanceOption {
+	/// `updateFontNames=True`.
+	UpdateNames,
+	/// `optimize=False`.
+	NoOptimize,
+	/// `overlap=OverlapMode.KEEP_AND_DONT_SET_FLAGS`.
+	NoOverlapFlag,
+	/// `static=True`.
+	Static,
+	/// `downgradeCFF2=True`.
+	DowngradeCff2,
+}
+
+impl InstanceOption {
+	fn name(self) -> &'static str {
+		match self {
+			InstanceOption::UpdateNames => "update-names",
+			InstanceOption::NoOptimize => "no-optimize",
+			InstanceOption::NoOverlapFlag => "no-overlap-flag",
+			InstanceOption::Static => "static",
+			InstanceOption::DowngradeCff2 => "downgrade-cff2",
+		}
+	}
+}
+
+/// See [`Args::instance_limits`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum InstanceLimits {
+	Pin,
+	Drop,
+	First,
+	Range,
+	Move,
+}
+
+impl InstanceLimits {
+	fn name(self) -> &'static str {
+		match self {
+			InstanceLimits::Pin => "pin",
+			InstanceLimits::Drop => "drop",
+			InstanceLimits::First => "first",
+			InstanceLimits::Range => "range",
+			InstanceLimits::Move => "move",
+		}
+	}
+
+	/// The limits for a font, by axis tag; empty if it is not a variable font. A
+	/// missing value keeps the one of `fvar`.
+	fn for_font(self, data: &[u8]) -> Vec<(String, Option<[Option<f64>; 3]>)> {
+		let read = || -> fontoxide_ttlib::Result<Vec<(String, f64, f64, f64)>> {
+			let mut font = Font::read(data.to_vec(), ReadOptions::default())?;
+			Ok(match font.get::<fontoxide_ttlib::tables::Fvar>()? {
+				Some(fvar) => fvar
+					.axes
+					.iter()
+					.map(|a| (a.tag_text(), a.min_value, a.default_value, a.max_value))
+					.collect(),
+				None => Vec::new(),
+			})
+		};
+		let axes = read().unwrap_or_default();
+		let mut limits = Vec::new();
+		for (i, (tag, min, default, max)) in axes.into_iter().enumerate() {
+			let middle = default + (max - default) / 2.0;
+			let value = match self {
+				InstanceLimits::Pin => Some([Some(middle); 3]),
+				InstanceLimits::Drop => None,
+				InstanceLimits::First if i == 0 => Some([Some(middle); 3]),
+				InstanceLimits::First => continue,
+				InstanceLimits::Range => Some([Some(min), None, Some(middle)]),
+				InstanceLimits::Move => Some([Some(min), Some(middle), Some(max)]),
+			};
+			limits.push((tag, value));
+		}
+		limits
+	}
+
+	fn to_axis_limits(self, data: &[u8]) -> fontoxide_varlib::instancer::AxisLimits {
+		self.for_font(data)
+			.into_iter()
+			.map(|(tag, value)| {
+				let triple = value.map(|[minimum, default, maximum]| {
+					fontoxide_varlib::instancer::AxisTriple {
+						minimum,
+						default,
+						maximum,
+					}
+				});
+				(tag, triple)
+			})
+			.collect()
+	}
 }
 
 impl Op {
@@ -83,13 +191,14 @@ impl Op {
 			Op::TtcRoundtrip => "ttc-roundtrip",
 			Op::Fromttx => "fromttx",
 			Op::Subset => "subset",
+			Op::Instance => "instance",
 		}
 	}
 
 	fn extension(self) -> &'static str {
 		match self {
 			Op::Ttx | Op::TtcTtx => "ttx",
-			Op::Roundtrip | Op::TtcRoundtrip | Op::Fromttx | Op::Subset => "bin",
+			Op::Roundtrip | Op::TtcRoundtrip | Op::Fromttx | Op::Subset | Op::Instance => "bin",
 		}
 	}
 
@@ -174,6 +283,15 @@ pub fn run(args: &Args) -> Result<()> {
 		flavor.push_str("-s");
 		flavor.extend(digest[..4].iter().map(|b| format!("{b:02x}")));
 	}
+	if ops.contains(&Op::Instance) {
+		// Outputs with other limits are cached apart.
+		flavor.push_str("-i");
+		flavor.push_str(args.instance_limits.name());
+		for option in &args.instance_options {
+			flavor.push('-');
+			flavor.push_str(option.name());
+		}
+	}
 	let ref_dir = root()
 		.join("target")
 		.join("parity")
@@ -187,12 +305,19 @@ pub fn run(args: &Args) -> Result<()> {
 		let key = content_key(font)?;
 		let collection = is_collection(font);
 		let ttx_input = is_ttx_input(font);
+		let instance_limits = if ops.contains(&Op::Instance) && !ttx_input {
+			args.instance_limits.for_font(&std::fs::read(font)?)
+		} else {
+			Vec::new()
+		};
 		let ttx_ref = ref_dir.join(Op::Ttx.name()).join(format!("{key}.ttx"));
 		let mut scheduled_ttx = false;
 		for &op in ops
 			.iter()
 			.filter(|op| !op.is_collection_op() || collection)
 			.filter(|&&op| !ttx_input || op == Op::Fromttx)
+			// Only variable fonts can be instantiated.
+			.filter(|&&op| op != Op::Instance || !instance_limits.is_empty())
 		{
 			let out = ref_dir
 				.join(op.name())
@@ -233,6 +358,19 @@ pub fn run(args: &Args) -> Result<()> {
 					job["gids"] = serde_json::json!(gids);
 					job["options"] = serde_json::json!(args.subset_options);
 				}
+				if op == Op::Instance {
+					job["options"] = serde_json::json!(
+						args.instance_options
+							.iter()
+							.map(|o| o.name())
+							.collect::<Vec<_>>()
+					);
+					let limits: serde_json::Map<String, serde_json::Value> = instance_limits
+						.iter()
+						.map(|(tag, value)| (tag.clone(), serde_json::json!(value)))
+						.collect();
+					job["limits"] = serde_json::Value::Object(limits);
+				}
 				jobs.push(job);
 				if op == Op::Ttx {
 					scheduled_ttx = true;
@@ -269,7 +407,14 @@ pub fn run(args: &Args) -> Result<()> {
 			});
 		};
 		match (
-			ours(op, &input, args.repacker, &args.subset_options),
+			ours(
+				op,
+				&input,
+				args.repacker,
+				&args.subset_options,
+				args.instance_limits,
+				&args.instance_options,
+			),
 			reference,
 		) {
 			(Ok(a), Ok(b)) => {
@@ -319,6 +464,8 @@ fn ours(
 	input: &[u8],
 	repacker: bool,
 	subset_options: &[String],
+	instance_limits: InstanceLimits,
+	instance_options: &[InstanceOption],
 ) -> Result<Vec<u8>, String> {
 	let options = ReadOptions {
 		font_number: Some(0),
@@ -380,13 +527,35 @@ fn ours(
 			.write(&WriteOptions::default())
 			.map_err(|e| e.to_string());
 	}
+	if op == Op::Instance {
+		let mut font = Font::read(input.to_vec(), options).map_err(|e| e.to_string())?;
+		fontoxide_varlib::instancer::instantiate_variable_font(
+			&mut font,
+			&instance_limits.to_axis_limits(input),
+			&fontoxide_varlib::instancer::InstancerOptions {
+				optimize: !instance_options.contains(&InstanceOption::NoOptimize),
+				overlap: if instance_options.contains(&InstanceOption::NoOverlapFlag) {
+					fontoxide_varlib::instancer::OverlapMode::KeepAndDontSetFlags
+				} else {
+					fontoxide_varlib::instancer::OverlapMode::KeepAndSetFlags
+				},
+				make_static: instance_options.contains(&InstanceOption::Static),
+				update_font_names: instance_options.contains(&InstanceOption::UpdateNames),
+				downgrade_cff2: instance_options.contains(&InstanceOption::DowngradeCff2),
+			},
+		)
+		.map_err(|e| e.to_string())?;
+		return font
+			.write(&WriteOptions::default())
+			.map_err(|e| e.to_string());
+	}
 	let mut font = Font::read(input.to_vec(), options).map_err(|e| e.to_string())?;
 	match op {
 		Op::Ttx => font
 			.to_ttx(&TtxOptions::default())
 			.map(String::into_bytes)
 			.map_err(|e| e.to_string()),
-		Op::Roundtrip | Op::TtcTtx | Op::TtcRoundtrip | Op::Fromttx | Op::Subset => {
+		Op::Roundtrip | Op::TtcTtx | Op::TtcRoundtrip | Op::Fromttx | Op::Subset | Op::Instance => {
 			font.ensure_decompiled().map_err(|e| e.to_string())?;
 			font.write(&WriteOptions::default())
 				.map_err(|e| e.to_string())
@@ -454,7 +623,7 @@ fn compare(op: Op, ours: &[u8], reference: &[u8]) -> Vec<(String, Outcome, Optio
 	}
 	let (a, b) = match op {
 		Op::Ttx | Op::TtcTtx => (split_ttx(ours), split_ttx(reference)),
-		Op::Roundtrip | Op::TtcRoundtrip | Op::Fromttx | Op::Subset => {
+		Op::Roundtrip | Op::TtcRoundtrip | Op::Fromttx | Op::Subset | Op::Instance => {
 			match (split_sfnt(ours), split_sfnt(reference)) {
 				(Ok(a), Ok(b)) => (a, b),
 				(Err(e), _) | (_, Err(e)) => {
@@ -477,7 +646,7 @@ fn compare(op: Op, ours: &[u8], reference: &[u8]) -> Vec<(String, Outcome, Optio
 				Outcome::Mismatch,
 				Some(match op {
 					Op::Ttx | Op::TtcTtx => first_line_difference(x, y),
-					Op::Roundtrip | Op::TtcRoundtrip | Op::Fromttx | Op::Subset => {
+					Op::Roundtrip | Op::TtcRoundtrip | Op::Fromttx | Op::Subset | Op::Instance => {
 						first_difference(x, y)
 					}
 				}),

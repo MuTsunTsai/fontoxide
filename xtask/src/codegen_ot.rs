@@ -1542,6 +1542,10 @@ impl Gen<'_> {
 			),
 		] {
 			let _ = writeln!(self.out, "\tfn {method}({args}) -> Result<()> {{");
+			if method == "visit_mut" {
+				// The table as a whole, which the visitor can replace by another format.
+				self.line("\t\tf(self)?;");
+			}
 			self.line("\t\tmatch self {");
 			for (fmt, _) in &variants {
 				let _ = writeln!(self.out, "\t\t\tSelf::Format{fmt}(v) => v.{call},");

@@ -110,6 +110,9 @@ impl Table for Maxp {
 		if font.contains(glyf) && font.is_loaded(glyf) && font.recalc_bboxes {
 			self.recalc(font)?;
 		}
+		// Loading the glyph order may need this table, which is detached from the
+		// font while compiling; a copy stands in until that is over.
+		font.insert(self.clone_table());
 		self.num_glyphs = crate::binary::fit(font.glyph_order()?.len(), "numGlyphs")?;
 		if self.table_version != VERSION_0_5 {
 			self.table_version = 0x0001_0000;

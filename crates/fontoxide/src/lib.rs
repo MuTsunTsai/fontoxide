@@ -12,6 +12,7 @@
 //! | [`subset`]           | `fontTools.subset` |
 //! | [`ttlib`]            | `fontTools.ttLib`  |
 //! | [`unicodedata`]      | `fontTools.unicodedata` |
+//! | [`varlib`]           | `fontTools.varLib` |
 
 pub use fontoxide_agl as agl;
 pub use fontoxide_misc as misc;
@@ -20,6 +21,7 @@ pub use fontoxide_repack as repack;
 pub use fontoxide_subset as subset;
 pub use fontoxide_ttlib as ttlib;
 pub use fontoxide_unicodedata as unicodedata;
+pub use fontoxide_varlib as varlib;
 
 /// The fontTools release whose behavior this version of fontoxide matches.
 pub use fontoxide_ttlib::FONTTOOLS_VERSION;

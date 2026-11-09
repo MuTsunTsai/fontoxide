@@ -7,6 +7,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use fontoxide_ttlib::ot::table::OtTable;
 use fontoxide_ttlib::ot::types as ot;
+use fontoxide_ttlib::ot::var_store::{calculate_num_shorts, prune_regions};
 use fontoxide_ttlib::tables::{Gdef, Gpos, Gsub, Hvar, Jstf, Math, Vvar};
 use fontoxide_ttlib::{Error as TtError, Font};
 
@@ -21,63 +22,6 @@ fn index_error() -> TtError {
 
 fn key_error(k: u64) -> TtError {
 	TtError::ttlib(format!("KeyError: {k}"))
-}
-
-/// The bit length of `i`, but 7 for -128 and 16 for -65536 (the magic of
-/// `calculateNumShorts`).
-fn bit_length(i: i64) -> u32 {
-	let v = i + i64::from(i < -1);
-	64 - v.unsigned_abs().leading_zeros()
-}
-
-/// `VarData.calculateNumShorts(optimize=True)`: orders the columns from the
-/// widest to the narrowest, dropping the ones that are all zeros.
-pub(crate) fn calculate_num_shorts(data: &mut ot::VarData) {
-	let count = data
-		.var_region_count
-		.map_or(data.var_region_index.len(), |c| c as usize);
-	let mut bit_lengths = vec![0u32; count];
-	for item in &data.item {
-		for (b, &i) in bit_lengths.iter_mut().zip(item) {
-			*b = (*b).max(bit_length(i));
-		}
-	}
-	let byte_lengths: Vec<u32> = bit_lengths
-		.iter()
-		.map(|&b| if b != 0 { (b + 8) >> 3 } else { 0 })
-		.collect();
-	// https://github.com/fonttools/fonttools/issues/2279
-	let long_words = byte_lengths.iter().any(|&b| b > 2);
-
-	// Reorder columns such that wider columns come before narrower columns
-	let mut mapping: Vec<usize> = Vec::new();
-	mapping.extend((0..byte_lengths.len()).filter(|&i| byte_lengths[i] > 2));
-	mapping.extend((0..byte_lengths.len()).filter(|&i| byte_lengths[i] == 2));
-	mapping.extend((0..byte_lengths.len()).filter(|&i| byte_lengths[i] == 1));
-	let byte_lengths: Vec<u32> = mapping.iter().map(|&i| byte_lengths[i]).collect();
-	data.var_region_index = mapping
-		.iter()
-		.filter_map(|&i| data.var_region_index.get(i).copied())
-		.collect();
-	for item in &mut data.item {
-		*item = mapping
-			.iter()
-			.filter_map(|&i| item.get(i).copied())
-			.collect();
-	}
-
-	let last = |min: u32| {
-		byte_lengths
-			.iter()
-			.rposition(|&b| b > min)
-			.map_or(0, |i| i + 1) as u16
-	};
-	data.num_shorts = if long_words {
-		last(2) | 0x8000
-	} else {
-		last(1)
-	};
-	data.var_region_count = Some(data.var_region_index.len() as u32);
 }
 
 /// `VarStore.subset_varidxes`: keeps the delta sets of `var_idxes`, and returns
@@ -146,46 +90,13 @@ pub(crate) fn subset_varidxes(
 		}
 		data.item = new_items;
 		data.item_count = Some(data.item.len() as u32);
-		calculate_num_shorts(&mut data);
+		calculate_num_shorts(&mut data, true);
 		new_var_data.push(Some(data));
 	}
 	store.var_data_count = Some(new_var_data.len() as u32);
 	store.var_data = new_var_data;
 	prune_regions(store)?;
 	Ok(map)
-}
-
-/// `VarStore.prune_regions`: drops the regions that no data uses.
-fn prune_regions(store: &mut ot::VarStore) -> Result<()> {
-	// Collect.
-	let mut used = BTreeSet::new();
-	for data in store.var_data.iter().flatten() {
-		used.extend(data.var_region_index.iter().copied());
-	}
-	// Subset.
-	let list = store.var_region_list.as_mut().ok_or_else(|| {
-		TtError::ttlib("AttributeError: 'NoneType' object has no attribute 'Region'")
-	})?;
-	let mut map = BTreeMap::new();
-	let mut regions = Vec::with_capacity(used.len());
-	for &i in &used {
-		map.insert(i, regions.len() as u16);
-		regions.push(
-			list.region
-				.get(usize::from(i))
-				.cloned()
-				.ok_or_else(index_error)?,
-		);
-	}
-	list.region = regions;
-	list.region_count = Some(list.region.len() as u32);
-	// Map.
-	for data in store.var_data.iter_mut().flatten() {
-		for i in &mut data.var_region_index {
-			*i = map[i];
-		}
-	}
-	Ok(())
 }
 
 /// `MultiVarStore.subset_varidxes`: `VarStore.subset_varidxes` without the
@@ -259,7 +170,7 @@ pub(crate) fn multi_subset_varidxes(
 
 /// The variation indices of the `Device` tables (`DeltaFormat` 0x8000) and
 /// the format 2 condition tables (`collect_device_varidxes`).
-fn collect_device_varidxes<T: OtTable>(table: &mut T, used: &mut BTreeSet<u64>) -> Result<()> {
+pub fn collect_device_varidxes<T: OtTable>(table: &mut T, used: &mut BTreeSet<u64>) -> Result<()> {
 	table.visit_mut(&mut |x| {
 		if let Some(d) = x.downcast_mut::<ot::Device>() {
 			if d.delta_format == 0x8000 {
@@ -275,7 +186,7 @@ fn collect_device_varidxes<T: OtTable>(table: &mut T, used: &mut BTreeSet<u64>) 
 
 /// Maps the variation indices that [`collect_device_varidxes`] finds
 /// (`remap_device_varidxes`).
-fn remap_device_varidxes<T: OtTable>(table: &mut T, map: &BTreeMap<u64, u64>) -> Result<()> {
+pub fn remap_device_varidxes<T: OtTable>(table: &mut T, map: &BTreeMap<u64, u64>) -> Result<()> {
 	table.visit_mut(&mut |x| {
 		if let Some(d) = x.downcast_mut::<ot::Device>() {
 			if d.delta_format == 0x8000 {
@@ -446,19 +357,4 @@ pub(crate) fn vvar_subset_glyphs(s: &Subsetter, font: &mut Font) -> Result<bool>
 			&mut t.v_org_map,
 		],
 	)
-}
-
-#[cfg(test)]
-mod tests {
-	use super::*;
-
-	#[test]
-	fn bit_lengths() {
-		assert_eq!(bit_length(0), 0);
-		assert_eq!(bit_length(-1), 1);
-		assert_eq!(bit_length(127), 7);
-		assert_eq!(bit_length(-128), 7);
-		assert_eq!(bit_length(128), 8);
-		assert_eq!(bit_length(-65536), 16);
-	}
 }

@@ -34,7 +34,8 @@ pub mod options;
 mod svg;
 mod tables;
 mod varc;
-mod varstore;
+#[doc(hidden)]
+pub mod varstore;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
@@ -42,6 +43,7 @@ use std::sync::Arc;
 use fontoxide_ttlib::{Font, GlyphOrder, Tag};
 
 pub use cli::{load_font, main, parse_gids, parse_glyphs, parse_unicodes, save_font};
+pub use layout::prune_table_lookups as prune_lookups;
 pub use options::{Item, Options};
 
 /// An error while subsetting.

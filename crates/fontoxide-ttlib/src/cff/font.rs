@@ -298,6 +298,9 @@ pub struct PrivateDict {
 	/// Entries set to `None`, which hides their defaults too (as
 	/// `remove_hints` does).
 	pub cleared: BTreeSet<&'static str>,
+	/// Of a CFF2 font that was converted to CFF: the order is that of CFF, while the
+	/// defaults stay those of CFF2.
+	pub cff1_order: bool,
 }
 
 /// A font DICT of the FDArray (`FontDict`).
@@ -458,6 +461,7 @@ impl PrivateDict {
 			values,
 			subrs,
 			cleared: BTreeSet::new(),
+			cff1_order: false,
 		})
 	}
 
@@ -1013,6 +1017,77 @@ impl CffFontSet {
 		run_char_string(top, &mut self.global_subrs, gid, pen, None)
 	}
 
+	/// The width of a glyph of the first font after drawing it (`charString.width`), with
+	/// `defaultWidthX` and `nominalWidthX` of its Private DICT (`None` in CFF2).
+	pub fn char_string_width(
+		&mut self,
+		gid: usize,
+	) -> Result<(Option<f64>, Option<f64>, Option<f64>)> {
+		struct NullPen;
+		impl Pen for NullPen {
+			fn move_to(&mut self, _: fontoxide_pens::Point) -> fontoxide_pens::Result<()> {
+				Ok(())
+			}
+			fn line_to(&mut self, _: fontoxide_pens::Point) -> fontoxide_pens::Result<()> {
+				Ok(())
+			}
+			fn curve_to(&mut self, _: &[fontoxide_pens::Point]) -> fontoxide_pens::Result<()> {
+				Ok(())
+			}
+			fn q_curve_to(
+				&mut self,
+				_: &[fontoxide_pens::Point],
+				_: Option<fontoxide_pens::Point>,
+			) -> fontoxide_pens::Result<()> {
+				Ok(())
+			}
+			fn close_path(&mut self) -> fontoxide_pens::Result<()> {
+				Ok(())
+			}
+			fn end_path(&mut self) -> fontoxide_pens::Result<()> {
+				Ok(())
+			}
+			fn add_component(
+				&mut self,
+				_: &str,
+				_: fontoxide_misc::transform::Transform,
+			) -> fontoxide_pens::Result<()> {
+				Ok(())
+			}
+		}
+		let top = self.top_dicts.first_mut().ok_or_else(index_error)?;
+		let mut width = None;
+		run_char_string_with_width(
+			top,
+			&mut self.global_subrs,
+			gid,
+			Some(&mut NullPen),
+			None,
+			Some(&mut width),
+		)?;
+		let private_ref = top
+			.char_strings
+			.as_ref()
+			.and_then(|c| c.privates.get(gid).copied())
+			.ok_or_else(index_error)?;
+		let private = match private_ref {
+			PrivateRef::Top => top.private.as_deref(),
+			PrivateRef::Fd(i) => top
+				.fd_array
+				.as_ref()
+				.and_then(|f| f.get(i))
+				.and_then(|f| f.private.as_deref()),
+			PrivateRef::None => None,
+		};
+		let (default, nominal) = match private {
+			Some(p) if !p.cff2 || p.cff1_order => {
+				(p.number("defaultWidthX"), p.number("nominalWidthX"))
+			}
+			_ => (None, None),
+		};
+		Ok((width, default, nominal))
+	}
+
 	/// Decompiles all charstrings of the first font (`decompileAllCharStrings`).
 	pub fn decompile_all_char_strings(&mut self) -> Result<()> {
 		for t in 0..self.top_dicts.len() {
@@ -1242,6 +1317,18 @@ pub(crate) fn run_char_string(
 	pen: Option<&mut dyn Pen>,
 	blender: Option<Blender<'_>>,
 ) -> Result<()> {
+	run_char_string_with_width(top, global_subrs, gid, pen, blender, None)
+}
+
+/// [`run_char_string`], with the width found when drawing.
+fn run_char_string_with_width(
+	top: &mut TopDict,
+	global_subrs: &mut [T2CharString],
+	gid: usize,
+	pen: Option<&mut dyn Pen>,
+	blender: Option<Blender<'_>>,
+	width_out: Option<&mut Option<f64>>,
+) -> Result<()> {
 	let TopDict {
 		char_strings,
 		private,
@@ -1273,7 +1360,7 @@ pub(crate) fn run_char_string(
 	}
 	// The Private DICT decides: one read from TTX is a CFF one, also in CFF2.
 	let (nominal, default, vsindex) = match &private {
-		Some(p) if !p.cff2 => (
+		Some(p) if !p.cff2 || p.cff1_order => (
 			p.number("nominalWidthX"),
 			p.number("defaultWidthX"),
 			p.get("vsindex").and_then(|v| v.int().ok()),
@@ -1306,7 +1393,12 @@ pub(crate) fn run_char_string(
 		num_regions: &regions,
 		blender,
 	};
-	let result = Interpreter::new(ctx, pen).execute(&mut cs);
+	let mut interpreter = Interpreter::new(ctx, pen);
+	let result = interpreter.execute(&mut cs);
+	let width = interpreter.width();
 	char_strings.items[gid] = cs;
+	if let Some(out) = width_out {
+		*out = width;
+	}
 	result
 }

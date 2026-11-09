@@ -20,6 +20,7 @@ fontoxide-repack.workspace = true
 fontoxide-subset.workspace = true
 fontoxide-unicodedata.workspace = true
 fontoxide-ttlib.workspace = true
+fontoxide-varlib.workspace = true
 
 [lints]
 workspace = true

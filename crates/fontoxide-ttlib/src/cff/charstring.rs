@@ -232,7 +232,7 @@ impl T2CharString {
 	}
 
 	/// The token at `index`, from the bytecode or the program (`getToken`).
-	fn token(&self, index: usize) -> Result<Option<(Token, usize)>> {
+	pub(crate) fn token(&self, index: usize) -> Result<Option<(Token, usize)>> {
 		match &self.bytecode {
 			Some(b) => read_token(b, index),
 			None => Ok(self.program.get(index).map(|t| (t.clone(), index + 1))),
@@ -240,7 +240,7 @@ impl T2CharString {
 	}
 
 	/// The mask bytes at `index` (`getBytes`).
-	fn bytes(&self, index: usize, n: usize) -> Result<(Vec<u8>, usize)> {
+	pub(crate) fn bytes(&self, index: usize, n: usize) -> Result<(Vec<u8>, usize)> {
 		let (bytes, next) = match &self.bytecode {
 			Some(b) => {
 				let end = (index + n).min(b.len());
@@ -468,6 +468,7 @@ pub struct Interpreter<'a, 'p> {
 	num_regions: Option<i64>,
 	vs_index: i64,
 	got_width: bool,
+	width: Option<f64>,
 	current: (f64, f64),
 	saw_move_to: bool,
 	subr_level: usize,
@@ -490,6 +491,7 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 			num_regions: None,
 			vs_index: 0,
 			got_width: false,
+			width: None,
 			current: (0.0, 0.0),
 			saw_move_to: false,
 			subr_level: 0,
@@ -499,6 +501,11 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 
 	fn drawing(&self) -> bool {
 		self.pen.is_some()
+	}
+
+	/// The width of what was drawn (`width`).
+	pub fn width(&self) -> Option<f64> {
+		self.width
 	}
 
 	/// Runs a charstring, decompiling it if it is still bytecode (`execute`).
@@ -573,7 +580,10 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 						"CFF2 CharStrings must not have an initial width value".into(),
 					));
 				}
-				args.remove(0);
+				let width = args.remove(0);
+				self.width = self.ctx.nominal_width_x.map(|n| n + width.value());
+			} else {
+				self.width = self.ctx.default_width_x;
 			}
 			self.got_width = true;
 		}

@@ -1944,6 +1944,7 @@ fn prune_trailing_variation_records(fv: &mut ot::FeatureVariations) {
 	}) {
 		fv.feature_variation_record.pop();
 	}
+	fv.feature_variation_count = Some(fv.feature_variation_record.len() as u32);
 }
 
 fn remap_lookup_variation_records(
@@ -2041,6 +2042,16 @@ fn table_subset_lookups<T: Layout>(t: &mut T, lookup_indices: &[u16]) -> Result<
 	let feature_indices = uniq_sort(feature_indices);
 	subset_features(t, &feature_indices, true);
 	script_list_subset_features(t, &feature_indices)
+}
+
+/// `prune_lookups()` of `GSUB` or `GPOS`: removes the lookups that no feature
+/// refers to.
+pub fn prune_table_lookups(font: &mut Font, tag: Tag) -> Result<()> {
+	if tag == *b"GSUB" {
+		prune_lookups(&mut font.require::<Gsub>()?.table, true)
+	} else {
+		prune_lookups(&mut font.require::<Gpos>()?.table, true)
+	}
 }
 
 /// `prune_lookups`: removes (`remap`) or neuters the lookups that no feature

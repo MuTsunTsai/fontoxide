@@ -741,6 +741,7 @@ impl OtTable for AlternateSubstRaw {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -1195,6 +1196,7 @@ impl OtTable for Anchor {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -1562,6 +1564,7 @@ impl OtTable for AnchorPoints {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format0(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
@@ -2850,6 +2853,7 @@ impl OtTable for AxisValue {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -3949,6 +3953,7 @@ impl OtTable for BaseCoord {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -5796,6 +5801,7 @@ impl OtTable for Baseline {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format0(v) => v.visit_mut(f),
 			Self::Format1(v) => v.visit_mut(f),
@@ -6053,6 +6059,7 @@ impl OtTable for CIDGlyphMapping {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format0(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
@@ -6801,6 +6808,7 @@ impl OtTable for CaretValue {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -8026,6 +8034,7 @@ impl OtTable for ChainContextPos {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -9281,6 +9290,7 @@ impl OtTable for ChainContextSubst {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -11995,6 +12005,7 @@ impl OtTable for ClassDefRaw {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -12705,6 +12716,7 @@ impl OtTable for ClipBox {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -12907,6 +12919,7 @@ impl OtTable for ClipListRaw {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
@@ -14218,6 +14231,7 @@ impl OtTable for ConditionTable {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -15324,6 +15338,7 @@ impl OtTable for ContextPos {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -16457,6 +16472,7 @@ impl OtTable for ContextSubst {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -17094,6 +17110,7 @@ impl OtTable for CoverageRaw {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -17491,6 +17508,7 @@ impl OtTable for CursivePos {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -17836,6 +17854,7 @@ impl OtTable for DeltaSetIndexMapRaw {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format0(v) => v.visit_mut(f),
 			Self::Format1(v) => v.visit_mut(f),
@@ -18662,6 +18681,7 @@ impl OtTable for ExtensionPos {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
@@ -18915,6 +18935,7 @@ impl OtTable for ExtensionSubst {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
@@ -22220,6 +22241,7 @@ impl OtTable for GlyphCIDMapping {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format0(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
@@ -22594,6 +22616,7 @@ impl OtTable for GlyphProperties {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format0(v) => v.visit_mut(f),
 			Self::Format1(v) => v.visit_mut(f),
@@ -26353,6 +26376,7 @@ impl OtTable for LigatureCarets {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format0(v) => v.visit_mut(f),
 			Self::Format1(v) => v.visit_mut(f),
@@ -26992,6 +27016,7 @@ impl OtTable for LigatureSubstRaw {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -29359,6 +29384,7 @@ impl OtTable for MarkBasePos {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -30053,6 +30079,7 @@ impl OtTable for MarkLigPos {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -30622,6 +30649,7 @@ impl OtTable for MarkMarkPos {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -35302,6 +35330,7 @@ impl OtTable for MultipleSubstRaw {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -35641,6 +35670,7 @@ impl OtTable for OpticalBounds {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format0(v) => v.visit_mut(f),
 			Self::Format1(v) => v.visit_mut(f),
@@ -39904,6 +39934,7 @@ impl OtTable for Paint {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format10(v) => v.visit_mut(f),
@@ -41044,6 +41075,7 @@ impl OtTable for PairPos {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -41857,6 +41889,7 @@ impl OtTable for PatchMap {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format2(v) => v.visit_mut(f),
 			Self::Unknown(_) => Ok(()),
@@ -43231,6 +43264,7 @@ impl OtTable for ReverseChainSingleSubst {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -45169,6 +45203,7 @@ impl OtTable for SinglePos {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -45772,6 +45807,7 @@ impl OtTable for SingleSubstRaw {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format1(v) => v.visit_mut(f),
 			Self::Format2(v) => v.visit_mut(f),
@@ -48456,6 +48492,7 @@ impl OtTable for VarIdxMapRaw {
 		}
 	}
 	fn visit_mut(&mut self, f: &mut dyn FnMut(&mut dyn std::any::Any) -> Result<()>) -> Result<()> {
+		f(self)?;
 		match self {
 			Self::Format0(v) => v.visit_mut(f),
 			Self::Format1(v) => v.visit_mut(f),

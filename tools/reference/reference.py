@@ -119,6 +119,34 @@ def run_job(job: dict) -> None:
 		subsetter.subset(font)
 		font.save(output, reorderTables=True)
 		return
+	if op == "instance":
+		from fontTools.varLib import instancer
+
+		font = TTFont(
+			job["input"],
+			fontNumber=job.get("font_number", 0),
+			recalcTimestamp=False,
+		)
+		font.cfg[otBase.USE_HARFBUZZ_REPACKER] = bool(job.get("repacker", False))
+		limits = {
+			tag: None if value is None else instancer.AxisTriple(*value)
+			for tag, value in job["limits"].items()
+		}
+		options = job.get("options", [])
+		font = instancer.instantiateVariableFont(
+			font,
+			limits,
+			inplace=True,
+			optimize="no-optimize" not in options,
+			overlap=instancer.OverlapMode.KEEP_AND_DONT_SET_FLAGS
+			if "no-overlap-flag" in options
+			else instancer.OverlapMode.KEEP_AND_SET_FLAGS,
+			updateFontNames="update-names" in options,
+			downgradeCFF2="downgrade-cff2" in options,
+			static="static" in options,
+		)
+		font.save(output, reorderTables=True)
+		return
 	font = open_font(job)
 	if op == "ttx":
 		font.saveXML(output)
