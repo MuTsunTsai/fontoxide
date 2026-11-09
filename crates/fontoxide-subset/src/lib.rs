@@ -21,6 +21,7 @@
 #![forbid(unsafe_code)]
 
 mod aat;
+mod bitmap;
 mod cff;
 mod cmap;
 mod colr;
@@ -342,9 +343,13 @@ impl Subsetter {
 		let order = &self.orig_glyph_order;
 		font.remap_glyphs(
 			&mut |g| {
-				map.get(&g).copied().ok_or_else(|| {
-					fontoxide_ttlib::Error::ttlib(format!("KeyError: {:?}", order.name(g)))
-				})
+				// `getGlyphID`: a `glyphXXXXX` name that is no longer in the glyph
+				// order is parsed.
+				let name = order.name(g);
+				map.get(&g)
+					.copied()
+					.or_else(|| fontoxide_ttlib::GlyphOrder::default().id(&name))
+					.ok_or_else(|| fontoxide_ttlib::Error::ttlib(format!("KeyError: {name:?}")))
 			},
 			names,
 		)?;

@@ -253,10 +253,10 @@ pub fn run(args: &Args) -> Result<()> {
 
 	let mut records = Vec::new();
 	for (font, op, input, out, err) in cases {
-		let reference = if out.exists() {
-			Ok(std::fs::read(&out)?)
-		} else {
+		let reference = if err.exists() || !out.exists() {
 			Err(std::fs::read_to_string(&err).unwrap_or_default())
+		} else {
+			Ok(std::fs::read(&out)?)
 		};
 		let input = std::fs::read(&input).unwrap_or_default();
 		let mut push = |table: &str, outcome, detail| {
@@ -642,6 +642,8 @@ fn run_reference_jobs(ref_dir: &Path, jobs: &[serde_json::Value]) -> Result<()> 
 	for (job, result) in jobs.iter().zip(results) {
 		if !result.ok {
 			let out = PathBuf::from(job["output"].as_str().unwrap_or_default());
+			// A failed `saveXML` leaves a partial dump behind.
+			let _ = std::fs::remove_file(&out);
 			std::fs::write(out.with_extension("err"), result.error)?;
 		}
 	}

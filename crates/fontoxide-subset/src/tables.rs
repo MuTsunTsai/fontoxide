@@ -14,7 +14,8 @@ use fontoxide_ttlib::{Font, Tag};
 
 use crate::options::{has_int, has_str};
 use crate::{
-	Error, Result, Subsetter, aat, cff, cmap, colr, glyf, layout, math, strip, varc, varstore,
+	Error, Result, Subsetter, aat, bitmap, cff, cmap, colr, glyf, layout, math, strip, varc,
+	varstore,
 };
 
 fn unsupported<T>(tag: Tag) -> Result<T> {
@@ -141,7 +142,12 @@ pub(crate) fn subset_glyphs(s: &mut Subsetter, font: &mut Font, tag: Tag) -> Res
 		}
 		b"GSUB" | b"GPOS" => layout::subset_glyphs(s, font, tag)?,
 		b"GDEF" => layout::gdef_subset_glyphs(s, font)?,
-		b"EBLC" | b"EBDT" | b"CBLC" | b"CBDT" | b"sbix" | b"kern" | b"DMAP" | b"SVG " => {
+		b"EBLC" => bitmap::locator_subset_glyphs::<false>(s, font)?,
+		b"CBLC" => bitmap::locator_subset_glyphs::<true>(s, font)?,
+		b"EBDT" => bitmap::data_subset_glyphs::<false>(s, font)?,
+		b"CBDT" => bitmap::data_subset_glyphs::<true>(s, font)?,
+		b"sbix" => bitmap::sbix_subset_glyphs(s, font)?,
+		b"kern" | b"DMAP" | b"SVG " => {
 			return unsupported(tag);
 		}
 		b"MATH" => math::subset_glyphs(s, font)?,
