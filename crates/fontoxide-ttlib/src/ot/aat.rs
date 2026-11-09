@@ -17,6 +17,57 @@ use crate::{Error, Font, Result};
 /// A glyph-keyed AAT lookup (`AATLookup`), by glyph ID.
 pub type AatLookup<V> = BTreeMap<u32, V>;
 
+/// A value of an [`AatLookup`] whose glyph IDs can be remapped.
+pub trait AatRemap {
+	/// Maps the glyph IDs in the value.
+	fn remap_value(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()>;
+}
+
+impl AatRemap for u16 {
+	fn remap_value(&mut self, _f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		Ok(())
+	}
+}
+
+/// `GlyphID` values.
+impl AatRemap for u32 {
+	fn remap_value(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		*self = f(*self)?;
+		Ok(())
+	}
+}
+
+impl<T: OtTable> AatRemap for Option<Box<T>> {
+	fn remap_value(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Some(t) => t.remap_glyphs(f),
+			None => Ok(()),
+		}
+	}
+}
+
+/// Maps the keys of a glyph-keyed map.
+pub fn remap_keys<V>(
+	map: BTreeMap<u32, V>,
+	f: &mut dyn FnMut(u32) -> Result<u32>,
+) -> Result<BTreeMap<u32, V>> {
+	map.into_iter().map(|(g, v)| Ok((f(g)?, v))).collect()
+}
+
+/// Maps the glyphs of an AAT lookup: its keys and glyph values.
+pub fn remap_aat_lookup<V: AatRemap>(
+	lookup: &mut AatLookup<V>,
+	f: &mut dyn FnMut(u32) -> Result<u32>,
+) -> Result<()> {
+	let mut out = BTreeMap::new();
+	for (g, mut v) in std::mem::take(lookup) {
+		v.remap_value(f)?;
+		out.insert(f(g)?, v);
+	}
+	*lookup = out;
+	Ok(())
+}
+
 /// A value type of an [`AatLookup`]: what `AATLookup.converter` reads.
 pub trait AatValue: Sized + Clone + PartialEq {
 	/// The size in the lookup (`converter.staticSize`).

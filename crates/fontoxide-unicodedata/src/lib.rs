@@ -8,6 +8,8 @@
 use std::borrow::Cow;
 use std::sync::OnceLock;
 
+mod mirrored;
+
 const NAMES: &str = include_str!("../data/names.txt");
 const NAME_RANGES: &str = include_str!("../data/name_ranges.txt");
 
@@ -96,6 +98,14 @@ pub fn name(code: u32) -> Option<Cow<'static, str>> {
 /// points without a name.
 pub fn unicode_name(code: u32) -> Cow<'static, str> {
 	name(code).unwrap_or(Cow::Borrowed("????"))
+}
+
+/// The mirrored version of a code point, if it has one (`mirrored`).
+pub fn mirrored(code: u32) -> Option<u32> {
+	mirrored::MIRRORED
+		.binary_search_by_key(&code, |&(c, _)| c)
+		.ok()
+		.map(|i| mirrored::MIRRORED[i].1)
 }
 
 #[cfg(test)]

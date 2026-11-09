@@ -38,6 +38,11 @@ impl TableType for Cvt {
 }
 
 impl Table for Cvt {
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
+
 	fn tag(&self) -> Tag {
 		Self::TAG
 	}

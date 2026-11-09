@@ -441,6 +441,11 @@ pub struct Glyph {
 	pub components: Vec<GlyphComponent>,
 	/// The instructions (`program`), if the glyph has them.
 	pub program: Option<Program>,
+	/// The compact data while the glyph is not expanded (`data`). The other
+	/// fields are always parsed, but as in fontTools, a glyph that was read
+	/// and not expanded is written as these bytes unless bounding boxes are
+	/// recalculated. Clear it when changing the glyph.
+	pub data: Option<Vec<u8>>,
 }
 
 impl Glyph {
@@ -1197,6 +1202,16 @@ impl Glyf {
 		done: &mut HashSet<u32>,
 	) -> Result<Vec<u8>> {
 		let g = self.glyph(gid, order)?;
+		if let Some(data) = &g.data {
+			if !recalc {
+				return Ok(data.clone());
+			}
+			// The glyph must be expanded to recalculate its bounding box.
+			if let Some(g) = self.glyphs.get_mut(&gid) {
+				g.data = None;
+			}
+		}
+		let g = self.glyph(gid, order)?;
 		if g.number_of_contours == 0 && g.program.as_ref().is_none_or(Program::is_empty) {
 			return Ok(Vec::new());
 		}
@@ -1308,6 +1323,159 @@ fn calc_bounds(coords: &[(f64, f64)]) -> [f64; 4] {
 	})
 }
 
+/// `remapComponentsFast`: maps the component glyphs of compact glyph data.
+fn remap_components_fast(data: &mut [u8], f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+	if data.len() < 2 || i16::from_be_bytes([data[0], data[1]]) >= 0 {
+		// Not composite.
+		return Ok(());
+	}
+	let byte = |data: &[u8], i: usize| -> Result<i64> {
+		data.get(i)
+			.map(|&b| i64::from(b))
+			.ok_or_else(|| Error::ttlib("IndexError: bytearray index out of range"))
+	};
+	let mut i = 10;
+	loop {
+		let flags = (byte(data, i)? << 8) | byte(data, i + 1)?;
+		let start = i + 2;
+		let gid = (byte(data, start)? << 8) | byte(data, start + 1)?;
+		let new = f(gid as u32)?;
+		let new = u16::try_from(new).map_err(|_| Error::Struct("int too big to convert".into()))?;
+		data[start..start + 2].copy_from_slice(&new.to_be_bytes());
+		i = start + 2;
+		i += if flags & ARG_1_AND_2_ARE_WORDS != 0 { 4 } else { 2 };
+		if flags & WE_HAVE_A_SCALE != 0 {
+			i += 2;
+		} else if flags & WE_HAVE_AN_X_AND_Y_SCALE != 0 {
+			i += 4;
+		} else if flags & WE_HAVE_A_TWO_BY_TWO != 0 {
+			i += 8;
+		}
+		if flags & MORE_COMPONENTS == 0 {
+			return Ok(());
+		}
+	}
+}
+
+impl Glyph {
+	/// `trim`: removes padding and, if asked, hinting, without expanding the
+	/// glyph.
+	pub fn trim(&mut self, remove_hinting: bool) -> Result<()> {
+		let Some(data) = self.data.as_mut() else {
+			if remove_hinting {
+				if self.is_composite() {
+					self.program = None;
+				} else {
+					self.program = Some(Program::from_bytecode(&[]));
+				}
+			}
+			// No padding to trim.
+			return Ok(());
+		};
+		if data.is_empty() {
+			return Ok(());
+		}
+		let err = || Error::ttlib("IndexError: bytearray index out of range");
+		let at = |data: &[u8], i: usize| data.get(i).map(|&b| usize::from(b)).ok_or_else(err);
+		let num_contours = i16::from_be_bytes([data[0], *data.get(1).ok_or_else(err)?]);
+		let mut i = 10;
+		if num_contours == 0 {
+			// No contour end points or flags in this case.
+			if !remove_hinting && data.len() >= i + 2 {
+				let instruction_len = (at(data, i)? << 8) | at(data, i + 1)?;
+				i += 2 + instruction_len;
+			}
+			data.truncate(i);
+			return Ok(());
+		}
+		if num_contours >= 0 {
+			i += 2 * num_contours as usize;
+			let n_coordinates = ((at(data, i - 2)? << 8) | at(data, i - 1)?) + 1;
+			let instruction_len = (at(data, i)? << 8) | at(data, i + 1)?;
+			if remove_hinting {
+				// Zero the instruction length and splice the instructions out.
+				data[i] = 0;
+				data[i + 1] = 0;
+				i += 2;
+				if instruction_len > 0 {
+					let end = (i + instruction_len).min(data.len());
+					data.drain(i..end);
+				}
+			} else {
+				i += 2 + instruction_len;
+			}
+			let mut coord_bytes = 0;
+			let mut j = 0;
+			loop {
+				let flag = at(data, i)? as u8;
+				i += 1;
+				let mut repeat = 1;
+				if flag & FLAG_REPEAT != 0 {
+					repeat = at(data, i)? + 1;
+					i += 1;
+				}
+				let x_bytes = if flag & FLAG_X_SHORT != 0 {
+					1
+				} else if flag & FLAG_X_SAME == 0 {
+					2
+				} else {
+					0
+				};
+				let y_bytes = if flag & FLAG_Y_SHORT != 0 {
+					1
+				} else if flag & FLAG_Y_SAME == 0 {
+					2
+				} else {
+					0
+				};
+				coord_bytes += (x_bytes + y_bytes) * repeat;
+				j += repeat;
+				if j >= n_coordinates {
+					break;
+				}
+			}
+			if j != n_coordinates {
+				return Err(Error::Assertion("bad glyph flags".into()));
+			}
+			i += coord_bytes;
+			// Remove padding.
+			data.truncate(i);
+		} else if num_contours == -1 {
+			let mut we_have_instructions = false;
+			loop {
+				let mut flags = ((at(data, i)? << 8) | at(data, i + 1)?) as i64;
+				if remove_hinting {
+					flags &= !WE_HAVE_INSTRUCTIONS;
+				}
+				if flags & WE_HAVE_INSTRUCTIONS != 0 {
+					we_have_instructions = true;
+				}
+				data[i] = (flags >> 8) as u8;
+				data[i + 1] = flags as u8;
+				i += 4;
+				i += if flags & ARG_1_AND_2_ARE_WORDS != 0 { 4 } else { 2 };
+				if flags & WE_HAVE_A_SCALE != 0 {
+					i += 2;
+				} else if flags & WE_HAVE_AN_X_AND_Y_SCALE != 0 {
+					i += 4;
+				} else if flags & WE_HAVE_A_TWO_BY_TWO != 0 {
+					i += 8;
+				}
+				if flags & MORE_COMPONENTS == 0 {
+					break;
+				}
+			}
+			if we_have_instructions {
+				let instruction_len = (at(data, i)? << 8) | at(data, i + 1)?;
+				i += 2 + instruction_len;
+			}
+			// Remove padding.
+			data.truncate(i);
+		}
+		Ok(())
+	}
+}
+
 impl TableType for Glyf {
 	const TAG: Tag = Tag::new(b"glyf");
 
@@ -1332,7 +1500,9 @@ impl TableType for Glyf {
 				None if next == pos => &[][..],
 				None => return Err(Error::ttlib("not enough 'glyf' table data")),
 			};
-			glyphs.insert(i as u32, Glyph::decompile(glyph_data, order.len())?);
+			let mut glyph = Glyph::decompile(glyph_data, order.len())?;
+			glyph.data = Some(glyph_data.to_vec());
+			glyphs.insert(i as u32, glyph);
 			pos = next;
 		}
 		if data.len() as i64 - next as i64 >= 4 {
@@ -1349,6 +1519,28 @@ impl TableType for Glyf {
 }
 
 impl Table for Glyf {
+	/// Expands every glyph (`ensureDecompiled`).
+	fn ensure_decompiled(&mut self) {
+		for g in self.glyphs.values_mut() {
+			g.data = None;
+		}
+	}
+
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let mut glyphs = BTreeMap::new();
+		for (g, mut glyph) in std::mem::take(&mut self.glyphs) {
+			for c in &mut glyph.components {
+				c.glyph = f(c.glyph)?;
+			}
+			if let Some(data) = &mut glyph.data {
+				remap_components_fast(data, f)?;
+			}
+			glyphs.insert(f(g)?, glyph);
+		}
+		self.glyphs = glyphs;
+		Ok(())
+	}
+
 	fn tag(&self) -> Tag {
 		Self::TAG
 	}
@@ -1359,8 +1551,6 @@ impl Table for Glyf {
 		if ![0, 1, 2, 4].contains(&padding) {
 			return Err(Error::Assertion("padding in (0, 1, 2, 4)".into()));
 		}
-		// LENIENT(L14): glyphs are always parsed, so they are re-encoded even
-		// without recalculating bounds; fontTools copies unexpanded glyphs as is.
 		let recalc = font.recalc_bboxes;
 		let mut done = HashSet::new();
 		let mut data_list = Vec::with_capacity(order.len());

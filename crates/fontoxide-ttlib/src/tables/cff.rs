@@ -37,6 +37,11 @@ macro_rules! cff_table {
 		}
 
 		impl Table for $name {
+			fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+				let _ = f;
+				Err(Error::ttlib("remapping the glyphs of CFF tables is not supported yet"))
+			}
+
 			fn tag(&self) -> Tag {
 				Self::TAG
 			}

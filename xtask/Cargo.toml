@@ -8,6 +8,7 @@ publish = false
 
 [dependencies]
 fontoxide-ttlib = { workspace = true, optional = true }
+fontoxide-subset = { workspace = true, optional = true }
 brotli = { workspace = true, optional = true }
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
@@ -20,7 +21,7 @@ toml = "0.9"
 default = ["parity"]
 # The parity command links fontoxide itself; codegen must not, so that it can run
 # while the generated code does not compile yet (`cargo codegen`).
-parity = ["dep:fontoxide-ttlib", "dep:brotli"]
+parity = ["dep:fontoxide-ttlib", "dep:fontoxide-subset", "dep:brotli"]
 
 [lints]
 workspace = true

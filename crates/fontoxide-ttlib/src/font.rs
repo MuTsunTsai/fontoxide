@@ -215,6 +215,24 @@ impl Font {
 		}
 	}
 
+	/// Maps the glyph IDs of every loaded table with `f`, then sets the glyph
+	/// order to `new_order` (`setGlyphOrder`, where fontTools' tables follow by
+	/// glyph name). Tables that were never loaded are written unchanged, as in
+	/// fontTools.
+	pub fn remap_glyphs(
+		&mut self,
+		f: &mut dyn FnMut(u32) -> Result<u32>,
+		new_order: Vec<String>,
+	) -> Result<()> {
+		for slot in self.tables.values_mut() {
+			if let Slot::Loaded(t) = slot {
+				t.remap_glyphs(f)?;
+			}
+		}
+		self.set_glyph_order(new_order);
+		Ok(())
+	}
+
 	/// Reads a font from sfnt, TTC, WOFF or WOFF2 data (`TTFont(file)`).
 	pub fn read(data: impl Into<Arc<[u8]>>, options: ReadOptions) -> Result<Self> {
 		let reader = SfntReader::new(
@@ -401,6 +419,9 @@ impl Font {
 		self.glyph_order()?;
 		for tag in self.tags() {
 			self.load(tag)?;
+			if let Some(t) = self.get_dyn(tag)? {
+				t.ensure_decompiled();
+			}
 		}
 		Ok(())
 	}

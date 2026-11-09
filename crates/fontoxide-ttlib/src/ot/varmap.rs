@@ -134,6 +134,11 @@ pub struct DeltaSetIndexMap {
 }
 
 impl OtTable for DeltaSetIndexMap {
+	/// The mapping is by position, not by glyph: nothing to map.
+	fn remap_glyphs(&mut self, _f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		Ok(())
+	}
+
 	fn class_name(&self) -> &'static str {
 		"DeltaSetIndexMap"
 	}
@@ -204,6 +209,11 @@ pub struct VarIdxMap {
 }
 
 impl OtTable for VarIdxMap {
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		self.mapping = super::aat::remap_keys(std::mem::take(&mut self.mapping), f)?;
+		Ok(())
+	}
+
 	fn class_name(&self) -> &'static str {
 		"VarIdxMap"
 	}

@@ -366,6 +366,11 @@ impl TableType for Fvar {
 }
 
 impl Table for Fvar {
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
+
 	fn tag(&self) -> Tag {
 		Self::TAG
 	}

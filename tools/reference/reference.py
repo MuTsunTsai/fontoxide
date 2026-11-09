@@ -100,6 +100,23 @@ def run_job(job: dict) -> None:
 		font.importXML(job["input"])
 		font.save(output, reorderTables=True)
 		return
+	if op == "subset":
+		# Subset to the given characters with the default options, as
+		# `pyftsubset --unicodes=...` does (without the glyph name hack).
+		from fontTools import subset
+
+		font = TTFont(
+			job["input"],
+			fontNumber=job.get("font_number", 0),
+			recalcTimestamp=False,
+			recalcBBoxes=False,
+		)
+		font.cfg[otBase.USE_HARFBUZZ_REPACKER] = bool(job.get("repacker", False))
+		subsetter = subset.Subsetter(subset.Options())
+		subsetter.populate(unicodes=job["unicodes"])
+		subsetter.subset(font)
+		font.save(output, reorderTables=True)
+		return
 	font = open_font(job)
 	if op == "ttx":
 		font.saveXML(output)

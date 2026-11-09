@@ -116,6 +116,12 @@ impl TableType for Vorg {
 }
 
 impl Table for Vorg {
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		self.v_origin_records =
+			crate::ot::aat::remap_keys(std::mem::take(&mut self.v_origin_records), f)?;
+		Ok(())
+	}
+
 	fn tag(&self) -> Tag {
 		Self::TAG
 	}
@@ -276,6 +282,11 @@ impl TableType for Ltag {
 }
 
 impl Table for Ltag {
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
+
 	fn tag(&self) -> Tag {
 		Self::TAG
 	}
@@ -362,6 +373,11 @@ impl TableType for Fftm {
 }
 
 impl Table for Fftm {
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
+
 	fn tag(&self) -> Tag {
 		Self::TAG
 	}

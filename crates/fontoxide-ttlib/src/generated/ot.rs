@@ -99,6 +99,10 @@ impl OtTable for AATLookupSegment {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `Affine2x3`.
@@ -190,6 +194,10 @@ impl OtTable for Affine2x3 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `AlternateSet`.
@@ -235,10 +243,13 @@ impl OtTable for AlternateSet {
 		let count_glyph_count = CountRef::new("GlyphCount", 2, None);
 		w.write_count_reference(count_glyph_count.clone());
 		count_glyph_count.set_value((self.alternate.len() as i64 - 0) as u64)?;
-		for (i, item) in self.alternate.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 2)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.alternate.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 2)?;
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
@@ -268,6 +279,12 @@ impl OtTable for AlternateSet {
 		let _ = t;
 		self.glyph_count = Some((self.alternate.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.alternate.iter_mut() {
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -315,10 +332,13 @@ impl OtTable for AlternateSet2 {
 		let count_glyph_count = CountRef::new("GlyphCount", 2, None);
 		w.write_count_reference(count_glyph_count.clone());
 		count_glyph_count.set_value((self.alternate.len() as i64 - 0) as u64)?;
-		for (i, item) in self.alternate.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 3)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.alternate.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 3)?;
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
@@ -348,6 +368,12 @@ impl OtTable for AlternateSet2 {
 		let _ = t;
 		self.glyph_count = Some((self.alternate.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.alternate.iter_mut() {
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -457,6 +483,20 @@ impl OtTable for AlternateSubstRawFormat1 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.alternate_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `AlternateSubst` format 2.
@@ -564,6 +604,20 @@ impl OtTable for AlternateSubstRawFormat2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.alternate_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `AlternateSubst` (format-switching).
@@ -630,6 +684,13 @@ impl OtTable for AlternateSubstRaw {
 		match self {
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Format2(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -738,6 +799,10 @@ impl OtTable for AnchorFormat1 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `Anchor` format 2.
@@ -825,6 +890,10 @@ impl OtTable for AnchorFormat2 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -948,6 +1017,21 @@ impl OtTable for AnchorFormat3 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.x_device_table;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.y_device_table;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Anchor` (format-switching).
@@ -1022,6 +1106,14 @@ impl OtTable for Anchor {
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Format2(v) => v.populate_defaults(ctx),
 			Self::Format3(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Format3(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -1143,6 +1235,12 @@ impl OtTable for AnchorGlyphData {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.anchor_point.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `AnchorPoint`.
@@ -1216,6 +1314,10 @@ impl OtTable for AnchorPoint {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `AnchorPoints` format 0.
@@ -1285,6 +1387,13 @@ impl OtTable for AnchorPointsFormat0 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.anchors;
+			remap_aat_lookup(v, &mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `AnchorPoints` (format-switching).
@@ -1343,6 +1452,12 @@ impl OtTable for AnchorPoints {
 	fn populate_defaults(&mut self, ctx: &mut XmlCtx) -> Result<()> {
 		match self {
 			Self::Format0(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format0(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -1465,6 +1580,20 @@ impl OtTable for AttachList {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.attach_point.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `AttachPoint`.
@@ -1510,10 +1639,13 @@ impl OtTable for AttachPoint {
 		let count_point_count = CountRef::new("PointCount", 2, None);
 		w.write_count_reference(count_point_count.clone());
 		count_point_count.set_value((self.point_index.len() as i64 - 0) as u64)?;
-		for (i, item) in self.point_index.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.point_index.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
@@ -1543,6 +1675,10 @@ impl OtTable for AttachPoint {
 		let _ = t;
 		self.point_count = Some((self.point_index.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -1639,6 +1775,21 @@ impl OtTable for Axis {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.base_tag_list;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.base_script_list;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `AxisIndicesList`.
@@ -1693,6 +1844,10 @@ impl OtTable for AxisIndicesList {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -1754,10 +1909,13 @@ impl OtTable for AxisRecord {
 		w.write_u16(self.axis_ordering);
 		w.count_ref("DesignAxisRecordSize")?
 			.set_value((self.more_bytes.len() as i64 - -8) as u64)?;
-		for (i, item) in self.more_bytes.iter().enumerate() {
-			let _ = i;
-			w.write_u8((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.more_bytes.iter().enumerate() {
+				let _ = i;
+				w.write_u8((*item));
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
@@ -1799,6 +1957,10 @@ impl OtTable for AxisRecord {
 			(self.more_bytes.len() as i64 - -8).max(0) as u32,
 		)?;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -1881,6 +2043,12 @@ impl OtTable for AxisRecordArray {
 			(self.axis.len() as i64 - 0).max(0) as u32,
 		)?;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.axis.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -1969,6 +2137,12 @@ impl OtTable for AxisSegmentMap {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.axis_value_map.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `AxisValue` format 1.
@@ -2053,6 +2227,10 @@ impl OtTable for AxisValueFormat1 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -2165,6 +2343,10 @@ impl OtTable for AxisValueFormat2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `AxisValue` format 3.
@@ -2261,6 +2443,10 @@ impl OtTable for AxisValueFormat3 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -2368,6 +2554,12 @@ impl OtTable for AxisValueFormat4 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.axis_value_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["AxisCount"]
 	}
@@ -2463,6 +2655,15 @@ impl OtTable for AxisValue {
 			Self::Format2(v) => v.populate_defaults(ctx),
 			Self::Format3(v) => v.populate_defaults(ctx),
 			Self::Format4(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Format3(v) => v.remap_glyphs(f),
+			Self::Format4(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -2584,6 +2785,14 @@ impl OtTable for AxisValueArray {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.axis_value.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `AxisValueMap`.
@@ -2659,6 +2868,10 @@ impl OtTable for AxisValueMap {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `AxisValueRecord`.
@@ -2725,6 +2938,10 @@ impl OtTable for AxisValueRecord {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -2833,6 +3050,29 @@ impl OtTable for BASE {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.horiz_axis;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.vert_axis;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		if (self.version as i64) >= 0x00010001 {
+			{
+				let v = &mut self.var_store;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `BaseArray`.
@@ -2913,6 +3153,12 @@ impl OtTable for BaseArray {
 		let _ = t;
 		self.base_count = Some((self.base_record.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.base_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -2997,6 +3243,12 @@ impl OtTable for BaseArray2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.base_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `BaseCoord` format 1.
@@ -3055,6 +3307,10 @@ impl OtTable for BaseCoordFormat1 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -3141,6 +3397,13 @@ impl OtTable for BaseCoordFormat2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.reference_glyph;
+			*v = f(*v)?;
+		}
+		Ok(())
+	}
 }
 
 /// `BaseCoord` format 3.
@@ -3221,6 +3484,15 @@ impl OtTable for BaseCoordFormat3 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.device_table;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -3307,6 +3579,13 @@ impl OtTable for BaseCoordFormat4 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.reference_glyph;
+			*v = f(*v)?;
+		}
+		Ok(())
+	}
 }
 
 /// `BaseCoord` (format-switching).
@@ -3389,6 +3668,15 @@ impl OtTable for BaseCoord {
 			Self::Format2(v) => v.populate_defaults(ctx),
 			Self::Format3(v) => v.populate_defaults(ctx),
 			Self::Format4(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Format3(v) => v.remap_glyphs(f),
+			Self::Format4(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -3518,6 +3806,12 @@ impl OtTable for BaseGlyphList {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.base_glyph_paint_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `BaseGlyphPaintRecord`.
@@ -3590,6 +3884,19 @@ impl OtTable for BaseGlyphPaintRecord {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.base_glyph;
+			*v = f(*v)?;
+		}
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -3670,6 +3977,13 @@ impl OtTable for BaseGlyphRecord {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.base_glyph;
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -3759,6 +4073,12 @@ impl OtTable for BaseGlyphRecordArray {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.base_glyph_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `BaseLangSysRecord`.
@@ -3831,6 +4151,15 @@ impl OtTable for BaseLangSysRecord {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.min_max;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -3915,6 +4244,14 @@ impl OtTable for BaseRecord {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.base_anchor.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `BaseRecord2`.
@@ -3995,6 +4332,14 @@ impl OtTable for BaseRecord2 {
 			(self.base_anchor.len() as i64 - 0).max(0) as u32,
 		)?;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.base_anchor.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -4122,6 +4467,24 @@ impl OtTable for BaseScript {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.base_values;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.default_min_max;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.base_lang_sys_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `BaseScriptList`.
@@ -4204,6 +4567,12 @@ impl OtTable for BaseScriptList {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.base_script_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `BaseScriptRecord`.
@@ -4278,6 +4647,15 @@ impl OtTable for BaseScriptRecord {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.base_script;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -4358,6 +4736,10 @@ impl OtTable for BaseTagList {
 		let _ = t;
 		self.base_tag_count = Some((self.baseline_tag.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -4454,6 +4836,14 @@ impl OtTable for BaseValues {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.base_coord.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Baseline` format 0.
@@ -4504,10 +4894,13 @@ impl OtTable for BaselineFormat0 {
 				self.delta.len()
 			)));
 		}
-		for (i, item) in self.delta.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.delta.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn format(&self) -> Option<u16> {
@@ -4544,6 +4937,10 @@ impl OtTable for BaselineFormat0 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -4600,10 +4997,13 @@ impl OtTable for BaselineFormat1 {
 				self.delta.len()
 			)));
 		}
-		for (i, item) in self.delta.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.delta.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		write_aat_lookup(w, font, &self.baseline_values)?;
 		Ok(())
 	}
@@ -4649,6 +5049,13 @@ impl OtTable for BaselineFormat1 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.baseline_values;
+			remap_aat_lookup(v, &mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -4706,10 +5113,13 @@ impl OtTable for BaselineFormat2 {
 				self.control_point.len()
 			)));
 		}
-		for (i, item) in self.control_point.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.control_point.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn format(&self) -> Option<u16> {
@@ -4753,6 +5163,13 @@ impl OtTable for BaselineFormat2 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.standard_glyph;
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -4814,10 +5231,13 @@ impl OtTable for BaselineFormat3 {
 				self.control_point.len()
 			)));
 		}
-		for (i, item) in self.control_point.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.control_point.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		write_aat_lookup(w, font, &self.baseline_values)?;
 		Ok(())
 	}
@@ -4870,6 +5290,17 @@ impl OtTable for BaselineFormat3 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.standard_glyph;
+			*v = f(*v)?;
+		}
+		{
+			let v = &mut self.baseline_values;
+			remap_aat_lookup(v, &mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -4954,6 +5385,15 @@ impl OtTable for Baseline {
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Format2(v) => v.populate_defaults(ctx),
 			Self::Format3(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format0(v) => v.remap_glyphs(f),
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Format3(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -5125,6 +5565,15 @@ impl OtTable for CIDGlyphMappingFormat0 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.mapping;
+			for g in v.values_mut() {
+				*g = f(*g)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `CIDGlyphMapping` (format-switching).
@@ -5183,6 +5632,12 @@ impl OtTable for CIDGlyphMapping {
 	fn populate_defaults(&mut self, ctx: &mut XmlCtx) -> Result<()> {
 		match self {
 			Self::Format0(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format0(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -5472,6 +5927,61 @@ impl OtTable for COLR {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.base_glyph_record_array;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.layer_record_array;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		if (self.version as i64) >= 1 {
+			{
+				let v = &mut self.base_glyph_list;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 1 {
+			{
+				let v = &mut self.layer_list;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 1 {
+			{
+				let v = &mut self.clip_list;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 1 {
+			{
+				let v = &mut self.var_index_map;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 1 {
+			{
+				let v = &mut self.var_store;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["BaseGlyphRecordCount", "LayerRecordCount"]
 	}
@@ -5550,6 +6060,10 @@ impl OtTable for CaretValueFormat1 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `CaretValue` format 2.
@@ -5613,6 +6127,10 @@ impl OtTable for CaretValueFormat2 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -5697,6 +6215,15 @@ impl OtTable for CaretValueFormat3 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.device_table;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `CaretValue` (format-switching).
@@ -5771,6 +6298,14 @@ impl OtTable for CaretValue {
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Format2(v) => v.populate_defaults(ctx),
 			Self::Format3(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Format3(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -5925,6 +6460,20 @@ impl OtTable for ChainContextPosFormat1 {
 		self.chain_pos_rule_set_count =
 			Some((self.chain_pos_rule_set.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.chain_pos_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -6112,6 +6661,38 @@ impl OtTable for ChainContextPosFormat2 {
 		self.chain_pos_class_set_count =
 			Some((self.chain_pos_class_set.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.backtrack_class_def;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.input_class_def;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.look_ahead_class_def;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.chain_pos_class_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -6327,6 +6908,27 @@ impl OtTable for ChainContextPosFormat3 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.backtrack_coverage.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.input_coverage.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.look_ahead_coverage.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.pos_lookup_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ChainContextPos` format 4.
@@ -6450,6 +7052,20 @@ impl OtTable for ChainContextPosFormat4 {
 		self.chained_seq_rule_set_count =
 			Some((self.chained_seq_rule_set.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.chained_seq_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -6657,6 +7273,38 @@ impl OtTable for ChainContextPosFormat5 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.backtrack_class_def;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.input_class_def;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.look_ahead_class_def;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.chained_class_seq_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ChainContextPos` (format-switching).
@@ -6747,6 +7395,16 @@ impl OtTable for ChainContextPos {
 			Self::Format3(v) => v.populate_defaults(ctx),
 			Self::Format4(v) => v.populate_defaults(ctx),
 			Self::Format5(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Format3(v) => v.remap_glyphs(f),
+			Self::Format4(v) => v.remap_glyphs(f),
+			Self::Format5(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -6929,6 +7587,20 @@ impl OtTable for ChainContextSubstFormat1 {
 		self.chain_sub_rule_set_count =
 			Some((self.chain_sub_rule_set.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.chain_sub_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -7116,6 +7788,38 @@ impl OtTable for ChainContextSubstFormat2 {
 		self.chain_sub_class_set_count =
 			Some((self.chain_sub_class_set.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.backtrack_class_def;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.input_class_def;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.look_ahead_class_def;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.chain_sub_class_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -7331,6 +8035,27 @@ impl OtTable for ChainContextSubstFormat3 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.backtrack_coverage.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.input_coverage.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.look_ahead_coverage.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.subst_lookup_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ChainContextSubst` format 4.
@@ -7454,6 +8179,20 @@ impl OtTable for ChainContextSubstFormat4 {
 		self.chained_seq_rule_set_count =
 			Some((self.chained_seq_rule_set.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.chained_seq_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -7661,6 +8400,38 @@ impl OtTable for ChainContextSubstFormat5 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.backtrack_class_def;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.input_class_def;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.look_ahead_class_def;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.chained_class_seq_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ChainContextSubst` (format-switching).
@@ -7751,6 +8522,16 @@ impl OtTable for ChainContextSubst {
 			Self::Format3(v) => v.populate_defaults(ctx),
 			Self::Format4(v) => v.populate_defaults(ctx),
 			Self::Format5(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Format3(v) => v.remap_glyphs(f),
+			Self::Format4(v) => v.remap_glyphs(f),
+			Self::Format5(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -7912,24 +8693,33 @@ impl OtTable for ChainPosClassRule {
 		let count_backtrack_glyph_count = CountRef::new("BacktrackGlyphCount", 2, None);
 		w.write_count_reference(count_backtrack_glyph_count.clone());
 		count_backtrack_glyph_count.set_value((self.backtrack.len() as i64 - 0) as u64)?;
-		for (i, item) in self.backtrack.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.backtrack.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		let count_input_glyph_count = CountRef::new("InputGlyphCount", 2, None);
 		w.write_count_reference(count_input_glyph_count.clone());
 		count_input_glyph_count.set_value((self.input.len() as i64 - -1) as u64)?;
-		for (i, item) in self.input.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.input.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		let count_look_ahead_glyph_count = CountRef::new("LookAheadGlyphCount", 2, None);
 		w.write_count_reference(count_look_ahead_glyph_count.clone());
 		count_look_ahead_glyph_count.set_value((self.look_ahead.len() as i64 - 0) as u64)?;
-		for (i, item) in self.look_ahead.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.look_ahead.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		let count_pos_count = CountRef::new("PosCount", 2, None);
 		w.write_count_reference(count_pos_count.clone());
 		count_pos_count.set_value((self.pos_lookup_record.len() as i64 - 0) as u64)?;
@@ -7999,6 +8789,12 @@ impl OtTable for ChainPosClassRule {
 		self.look_ahead_glyph_count = Some((self.look_ahead.len() as i64 - 0).max(0) as u32);
 		self.pos_count = Some((self.pos_lookup_record.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.pos_lookup_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -8093,6 +8889,14 @@ impl OtTable for ChainPosClassSet {
 		self.chain_pos_class_rule_count =
 			Some((self.chain_pos_class_rule.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.chain_pos_class_rule.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -8193,24 +8997,33 @@ impl OtTable for ChainPosRule {
 		let count_backtrack_glyph_count = CountRef::new("BacktrackGlyphCount", 2, None);
 		w.write_count_reference(count_backtrack_glyph_count.clone());
 		count_backtrack_glyph_count.set_value((self.backtrack.len() as i64 - 0) as u64)?;
-		for (i, item) in self.backtrack.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 2)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.backtrack.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 2)?;
+			}
+			Ok(())
+		})?;
 		let count_input_glyph_count = CountRef::new("InputGlyphCount", 2, None);
 		w.write_count_reference(count_input_glyph_count.clone());
 		count_input_glyph_count.set_value((self.input.len() as i64 - -1) as u64)?;
-		for (i, item) in self.input.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 2)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.input.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 2)?;
+			}
+			Ok(())
+		})?;
 		let count_look_ahead_glyph_count = CountRef::new("LookAheadGlyphCount", 2, None);
 		w.write_count_reference(count_look_ahead_glyph_count.clone());
 		count_look_ahead_glyph_count.set_value((self.look_ahead.len() as i64 - 0) as u64)?;
-		for (i, item) in self.look_ahead.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 2)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.look_ahead.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 2)?;
+			}
+			Ok(())
+		})?;
 		let count_pos_count = CountRef::new("PosCount", 2, None);
 		w.write_count_reference(count_pos_count.clone());
 		count_pos_count.set_value((self.pos_lookup_record.len() as i64 - 0) as u64)?;
@@ -8280,6 +9093,21 @@ impl OtTable for ChainPosRule {
 		self.look_ahead_glyph_count = Some((self.look_ahead.len() as i64 - 0).max(0) as u32);
 		self.pos_count = Some((self.pos_lookup_record.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.backtrack.iter_mut() {
+			*v = f(*v)?;
+		}
+		for v in self.input.iter_mut() {
+			*v = f(*v)?;
+		}
+		for v in self.look_ahead.iter_mut() {
+			*v = f(*v)?;
+		}
+		for v in self.pos_lookup_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -8368,6 +9196,14 @@ impl OtTable for ChainPosRuleSet {
 		let _ = t;
 		self.chain_pos_rule_count = Some((self.chain_pos_rule.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.chain_pos_rule.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -8468,24 +9304,33 @@ impl OtTable for ChainSubClassRule {
 		let count_backtrack_glyph_count = CountRef::new("BacktrackGlyphCount", 2, None);
 		w.write_count_reference(count_backtrack_glyph_count.clone());
 		count_backtrack_glyph_count.set_value((self.backtrack.len() as i64 - 0) as u64)?;
-		for (i, item) in self.backtrack.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.backtrack.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		let count_input_glyph_count = CountRef::new("InputGlyphCount", 2, None);
 		w.write_count_reference(count_input_glyph_count.clone());
 		count_input_glyph_count.set_value((self.input.len() as i64 - -1) as u64)?;
-		for (i, item) in self.input.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.input.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		let count_look_ahead_glyph_count = CountRef::new("LookAheadGlyphCount", 2, None);
 		w.write_count_reference(count_look_ahead_glyph_count.clone());
 		count_look_ahead_glyph_count.set_value((self.look_ahead.len() as i64 - 0) as u64)?;
-		for (i, item) in self.look_ahead.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.look_ahead.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		let count_subst_count = CountRef::new("SubstCount", 2, None);
 		w.write_count_reference(count_subst_count.clone());
 		count_subst_count.set_value((self.subst_lookup_record.len() as i64 - 0) as u64)?;
@@ -8555,6 +9400,12 @@ impl OtTable for ChainSubClassRule {
 		self.look_ahead_glyph_count = Some((self.look_ahead.len() as i64 - 0).max(0) as u32);
 		self.subst_count = Some((self.subst_lookup_record.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.subst_lookup_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -8649,6 +9500,14 @@ impl OtTable for ChainSubClassSet {
 		self.chain_sub_class_rule_count =
 			Some((self.chain_sub_class_rule.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.chain_sub_class_rule.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -8749,24 +9608,33 @@ impl OtTable for ChainSubRule {
 		let count_backtrack_glyph_count = CountRef::new("BacktrackGlyphCount", 2, None);
 		w.write_count_reference(count_backtrack_glyph_count.clone());
 		count_backtrack_glyph_count.set_value((self.backtrack.len() as i64 - 0) as u64)?;
-		for (i, item) in self.backtrack.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 2)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.backtrack.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 2)?;
+			}
+			Ok(())
+		})?;
 		let count_input_glyph_count = CountRef::new("InputGlyphCount", 2, None);
 		w.write_count_reference(count_input_glyph_count.clone());
 		count_input_glyph_count.set_value((self.input.len() as i64 - -1) as u64)?;
-		for (i, item) in self.input.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 2)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.input.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 2)?;
+			}
+			Ok(())
+		})?;
 		let count_look_ahead_glyph_count = CountRef::new("LookAheadGlyphCount", 2, None);
 		w.write_count_reference(count_look_ahead_glyph_count.clone());
 		count_look_ahead_glyph_count.set_value((self.look_ahead.len() as i64 - 0) as u64)?;
-		for (i, item) in self.look_ahead.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 2)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.look_ahead.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 2)?;
+			}
+			Ok(())
+		})?;
 		let count_subst_count = CountRef::new("SubstCount", 2, None);
 		w.write_count_reference(count_subst_count.clone());
 		count_subst_count.set_value((self.subst_lookup_record.len() as i64 - 0) as u64)?;
@@ -8836,6 +9704,21 @@ impl OtTable for ChainSubRule {
 		self.look_ahead_glyph_count = Some((self.look_ahead.len() as i64 - 0).max(0) as u32);
 		self.subst_count = Some((self.subst_lookup_record.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.backtrack.iter_mut() {
+			*v = f(*v)?;
+		}
+		for v in self.input.iter_mut() {
+			*v = f(*v)?;
+		}
+		for v in self.look_ahead.iter_mut() {
+			*v = f(*v)?;
+		}
+		for v in self.subst_lookup_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -8924,6 +9807,14 @@ impl OtTable for ChainSubRuleSet {
 		let _ = t;
 		self.chain_sub_rule_count = Some((self.chain_sub_rule.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.chain_sub_rule.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -9024,25 +9915,34 @@ impl OtTable for ChainedClassSeqRule {
 		let count_backtrack_glyph_count = CountRef::new("BacktrackGlyphCount", 2, None);
 		w.write_count_reference(count_backtrack_glyph_count.clone());
 		count_backtrack_glyph_count.set_value((self.backtrack_sequence.len() as i64 - 0) as u64)?;
-		for (i, item) in self.backtrack_sequence.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.backtrack_sequence.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		let count_input_glyph_count = CountRef::new("InputGlyphCount", 2, None);
 		w.write_count_reference(count_input_glyph_count.clone());
 		count_input_glyph_count.set_value((self.input_sequence.len() as i64 - -1) as u64)?;
-		for (i, item) in self.input_sequence.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.input_sequence.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		let count_look_ahead_glyph_count = CountRef::new("LookAheadGlyphCount", 2, None);
 		w.write_count_reference(count_look_ahead_glyph_count.clone());
 		count_look_ahead_glyph_count
 			.set_value((self.look_ahead_sequence.len() as i64 - 0) as u64)?;
-		for (i, item) in self.look_ahead_sequence.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.look_ahead_sequence.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		let count_seq_lookup_count = CountRef::new("SeqLookupCount", 2, None);
 		w.write_count_reference(count_seq_lookup_count.clone());
 		count_seq_lookup_count.set_value((self.seq_lookup_record.len() as i64 - 0) as u64)?;
@@ -9117,6 +10017,12 @@ impl OtTable for ChainedClassSeqRule {
 			Some((self.look_ahead_sequence.len() as i64 - 0).max(0) as u32);
 		self.seq_lookup_count = Some((self.seq_lookup_record.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.seq_lookup_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -9219,6 +10125,14 @@ impl OtTable for ChainedClassSeqRuleSet2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.chained_class_seq_rule.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ChainedSeqRule2`.
@@ -9317,25 +10231,34 @@ impl OtTable for ChainedSeqRule2 {
 		let count_backtrack_glyph_count = CountRef::new("BacktrackGlyphCount", 2, None);
 		w.write_count_reference(count_backtrack_glyph_count.clone());
 		count_backtrack_glyph_count.set_value((self.backtrack_sequence.len() as i64 - 0) as u64)?;
-		for (i, item) in self.backtrack_sequence.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 3)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.backtrack_sequence.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 3)?;
+			}
+			Ok(())
+		})?;
 		let count_input_glyph_count = CountRef::new("InputGlyphCount", 2, None);
 		w.write_count_reference(count_input_glyph_count.clone());
 		count_input_glyph_count.set_value((self.input_sequence.len() as i64 - -1) as u64)?;
-		for (i, item) in self.input_sequence.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 3)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.input_sequence.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 3)?;
+			}
+			Ok(())
+		})?;
 		let count_look_ahead_glyph_count = CountRef::new("LookAheadGlyphCount", 2, None);
 		w.write_count_reference(count_look_ahead_glyph_count.clone());
 		count_look_ahead_glyph_count
 			.set_value((self.look_ahead_sequence.len() as i64 - 0) as u64)?;
-		for (i, item) in self.look_ahead_sequence.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 3)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.look_ahead_sequence.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 3)?;
+			}
+			Ok(())
+		})?;
 		let count_seq_lookup_count = CountRef::new("SeqLookupCount", 2, None);
 		w.write_count_reference(count_seq_lookup_count.clone());
 		count_seq_lookup_count.set_value((self.seq_lookup_record.len() as i64 - 0) as u64)?;
@@ -9408,6 +10331,21 @@ impl OtTable for ChainedSeqRule2 {
 			Some((self.look_ahead_sequence.len() as i64 - 0).max(0) as u32);
 		self.seq_lookup_count = Some((self.seq_lookup_record.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.backtrack_sequence.iter_mut() {
+			*v = f(*v)?;
+		}
+		for v in self.input_sequence.iter_mut() {
+			*v = f(*v)?;
+		}
+		for v in self.look_ahead_sequence.iter_mut() {
+			*v = f(*v)?;
+		}
+		for v in self.seq_lookup_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -9498,6 +10436,14 @@ impl OtTable for ChainedSeqRuleSet2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.chained_seq_rule.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Class1Record`.
@@ -9580,6 +10526,12 @@ impl OtTable for Class1Record {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.class2_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `Class2Record`.
@@ -9647,6 +10599,10 @@ impl OtTable for Class2Record {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `ClassDef` format 1.
@@ -9699,10 +10655,13 @@ impl OtTable for ClassDefRawFormat1 {
 		let count_glyph_count = CountRef::new("GlyphCount", 2, None);
 		w.write_count_reference(count_glyph_count.clone());
 		count_glyph_count.set_value((self.class_value_array.len() as i64 - 0) as u64)?;
-		for (i, item) in self.class_value_array.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.class_value_array.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn format(&self) -> Option<u16> {
@@ -9744,6 +10703,13 @@ impl OtTable for ClassDefRawFormat1 {
 		let _ = t;
 		self.glyph_count = Some((self.class_value_array.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.start_glyph;
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -9831,6 +10797,12 @@ impl OtTable for ClassDefRawFormat2 {
 		let _ = t;
 		self.class_range_count = Some((self.class_range_record.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.class_range_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -9932,6 +10904,13 @@ impl OtTable for ClassDefRawFormat3 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.start_glyph;
+			*v = f(*v)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ClassDef` format 4.
@@ -10019,6 +10998,12 @@ impl OtTable for ClassDefRawFormat4 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.class_range_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ClassDef` (format-switching).
@@ -10101,6 +11086,15 @@ impl OtTable for ClassDefRaw {
 			Self::Format2(v) => v.populate_defaults(ctx),
 			Self::Format3(v) => v.populate_defaults(ctx),
 			Self::Format4(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Format3(v) => v.remap_glyphs(f),
+			Self::Format4(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -10210,6 +11204,17 @@ impl OtTable for ClassRangeRecord {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.start;
+			*v = f(*v)?;
+		}
+		{
+			let v = &mut self.end;
+			*v = f(*v)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ClassRangeRecord2`.
@@ -10280,6 +11285,17 @@ impl OtTable for ClassRangeRecord2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.start;
+			*v = f(*v)?;
+		}
+		{
+			let v = &mut self.end;
+			*v = f(*v)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ClassSeqRule`.
@@ -10342,10 +11358,13 @@ impl OtTable for ClassSeqRule {
 		let count_seq_lookup_count = CountRef::new("SeqLookupCount", 2, None);
 		w.write_count_reference(count_seq_lookup_count.clone());
 		count_glyph_count.set_value((self.input_sequence.len() as i64 - -1) as u64)?;
-		for (i, item) in self.input_sequence.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.input_sequence.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		count_seq_lookup_count.set_value((self.seq_lookup_record.len() as i64 - 0) as u64)?;
 		for (i, item) in self.seq_lookup_record.iter().enumerate() {
 			let _ = i;
@@ -10391,6 +11410,12 @@ impl OtTable for ClassSeqRule {
 		self.glyph_count = Some((self.input_sequence.len() as i64 - -1).max(0) as u32);
 		self.seq_lookup_count = Some((self.seq_lookup_record.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.seq_lookup_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -10481,6 +11506,14 @@ impl OtTable for ClassSeqRuleSet2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.class_seq_rule.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ClipBox` format 1.
@@ -10560,6 +11593,10 @@ impl OtTable for ClipBoxFormat1 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -10650,6 +11687,10 @@ impl OtTable for ClipBoxFormat2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `ClipBox` (format-switching).
@@ -10716,6 +11757,13 @@ impl OtTable for ClipBox {
 		match self {
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Format2(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -10834,6 +11882,12 @@ impl OtTable for ClipListRawFormat1 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.clip_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ClipList` (format-switching).
@@ -10892,6 +11946,12 @@ impl OtTable for ClipListRaw {
 	fn populate_defaults(&mut self, ctx: &mut XmlCtx) -> Result<()> {
 		match self {
 			Self::Format1(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -11005,6 +12065,15 @@ impl OtTable for ClipRecord {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.clip_box;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ColorLine`.
@@ -11099,6 +12168,12 @@ impl OtTable for ColorLine {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.color_stop.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ColorStop`.
@@ -11184,6 +12259,10 @@ impl OtTable for ColorStop {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `ComponentRecord`.
@@ -11264,6 +12343,14 @@ impl OtTable for ComponentRecord {
 			(self.ligature_anchor.len() as i64 - 0).max(0) as u32,
 		)?;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.ligature_anchor.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -11348,6 +12435,14 @@ impl OtTable for ComponentRecord2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.ligature_anchor.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ConditionList`.
@@ -11430,6 +12525,14 @@ impl OtTable for ConditionList {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.condition_table.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ConditionSet`.
@@ -11510,6 +12613,14 @@ impl OtTable for ConditionSet {
 		let _ = t;
 		self.condition_count = Some((self.condition_table.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.condition_table.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -11600,6 +12711,10 @@ impl OtTable for ConditionTableFormat1 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `ConditionTable` format 2.
@@ -11670,6 +12785,10 @@ impl OtTable for ConditionTableFormat2 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -11758,6 +12877,14 @@ impl OtTable for ConditionTableFormat3 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.condition_table.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ConditionTable` format 4.
@@ -11844,6 +12971,14 @@ impl OtTable for ConditionTableFormat4 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.condition_table.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ConditionTable` format 5.
@@ -11918,6 +13053,15 @@ impl OtTable for ConditionTableFormat5 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.condition_table;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -12010,6 +13154,16 @@ impl OtTable for ConditionTable {
 			Self::Format3(v) => v.populate_defaults(ctx),
 			Self::Format4(v) => v.populate_defaults(ctx),
 			Self::Format5(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Format3(v) => v.remap_glyphs(f),
+			Self::Format4(v) => v.remap_glyphs(f),
+			Self::Format5(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -12166,6 +13320,20 @@ impl OtTable for ContextPosFormat1 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.pos_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ContextPos` format 2.
@@ -12296,6 +13464,26 @@ impl OtTable for ContextPosFormat2 {
 		let _ = t;
 		self.pos_class_set_count = Some((self.pos_class_set.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.class_def;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.pos_class_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -12431,6 +13619,17 @@ impl OtTable for ContextPosFormat3 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.coverage.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.pos_lookup_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ContextPos` format 4.
@@ -12542,6 +13741,20 @@ impl OtTable for ContextPosFormat4 {
 		let _ = t;
 		self.seq_rule_set_count = Some((self.seq_rule_set.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.seq_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -12678,6 +13891,26 @@ impl OtTable for ContextPosFormat5 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.class_def;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.class_seq_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ContextPos` format 6.
@@ -12811,6 +14044,17 @@ impl OtTable for ContextPosFormat6 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.coverage.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.seq_lookup_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ContextPos` (format-switching).
@@ -12909,6 +14153,17 @@ impl OtTable for ContextPos {
 			Self::Format4(v) => v.populate_defaults(ctx),
 			Self::Format5(v) => v.populate_defaults(ctx),
 			Self::Format6(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Format3(v) => v.remap_glyphs(f),
+			Self::Format4(v) => v.remap_glyphs(f),
+			Self::Format5(v) => v.remap_glyphs(f),
+			Self::Format6(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -13091,6 +14346,20 @@ impl OtTable for ContextSubstFormat1 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.sub_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ContextSubst` format 2.
@@ -13221,6 +14490,26 @@ impl OtTable for ContextSubstFormat2 {
 		let _ = t;
 		self.sub_class_set_count = Some((self.sub_class_set.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.class_def;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.sub_class_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -13356,6 +14645,17 @@ impl OtTable for ContextSubstFormat3 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.coverage.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.subst_lookup_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ContextSubst` format 4.
@@ -13467,6 +14767,20 @@ impl OtTable for ContextSubstFormat4 {
 		let _ = t;
 		self.seq_rule_set_count = Some((self.seq_rule_set.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.seq_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -13603,6 +14917,26 @@ impl OtTable for ContextSubstFormat5 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.class_def;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.class_seq_rule_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ContextSubst` format 6.
@@ -13736,6 +15070,17 @@ impl OtTable for ContextSubstFormat6 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.coverage.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.seq_lookup_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ContextSubst` (format-switching).
@@ -13834,6 +15179,17 @@ impl OtTable for ContextSubst {
 			Self::Format4(v) => v.populate_defaults(ctx),
 			Self::Format5(v) => v.populate_defaults(ctx),
 			Self::Format6(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Format3(v) => v.remap_glyphs(f),
+			Self::Format4(v) => v.remap_glyphs(f),
+			Self::Format5(v) => v.remap_glyphs(f),
+			Self::Format6(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -13962,6 +15318,13 @@ impl OtTable for ContextualMorph {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.state_table;
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `Coverage` format 1.
@@ -14009,10 +15372,13 @@ impl OtTable for CoverageRawFormat1 {
 		let count_glyph_count = CountRef::new("GlyphCount", 2, None);
 		w.write_count_reference(count_glyph_count.clone());
 		count_glyph_count.set_value((self.glyph_array.len() as i64 - 0) as u64)?;
-		for (i, item) in self.glyph_array.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 2)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.glyph_array.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 2)?;
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn format(&self) -> Option<u16> {
@@ -14045,6 +15411,12 @@ impl OtTable for CoverageRawFormat1 {
 		let _ = t;
 		self.glyph_count = Some((self.glyph_array.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.glyph_array.iter_mut() {
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -14134,6 +15506,12 @@ impl OtTable for CoverageRawFormat2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.range_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `Coverage` format 3.
@@ -14181,10 +15559,13 @@ impl OtTable for CoverageRawFormat3 {
 		let count_glyph_count = CountRef::new("GlyphCount", 3, None);
 		w.write_count_reference(count_glyph_count.clone());
 		count_glyph_count.set_value((self.glyph_array.len() as i64 - 0) as u64)?;
-		for (i, item) in self.glyph_array.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 3)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.glyph_array.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 3)?;
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn format(&self) -> Option<u16> {
@@ -14217,6 +15598,12 @@ impl OtTable for CoverageRawFormat3 {
 		let _ = t;
 		self.glyph_count = Some((self.glyph_array.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.glyph_array.iter_mut() {
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -14306,6 +15693,12 @@ impl OtTable for CoverageRawFormat4 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.range_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `Coverage` (format-switching).
@@ -14388,6 +15781,15 @@ impl OtTable for CoverageRaw {
 			Self::Format2(v) => v.populate_defaults(ctx),
 			Self::Format3(v) => v.populate_defaults(ctx),
 			Self::Format4(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Format3(v) => v.remap_glyphs(f),
+			Self::Format4(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -14540,6 +15942,18 @@ impl OtTable for CursivePosFormat1 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.entry_exit_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `CursivePos` format 2.
@@ -14653,6 +16067,18 @@ impl OtTable for CursivePosFormat2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.entry_exit_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `CursivePos` (format-switching).
@@ -14719,6 +16145,13 @@ impl OtTable for CursivePos {
 		match self {
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Format2(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -14853,6 +16286,10 @@ impl OtTable for DeltaSetIndexMapRawFormat0 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["MappingCount"]
 	}
@@ -14955,6 +16392,10 @@ impl OtTable for DeltaSetIndexMapRawFormat1 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["MappingCount"]
 	}
@@ -15034,6 +16475,13 @@ impl OtTable for DeltaSetIndexMapRaw {
 		match self {
 			Self::Format0(v) => v.populate_defaults(ctx),
 			Self::Format1(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format0(v) => v.remap_glyphs(f),
+			Self::Format1(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -15164,6 +16612,10 @@ impl OtTable for Device {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `EntryExit2`.
@@ -15248,6 +16700,21 @@ impl OtTable for EntryExit2 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.entry_anchor;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.exit_anchor;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -15336,6 +16803,21 @@ impl OtTable for EntryExitRecord {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.entry_anchor;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.exit_anchor;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `EntryIdStringData`.
@@ -15379,6 +16861,10 @@ impl OtTable for EntryIdStringDataRaw {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -15426,10 +16912,13 @@ impl OtTable for ExtenderGlyph {
 		let count_glyph_count = CountRef::new("GlyphCount", 2, None);
 		w.write_count_reference(count_glyph_count.clone());
 		count_glyph_count.set_value((self.extender_glyph.len() as i64 - 0) as u64)?;
-		for (i, item) in self.extender_glyph.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 2)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.extender_glyph.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 2)?;
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
@@ -15459,6 +16948,12 @@ impl OtTable for ExtenderGlyph {
 		let _ = t;
 		self.glyph_count = Some((self.extender_glyph.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.extender_glyph.iter_mut() {
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -15506,10 +17001,13 @@ impl OtTable for ExtenderGlyph2 {
 		let count_glyph_count = CountRef::new("GlyphCount", 2, None);
 		w.write_count_reference(count_glyph_count.clone());
 		count_glyph_count.set_value((self.extender_glyph.len() as i64 - 0) as u64)?;
-		for (i, item) in self.extender_glyph.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 3)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.extender_glyph.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 3)?;
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
@@ -15539,6 +17037,12 @@ impl OtTable for ExtenderGlyph2 {
 		let _ = t;
 		self.glyph_count = Some((self.extender_glyph.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.extender_glyph.iter_mut() {
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -15666,6 +17170,15 @@ impl OtTable for ExtensionPosFormat1 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.ext_sub_table;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ExtensionPos` (format-switching).
@@ -15724,6 +17237,12 @@ impl OtTable for ExtensionPos {
 	fn populate_defaults(&mut self, ctx: &mut XmlCtx) -> Result<()> {
 		match self {
 			Self::Format1(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -15888,6 +17407,15 @@ impl OtTable for ExtensionSubstFormat1 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.ext_sub_table;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ExtensionSubst` (format-switching).
@@ -15946,6 +17474,12 @@ impl OtTable for ExtensionSubst {
 	fn populate_defaults(&mut self, ctx: &mut XmlCtx) -> Result<()> {
 		match self {
 			Self::Format1(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -16076,6 +17610,21 @@ impl OtTable for FeatMinMaxRecord {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.min_coord;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.max_coord;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Feature`.
@@ -16133,10 +17682,13 @@ impl OtTable for Feature {
 		let count_lookup_count = CountRef::new("LookupCount", 2, None);
 		w.write_count_reference(count_lookup_count.clone());
 		count_lookup_count.set_value((self.lookup_list_index.len() as i64 - 0) as u64)?;
-		for (i, item) in self.lookup_list_index.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.lookup_list_index.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
@@ -16181,6 +17733,15 @@ impl OtTable for Feature {
 		let _ = t;
 		self.lookup_count = Some((self.lookup_list_index.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.feature_params;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -16263,6 +17824,12 @@ impl OtTable for FeatureList {
 		let _ = t;
 		self.feature_count = Some((self.feature_record.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.feature_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -16372,6 +17939,12 @@ impl OtTable for FeatureLookupsTable {
 		self.lookup_condition_count =
 			Some((self.lookup_condition_record.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.lookup_condition_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -16489,6 +18062,15 @@ impl OtTable for FeatureName {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.settings;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["SettingsCount"]
 	}
@@ -16602,6 +18184,12 @@ impl OtTable for FeatureNames {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.feature_name.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `FeatureParams`.
@@ -16644,6 +18232,10 @@ impl OtTable for FeatureParams {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -16810,6 +18402,10 @@ impl OtTable for FeatureParamsCharacterVariants {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `FeatureParamsSize`.
@@ -16920,6 +18516,10 @@ impl OtTable for FeatureParamsSize {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `FeatureParamsStylisticSet`.
@@ -16981,6 +18581,10 @@ impl OtTable for FeatureParamsStylisticSet {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -17057,6 +18661,15 @@ impl OtTable for FeatureRecord {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.feature;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -17160,6 +18773,12 @@ impl OtTable for FeatureTableSubstitution {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.substitution_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `FeatureTableSubstitutionRecord`.
@@ -17240,6 +18859,15 @@ impl OtTable for FeatureTableSubstitutionRecord {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.feature;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -17334,6 +18962,21 @@ impl OtTable for FeatureVariationRecord {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.condition_set;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.feature_table_substitution;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -17489,6 +19132,17 @@ impl OtTable for FeatureVariations {
 				Some((self.lookup_variation_record.len() as i64 - 0).max(0) as u32);
 		}
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.feature_variation_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		if (self.version as i64) >= 0x00010001 {
+			for v in self.lookup_variation_record.iter_mut() {
+				v.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -17824,6 +19478,89 @@ impl OtTable for GDEF {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.glyph_class_def;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.attach_list;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.lig_caret_list;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark_attach_class_def;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		if (self.version as i64) >= 0x00010002 {
+			{
+				let v = &mut self.mark_glyph_sets_def;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010003 {
+			{
+				let v = &mut self.var_store;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010004 {
+			{
+				let v = &mut self.glyph_class_def2;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010004 {
+			{
+				let v = &mut self.attach_list2;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010004 {
+			{
+				let v = &mut self.lig_caret_list2;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010004 {
+			{
+				let v = &mut self.mark_attach_class_def2;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010004 {
+			{
+				let v = &mut self.mark_glyph_sets_def2;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `GPOS`.
@@ -18055,6 +19792,59 @@ impl OtTable for GPOS {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.script_list;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.feature_list;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.lookup_list;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		if (self.version as i64) >= 0x00010001 {
+			{
+				let v = &mut self.feature_variations;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010002 {
+			{
+				let v = &mut self.script_list2;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010002 {
+			{
+				let v = &mut self.feature_list2;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010002 {
+			{
+				let v = &mut self.lookup_list2;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
 		Ok(())
 	}
 }
@@ -18290,6 +20080,59 @@ impl OtTable for GSUB {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.script_list;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.feature_list;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.lookup_list;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		if (self.version as i64) >= 0x00010001 {
+			{
+				let v = &mut self.feature_variations;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010002 {
+			{
+				let v = &mut self.script_list2;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010002 {
+			{
+				let v = &mut self.feature_list2;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00010002 {
+			{
+				let v = &mut self.lookup_list2;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `GlyphAssembly`.
@@ -18386,6 +20229,16 @@ impl OtTable for GlyphAssembly {
 		let _ = t;
 		self.part_count = Some((self.part_records.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.italics_correction;
+			v.remap_glyphs(&mut *f)?;
+		}
+		for v in self.part_records.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -18520,6 +20373,13 @@ impl OtTable for GlyphCIDMappingFormat0 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.mapping;
+			*v = remap_keys(std::mem::take(v), &mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `GlyphCIDMapping` (format-switching).
@@ -18578,6 +20438,12 @@ impl OtTable for GlyphCIDMapping {
 	fn populate_defaults(&mut self, ctx: &mut XmlCtx) -> Result<()> {
 		match self {
 			Self::Format0(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format0(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -18706,6 +20572,13 @@ impl OtTable for GlyphPartRecord {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.glyph;
+			*v = f(*v)?;
+		}
+		Ok(())
+	}
 }
 
 /// `GlyphProperties` format 0.
@@ -18769,6 +20642,10 @@ impl OtTable for GlyphPropertiesFormat0 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -18843,6 +20720,13 @@ impl OtTable for GlyphPropertiesFormat1 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.properties;
+			remap_aat_lookup(v, &mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `GlyphProperties` (format-switching).
@@ -18909,6 +20793,13 @@ impl OtTable for GlyphProperties {
 		match self {
 			Self::Format0(v) => v.populate_defaults(ctx),
 			Self::Format1(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format0(v) => v.remap_glyphs(f),
+			Self::Format1(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -19062,6 +20953,33 @@ impl OtTable for HVAR {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.var_store;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.adv_width_map;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.lsb_map;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.rsb_map;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `InsertionMorph`.
@@ -19119,6 +21037,13 @@ impl OtTable for InsertionMorph {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.state_table;
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -19275,6 +21200,17 @@ impl OtTable for JSTF {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.jstf_script_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		if (self.version as i64) >= 0x00010001 {
+			for v in self.jstf_script_record2.iter_mut() {
+				v.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `JstfGPOSModList`.
@@ -19320,10 +21256,13 @@ impl OtTable for JstfGPOSModList {
 		let count_lookup_count = CountRef::new("LookupCount", 2, None);
 		w.write_count_reference(count_lookup_count.clone());
 		count_lookup_count.set_value((self.gpos_lookup_index.len() as i64 - 0) as u64)?;
-		for (i, item) in self.gpos_lookup_index.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.gpos_lookup_index.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
@@ -19355,6 +21294,10 @@ impl OtTable for JstfGPOSModList {
 		let _ = t;
 		self.lookup_count = Some((self.gpos_lookup_index.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -19402,10 +21345,13 @@ impl OtTable for JstfGSUBModList {
 		let count_lookup_count = CountRef::new("LookupCount", 2, None);
 		w.write_count_reference(count_lookup_count.clone());
 		count_lookup_count.set_value((self.gsub_lookup_index.len() as i64 - 0) as u64)?;
-		for (i, item) in self.gsub_lookup_index.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.gsub_lookup_index.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
@@ -19437,6 +21383,10 @@ impl OtTable for JstfGSUBModList {
 		let _ = t;
 		self.lookup_count = Some((self.gsub_lookup_index.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -19527,6 +21477,14 @@ impl OtTable for JstfLangSys {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.jstf_priority.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `JstfLangSysRecord`.
@@ -19610,6 +21568,15 @@ impl OtTable for JstfLangSysRecord {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.jstf_lang_sys;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `JstfMax`.
@@ -19690,6 +21657,14 @@ impl OtTable for JstfMax {
 		let _ = t;
 		self.lookup_count = Some((self.lookup.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.lookup.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -19969,6 +21944,69 @@ impl OtTable for JstfPriority {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.shrinkage_enable_gsub;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.shrinkage_disable_gsub;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.shrinkage_enable_gpos;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.shrinkage_disable_gpos;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.shrinkage_jstf_max;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.extension_enable_gsub;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.extension_disable_gsub;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.extension_enable_gpos;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.extension_disable_gpos;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.extension_jstf_max;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `JstfScript`.
@@ -20099,6 +22137,24 @@ impl OtTable for JstfScript {
 		let _ = t;
 		self.jstf_lang_sys_count = Some((self.jstf_lang_sys_record.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.extender_glyph;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.def_jstf_lang_sys;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.jstf_lang_sys_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -20233,6 +22289,24 @@ impl OtTable for JstfScript2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.extender_glyph;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.def_jstf_lang_sys;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.jstf_lang_sys_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `JstfScriptRecord`.
@@ -20307,6 +22381,15 @@ impl OtTable for JstfScriptRecord {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.jstf_script;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -20385,6 +22468,15 @@ impl OtTable for JstfScriptRecord2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.jstf_script;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LangSys`.
@@ -20447,10 +22539,13 @@ impl OtTable for LangSys {
 		let count_feature_count = CountRef::new("FeatureCount", 2, None);
 		w.write_count_reference(count_feature_count.clone());
 		count_feature_count.set_value((self.feature_index.len() as i64 - 0) as u64)?;
-		for (i, item) in self.feature_index.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.feature_index.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
@@ -20497,6 +22592,15 @@ impl OtTable for LangSys {
 		let _ = t;
 		self.feature_count = Some((self.feature_index.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.lookup_order;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -20571,6 +22675,15 @@ impl OtTable for LangSysRecord {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.lang_sys;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -20655,6 +22768,14 @@ impl OtTable for LayerList {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.paint.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LayerRecord`.
@@ -20726,6 +22847,13 @@ impl OtTable for LayerRecord {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.layer_glyph;
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -20810,6 +22938,12 @@ impl OtTable for LayerRecordArray {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.layer_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `LigCaretDistances`.
@@ -20859,10 +22993,13 @@ impl OtTable for LigCaretDistances {
 		let count_divsion_point_count = CountRef::new("DivsionPointCount", 2, None);
 		w.write_count_reference(count_divsion_point_count.clone());
 		count_divsion_point_count.set_value((self.division_point.len() as i64 - 0) as u64)?;
-		for (i, item) in self.division_point.iter().enumerate() {
-			let _ = i;
-			w.write_i16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.division_point.iter().enumerate() {
+				let _ = i;
+				w.write_i16((*item));
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
@@ -20894,6 +23031,10 @@ impl OtTable for LigCaretDistances {
 		let _ = t;
 		self.divsion_point_count = Some((self.division_point.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -20991,6 +23132,20 @@ impl OtTable for LigCaretList {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.lig_glyph.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LigCaretList2`.
@@ -21086,6 +23241,20 @@ impl OtTable for LigCaretList2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.lig_glyph.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LigCaretPoints`.
@@ -21135,10 +23304,13 @@ impl OtTable for LigCaretPoints {
 		let count_divsion_point_count = CountRef::new("DivsionPointCount", 2, None);
 		w.write_count_reference(count_divsion_point_count.clone());
 		count_divsion_point_count.set_value((self.division_point.len() as i64 - 0) as u64)?;
-		for (i, item) in self.division_point.iter().enumerate() {
-			let _ = i;
-			w.write_i16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.division_point.iter().enumerate() {
+				let _ = i;
+				w.write_i16((*item));
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
@@ -21170,6 +23342,10 @@ impl OtTable for LigCaretPoints {
 		let _ = t;
 		self.divsion_point_count = Some((self.division_point.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -21254,6 +23430,14 @@ impl OtTable for LigGlyph {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.caret_value.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Ligature`.
@@ -21304,10 +23488,13 @@ impl OtTable for Ligature {
 		let count_comp_count = CountRef::new("CompCount", 2, None);
 		w.write_count_reference(count_comp_count.clone());
 		count_comp_count.set_value((self.component.len() as i64 - -1) as u64)?;
-		for (i, item) in self.component.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 2)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.component.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 2)?;
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
@@ -21344,6 +23531,16 @@ impl OtTable for Ligature {
 		let _ = t;
 		self.comp_count = Some((self.component.len() as i64 - -1).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.lig_glyph;
+			*v = f(*v)?;
+		}
+		for v in self.component.iter_mut() {
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -21396,10 +23593,13 @@ impl OtTable for Ligature2 {
 		let count_comp_count = CountRef::new("CompCount", 2, None);
 		w.write_count_reference(count_comp_count.clone());
 		count_comp_count.set_value((self.component.len() as i64 - -1) as u64)?;
-		for (i, item) in self.component.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 3)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.component.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 3)?;
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
@@ -21436,6 +23636,16 @@ impl OtTable for Ligature2 {
 		let _ = t;
 		self.comp_count = Some((self.component.len() as i64 - -1).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.lig_glyph;
+			*v = f(*v)?;
+		}
+		for v in self.component.iter_mut() {
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -21520,6 +23730,14 @@ impl OtTable for LigatureArray {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.ligature_attach.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LigatureArray2`.
@@ -21600,6 +23818,14 @@ impl OtTable for LigatureArray2 {
 		let _ = t;
 		self.ligature_count = Some((self.ligature_attach.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.ligature_attach.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -21684,6 +23910,12 @@ impl OtTable for LigatureAttach {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.component_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `LigatureAttach2`.
@@ -21766,6 +23998,12 @@ impl OtTable for LigatureAttach2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.component_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `LigatureCarets` format 0.
@@ -21828,6 +24066,13 @@ impl OtTable for LigatureCaretsFormat0 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.carets;
+			remap_aat_lookup(v, &mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `LigatureCarets` format 1.
@@ -21888,6 +24133,13 @@ impl OtTable for LigatureCaretsFormat1 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.carets;
+			remap_aat_lookup(v, &mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -21956,6 +24208,13 @@ impl OtTable for LigatureCarets {
 		match self {
 			Self::Format0(v) => v.populate_defaults(ctx),
 			Self::Format1(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format0(v) => v.remap_glyphs(f),
+			Self::Format1(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -22046,6 +24305,13 @@ impl OtTable for LigatureMorph {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.state_table;
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `LigatureSet`.
@@ -22128,6 +24394,14 @@ impl OtTable for LigatureSet {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.ligature.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LigatureSet2`.
@@ -22208,6 +24482,14 @@ impl OtTable for LigatureSet2 {
 		let _ = t;
 		self.ligature_count = Some((self.ligature.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.ligature.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -22311,6 +24593,20 @@ impl OtTable for LigatureSubstRawFormat1 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.ligature_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LigatureSubst` format 2.
@@ -22412,6 +24708,20 @@ impl OtTable for LigatureSubstRawFormat2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.ligature_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LigatureSubst` (format-switching).
@@ -22478,6 +24788,13 @@ impl OtTable for LigatureSubstRaw {
 		match self {
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Format2(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -22586,6 +24903,10 @@ impl OtTable for LocationRecord {
 		let _ = t;
 		ctx.set_count("AxisCount", (self.axis.len() as i64 - 0).max(0) as u32)?;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -22732,6 +25053,14 @@ impl OtTable for Lookup {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.sub_table.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LookupConditionRecord`.
@@ -22827,6 +25156,21 @@ impl OtTable for LookupConditionRecord {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.condition_table;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.lookup_index_list;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LookupIndexList`.
@@ -22876,10 +25220,13 @@ impl OtTable for LookupIndexList {
 		let count_lookup_index_count = CountRef::new("LookupIndexCount", 2, None);
 		w.write_count_reference(count_lookup_index_count.clone());
 		count_lookup_index_count.set_value((self.lookup_index.len() as i64 - 0) as u64)?;
-		for (i, item) in self.lookup_index.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.lookup_index.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
@@ -22909,6 +25256,10 @@ impl OtTable for LookupIndexList {
 		let _ = t;
 		self.lookup_index_count = Some((self.lookup_index.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -22993,6 +25344,14 @@ impl OtTable for LookupList {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.lookup.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LookupList2`.
@@ -23075,6 +25434,14 @@ impl OtTable for LookupList2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.lookup.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `LookupOrder`.
@@ -23117,6 +25484,10 @@ impl OtTable for LookupOrder {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -23201,6 +25572,15 @@ impl OtTable for LookupVariationRecord {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.feature_lookups_table;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -23328,6 +25708,27 @@ impl OtTable for MATH {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.math_constants;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.math_glyph_info;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.math_variants;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -23470,6 +25871,18 @@ impl OtTable for MVAR {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.var_store;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.value_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["ValueRecordSize"]
 	}
@@ -23537,6 +25950,10 @@ impl OtTable for MappingEntries {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -23621,6 +26038,12 @@ impl OtTable for Mark2Array {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.mark2_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `Mark2Array2`.
@@ -23701,6 +26124,12 @@ impl OtTable for Mark2Array2 {
 		let _ = t;
 		self.mark2_count = Some((self.mark2_record.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.mark2_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -23785,6 +26214,14 @@ impl OtTable for Mark2Record {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.mark2_anchor.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Mark2Record2`.
@@ -23865,6 +26302,14 @@ impl OtTable for Mark2Record2 {
 			(self.mark2_anchor.len() as i64 - 0).max(0) as u32,
 		)?;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.mark2_anchor.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -23949,6 +26394,12 @@ impl OtTable for MarkArray {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.mark_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `MarkArray2`.
@@ -24029,6 +26480,12 @@ impl OtTable for MarkArray2 {
 		let _ = t;
 		self.mark_count = Some((self.mark_record.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.mark_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -24183,6 +26640,33 @@ impl OtTable for MarkBasePosFormat1 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.mark_coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.base_coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark_array;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.base_array;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -24352,6 +26836,33 @@ impl OtTable for MarkBasePosFormat2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.mark_coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.base_coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark_array;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.base_array;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["ClassCount"]
 	}
@@ -24431,6 +26942,13 @@ impl OtTable for MarkBasePos {
 		match self {
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Format2(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -24568,6 +27086,14 @@ impl OtTable for MarkGlyphSetsDef {
 		let _ = t;
 		self.mark_set_count = Some((self.coverage.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.coverage.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -24729,6 +27255,33 @@ impl OtTable for MarkLigPosFormat1 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.mark_coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.ligature_coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark_array;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.ligature_array;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -24905,6 +27458,33 @@ impl OtTable for MarkLigPosFormat2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.mark_coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.ligature_coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark_array;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.ligature_array;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["ClassCount"]
 	}
@@ -24984,6 +27564,13 @@ impl OtTable for MarkLigPos {
 		match self {
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Format2(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -25183,6 +27770,33 @@ impl OtTable for MarkMarkPosFormat1 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.mark1_coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark2_coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark1_array;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark2_array;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["ClassCount"]
 	}
@@ -25350,6 +27964,33 @@ impl OtTable for MarkMarkPosFormat2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.mark1_coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark2_coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark1_array;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.mark2_array;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["ClassCount"]
 	}
@@ -25429,6 +28070,13 @@ impl OtTable for MarkMarkPos {
 		match self {
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Format2(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -25545,6 +28193,15 @@ impl OtTable for MarkRecord {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.mark_anchor;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `MarkRecord2`.
@@ -25614,6 +28271,15 @@ impl OtTable for MarkRecord2 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.mark_anchor;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -26555,6 +29221,213 @@ impl OtTable for MathConstants {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.math_leading;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.axis_height;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.accent_base_height;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.flattened_accent_base_height;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.subscript_shift_down;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.subscript_top_max;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.subscript_baseline_drop_min;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.superscript_shift_up;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.superscript_shift_up_cramped;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.superscript_bottom_min;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.superscript_baseline_drop_max;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.sub_superscript_gap_min;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.superscript_bottom_max_with_subscript;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.space_after_script;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.upper_limit_gap_min;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.upper_limit_baseline_rise_min;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.lower_limit_gap_min;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.lower_limit_baseline_drop_min;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.stack_top_shift_up;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.stack_top_display_style_shift_up;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.stack_bottom_shift_down;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.stack_bottom_display_style_shift_down;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.stack_gap_min;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.stack_display_style_gap_min;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.stretch_stack_top_shift_up;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.stretch_stack_bottom_shift_down;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.stretch_stack_gap_above_min;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.stretch_stack_gap_below_min;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.fraction_numerator_shift_up;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.fraction_numerator_display_style_shift_up;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.fraction_denominator_shift_down;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.fraction_denominator_display_style_shift_down;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.fraction_numerator_gap_min;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.fraction_num_display_style_gap_min;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.fraction_rule_thickness;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.fraction_denominator_gap_min;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.fraction_denom_display_style_gap_min;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.skewed_fraction_horizontal_gap;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.skewed_fraction_vertical_gap;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.overbar_vertical_gap;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.overbar_rule_thickness;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.overbar_extra_ascender;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.underbar_vertical_gap;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.underbar_rule_thickness;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.underbar_extra_descender;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.radical_vertical_gap;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.radical_display_style_vertical_gap;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.radical_rule_thickness;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.radical_extra_ascender;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.radical_kern_before_degree;
+			v.remap_glyphs(&mut *f)?;
+		}
+		{
+			let v = &mut self.radical_kern_after_degree;
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `MathGlyphConstruction`.
@@ -26657,6 +29530,18 @@ impl OtTable for MathGlyphConstruction {
 		let _ = t;
 		self.variant_count = Some((self.math_glyph_variant_record.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.glyph_assembly;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.math_glyph_variant_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -26799,6 +29684,33 @@ impl OtTable for MathGlyphInfo {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.math_italics_correction_info;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.math_top_accent_attachment;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.extended_shape_coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.math_kern_info;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `MathGlyphVariantRecord`.
@@ -26870,6 +29782,13 @@ impl OtTable for MathGlyphVariantRecord {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.variant_glyph;
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -26973,6 +29892,18 @@ impl OtTable for MathItalicsCorrectionInfo {
 		self.italics_correction_count =
 			Some((self.italics_correction.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.italics_correction.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -27082,6 +30013,15 @@ impl OtTable for MathKern {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.correction_height.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		for v in self.kern_value.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `MathKernInfo`.
@@ -27184,6 +30124,18 @@ impl OtTable for MathKernInfo {
 		let _ = t;
 		self.math_kern_count = Some((self.math_kern_info_records.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.math_kern_coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.math_kern_info_records.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -27325,6 +30277,33 @@ impl OtTable for MathKernInfoRecord {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.top_right_math_kern;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.top_left_math_kern;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.bottom_right_math_kern;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.bottom_left_math_kern;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `MathTopAccentAttachment`.
@@ -27441,6 +30420,18 @@ impl OtTable for MathTopAccentAttachment {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.top_accent_coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.top_accent_attachment.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `MathValueRecord`.
@@ -27517,6 +30508,15 @@ impl OtTable for MathValueRecord {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.device_table;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -27718,6 +30718,31 @@ impl OtTable for MathVariants {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.vert_glyph_coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.horiz_glyph_coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.vert_glyph_construction.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.horiz_glyph_construction.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `MetricsValueRecord`.
@@ -27772,10 +30797,13 @@ impl OtTable for MetricsValueRecord {
 		w.write_u32(self.var_idx);
 		w.count_ref("ValueRecordSize")?
 			.set_value((self.more_bytes.len() as i64 - -8) as u64)?;
-		for (i, item) in self.more_bytes.iter().enumerate() {
-			let _ = i;
-			w.write_u8((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.more_bytes.iter().enumerate() {
+				let _ = i;
+				w.write_u8((*item));
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
@@ -27810,6 +30838,10 @@ impl OtTable for MetricsValueRecord {
 			(self.more_bytes.len() as i64 - -8).max(0) as u32,
 		)?;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -27924,6 +30956,24 @@ impl OtTable for MinMax {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.min_coord;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.max_coord;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.feat_min_max_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `MorphClass`.
@@ -27983,6 +31033,10 @@ impl OtTable for MorphClass {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -28080,6 +31134,10 @@ impl OtTable for MorphFeature {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -28234,6 +31292,15 @@ impl OtTable for MortChain {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.morph_feature.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		for v in self.morph_subtable.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `MortSubtable`.
@@ -28336,6 +31403,10 @@ impl OtTable for MortSubtableRaw {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -28490,6 +31561,15 @@ impl OtTable for MorxChain {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.morph_feature.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		for v in self.morph_subtable.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `MorxSubtable`.
@@ -28601,6 +31681,10 @@ impl OtTable for MorxSubtableRaw {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `MultiVarData`.
@@ -28663,10 +31747,13 @@ impl OtTable for MultiVarData {
 			StateValue::Count(count_var_region_count.clone()),
 		);
 		count_var_region_count.set_value((self.var_region_index.len() as i64 - 0) as u64)?;
-		for (i, item) in self.var_region_index.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.var_region_index.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		write_tuple_list_offset(w, &self.item, "Item")?;
 		Ok(())
 	}
@@ -28712,6 +31799,10 @@ impl OtTable for MultiVarData {
 		let _ = t;
 		self.var_region_count = Some((self.var_region_index.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -28854,6 +31945,20 @@ impl OtTable for MultiVarStore {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.sparse_var_region_list;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.multi_var_data.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `MultipleSubst` format 1.
@@ -28953,6 +32058,20 @@ impl OtTable for MultipleSubstRawFormat1 {
 		let _ = t;
 		self.sequence_count = Some((self.sequence.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.sequence.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -29056,6 +32175,20 @@ impl OtTable for MultipleSubstRawFormat2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.sequence.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `MultipleSubst` (format-switching).
@@ -29122,6 +32255,13 @@ impl OtTable for MultipleSubstRaw {
 		match self {
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Format2(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -29210,6 +32350,13 @@ impl OtTable for NoncontextualMorph {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.substitution;
+			remap_aat_lookup(v, &mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `OpticalBounds` format 0.
@@ -29277,6 +32424,13 @@ impl OtTable for OpticalBoundsFormat0 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.optical_bounds_deltas;
+			remap_aat_lookup(v, &mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -29348,6 +32502,13 @@ impl OtTable for OpticalBoundsFormat1 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.optical_bounds_points;
+			remap_aat_lookup(v, &mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `OpticalBounds` (format-switching).
@@ -29414,6 +32575,13 @@ impl OtTable for OpticalBounds {
 		match self {
 			Self::Format0(v) => v.populate_defaults(ctx),
 			Self::Format1(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format0(v) => v.remap_glyphs(f),
+			Self::Format1(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -29522,6 +32690,10 @@ impl OtTable for OpticalBoundsDeltas {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `OpticalBoundsPoints`.
@@ -29599,6 +32771,10 @@ impl OtTable for OpticalBoundsPoints {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `Paint` format 1.
@@ -29669,6 +32845,10 @@ impl OtTable for PaintFormat1 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -29744,6 +32924,19 @@ impl OtTable for PaintFormat10 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.glyph;
+			*v = f(*v)?;
+		}
+		Ok(())
+	}
 }
 
 /// `Paint` format 11.
@@ -29802,6 +32995,13 @@ impl OtTable for PaintFormat11 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.glyph;
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -29885,6 +33085,21 @@ impl OtTable for PaintFormat12 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.transform;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Paint` format 13.
@@ -29966,6 +33181,21 @@ impl OtTable for PaintFormat13 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.transform;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Paint` format 14.
@@ -30044,6 +33274,15 @@ impl OtTable for PaintFormat14 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -30131,6 +33370,15 @@ impl OtTable for PaintFormat15 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -30221,6 +33469,15 @@ impl OtTable for PaintFormat16 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -30318,6 +33575,15 @@ impl OtTable for PaintFormat17 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -30422,6 +33688,15 @@ impl OtTable for PaintFormat18 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -30535,6 +33810,15 @@ impl OtTable for PaintFormat19 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Paint` format 2.
@@ -30610,6 +33894,10 @@ impl OtTable for PaintFormat2 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -30688,6 +33976,15 @@ impl OtTable for PaintFormat20 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -30773,6 +34070,15 @@ impl OtTable for PaintFormat21 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -30865,6 +34171,15 @@ impl OtTable for PaintFormat22 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -30966,6 +34281,15 @@ impl OtTable for PaintFormat23 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Paint` format 24.
@@ -31042,6 +34366,15 @@ impl OtTable for PaintFormat24 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -31127,6 +34460,15 @@ impl OtTable for PaintFormat25 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -31219,6 +34561,15 @@ impl OtTable for PaintFormat26 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -31320,6 +34671,15 @@ impl OtTable for PaintFormat27 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Paint` format 28.
@@ -31408,6 +34768,15 @@ impl OtTable for PaintFormat28 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -31507,6 +34876,15 @@ impl OtTable for PaintFormat29 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Paint` format 3.
@@ -31589,6 +34967,10 @@ impl OtTable for PaintFormat3 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -31693,6 +35075,15 @@ impl OtTable for PaintFormat30 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -31806,6 +35197,15 @@ impl OtTable for PaintFormat31 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Paint` format 32.
@@ -31917,6 +35317,21 @@ impl OtTable for PaintFormat32 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.source_paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.backdrop_paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Paint` format 33.
@@ -31988,6 +35403,19 @@ impl OtTable for PaintFormat33 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.paint;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.glyph;
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -32098,6 +35526,15 @@ impl OtTable for PaintFormat4 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.color_line;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -32217,6 +35654,15 @@ impl OtTable for PaintFormat5 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.color_line;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Paint` format 6.
@@ -32325,6 +35771,15 @@ impl OtTable for PaintFormat6 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.color_line;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -32444,6 +35899,15 @@ impl OtTable for PaintFormat7 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.color_line;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Paint` format 8.
@@ -32548,6 +36012,15 @@ impl OtTable for PaintFormat8 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.color_line;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -32661,6 +36134,15 @@ impl OtTable for PaintFormat9 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.color_line;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -32989,6 +36471,44 @@ impl OtTable for Paint {
 			Self::Unknown(_) => Ok(()),
 		}
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format10(v) => v.remap_glyphs(f),
+			Self::Format11(v) => v.remap_glyphs(f),
+			Self::Format12(v) => v.remap_glyphs(f),
+			Self::Format13(v) => v.remap_glyphs(f),
+			Self::Format14(v) => v.remap_glyphs(f),
+			Self::Format15(v) => v.remap_glyphs(f),
+			Self::Format16(v) => v.remap_glyphs(f),
+			Self::Format17(v) => v.remap_glyphs(f),
+			Self::Format18(v) => v.remap_glyphs(f),
+			Self::Format19(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Format20(v) => v.remap_glyphs(f),
+			Self::Format21(v) => v.remap_glyphs(f),
+			Self::Format22(v) => v.remap_glyphs(f),
+			Self::Format23(v) => v.remap_glyphs(f),
+			Self::Format24(v) => v.remap_glyphs(f),
+			Self::Format25(v) => v.remap_glyphs(f),
+			Self::Format26(v) => v.remap_glyphs(f),
+			Self::Format27(v) => v.remap_glyphs(f),
+			Self::Format28(v) => v.remap_glyphs(f),
+			Self::Format29(v) => v.remap_glyphs(f),
+			Self::Format3(v) => v.remap_glyphs(f),
+			Self::Format30(v) => v.remap_glyphs(f),
+			Self::Format31(v) => v.remap_glyphs(f),
+			Self::Format32(v) => v.remap_glyphs(f),
+			Self::Format33(v) => v.remap_glyphs(f),
+			Self::Format4(v) => v.remap_glyphs(f),
+			Self::Format5(v) => v.remap_glyphs(f),
+			Self::Format6(v) => v.remap_glyphs(f),
+			Self::Format7(v) => v.remap_glyphs(f),
+			Self::Format8(v) => v.remap_glyphs(f),
+			Self::Format9(v) => v.remap_glyphs(f),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
 	fn struct_length(&self) -> Option<StructLength> {
 		match self {
 			Self::Format1(v) => v.struct_length(),
@@ -33288,6 +36808,20 @@ impl OtTable for PairPosFormat1 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.pair_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `PairPos` format 2.
@@ -33478,6 +37012,30 @@ impl OtTable for PairPosFormat2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.class_def1;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.class_def2;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.class1_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["Class2Count"]
 	}
@@ -33636,6 +37194,20 @@ impl OtTable for PairPosFormat3 {
 		let _ = t;
 		self.pair_set_count = Some((self.pair_set.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.pair_set.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -33828,6 +37400,30 @@ impl OtTable for PairPosFormat4 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.class_def1;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.class_def2;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.class1_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["Class2Count"]
 	}
@@ -33923,6 +37519,15 @@ impl OtTable for PairPos {
 			Self::Format2(v) => v.populate_defaults(ctx),
 			Self::Format3(v) => v.populate_defaults(ctx),
 			Self::Format4(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Format3(v) => v.remap_glyphs(f),
+			Self::Format4(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -34062,6 +37667,12 @@ impl OtTable for PairSet {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.pair_value_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `PairSet2`.
@@ -34144,6 +37755,12 @@ impl OtTable for PairSet2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.pair_value_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `PairValue2`.
@@ -34223,6 +37840,13 @@ impl OtTable for PairValue2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.second_glyph;
+			*v = f(*v)?;
+		}
+		Ok(())
+	}
 }
 
 /// `PairValueRecord`.
@@ -34300,6 +37924,13 @@ impl OtTable for PairValueRecord {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.second_glyph;
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -34401,10 +38032,13 @@ impl OtTable for PatchMapFormat2 {
 				self.compatibility_id.len()
 			)));
 		}
-		for (i, item) in self.compatibility_id.iter().enumerate() {
-			let _ = i;
-			w.write_u32((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.compatibility_id.iter().enumerate() {
+				let _ = i;
+				w.write_u32((*item));
+			}
+			Ok(())
+		})?;
 		w.write_u8(self.default_patch_format);
 		w.write_u24(self.num_entries)?;
 		w.set("NumEntries", StateValue::Int(self.num_entries as i64));
@@ -34432,10 +38066,13 @@ impl OtTable for PatchMapFormat2 {
 				self.url_template.len() as i64 - 0
 			)));
 		}
-		for (i, item) in self.url_template.iter().enumerate() {
-			let _ = i;
-			w.write_u8((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.url_template.iter().enumerate() {
+				let _ = i;
+				w.write_u8((*item));
+			}
+			Ok(())
+		})?;
 		if (t.flags as i64) & 0x01 != 0 {
 			w.write_u32(self.cff_char_strings_offset);
 		}
@@ -34554,6 +38191,21 @@ impl OtTable for PatchMapFormat2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.mapping_entries;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.entry_id_string_data;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `PatchMap` (format-switching).
@@ -34612,6 +38264,12 @@ impl OtTable for PatchMap {
 	fn populate_defaults(&mut self, ctx: &mut XmlCtx) -> Result<()> {
 		match self {
 			Self::Format2(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format2(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -34701,10 +38359,13 @@ impl OtTable for PosClassRule {
 		let count_pos_count = CountRef::new("PosCount", 2, None);
 		w.write_count_reference(count_pos_count.clone());
 		count_glyph_count.set_value((self.class.len() as i64 - -1) as u64)?;
-		for (i, item) in self.class.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.class.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		count_pos_count.set_value((self.pos_lookup_record.len() as i64 - 0) as u64)?;
 		for (i, item) in self.pos_lookup_record.iter().enumerate() {
 			let _ = i;
@@ -34750,6 +38411,12 @@ impl OtTable for PosClassRule {
 		self.glyph_count = Some((self.class.len() as i64 - -1).max(0) as u32);
 		self.pos_count = Some((self.pos_lookup_record.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.pos_lookup_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -34840,6 +38507,14 @@ impl OtTable for PosClassSet {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.pos_class_rule.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `PosLookupRecord`.
@@ -34913,6 +38588,10 @@ impl OtTable for PosLookupRecord {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `PosRule`.
@@ -34975,10 +38654,13 @@ impl OtTable for PosRule {
 		let count_pos_count = CountRef::new("PosCount", 2, None);
 		w.write_count_reference(count_pos_count.clone());
 		count_glyph_count.set_value((self.input.len() as i64 - -1) as u64)?;
-		for (i, item) in self.input.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 2)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.input.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 2)?;
+			}
+			Ok(())
+		})?;
 		count_pos_count.set_value((self.pos_lookup_record.len() as i64 - 0) as u64)?;
 		for (i, item) in self.pos_lookup_record.iter().enumerate() {
 			let _ = i;
@@ -35024,6 +38706,15 @@ impl OtTable for PosRule {
 		self.glyph_count = Some((self.input.len() as i64 - -1).max(0) as u32);
 		self.pos_count = Some((self.pos_lookup_record.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.input.iter_mut() {
+			*v = f(*v)?;
+		}
+		for v in self.pos_lookup_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -35108,6 +38799,14 @@ impl OtTable for PosRuleSet {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.pos_rule.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `RangeRecord`.
@@ -35181,6 +38880,17 @@ impl OtTable for RangeRecord {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.start;
+			*v = f(*v)?;
+		}
+		{
+			let v = &mut self.end;
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -35258,6 +38968,17 @@ impl OtTable for RangeRecord2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.start;
+			*v = f(*v)?;
+		}
+		{
+			let v = &mut self.end;
+			*v = f(*v)?;
+		}
+		Ok(())
+	}
 }
 
 /// `RearrangementMorph`.
@@ -35315,6 +39036,13 @@ impl OtTable for RearrangementMorph {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.state_table;
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -35429,10 +39157,13 @@ impl OtTable for ReverseChainSingleSubstFormat1 {
 		let count_glyph_count = CountRef::new("GlyphCount", 2, None);
 		w.write_count_reference(count_glyph_count.clone());
 		count_glyph_count.set_value((self.substitute.len() as i64 - 0) as u64)?;
-		for (i, item) in self.substitute.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 2)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.substitute.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 2)?;
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn dont_share(&self) -> bool {
@@ -35506,6 +39237,28 @@ impl OtTable for ReverseChainSingleSubstFormat1 {
 			Some((self.look_ahead_coverage.len() as i64 - 0).max(0) as u32);
 		self.glyph_count = Some((self.substitute.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.backtrack_coverage.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.look_ahead_coverage.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.substitute.iter_mut() {
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -35620,10 +39373,13 @@ impl OtTable for ReverseChainSingleSubstFormat2 {
 		let count_glyph_count = CountRef::new("GlyphCount", 3, None);
 		w.write_count_reference(count_glyph_count.clone());
 		count_glyph_count.set_value((self.substitute.len() as i64 - 0) as u64)?;
-		for (i, item) in self.substitute.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 3)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.substitute.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 3)?;
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn dont_share(&self) -> bool {
@@ -35699,6 +39455,28 @@ impl OtTable for ReverseChainSingleSubstFormat2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.backtrack_coverage.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.look_ahead_coverage.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.substitute.iter_mut() {
+			*v = f(*v)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ReverseChainSingleSubst` (format-switching).
@@ -35765,6 +39543,13 @@ impl OtTable for ReverseChainSingleSubst {
 		match self {
 			Self::Format1(v) => v.populate_defaults(ctx),
 			Self::Format2(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -35994,6 +39779,21 @@ impl OtTable for STAT {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.design_axis_record;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.axis_value_array;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["DesignAxisRecordSize", "DesignAxisCount", "AxisValueCount"]
 	}
@@ -36121,6 +39921,18 @@ impl OtTable for Script {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.default_lang_sys;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.lang_sys_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ScriptList`.
@@ -36203,6 +40015,12 @@ impl OtTable for ScriptList {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.script_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `ScriptRecord`.
@@ -36270,6 +40088,15 @@ impl OtTable for ScriptRecord {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.script;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -36345,6 +40172,10 @@ impl OtTable for SeqLookup {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `SeqRule2`.
@@ -36407,10 +40238,13 @@ impl OtTable for SeqRule2 {
 		let count_seq_lookup_count = CountRef::new("SeqLookupCount", 2, None);
 		w.write_count_reference(count_seq_lookup_count.clone());
 		count_glyph_count.set_value((self.input_sequence.len() as i64 - -1) as u64)?;
-		for (i, item) in self.input_sequence.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 3)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.input_sequence.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 3)?;
+			}
+			Ok(())
+		})?;
 		count_seq_lookup_count.set_value((self.seq_lookup_record.len() as i64 - 0) as u64)?;
 		for (i, item) in self.seq_lookup_record.iter().enumerate() {
 			let _ = i;
@@ -36456,6 +40290,15 @@ impl OtTable for SeqRule2 {
 		self.glyph_count = Some((self.input_sequence.len() as i64 - -1).max(0) as u32);
 		self.seq_lookup_count = Some((self.seq_lookup_record.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.input_sequence.iter_mut() {
+			*v = f(*v)?;
+		}
+		for v in self.seq_lookup_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -36540,6 +40383,14 @@ impl OtTable for SeqRuleSet2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.seq_rule.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `Sequence`.
@@ -36585,10 +40436,13 @@ impl OtTable for Sequence {
 		let count_glyph_count = CountRef::new("GlyphCount", 2, None);
 		w.write_count_reference(count_glyph_count.clone());
 		count_glyph_count.set_value((self.substitute.len() as i64 - 0) as u64)?;
-		for (i, item) in self.substitute.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 2)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.substitute.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 2)?;
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
@@ -36618,6 +40472,12 @@ impl OtTable for Sequence {
 		let _ = t;
 		self.glyph_count = Some((self.substitute.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.substitute.iter_mut() {
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -36665,10 +40525,13 @@ impl OtTable for Sequence2 {
 		let count_glyph_count = CountRef::new("GlyphCount", 2, None);
 		w.write_count_reference(count_glyph_count.clone());
 		count_glyph_count.set_value((self.substitute.len() as i64 - 0) as u64)?;
-		for (i, item) in self.substitute.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 3)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.substitute.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 3)?;
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
@@ -36698,6 +40561,12 @@ impl OtTable for Sequence2 {
 		let _ = t;
 		self.glyph_count = Some((self.substitute.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.substitute.iter_mut() {
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -36772,6 +40641,10 @@ impl OtTable for Setting {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -36854,6 +40727,12 @@ impl OtTable for Settings {
 			(self.setting.len() as i64 - 0).max(0) as u32,
 		)?;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.setting.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -36960,6 +40839,15 @@ impl OtTable for SinglePosFormat1 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -37092,6 +40980,15 @@ impl OtTable for SinglePosFormat2 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `SinglePos` format 3.
@@ -37196,6 +41093,15 @@ impl OtTable for SinglePosFormat3 {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -37328,6 +41234,15 @@ impl OtTable for SinglePosFormat4 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `SinglePos` (format-switching).
@@ -37410,6 +41325,15 @@ impl OtTable for SinglePos {
 			Self::Format2(v) => v.populate_defaults(ctx),
 			Self::Format3(v) => v.populate_defaults(ctx),
 			Self::Format4(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Format3(v) => v.remap_glyphs(f),
+			Self::Format4(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -37547,6 +41471,15 @@ impl OtTable for SingleSubstRawFormat1 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `SingleSubst` format 2.
@@ -37600,10 +41533,13 @@ impl OtTable for SingleSubstRawFormat2 {
 		let count_glyph_count = CountRef::new("GlyphCount", 2, None);
 		w.write_count_reference(count_glyph_count.clone());
 		count_glyph_count.set_value((self.substitute.len() as i64 - 0) as u64)?;
-		for (i, item) in self.substitute.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 2)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.substitute.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 2)?;
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn format(&self) -> Option<u16> {
@@ -37644,6 +41580,18 @@ impl OtTable for SingleSubstRawFormat2 {
 		let _ = t;
 		self.glyph_count = Some((self.substitute.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.substitute.iter_mut() {
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -37726,6 +41674,15 @@ impl OtTable for SingleSubstRawFormat3 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `SingleSubst` format 4.
@@ -37779,10 +41736,13 @@ impl OtTable for SingleSubstRawFormat4 {
 		let count_glyph_count = CountRef::new("GlyphCount", 3, None);
 		w.write_count_reference(count_glyph_count.clone());
 		count_glyph_count.set_value((self.substitute.len() as i64 - 0) as u64)?;
-		for (i, item) in self.substitute.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 3)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.substitute.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 3)?;
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn format(&self) -> Option<u16> {
@@ -37823,6 +41783,18 @@ impl OtTable for SingleSubstRawFormat4 {
 		let _ = t;
 		self.glyph_count = Some((self.substitute.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.substitute.iter_mut() {
+			*v = f(*v)?;
+		}
 		Ok(())
 	}
 }
@@ -37907,6 +41879,15 @@ impl OtTable for SingleSubstRaw {
 			Self::Format2(v) => v.populate_defaults(ctx),
 			Self::Format3(v) => v.populate_defaults(ctx),
 			Self::Format4(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format1(v) => v.remap_glyphs(f),
+			Self::Format2(v) => v.remap_glyphs(f),
+			Self::Format3(v) => v.remap_glyphs(f),
+			Self::Format4(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -38042,6 +42023,14 @@ impl OtTable for SparseVarRegion {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.sparse_var_region_axis.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `SparseVarRegionAxis`.
@@ -38134,6 +42123,10 @@ impl OtTable for SparseVarRegionAxis {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `SparseVarRegionList`.
@@ -38214,6 +42207,14 @@ impl OtTable for SparseVarRegionList {
 		let _ = t;
 		self.region_count = Some((self.region.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.region.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -38314,6 +42315,10 @@ impl OtTable for StateHeader {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["ClassCount"]
 	}
@@ -38389,10 +42394,13 @@ impl OtTable for SubClassRule {
 		let count_subst_count = CountRef::new("SubstCount", 2, None);
 		w.write_count_reference(count_subst_count.clone());
 		count_glyph_count.set_value((self.class.len() as i64 - -1) as u64)?;
-		for (i, item) in self.class.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.class.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		count_subst_count.set_value((self.subst_lookup_record.len() as i64 - 0) as u64)?;
 		for (i, item) in self.subst_lookup_record.iter().enumerate() {
 			let _ = i;
@@ -38438,6 +42446,12 @@ impl OtTable for SubClassRule {
 		self.glyph_count = Some((self.class.len() as i64 - -1).max(0) as u32);
 		self.subst_count = Some((self.subst_lookup_record.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.subst_lookup_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -38528,6 +42542,14 @@ impl OtTable for SubClassSet {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.sub_class_rule.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `SubRule`.
@@ -38590,10 +42612,13 @@ impl OtTable for SubRule {
 		let count_subst_count = CountRef::new("SubstCount", 2, None);
 		w.write_count_reference(count_subst_count.clone());
 		count_glyph_count.set_value((self.input.len() as i64 - -1) as u64)?;
-		for (i, item) in self.input.iter().enumerate() {
-			let _ = i;
-			write_glyph(w, (*item), 2)?;
-		}
+		w.write_array(|w| {
+			for (i, item) in self.input.iter().enumerate() {
+				let _ = i;
+				write_glyph(w, (*item), 2)?;
+			}
+			Ok(())
+		})?;
 		count_subst_count.set_value((self.subst_lookup_record.len() as i64 - 0) as u64)?;
 		for (i, item) in self.subst_lookup_record.iter().enumerate() {
 			let _ = i;
@@ -38639,6 +42664,15 @@ impl OtTable for SubRule {
 		self.glyph_count = Some((self.input.len() as i64 - -1).max(0) as u32);
 		self.subst_count = Some((self.subst_lookup_record.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.input.iter_mut() {
+			*v = f(*v)?;
+		}
+		for v in self.subst_lookup_record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -38723,6 +42757,14 @@ impl OtTable for SubRuleSet {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.sub_rule.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `SubstLookupRecord`.
@@ -38794,6 +42836,10 @@ impl OtTable for SubstLookupRecord {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -38965,6 +43011,15 @@ impl OtTable for TSIC {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.record_locations.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		for v in self.record.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["AxisCount"]
 	}
@@ -39060,10 +43115,13 @@ impl OtTable for TSICRecord {
 				self.name_array.len() as i64 - 0
 			)));
 		}
-		for (i, item) in self.name_array.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.name_array.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		if self.num_cvt_entries as i64 != self.cvt_array.len() as i64 - 0 {
 			return Err(Error::Assertion(format!(
 				"(NumCVTEntries, {}, {})",
@@ -39071,10 +43129,13 @@ impl OtTable for TSICRecord {
 				self.cvt_array.len() as i64 - 0
 			)));
 		}
-		for (i, item) in self.cvt_array.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.cvt_array.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		if self.num_cvt_entries as i64 != self.cvt_value_array.len() as i64 - 0 {
 			return Err(Error::Assertion(format!(
 				"(NumCVTEntries, {}, {})",
@@ -39082,10 +43143,13 @@ impl OtTable for TSICRecord {
 				self.cvt_value_array.len() as i64 - 0
 			)));
 		}
-		for (i, item) in self.cvt_value_array.iter().enumerate() {
-			let _ = i;
-			w.write_i16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.cvt_value_array.iter().enumerate() {
+				let _ = i;
+				w.write_i16((*item));
+			}
+			Ok(())
+		})?;
 		Ok(())
 	}
 	fn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {
@@ -39152,6 +43216,10 @@ impl OtTable for TSICRecord {
 			"NumCVTEntries",
 		)?;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -39321,6 +43389,39 @@ impl OtTable for VARC {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.coverage;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.multi_var_store;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.condition_list;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.axis_indices_list;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.var_composite_glyphs;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `VVAR`.
@@ -39456,6 +43557,39 @@ impl OtTable for VVAR {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.var_store;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.adv_height_map;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.tsb_map;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.bsb_map;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		{
+			let v = &mut self.v_org_map;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `VarAffine2x3`.
@@ -39554,6 +43688,10 @@ impl OtTable for VarAffine2x3 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `VarColorLine`.
@@ -39648,6 +43786,12 @@ impl OtTable for VarColorLine {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.color_stop.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `VarColorStop`.
@@ -39740,6 +43884,10 @@ impl OtTable for VarColorStop {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 }
 
 /// `VarCompositeGlyphs`.
@@ -39796,6 +43944,15 @@ impl OtTable for VarCompositeGlyphs {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.var_composite_glyph;
+			for g in v.iter_mut() {
+				g.remap_glyphs(&mut *f)?;
+			}
+		}
 		Ok(())
 	}
 }
@@ -39873,10 +44030,13 @@ impl OtTable for VarData {
 			StateValue::Count(count_var_region_count.clone()),
 		);
 		count_var_region_count.set_value((self.var_region_index.len() as i64 - 0) as u64)?;
-		for (i, item) in self.var_region_index.iter().enumerate() {
-			let _ = i;
-			w.write_u16((*item));
-		}
+		w.write_array(|w| {
+			for (i, item) in self.var_region_index.iter().enumerate() {
+				let _ = i;
+				w.write_u16((*item));
+			}
+			Ok(())
+		})?;
 		count_item_count.set_value((self.item.len() as i64 - 0) as u64)?;
 		for (i, item) in self.item.iter().enumerate() {
 			let _ = i;
@@ -39924,6 +44084,10 @@ impl OtTable for VarData {
 		self.var_region_count = Some((self.var_region_index.len() as i64 - 0).max(0) as u32);
 		self.item_count = Some((self.item.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -40028,6 +44192,10 @@ impl OtTable for VarIdxMapRawFormat0 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["MappingCount"]
 	}
@@ -40130,6 +44298,10 @@ impl OtTable for VarIdxMapRawFormat1 {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["MappingCount"]
 	}
@@ -40209,6 +44381,13 @@ impl OtTable for VarIdxMapRaw {
 		match self {
 			Self::Format0(v) => v.populate_defaults(ctx),
 			Self::Format1(v) => v.populate_defaults(ctx),
+			Self::Unknown(_) => Ok(()),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::Format0(v) => v.remap_glyphs(f),
+			Self::Format1(v) => v.remap_glyphs(f),
 			Self::Unknown(_) => Ok(()),
 		}
 	}
@@ -40322,6 +44501,12 @@ impl OtTable for VarRegion {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.var_region_axis.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `VarRegionAxis`.
@@ -40405,6 +44590,10 @@ impl OtTable for VarRegionAxis {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
 		Ok(())
 	}
 }
@@ -40507,6 +44696,12 @@ impl OtTable for VarRegionList {
 		let _ = t;
 		self.region_count = Some((self.region.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.region.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
@@ -40642,6 +44837,20 @@ impl OtTable for VarStore {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.var_region_list;
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		for v in self.var_data.iter_mut() {
+			if let Some(x) = v {
+				x.remap_glyphs(&mut *f)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// `ankr`.
@@ -40705,6 +44914,13 @@ impl OtTable for Ankr {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.anchor_points;
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -40853,6 +45069,28 @@ impl OtTable for Avar {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.axis_segment_map.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		if (self.version as i64) >= 0x00020000 {
+			{
+				let v = &mut self.var_idx_map;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		if (self.version as i64) >= 0x00020000 {
+			{
+				let v = &mut self.var_store;
+				if let Some(x) = v {
+					x.remap_glyphs(&mut *f)?;
+				}
+			}
+		}
+		Ok(())
+	}
 	fn propagated_counts(&self) -> &'static [&'static str] {
 		&["AxisCount"]
 	}
@@ -40942,6 +45180,13 @@ impl OtTable for Bsln {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.baseline;
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `cidg`.
@@ -41005,6 +45250,13 @@ impl OtTable for Cidg {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.cid_glyph_mapping;
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -41084,6 +45336,13 @@ impl OtTable for Feat {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.feature_names;
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `gcid`.
@@ -41147,6 +45406,13 @@ impl OtTable for Gcid {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.glyph_cid_mapping;
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -41224,6 +45490,13 @@ impl OtTable for Lcar {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.ligature_carets;
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -41318,6 +45591,12 @@ impl OtTable for Mort {
 		let _ = t;
 		self.morph_chain_count = Some((self.morph_chain.len() as i64 - 0).max(0) as u32);
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.morph_chain.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -41416,6 +45695,12 @@ impl OtTable for Morx {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for v in self.morph_chain.iter_mut() {
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `opbd`.
@@ -41493,6 +45778,13 @@ impl OtTable for Opbd {
 		let _ = ctx;
 		Ok(())
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.optical_bounds;
+			v.remap_glyphs(&mut *f)?;
+		}
+		Ok(())
+	}
 }
 
 /// `prop`.
@@ -41568,6 +45860,13 @@ impl OtTable for Prop {
 		let t = &*self;
 		let _ = t;
 		let _ = ctx;
+		Ok(())
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		{
+			let v = &mut self.glyph_properties;
+			v.remap_glyphs(&mut *f)?;
+		}
 		Ok(())
 	}
 }
@@ -42000,6 +46299,32 @@ impl OtTable for LookupSubTable {
 			Self::SingleSubst(v) => v.populate_defaults(ctx),
 		}
 	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::AlternateSubst(v) => v.remap_glyphs(f),
+			Self::ChainContextPos(v) => v.remap_glyphs(f),
+			Self::ChainContextSubst(v) => v.remap_glyphs(f),
+			Self::ContextPos(v) => v.remap_glyphs(f),
+			Self::ContextSubst(v) => v.remap_glyphs(f),
+			Self::ContextualMorph(v) => v.remap_glyphs(f),
+			Self::CursivePos(v) => v.remap_glyphs(f),
+			Self::ExtensionPos(v) => v.remap_glyphs(f),
+			Self::ExtensionSubst(v) => v.remap_glyphs(f),
+			Self::InsertionMorph(v) => v.remap_glyphs(f),
+			Self::LigatureMorph(v) => v.remap_glyphs(f),
+			Self::LigatureSubst(v) => v.remap_glyphs(f),
+			Self::MarkBasePos(v) => v.remap_glyphs(f),
+			Self::MarkLigPos(v) => v.remap_glyphs(f),
+			Self::MarkMarkPos(v) => v.remap_glyphs(f),
+			Self::MultipleSubst(v) => v.remap_glyphs(f),
+			Self::NoncontextualMorph(v) => v.remap_glyphs(f),
+			Self::PairPos(v) => v.remap_glyphs(f),
+			Self::RearrangementMorph(v) => v.remap_glyphs(f),
+			Self::ReverseChainSingleSubst(v) => v.remap_glyphs(f),
+			Self::SinglePos(v) => v.remap_glyphs(f),
+			Self::SingleSubst(v) => v.remap_glyphs(f),
+		}
+	}
 }
 
 /// Feature parameters of any kind (`FeatureParams`), dispatched on the
@@ -42291,6 +46616,14 @@ impl OtTable for FeatureParamsAny {
 			Self::FeatureParamsCharacterVariants(v) => v.populate_defaults(ctx),
 			Self::FeatureParamsSize(v) => v.populate_defaults(ctx),
 			Self::FeatureParamsStylisticSet(v) => v.populate_defaults(ctx),
+		}
+	}
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			Self::FeatureParams(v) => v.remap_glyphs(f),
+			Self::FeatureParamsCharacterVariants(v) => v.remap_glyphs(f),
+			Self::FeatureParamsSize(v) => v.remap_glyphs(f),
+			Self::FeatureParamsStylisticSet(v) => v.remap_glyphs(f),
 		}
 	}
 }

@@ -224,6 +224,7 @@ dependencies = [
  "fontoxide-misc",
  "fontoxide-pens",
  "fontoxide-repack",
+ "fontoxide-subset",
  "fontoxide-ttlib",
  "fontoxide-unicodedata",
 ]
@@ -257,6 +258,16 @@ dependencies = [
 name = "fontoxide-repack"
 version = "0.0.0"
 dependencies = [
+ "log",
+ "thiserror",
+]
+
+[[package]]
+name = "fontoxide-subset"
+version = "0.0.0"
+dependencies = [
+ "fontoxide-ttlib",
+ "fontoxide-unicodedata",
  "log",
  "thiserror",
 ]
@@ -591,6 +602,7 @@ dependencies = [
  "anyhow",
  "brotli",
  "clap",
+ "fontoxide-subset",
  "fontoxide-ttlib",
  "serde",
  "serde_json",

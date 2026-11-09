@@ -23,6 +23,7 @@ pub mod metrics;
 pub mod misc_tables;
 pub mod name;
 pub mod os2;
+pub mod os2_ranges;
 pub mod otl;
 pub mod post;
 pub mod tt_program;

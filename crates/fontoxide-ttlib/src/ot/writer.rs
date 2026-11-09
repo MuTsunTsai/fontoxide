@@ -511,6 +511,23 @@ impl<'g> OtWriter<'g> {
 		self.node().items.push(Item::Data(data.to_vec()));
 	}
 
+	/// Writes what `f` writes as a single item, an empty one if `f` writes
+	/// nothing (`writeArray`); `f` may only write data.
+	pub fn write_array(&mut self, f: impl FnOnce(&mut Self) -> Result<()>) -> Result<()> {
+		let start = self.node().items.len();
+		f(self)?;
+		let items = self.node().items.split_off(start);
+		let mut data = Vec::new();
+		for item in items {
+			match item {
+				Item::Data(d) => data.extend(d),
+				_ => return Err(Error::Assertion("writeArray of non-data items".into())),
+			}
+		}
+		self.node().items.push(Item::Data(data));
+		Ok(())
+	}
+
 	/// Appends a big-endian `u8`.
 	pub fn write_u8(&mut self, v: u8) {
 		self.write_data(&[v]);

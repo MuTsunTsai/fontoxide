@@ -98,6 +98,11 @@ pub trait OtTable: Sized + Default + Clone {
 	/// Fills in counts and defaults after reading TTX (`populateDefaults`).
 	fn populate_defaults(&mut self, ctx: &mut XmlCtx) -> Result<()>;
 
+	/// Maps every glyph ID in the table (and its subtables) with `f`, as when the
+	/// glyph order changes (fontTools refers to glyphs by name, so this happens
+	/// implicitly there). `f` fails for glyphs that no longer exist.
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()>;
+
 	/// Whether the subtables below are never shared (`DontShare` on an
 	/// instance); only lookup subtables can be marked.
 	fn dont_share(&self) -> bool {

@@ -103,6 +103,11 @@ macro_rules! metrics_table {
 		}
 
 		impl Table for $ty {
+			fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+				self.metrics = crate::ot::aat::remap_keys(std::mem::take(&mut self.metrics), f)?;
+				Ok(())
+			}
+
 			fn tag(&self) -> Tag {
 				Self::TAG
 			}

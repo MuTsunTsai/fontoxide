@@ -62,6 +62,28 @@ struct Conv {
 /// Classes whose fontTools representation differs from the binary layout
 /// (`postRead`/`preWrite`): written by hand in `crate::ot::custom`; the generator
 /// emits their raw layout as `<Name>Raw`.
+/// Converters that write an array as one item (`writeArray` overridden):
+/// `Long`, `ULong`, `Short`, `UShort`, `Int8`, `UInt8`, the glyph IDs, and their
+/// subclasses.
+const ARRAY_CONVERTERS: &[&str] = &[
+	"Long",
+	"ULong",
+	"Flags32",
+	"VarIndex",
+	"Short",
+	"UShort",
+	"NameID",
+	"STATFlags",
+	"LookupFlag",
+	"Int8",
+	"UInt8",
+	"ExtendMode",
+	"CompositeMode",
+	"GlyphID",
+	"GlyphID24",
+	"GlyphID32",
+];
+
 const CUSTOM: &[&str] = &[
 	"Coverage",
 	"ClassDef",
@@ -820,11 +842,18 @@ impl Gen<'_> {
 						let stmt = stmt
 							.replace("(*item).as_deref()", "item.as_deref()")
 							.replace("(*item).as_ref()", "item.as_ref()");
-						let _ = write!(
-							body,
-							" for (i, item) in self.{}.iter().enumerate() {{ let _ = i; {stmt} }}",
+						let lp = format!(
+							"for (i, item) in self.{}.iter().enumerate() {{ let _ = i; {stmt} }}",
 							f.ident
 						);
+						// Converters with their own `writeArray` write the whole array as
+						// one item, even when empty; this matters for the sharing of
+						// identical subtables.
+						if ARRAY_CONVERTERS.contains(&f.conv.converter.as_str()) {
+							let _ = write!(body, " w.write_array(|w| {{ {lp} Ok(()) }})?;");
+						} else {
+							let _ = write!(body, " {lp}");
+						}
 					}
 				}
 				(None, Kind::Count(size)) => {
@@ -1164,6 +1193,52 @@ impl Gen<'_> {
 		self.line("\t\tOk(())");
 	}
 
+	/// `remap_glyphs`: maps every glyph ID the table holds, recursively.
+	fn remap_body(&mut self, fields: &[Field]) {
+		let mut any = false;
+		for f in fields {
+			let stmt = match &f.kind {
+				Kind::Glyph(_) => "*v = f(*v)?;",
+				Kind::Struct(_)
+				| Kind::StructWithLength(_)
+				| Kind::MorphStateTable(_)
+				| Kind::MortSubtable
+				| Kind::MorxSubtable => "v.remap_glyphs(&mut *f)?;",
+				Kind::Offset(..)
+				| Kind::SubTable(_)
+				| Kind::FeatureParams
+				| Kind::FeatureVariations
+				| Kind::AlternateFeature(_) => "if let Some(x) = v { x.remap_glyphs(&mut *f)?; }",
+				Kind::AatLookup(_) | Kind::AatLookupWithDataOffset(_) => {
+					"remap_aat_lookup(v, &mut *f)?;"
+				}
+				Kind::CidGlyphMap => "for g in v.values_mut() { *g = f(*g)?; }",
+				Kind::GlyphCidMap => "*v = remap_keys(std::mem::take(v), &mut *f)?;",
+				Kind::VarCompositeGlyphList => "for g in v.iter_mut() { g.remap_glyphs(&mut *f)?; }",
+				_ => continue,
+			};
+			any = true;
+			let body = if f.repeat.is_some() {
+				format!("for v in self.{}.iter_mut() {{ {stmt} }}", f.ident)
+			} else {
+				format!("{{ let v = &mut self.{}; {stmt} }}", f.ident)
+			};
+			match &f.cond {
+				Some(c) => {
+					let c = c.replace("t.", "self.");
+					let _ = writeln!(self.out, "\t\tif {c} {{ {body} }}");
+				}
+				None => {
+					let _ = writeln!(self.out, "\t\t{body}");
+				}
+			}
+		}
+		if !any {
+			self.line("\t\tlet _ = f;");
+		}
+		self.line("\t\tOk(())");
+	}
+
 	fn propagated(&mut self, fields: &[Field]) {
 		let names: Vec<&Field> = fields
 			.iter()
@@ -1304,6 +1379,9 @@ impl Gen<'_> {
 		self.line("\tfn populate_defaults(&mut self, ctx: &mut XmlCtx) -> Result<()> {");
 		self.populate_body(&fields);
 		self.line("\t}");
+		self.line("\tfn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {");
+		self.remap_body(&fields);
+		self.line("\t}");
 		self.propagated(&fields);
 		self.line("}");
 		self.line("");
@@ -1410,6 +1488,11 @@ impl Gen<'_> {
 				"populate_defaults",
 				"&mut self, ctx: &mut XmlCtx",
 				"populate_defaults(ctx)",
+			),
+			(
+				"remap_glyphs",
+				"&mut self, f: &mut dyn FnMut(u32) -> Result<u32>",
+				"remap_glyphs(f)",
 			),
 		] {
 			let _ = writeln!(self.out, "\tfn {method}({args}) -> Result<()> {{");
@@ -1736,6 +1819,11 @@ impl Gen<'_> {
 				"populate_defaults",
 				"&mut self, ctx: &mut XmlCtx",
 				"populate_defaults(ctx)",
+			),
+			(
+				"remap_glyphs",
+				"&mut self, f: &mut dyn FnMut(u32) -> Result<u32>",
+				"remap_glyphs(f)",
 			),
 		] {
 			let _ = writeln!(self.out, "\tfn {method}({args}) -> Result<()> {{");

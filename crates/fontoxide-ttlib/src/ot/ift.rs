@@ -363,6 +363,10 @@ pub struct EntryIdStringData {
 }
 
 impl OtTable for EntryIdStringData {
+	fn remap_glyphs(&mut self, _f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		Ok(())
+	}
+
 	fn class_name(&self) -> &'static str {
 		"EntryIdStringData"
 	}

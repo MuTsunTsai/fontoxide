@@ -58,6 +58,10 @@ macro_rules! otl_table {
 		}
 
 		impl Table for $name {
+			fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+				self.table.remap_glyphs(f)
+			}
+
 			fn tag(&self) -> Tag {
 				Self::TAG
 			}

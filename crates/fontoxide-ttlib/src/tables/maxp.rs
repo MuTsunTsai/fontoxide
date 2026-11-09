@@ -96,6 +96,11 @@ impl TableType for Maxp {
 }
 
 impl Table for Maxp {
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
+
 	fn tag(&self) -> Tag {
 		Self::TAG
 	}

@@ -66,6 +66,10 @@ macro_rules! lookup_subtable_impl {
 				self.dont_share
 			}
 
+			fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+				self.remap(f)
+			}
+
 			fn set_dont_share(&mut self) {
 				self.dont_share = true;
 			}
@@ -101,6 +105,15 @@ pub struct SingleSubst {
 }
 
 impl SingleSubst {
+	fn remap(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let mut out = BTreeMap::new();
+		for (k, v) in std::mem::take(&mut self.mapping) {
+			out.insert(f(k)?, f(v)?);
+		}
+		self.mapping = out;
+		Ok(())
+	}
+
 	/// `postRead`.
 	fn from_raw(raw: SingleSubstRaw) -> Result<Self> {
 		let mut mapping = BTreeMap::new();
@@ -235,6 +248,16 @@ pub struct MultipleSubst {
 }
 
 impl MultipleSubst {
+	fn remap(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let mut out = BTreeMap::new();
+		for (k, v) in std::mem::take(&mut self.mapping) {
+			let v = v.into_iter().map(&mut *f).collect::<Result<Vec<_>>>()?;
+			out.insert(f(k)?, v);
+		}
+		self.mapping = out;
+		Ok(())
+	}
+
 	/// `postRead`.
 	fn from_raw(raw: MultipleSubstRaw) -> Result<Self> {
 		let (glyphs, subst): (Vec<u32>, Vec<Vec<u32>>) = match raw {
@@ -368,6 +391,16 @@ pub struct AlternateSubst {
 }
 
 impl AlternateSubst {
+	fn remap(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let mut out = BTreeMap::new();
+		for (k, v) in std::mem::take(&mut self.alternates) {
+			let v = v.into_iter().map(&mut *f).collect::<Result<Vec<_>>>()?;
+			out.insert(f(k)?, v);
+		}
+		self.alternates = out;
+		Ok(())
+	}
+
 	/// `postRead`.
 	fn from_raw(raw: AlternateSubstRaw) -> Result<Self> {
 		let (input, alts): (Vec<u32>, Vec<Vec<u32>>) = match raw {
@@ -508,6 +541,18 @@ pub struct LigatureSubst {
 }
 
 impl LigatureSubst {
+	fn remap(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let mut out = BTreeMap::new();
+		for (k, mut v) in std::mem::take(&mut self.ligatures) {
+			for lig in &mut v {
+				lig.remap_glyphs(f)?;
+			}
+			out.insert(f(k)?, v);
+		}
+		self.ligatures = out;
+		Ok(())
+	}
+
 	/// `postRead`.
 	fn from_raw(raw: LigatureSubstRaw) -> Result<Self> {
 		let (input, sets): (Vec<u32>, Vec<Vec<Ligature>>) = match raw {

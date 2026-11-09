@@ -57,6 +57,9 @@ pub enum Op {
 	/// Read fontTools' TTX dump of the font and compile it. Tables that fontoxide
 	/// does not implement are skipped.
 	Fromttx,
+	/// Subset the font to every third character of its `cmap`, with the default
+	/// options. Not run unless asked for (`--op subset`).
+	Subset,
 }
 
 impl Op {
@@ -75,13 +78,14 @@ impl Op {
 			Op::TtcTtx => "ttc-ttx",
 			Op::TtcRoundtrip => "ttc-roundtrip",
 			Op::Fromttx => "fromttx",
+			Op::Subset => "subset",
 		}
 	}
 
 	fn extension(self) -> &'static str {
 		match self {
 			Op::Ttx | Op::TtcTtx => "ttx",
-			Op::Roundtrip | Op::TtcRoundtrip | Op::Fromttx => "bin",
+			Op::Roundtrip | Op::TtcRoundtrip | Op::Fromttx | Op::Subset => "bin",
 		}
 	}
 
@@ -206,13 +210,17 @@ pub fn run(args: &Args) -> Result<()> {
 			if args.rebuild_reference || !(out.exists() || err.exists()) {
 				let _ = std::fs::remove_file(&out);
 				let _ = std::fs::remove_file(&err);
-				jobs.push(serde_json::json!({
+				let mut job = serde_json::json!({
 					"op": op.name(),
 					"input": input,
 					"output": out,
 					"font_number": 0,
 					"repacker": args.repacker,
-				}));
+				});
+				if op == Op::Subset {
+					job["unicodes"] = serde_json::json!(subset_unicodes(&std::fs::read(font)?));
+				}
+				jobs.push(job);
 				if op == Op::Ttx {
 					scheduled_ttx = true;
 				}
@@ -329,18 +337,59 @@ fn ours(op: Op, input: &[u8], repacker: bool) -> Result<Vec<u8>, String> {
 			.write(&WriteOptions::default())
 			.map_err(|e| e.to_string());
 	}
+	if op == Op::Subset {
+		let mut font = Font::read(
+			input.to_vec(),
+			ReadOptions {
+				recalc_bboxes: false,
+				..options
+			},
+		)
+		.map_err(|e| e.to_string())?;
+		let mut subsetter = fontoxide_subset::Subsetter::new(fontoxide_subset::Options::default());
+		subsetter.populate(&[], &[], &subset_unicodes(input), "");
+		subsetter.subset(&mut font).map_err(|e| e.to_string())?;
+		return font
+			.write(&WriteOptions::default())
+			.map_err(|e| e.to_string());
+	}
 	let mut font = Font::read(input.to_vec(), options).map_err(|e| e.to_string())?;
 	match op {
 		Op::Ttx => font
 			.to_ttx(&TtxOptions::default())
 			.map(String::into_bytes)
 			.map_err(|e| e.to_string()),
-		Op::Roundtrip | Op::TtcTtx | Op::TtcRoundtrip | Op::Fromttx => {
+		Op::Roundtrip | Op::TtcTtx | Op::TtcRoundtrip | Op::Fromttx | Op::Subset => {
 			font.ensure_decompiled().map_err(|e| e.to_string())?;
 			font.write(&WriteOptions::default())
 				.map_err(|e| e.to_string())
 		}
 	}
+}
+
+/// The characters the `subset` op keeps: every third code point of the Unicode
+/// `cmap` subtables. Empty if the font cannot be read.
+fn subset_unicodes(data: &[u8]) -> Vec<u32> {
+	let read = || -> fontoxide_ttlib::Result<Vec<u32>> {
+		let mut font = Font::read(
+			data.to_vec(),
+			ReadOptions {
+				font_number: Some(0),
+				..Default::default()
+			},
+		)?;
+		let Some(cmap) = font.get::<fontoxide_ttlib::tables::Cmap>()? else {
+			return Ok(Vec::new());
+		};
+		let all: std::collections::BTreeSet<u32> = cmap
+			.tables
+			.iter()
+			.filter(|t| t.is_unicode())
+			.flat_map(|t| t.cmap.keys().copied())
+			.collect();
+		Ok(all.into_iter().step_by(3).collect())
+	};
+	read().unwrap_or_default()
 }
 
 fn implemented(table: &str) -> bool {
@@ -373,7 +422,7 @@ fn compare(op: Op, ours: &[u8], reference: &[u8]) -> Vec<(String, Outcome, Optio
 	}
 	let (a, b) = match op {
 		Op::Ttx | Op::TtcTtx => (split_ttx(ours), split_ttx(reference)),
-		Op::Roundtrip | Op::TtcRoundtrip | Op::Fromttx => {
+		Op::Roundtrip | Op::TtcRoundtrip | Op::Fromttx | Op::Subset => {
 			match (split_sfnt(ours), split_sfnt(reference)) {
 				(Ok(a), Ok(b)) => (a, b),
 				(Err(e), _) | (_, Err(e)) => {
@@ -396,7 +445,9 @@ fn compare(op: Op, ours: &[u8], reference: &[u8]) -> Vec<(String, Outcome, Optio
 				Outcome::Mismatch,
 				Some(match op {
 					Op::Ttx | Op::TtcTtx => first_line_difference(x, y),
-					Op::Roundtrip | Op::TtcRoundtrip | Op::Fromttx => first_difference(x, y),
+					Op::Roundtrip | Op::TtcRoundtrip | Op::Fromttx | Op::Subset => {
+						first_difference(x, y)
+					}
 				}),
 			),
 			(Some(_), None) => (Outcome::Missing, Some("only in fontoxide".into())),

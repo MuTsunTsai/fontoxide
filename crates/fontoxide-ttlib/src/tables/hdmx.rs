@@ -66,6 +66,13 @@ impl TableType for Hdmx {
 }
 
 impl Table for Hdmx {
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for widths in self.hdmx.values_mut() {
+			*widths = crate::ot::aat::remap_keys(std::mem::take(widths), &mut *f)?;
+		}
+		Ok(())
+	}
+
 	fn tag(&self) -> Tag {
 		Self::TAG
 	}
@@ -231,6 +238,12 @@ impl TableType for Ltsh {
 }
 
 impl Table for Ltsh {
+	/// The values are by position; fontTools does not subset `LTSH` either.
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Err(Error::ttlib("remapping the glyphs of 'LTSH' is not supported"))
+	}
+
 	fn tag(&self) -> Tag {
 		Self::TAG
 	}

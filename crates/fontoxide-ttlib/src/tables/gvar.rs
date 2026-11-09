@@ -243,6 +243,14 @@ impl TableType for Gvar {
 }
 
 impl Table for Gvar {
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for (g, _) in &mut self.variations {
+			*g = f(*g)?;
+		}
+		self.variations.sort_by_key(|(g, _)| *g);
+		Ok(())
+	}
+
 	fn tag(&self) -> Tag {
 		Self::TAG
 	}
@@ -449,6 +457,11 @@ impl TableType for Cvar {
 }
 
 impl Table for Cvar {
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
+
 	fn tag(&self) -> Tag {
 		Self::TAG
 	}

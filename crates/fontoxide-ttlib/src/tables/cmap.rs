@@ -864,6 +864,26 @@ impl TableType for Cmap {
 }
 
 impl Table for Cmap {
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for t in &mut self.tables {
+			let mut cmap = (*t.cmap).clone();
+			for g in cmap.values_mut() {
+				*g = f(*g)?;
+			}
+			t.cmap = std::sync::Arc::new(cmap);
+			if let Some(uvs) = &mut t.uvs_dict {
+				for records in uvs.values_mut() {
+					for (_, g) in records.iter_mut() {
+						if let Some(g) = g {
+							*g = f(*g)?;
+						}
+					}
+				}
+			}
+		}
+		Ok(())
+	}
+
 	fn tag(&self) -> Tag {
 		Self::TAG
 	}

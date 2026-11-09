@@ -66,6 +66,12 @@ impl TableType for Loca {
 }
 
 impl Table for Loca {
+	/// The offsets are positional and rebuilt from `glyf` when compiling.
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
+
 	fn tag(&self) -> Tag {
 		Self::TAG
 	}

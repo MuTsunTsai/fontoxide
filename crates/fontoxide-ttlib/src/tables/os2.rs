@@ -1,5 +1,7 @@
 //! `OS/2`: OS/2 and Windows Metrics table (`fontTools.ttLib.tables.O_S_2f_2`).
 
+use std::collections::BTreeSet;
+
 use fontoxide_misc::Tag;
 use fontoxide_misc::text_tools::{Literal, binary2num, num2binary};
 use fontoxide_misc::xml_reader::Element;
@@ -291,6 +293,93 @@ impl Os2 {
 		Ok(())
 	}
 
+	/// `recalcUnicodeRanges` with the code points of the Unicode `cmap`
+	/// subtables: sets the bits of the blocks that have some of them, or with
+	/// `prune_only`, only clears the bits of the blocks that have none.
+	pub fn recalc_unicode_ranges(
+		&mut self,
+		unicodes: &BTreeSet<u32>,
+		prune_only: bool,
+	) -> Result<BTreeSet<u32>> {
+		let bits = if prune_only {
+			let empty = intersect_unicode_ranges(unicodes, true);
+			self.unicode_ranges().difference(&empty).copied().collect()
+		} else {
+			intersect_unicode_ranges(unicodes, false)
+		};
+		self.set_unicode_ranges(bits.iter().copied())?;
+		Ok(bits)
+	}
+
+	/// The set of `ulCodePageRange*` bits that are set (`getCodePageRanges`).
+	pub fn code_page_ranges(&self) -> BTreeSet<u32> {
+		let mut bits = BTreeSet::new();
+		if self.version < 1 {
+			return bits;
+		}
+		for (k, r) in [self.ul_code_page_range1, self.ul_code_page_range2]
+			.iter()
+			.enumerate()
+		{
+			for i in 0..32 {
+				if r & (1 << i) != 0 {
+					bits.insert(i + 32 * k as u32);
+				}
+			}
+		}
+		bits
+	}
+
+	/// Sets the `ulCodePageRange*` fields (`setCodePageRanges`); the version
+	/// becomes at least 1.
+	pub fn set_code_page_ranges(&mut self, bits: impl IntoIterator<Item = u32>) -> Result<()> {
+		let mut ul = [0u32; 2];
+		for bit in bits {
+			if bit >= 64 {
+				return Err(Error::value(format!("expected 0 <= int <= 63, found: {bit}")));
+			}
+			ul[(bit / 32) as usize] |= 1 << (bit % 32);
+		}
+		if self.version < 1 {
+			self.base.version = 1;
+		}
+		[self.ul_code_page_range1, self.ul_code_page_range2] = ul;
+		Ok(())
+	}
+
+	/// `recalcCodePageRanges` with the code points of the Unicode `cmap`
+	/// subtables; bit 0 (Latin 1) if none applies.
+	pub fn recalc_code_page_ranges(
+		&mut self,
+		unicodes: &BTreeSet<u32>,
+		prune_only: bool,
+	) -> Result<BTreeSet<u32>> {
+		let mut bits = calc_code_page_ranges(unicodes);
+		if prune_only {
+			let current = self.code_page_ranges();
+			bits.retain(|b| current.contains(b));
+		}
+		if bits.is_empty() {
+			// So that the font works in MS Word.
+			bits.insert(0);
+		}
+		self.set_code_page_ranges(bits.iter().copied())?;
+		Ok(bits)
+	}
+
+	/// `recalcAvgCharWidth`: the rounded average of the positive advance widths.
+	pub fn recalc_avg_char_width(&mut self, widths: impl IntoIterator<Item = u16>) -> i16 {
+		let widths: Vec<u16> = widths.into_iter().filter(|&w| w > 0).collect();
+		let avg = if widths.is_empty() {
+			0
+		} else {
+			let sum: u64 = widths.iter().map(|&w| u64::from(w)).sum();
+			fontoxide_misc::round_tools::ot_round(sum as f64 / widths.len() as f64) as i16
+		};
+		self.base.x_avg_char_width = avg;
+		avg
+	}
+
 	/// Sets `usFirstCharIndex` and `usLastCharIndex` from the Unicode `cmap`
 	/// subtables (`updateFirstAndLastCharIndex`).
 	pub fn update_first_and_last_char_index(&mut self, font: &mut Font) -> Result<()> {
@@ -384,6 +473,11 @@ impl TableType for Os2 {
 }
 
 impl Table for Os2 {
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
+
 	fn tag(&self) -> Tag {
 		Self::TAG
 	}
@@ -577,5 +671,171 @@ mod tests {
 		check(Os2Format1Addition::FORMAT_NAME, Os2Format1Addition::FIELDS);
 		check(Os2Format2Addition::FORMAT_NAME, Os2Format2Addition::FIELDS);
 		check(Os2Format5Addition::FORMAT_NAME, Os2Format5Addition::FIELDS);
+	}
+}
+
+/// `intersectUnicodeRanges`: the `ulUnicodeRange` bits of the blocks with at
+/// least one of the code points; with `inverse`, the bits of those with none.
+pub fn intersect_unicode_ranges(unicodes: &BTreeSet<u32>, inverse: bool) -> BTreeSet<u32> {
+	use super::os2_ranges::OS2_UNICODE_RANGES;
+	// (start, stop, bit), sorted by start as `_getUnicodeRanges` does.
+	let mut ranges: Vec<(u32, u32, u32)> = OS2_UNICODE_RANGES
+		.iter()
+		.enumerate()
+		.flat_map(|(bit, blocks)| blocks.iter().map(move |&(_, a, b)| (a, b, bit as u32)))
+		.collect();
+	ranges.sort_unstable();
+	let mut bits = BTreeSet::new();
+	for &code in unicodes {
+		// `bisect.bisect(starts, code)`: the last range starting at or before.
+		let i = ranges.partition_point(|r| r.0 <= code);
+		if i > 0 && code <= ranges[i - 1].1 {
+			bits.insert(ranges[i - 1].2);
+		}
+	}
+	// Bit 57 ("Non Plane 0") means at least one code point beyond the BMP.
+	if unicodes.iter().any(|&c| (0x10000..0x110000).contains(&c)) {
+		bits.insert(57);
+	}
+	if inverse {
+		(0..OS2_UNICODE_RANGES.len() as u32)
+			.filter(|b| !bits.contains(b))
+			.collect()
+	} else {
+		bits
+	}
+}
+
+/// `calcCodePageRanges`: the OS/2 code page bits for the code points (a
+/// translation of FontForge's implementation).
+pub fn calc_code_page_ranges(unicodes: &BTreeSet<u32>) -> BTreeSet<u32> {
+	let has = |c: char| unicodes.contains(&(c as u32));
+	let mut bits = BTreeSet::new();
+	let has_ascii = (0x20..0x7E).all(|c| unicodes.contains(&c));
+	let has_lineart = has('┤');
+	for &uni in unicodes {
+		let Some(c) = char::from_u32(uni) else {
+			continue;
+		};
+		match c {
+			'Þ' if has_ascii => {
+				bits.insert(0);
+			}
+			'Ľ' if has_ascii => {
+				bits.insert(1);
+				if has_lineart {
+					bits.insert(58);
+				}
+			}
+			'Б' => {
+				bits.insert(2);
+				if has('Ѕ') && has_lineart {
+					bits.insert(57);
+				}
+				if has('╜') && has_lineart {
+					bits.insert(49);
+				}
+			}
+			'Ά' => {
+				bits.insert(3);
+				if has_lineart && has('½') {
+					bits.insert(48);
+				}
+				if has_lineart && has('√') {
+					bits.insert(60);
+				}
+			}
+			'İ' if has_ascii => {
+				bits.insert(4);
+				if has_lineart {
+					bits.insert(56);
+				}
+			}
+			'א' => {
+				bits.insert(5);
+				if has_lineart && has('√') {
+					bits.insert(53);
+				}
+			}
+			'ر' => {
+				bits.insert(6);
+				if has('√') {
+					bits.insert(51);
+				}
+				if has_lineart {
+					bits.insert(61);
+				}
+			}
+			'ŗ' if has_ascii => {
+				bits.insert(7);
+				if has_lineart {
+					bits.insert(59);
+				}
+			}
+			'₫' if has_ascii => {
+				bits.insert(8);
+			}
+			'ๅ' => {
+				bits.insert(16);
+			}
+			'エ' => {
+				bits.insert(17);
+			}
+			'ㄅ' => {
+				bits.insert(18);
+			}
+			'ㄱ' => {
+				bits.insert(19);
+			}
+			'央' => {
+				bits.insert(20);
+			}
+			'곴' => {
+				bits.insert(21);
+			}
+			'♥' if has_ascii => {
+				bits.insert(30);
+			}
+			'þ' if has_ascii && has_lineart => {
+				bits.insert(54);
+			}
+			'╚' if has_ascii => {
+				bits.insert(62);
+				bits.insert(63);
+			}
+			_ if has_ascii && has_lineart && has('√') => match c {
+				'Å' => {
+					bits.insert(50);
+				}
+				'é' => {
+					bits.insert(52);
+				}
+				'õ' => {
+					bits.insert(55);
+				}
+				_ => {}
+			},
+			_ => {}
+		}
+	}
+	if has_ascii && has('‰') && has('∑') {
+		bits.insert(29);
+	}
+	bits
+}
+
+#[cfg(test)]
+mod range_tests {
+	use super::*;
+
+	#[test]
+	fn doctests() {
+		assert_eq!(intersect_unicode_ranges(&[0x0410].into(), false), [9].into());
+		assert_eq!(
+			intersect_unicode_ranges(&[0x0410, 0x1F000].into(), false),
+			[9, 57, 122].into()
+		);
+		let inverse = intersect_unicode_ranges(&[0x0410, 0x1F000].into(), true);
+		assert_eq!(inverse.len(), 123 - 3);
 	}
 }

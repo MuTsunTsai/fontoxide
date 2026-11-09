@@ -2084,3 +2084,30 @@ pub fn read_morx_subtable_xml(element: &Element, font: &mut Font) -> Result<Morx
 	m.reserved |= (coverage_flags & 0xF) << 16;
 	Ok(m)
 }
+
+impl AatStateTable {
+	/// Maps the glyphs of the class lookup and of the per-glyph lookups.
+	pub fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		self.glyph_classes = super::aat::remap_keys(std::mem::take(&mut self.glyph_classes), f)?;
+		for lookup in &mut self.per_glyph_lookups {
+			super::aat::remap_aat_lookup(lookup, f)?;
+		}
+		Ok(())
+	}
+}
+
+impl MortSubtable {
+	/// Not supported: fontTools cannot subset `mort` either, so it never needs to
+	/// follow a new glyph order.
+	pub fn remap_glyphs(&mut self, _f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		Err(Error::ttlib("remapping the glyphs of 'mort' subtables is not supported"))
+	}
+}
+
+impl MorxSubtable {
+	/// Not supported: fontTools cannot subset `morx` either, so it never needs to
+	/// follow a new glyph order.
+	pub fn remap_glyphs(&mut self, _f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		Err(Error::ttlib("remapping the glyphs of 'morx' subtables is not supported"))
+	}
+}

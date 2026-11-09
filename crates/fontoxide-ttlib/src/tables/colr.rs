@@ -134,6 +134,23 @@ impl TableType for Colr {
 }
 
 impl Table for Colr {
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		if let Some(layers) = &mut self.color_layers {
+			let mut out = BTreeMap::new();
+			for (g, mut records) in std::mem::take(layers) {
+				for r in &mut records {
+					r.glyph = f(r.glyph)?;
+				}
+				out.insert(f(g)?, records);
+			}
+			*layers = out;
+		}
+		if let Some(table) = &mut self.table {
+			table.remap_glyphs(f)?;
+		}
+		Ok(())
+	}
+
 	fn tag(&self) -> Tag {
 		Self::TAG
 	}

@@ -169,6 +169,13 @@ fn expand_ranges(mut ranges: Vec<(u32, u32, u32)>) -> Vec<u32> {
 }
 
 impl OtTable for Coverage {
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for g in &mut self.glyphs {
+			*g = f(*g)?;
+		}
+		Ok(())
+	}
+
 	fn class_name(&self) -> &'static str {
 		"Coverage"
 	}
@@ -364,6 +371,11 @@ impl ClassDef {
 }
 
 impl OtTable for ClassDef {
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		self.class_defs = super::aat::remap_keys(std::mem::take(&mut self.class_defs), f)?;
+		Ok(())
+	}
+
 	fn class_name(&self) -> &'static str {
 		"ClassDef"
 	}

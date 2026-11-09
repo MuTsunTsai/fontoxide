@@ -769,6 +769,16 @@ pub fn xml_var_composite_glyphs(
 	Ok(())
 }
 
+impl VarCompositeGlyph {
+	/// Maps the glyphs of the components.
+	pub fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for c in &mut self.components {
+			c.glyph = f(c.glyph)?;
+		}
+		Ok(())
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;

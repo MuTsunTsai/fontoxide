@@ -211,6 +211,11 @@ impl ClipList {
 }
 
 impl OtTable for ClipList {
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		self.clips = super::aat::remap_keys(std::mem::take(&mut self.clips), f)?;
+		Ok(())
+	}
+
 	fn class_name(&self) -> &'static str {
 		"ClipList"
 	}

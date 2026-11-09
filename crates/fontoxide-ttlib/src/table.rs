@@ -51,6 +51,14 @@ pub trait Table: AsAny + fmt::Debug + Send + Sync {
 	/// A deep copy.
 	fn clone_table(&self) -> Box<dyn Table>;
 
+	/// Expands whatever was left compact when reading (`ensureDecompiled`).
+	fn ensure_decompiled(&mut self) {}
+
+	/// Maps every glyph ID in the table with `f`, as when the glyph order
+	/// changes (fontTools refers to glyphs by name, so this happens implicitly
+	/// there). `f` fails for glyphs that no longer exist.
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()>;
+
 	/// Whether this is a plain [`DefaultTable`], which TTX marks as `raw`.
 	fn is_raw(&self) -> bool {
 		false
@@ -113,6 +121,12 @@ impl DefaultTable {
 }
 
 impl Table for DefaultTable {
+	/// Raw data is passed through unchanged.
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
+
 	fn tag(&self) -> Tag {
 		self.tag
 	}

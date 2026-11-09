@@ -337,6 +337,12 @@ impl TableType for Post {
 }
 
 impl Table for Post {
+	/// Glyph names come from the glyph order when compiling.
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
+
 	fn tag(&self) -> Tag {
 		Self::TAG
 	}
