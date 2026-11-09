@@ -6,9 +6,11 @@
 use std::collections::BTreeSet;
 
 use fontoxide_ttlib::ot::types as ot;
+use fontoxide_ttlib::tables::kern::KernSubtable;
 use fontoxide_ttlib::tables::name::{NameRecord, NameString};
 use fontoxide_ttlib::tables::{
-	Cmap, Cpal, Fvar, Gpos, Gsub, Gvar, Hdmx, Head, Hmtx, Maxp, Name, Os2, Post, Stat, Vmtx, Vorg,
+	Cmap, Cpal, Fvar, Gpos, Gsub, Gvar, Hdmx, Head, Hmtx, Kern, Maxp, Name, Os2, Post, Stat, Vmtx,
+	Vorg,
 };
 use fontoxide_ttlib::{Font, Tag};
 
@@ -22,6 +24,12 @@ fn unsupported<T>(tag: Tag) -> Result<T> {
 	Err(Error::Unsupported(strip(tag)))
 }
 
+fn no_kern_tables() -> fontoxide_ttlib::Error {
+	fontoxide_ttlib::Error::ttlib(
+		"AttributeError: 'table__k_e_r_n' object has no attribute 'kernTables'",
+	)
+}
+
 /// `prune_pre_subset`.
 pub(crate) fn prune_pre_subset(
 	s: &mut Subsetter,
@@ -29,7 +37,7 @@ pub(crate) fn prune_pre_subset(
 	tag: Tag,
 ) -> Result<Option<bool>> {
 	Ok(Some(match &tag.0 {
-		b"cmap" => cmap::prune_pre_subset(s, font)?,
+		b"cmap" | b"DMAP" => cmap::prune_pre_subset(s, font, tag)?,
 		b"glyf" => glyf::prune_pre_subset(s, font)?,
 		b"gvar" => {
 			if s.options.notdef_glyph && !s.options.notdef_outline {
@@ -67,7 +75,14 @@ pub(crate) fn prune_pre_subset(
 		}
 		b"GSUB" | b"GPOS" => layout::prune_pre_subset(s, font, tag)?,
 		b"CFF " | b"CFF2" => cff::prune_pre_subset(s, font, tag)?,
-		b"DMAP" | b"DSIG" | b"kern" => return unsupported(tag),
+		b"kern" => {
+			// Prune unknown kern table types.
+			let kern = font.require::<Kern>()?;
+			let tables = kern.kern_tables.as_mut().ok_or_else(no_kern_tables)?;
+			tables.retain(|t| matches!(t, KernSubtable::Format0(_)));
+			!tables.is_empty()
+		}
+		b"DSIG" => return unsupported(tag),
 		_ => return Ok(None),
 	}))
 }
@@ -94,7 +109,7 @@ fn retain_glyphs<V>(map: &mut std::collections::BTreeMap<u32, V>, glyphs: &BTree
 /// `subset_glyphs`.
 pub(crate) fn subset_glyphs(s: &mut Subsetter, font: &mut Font, tag: Tag) -> Result<Option<bool>> {
 	Ok(Some(match &tag.0 {
-		b"cmap" => cmap::subset_glyphs(s, font)?,
+		b"cmap" | b"DMAP" => cmap::subset_glyphs(s, font, tag)?,
 		b"glyf" => glyf::subset_glyphs(s, font)?,
 		b"hmtx" => {
 			let t = font.require::<Hmtx>()?;
@@ -147,7 +162,23 @@ pub(crate) fn subset_glyphs(s: &mut Subsetter, font: &mut Font, tag: Tag) -> Res
 		b"EBDT" => bitmap::data_subset_glyphs::<false>(s, font)?,
 		b"CBDT" => bitmap::data_subset_glyphs::<true>(s, font)?,
 		b"sbix" => bitmap::sbix_subset_glyphs(s, font)?,
-		b"kern" | b"DMAP" | b"SVG " => {
+		b"kern" => {
+			let kern = font.require::<Kern>()?;
+			let tables = kern.kern_tables.as_mut().ok_or_else(no_kern_tables)?;
+			let glyphs = &s.glyphs_gsubed;
+			tables.retain_mut(|t| match t {
+				KernSubtable::Format0(t) => {
+					t.kern_table
+						.retain(|(a, b), _| glyphs.contains(a) && glyphs.contains(b));
+					!t.kern_table.is_empty()
+				}
+				// `t.kernTable` of an unknown format fails in fontTools, but those
+				// were pruned before.
+				KernSubtable::Unknown { .. } => true,
+			});
+			!tables.is_empty()
+		}
+		b"SVG " => {
 			return unsupported(tag);
 		}
 		b"MATH" => math::subset_glyphs(s, font)?,

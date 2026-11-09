@@ -979,6 +979,45 @@ impl Table for Cmap {
 	}
 }
 
+/// Delta map table (`table_D_M_A_P_`): the same structure as `cmap`, whose
+/// mappings it takes precedence over.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct Dmap(pub Cmap);
+
+impl TableType for Dmap {
+	const TAG: Tag = Tag::new(b"DMAP");
+
+	fn decompile(data: &[u8], _font: &mut Font) -> Result<Self> {
+		Cmap::parse(data).map(Dmap)
+	}
+}
+
+impl Table for Dmap {
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		self.0.remap_glyphs(f)
+	}
+
+	fn tag(&self) -> Tag {
+		Self::TAG
+	}
+
+	fn compile(&mut self, font: &mut Font) -> Result<Vec<u8>> {
+		self.0.compile(font)
+	}
+
+	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
+		self.0.to_xml(writer, font)
+	}
+
+	fn from_xml(&mut self, element: &Element, font: &mut Font) -> Result<()> {
+		self.0.from_xml(element, font)
+	}
+
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 
