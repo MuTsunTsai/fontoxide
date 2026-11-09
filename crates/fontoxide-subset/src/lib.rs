@@ -22,6 +22,7 @@
 
 mod cff;
 mod cmap;
+mod colr;
 mod glyf;
 mod layout;
 pub mod options;

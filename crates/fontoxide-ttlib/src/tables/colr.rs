@@ -40,7 +40,6 @@ pub struct Colr {
 	pub table: Option<ot::COLR>,
 }
 
-/// `_decompileColorLayersV0`.
 fn color_layers_v0(table: &ot::COLR) -> Result<BTreeMap<u32, Vec<LayerRecord>>> {
 	let Some(layer_array) = table.layer_record_array.as_deref() else {
 		return Ok(BTreeMap::new());
@@ -75,9 +74,16 @@ fn no_color_layers() -> Error {
 }
 
 impl Colr {
-	/// `_toOTTable`, through `populateCOLRv0`.
-	fn to_ot_table(&self) -> Result<ot::COLR> {
-		let color_layers = self.color_layers.as_ref().ok_or_else(no_color_layers)?;
+	/// `_decompileColorLayersV0`.
+	pub fn decompile_color_layers_v0(table: &ot::COLR) -> Result<BTreeMap<u32, Vec<LayerRecord>>> {
+		color_layers_v0(table)
+	}
+
+	/// `populateCOLRv0`, with the base glyphs in glyph order.
+	pub fn populate_color_layers_v0(
+		table: &mut ot::COLR,
+		color_layers: &BTreeMap<u32, Vec<LayerRecord>>,
+	) -> Result<()> {
 		let mut base_records = Vec::new();
 		let mut layer_records = Vec::new();
 		for (&base_glyph, layers) in color_layers {
@@ -93,20 +99,29 @@ impl Colr {
 				});
 			}
 		}
+		table.base_glyph_record_count = Some(fit(base_records.len(), "BaseGlyphRecordCount")?);
+		table.layer_record_count = Some(fit(layer_records.len(), "LayerRecordCount")?);
+		table.base_glyph_record_array = (!base_records.is_empty()).then(|| {
+			Box::new(ot::BaseGlyphRecordArray {
+				base_glyph_record: base_records,
+			})
+		});
+		table.layer_record_array = (!layer_records.is_empty()).then(|| {
+			Box::new(ot::LayerRecordArray {
+				layer_record: layer_records,
+			})
+		});
+		Ok(())
+	}
+
+	/// `_toOTTable`.
+	fn to_ot_table(&self) -> Result<ot::COLR> {
+		let color_layers = self.color_layers.as_ref().ok_or_else(no_color_layers)?;
 		let mut table = ot::COLR {
 			version: self.version,
 			..Default::default()
 		};
-		if !base_records.is_empty() {
-			table.base_glyph_record_array = Some(Box::new(ot::BaseGlyphRecordArray {
-				base_glyph_record: base_records,
-			}));
-		}
-		if !layer_records.is_empty() {
-			table.layer_record_array = Some(Box::new(ot::LayerRecordArray {
-				layer_record: layer_records,
-			}));
-		}
+		Self::populate_color_layers_v0(&mut table, color_layers)?;
 		Ok(table)
 	}
 }

@@ -13,7 +13,7 @@ use fontoxide_ttlib::tables::{
 use fontoxide_ttlib::{Font, Tag};
 
 use crate::options::{has_int, has_str};
-use crate::{Error, Result, Subsetter, cff, cmap, glyf, layout, strip, varstore};
+use crate::{Error, Result, Subsetter, cff, cmap, colr, glyf, layout, strip, varstore};
 
 fn unsupported<T>(tag: Tag) -> Result<T> {
 	Err(Error::Unsupported(strip(tag)))
@@ -75,6 +75,7 @@ pub(crate) fn closure_glyphs(s: &mut Subsetter, font: &mut Font, tag: Tag) -> Re
 		b"glyf" => glyf::closure_glyphs(s, font),
 		b"GSUB" => layout::gsub_closure_glyphs(s, font),
 		b"CFF " => cff::closure_glyphs(s, font),
+		b"COLR" => colr::closure_glyphs(s, font),
 		_ => unsupported(tag),
 	}
 }
@@ -136,8 +137,9 @@ pub(crate) fn subset_glyphs(s: &mut Subsetter, font: &mut Font, tag: Tag) -> Res
 		b"GSUB" | b"GPOS" => layout::subset_glyphs(s, font, tag)?,
 		b"GDEF" => layout::gdef_subset_glyphs(s, font)?,
 		b"EBLC" | b"EBDT" | b"CBLC" | b"CBDT" | b"sbix" | b"kern" | b"ankr" | b"bsln" | b"lcar"
-		| b"opbd" | b"prop" | b"COLR" | b"MATH" | b"VARC" | b"DMAP" | b"SVG " => return unsupported(tag),
+		| b"opbd" | b"prop" | b"MATH" | b"VARC" | b"DMAP" | b"SVG " => return unsupported(tag),
 		b"CFF " | b"CFF2" => cff::subset_glyphs(s, font, tag)?,
+		b"COLR" => colr::subset_glyphs(s, font)?,
 		b"HVAR" => varstore::hvar_subset_glyphs(s, font)?,
 		b"VVAR" => varstore::vvar_subset_glyphs(s, font)?,
 		_ => return Ok(None),
@@ -161,7 +163,8 @@ pub(crate) fn prune_post_subset(
 		b"GSUB" | b"GPOS" => layout::prune_post_subset(s, font, tag)?,
 		b"GDEF" => layout::gdef_prune_post_subset(font)?,
 		b"CFF " | b"CFF2" => cff::prune_post_subset(s, font, tag)?,
-		b"CPAL" | b"VARC" => return unsupported(tag),
+		b"CPAL" => colr::cpal_prune_post_subset(s, font)?,
+		b"VARC" => return unsupported(tag),
 		_ => return Ok(None),
 	}))
 }
