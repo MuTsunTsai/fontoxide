@@ -12,10 +12,14 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
+fontoxide-misc.workspace = true
 fontoxide-ttlib.workspace = true
 fontoxide-unicodedata.workspace = true
 log.workspace = true
 thiserror.workspace = true
+
+[dev-dependencies]
+fontoxide-pens.workspace = true
 
 [lints]
 workspace = true

@@ -713,6 +713,7 @@ impl LigatureSubst {
 			}
 			ligs.push(Ligature {
 				lig_glyph,
+				// UPSTREAM-BUG(B24): one less than when read from binary.
 				comp_count: Some(component.len() as u32),
 				component,
 			});

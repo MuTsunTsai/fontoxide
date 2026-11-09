@@ -205,3 +205,51 @@ pub(crate) fn prune_post_subset(font: &mut Font) -> Result<bool> {
 	}
 	Ok(true)
 }
+
+#[cfg(test)]
+mod tests {
+	use fontoxide_ttlib::ot::varc::{VarComponent, VarCompositeGlyph};
+
+	use super::*;
+
+	/// `test_varComposite_closure_visited`: glyphs are 0 ("a"), 1, 2 and 3.
+	#[test]
+	fn closure_visits_each_glyph_once() -> Result<()> {
+		let cases: [&[(u32, &[u32])]; 3] = [
+			&[(0, &[0])],
+			&[(0, &[1]), (1, &[0])],
+			&[(0, &[1, 2]), (1, &[3]), (2, &[3]), (3, &[])],
+		];
+		for edges in cases {
+			let mut table = ot::VARC {
+				coverage: Some(Box::new(ot::Coverage {
+					glyphs: edges.iter().map(|e| e.0).collect(),
+				})),
+				..Default::default()
+			};
+			table.var_composite_glyphs = Some(Box::new(ot::VarCompositeGlyphs {
+				var_composite_glyph: edges
+					.iter()
+					.map(|(_, components)| VarCompositeGlyph {
+						components: components
+							.iter()
+							.map(|&glyph| VarComponent {
+								glyph,
+								..Default::default()
+							})
+							.collect(),
+					})
+					.collect(),
+			}));
+			let mut font = Font::new();
+			font.insert(Box::new(Varc { table }));
+			let mut s = Subsetter {
+				glyphs: GlyphSet::from([0]),
+				..Default::default()
+			};
+			closure_glyphs(&mut s, &mut font)?;
+			assert_eq!(s.glyphs, edges.iter().map(|e| e.0).collect::<GlyphSet>());
+		}
+		Ok(())
+	}
+}

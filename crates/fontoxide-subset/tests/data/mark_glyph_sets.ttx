@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont sfntVersion="\x00\x01\x00\x00" ttLibVersion="4.68">
+
+  <GlyphOrder>
+    <!-- The 'id' attribute is only for humans; it is ignored when parsed. -->
+    <GlyphID id="0" name=".notdef"/>
+    <GlyphID id="1" name="A"/>
+    <GlyphID id="2" name="Aacute"/>
+    <GlyphID id="3" name="Acircumflex"/>
+    <GlyphID id="4" name="Adieresis"/>
+    <GlyphID id="5" name="a"/>
+    <GlyphID id="6" name="aacute"/>
+    <GlyphID id="7" name="acircumflex"/>
+    <GlyphID id="8" name="adieresis"/>
+    <GlyphID id="9" name="dieresiscomb"/>
+    <GlyphID id="10" name="acutecomb"/>
+    <GlyphID id="11" name="circumflexcomb"/>
+  </GlyphOrder>
+
+  <head>
+    <!-- Most of this table will be recalculated by the compiler -->
+    <tableVersion value="1.0"/>
+    <fontRevision value="1.0"/>
+    <checkSumAdjustment value="0x482c0179"/>
+    <magicNumber value="0x5f0f3cf5"/>
+    <flags value="00000000 00000011"/>
+    <unitsPerEm value="1000"/>
+    <created value="Thu Jan  1 00:00:00 1970"/>
+    <modified value="Thu Jan  1 00:00:00 1970"/>
+    <xMin value="0"/>
+    <yMin value="0"/>
+    <xMax value="0"/>
+    <yMax value="0"/>
+    <macStyle value="00000000 00000000"/>
+    <lowestRecPPEM value="3"/>
+    <fontDirectionHint value="2"/>
+    <indexToLocFormat value="0"/>
+    <glyphDataFormat value="0"/>
+  </head>
+
+  <hhea>
+    <tableVersion value="0x00010000"/>
+    <ascent value="0"/>
+    <descent value="0"/>
+    <lineGap value="0"/>
+    <advanceWidthMax value="500"/>
+    <minLeftSideBearing value="0"/>
+    <minRightSideBearing value="0"/>
+    <xMaxExtent value="0"/>
+    <caretSlopeRise value="1"/>
+    <caretSlopeRun value="0"/>
+    <caretOffset value="0"/>
+    <reserved0 value="0"/>
+    <reserved1 value="0"/>
+    <reserved2 value="0"/>
+    <reserved3 value="0"/>
+    <metricDataFormat value="0"/>
+    <numberOfHMetrics value="1"/>
+  </hhea>
+
+  <maxp>
+    <!-- Most of this table will be recalculated by the compiler -->
+    <tableVersion value="0x10000"/>
+    <numGlyphs value="12"/>
+    <maxPoints value="0"/>
+    <maxContours value="0"/>
+    <maxCompositePoints value="0"/>
+    <maxCompositeContours value="0"/>
+    <maxZones value="2"/>
+    <maxTwilightPoints value="0"/>
+    <maxStorage value="0"/>
+    <maxFunctionDefs value="0"/>
+    <maxInstructionDefs value="0"/>
+    <maxStackElements value="0"/>
+    <maxSizeOfInstructions value="0"/>
+    <maxComponentElements value="0"/>
+    <maxComponentDepth value="0"/>
+  </maxp>
+
+  <hmtx>
+    <mtx name=".notdef" width="500" lsb="0"/>
+    <mtx name="A" width="500" lsb="0"/>
+    <mtx name="Aacute" width="500" lsb="0"/>
+    <mtx name="Acircumflex" width="500" lsb="0"/>
+    <mtx name="Adieresis" width="500" lsb="0"/>
+    <mtx name="a" width="500" lsb="0"/>
+    <mtx name="aacute" width="500" lsb="0"/>
+    <mtx name="acircumflex" width="500" lsb="0"/>
+    <mtx name="acutecomb" width="500" lsb="0"/>
+    <mtx name="adieresis" width="500" lsb="0"/>
+    <mtx name="circumflexcomb" width="500" lsb="0"/>
+    <mtx name="dieresiscomb" width="500" lsb="0"/>
+  </hmtx>
+
+  <loca>
+    <!-- The 'loca' table will be calculated by the compiler -->
+  </loca>
+
+  <glyf>
+
+    <!-- The xMin, yMin, xMax and yMax values
+         will be recalculated by the compiler. -->
+
+    <TTGlyph name=".notdef"/><!-- contains no outline data -->
+
+    <TTGlyph name="A"/><!-- contains no outline data -->
+
+    <TTGlyph name="Aacute"/><!-- contains no outline data -->
+
+    <TTGlyph name="Acircumflex"/><!-- contains no outline data -->
+
+    <TTGlyph name="Adieresis"/><!-- contains no outline data -->
+
+    <TTGlyph name="a"/><!-- contains no outline data -->
+
+    <TTGlyph name="aacute"/><!-- contains no outline data -->
+
+    <TTGlyph name="acircumflex"/><!-- contains no outline data -->
+
+    <TTGlyph name="acutecomb"/><!-- contains no outline data -->
+
+    <TTGlyph name="adieresis"/><!-- contains no outline data -->
+
+    <TTGlyph name="circumflexcomb"/><!-- contains no outline data -->
+
+    <TTGlyph name="dieresiscomb"/><!-- contains no outline data -->
+
+  </glyf>
+
+  <name>
+    <namerecord nameID="1" platformID="1" platEncID="0" langID="0x0" unicode="True">
+      TestGDEFMarkGlyphSetsDef
+    </namerecord>
+    <namerecord nameID="2" platformID="1" platEncID="0" langID="0x0" unicode="True">
+      Regular
+    </namerecord>
+    <namerecord nameID="1" platformID="3" platEncID="1" langID="0x409">
+      TestGDEFMarkGlyphSetsDef
+    </namerecord>
+    <namerecord nameID="2" platformID="3" platEncID="1" langID="0x409">
+      Regular
+    </namerecord>
+  </name>
+
+  <post>
+    <formatType value="2.0"/>
+    <italicAngle value="0.0"/>
+    <underlinePosition value="0"/>
+    <underlineThickness value="0"/>
+    <isFixedPitch value="0"/>
+    <minMemType42 value="0"/>
+    <maxMemType42 value="0"/>
+    <minMemType1 value="0"/>
+    <maxMemType1 value="0"/>
+    <psNames>
+      <!-- This file uses unique glyph names based on the information
+           found in the 'post' table. Since these names might not be unique,
+           we have to invent artificial names in case of clashes. In order to
+           be able to retain the original information, we need a name to
+           ps name mapping for those cases where they differ. That's what
+           you see below.
+            -->
+    </psNames>
+    <extraNames>
+      <!-- following are the name that are not taken from the standard Mac glyph order -->
+      <psName name="dieresiscomb"/>
+      <psName name="acutecomb"/>
+      <psName name="circumflexcomb"/>
+    </extraNames>
+  </post>
+
+  <GDEF>
+    <Version value="0x00010002"/>
+    <MarkGlyphSetsDef>
+      <MarkSetTableFormat value="1"/>
+      <!-- MarkSetCount=3 -->
+      <Coverage index="0">
+        <Glyph value="acutecomb"/>
+      </Coverage>
+      <Coverage index="1">
+        <Glyph value="circumflexcomb"/>
+      </Coverage>
+      <Coverage index="2">
+        <Glyph value="dieresiscomb"/>
+      </Coverage>
+    </MarkGlyphSetsDef>
+  </GDEF>
+
+  <GSUB>
+    <Version value="0x00010000"/>
+    <ScriptList>
+      <!-- ScriptCount=1 -->
+      <ScriptRecord index="0">
+        <ScriptTag value="DFLT"/>
+        <Script>
+          <DefaultLangSys>
+            <ReqFeatureIndex value="65535"/>
+            <!-- FeatureCount=1 -->
+            <FeatureIndex index="0" value="0"/>
+          </DefaultLangSys>
+          <!-- LangSysCount=0 -->
+        </Script>
+      </ScriptRecord>
+    </ScriptList>
+    <FeatureList>
+      <!-- FeatureCount=1 -->
+      <FeatureRecord index="0">
+        <FeatureTag value="ccmp"/>
+        <Feature>
+          <!-- LookupCount=3 -->
+          <LookupListIndex index="0" value="0"/>
+          <LookupListIndex index="1" value="1"/>
+          <LookupListIndex index="2" value="2"/>
+        </Feature>
+      </FeatureRecord>
+    </FeatureList>
+    <LookupList>
+      <!-- LookupCount=3 -->
+      <Lookup index="0">
+        <LookupType value="4"/>
+        <LookupFlag value="16"/><!-- useMarkFilteringSet -->
+        <!-- SubTableCount=1 -->
+        <LigatureSubst index="0">
+          <LigatureSet glyph="A">
+            <Ligature components="acutecomb" glyph="Aacute"/>
+          </LigatureSet>
+          <LigatureSet glyph="a">
+            <Ligature components="acutecomb" glyph="aacute"/>
+          </LigatureSet>
+        </LigatureSubst>
+        <MarkFilteringSet value="0"/>
+      </Lookup>
+      <Lookup index="1">
+        <LookupType value="4"/>
+        <LookupFlag value="16"/><!-- useMarkFilteringSet -->
+        <!-- SubTableCount=1 -->
+        <LigatureSubst index="0">
+          <LigatureSet glyph="A">
+            <Ligature components="circumflexcomb" glyph="Acircumflex"/>
+          </LigatureSet>
+          <LigatureSet glyph="a">
+            <Ligature components="circumflexcomb" glyph="acircumflex"/>
+          </LigatureSet>
+        </LigatureSubst>
+        <MarkFilteringSet value="1"/>
+      </Lookup>
+      <Lookup index="2">
+        <LookupType value="4"/>
+        <LookupFlag value="16"/><!-- useMarkFilteringSet -->
+        <!-- SubTableCount=1 -->
+        <LigatureSubst index="0">
+          <LigatureSet glyph="A">
+            <Ligature components="dieresiscomb" glyph="Adieresis"/>
+            <Ligature components="acutecomb" glyph="Aacute"/>
+          </LigatureSet>
+          <LigatureSet glyph="a">
+            <Ligature components="dieresiscomb" glyph="adieresis"/>
+          </LigatureSet>
+        </LigatureSubst>
+        <MarkFilteringSet value="2"/>
+      </Lookup>
+    </LookupList>
+  </GSUB>
+
+</ttFont>

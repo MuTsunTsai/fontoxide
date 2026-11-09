@@ -253,6 +253,8 @@ registry! {
 	b"loca" => crate::tables::Loca,
 	b"cmap" => crate::tables::Cmap,
 	b"DMAP" => crate::tables::Dmap,
+	b"DSIG" => crate::tables::Dsig,
+	b"SVG " => crate::tables::Svg,
 	b"kern" => crate::tables::Kern,
 	b"hdmx" => crate::tables::Hdmx,
 	b"head" => crate::tables::Head,

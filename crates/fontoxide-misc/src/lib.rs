@@ -4,6 +4,7 @@
 //! |---------------------|-------------------------------|
 //! | [`array_tools`]     | `fontTools.misc.arrayTools`   |
 //! | [`bezier_tools`]    | `fontTools.misc.bezierTools`  |
+//! | [`cli_tools`]       | `fontTools.misc.cliTools`     |
 //! | [`encoding_tools`]  | `fontTools.misc.encodingTools` |
 //! | [`fixed_tools`]     | `fontTools.misc.fixedTools`   |
 //! | [`ift_sparse_bit_set`] | `fontTools.misc.iftSparseBitSet` |
@@ -18,6 +19,7 @@
 
 pub mod array_tools;
 pub mod bezier_tools;
+pub mod cli_tools;
 pub mod encoding_tools;
 pub mod fixed_tools;
 pub mod ift_sparse_bit_set;

@@ -266,6 +266,8 @@ dependencies = [
 name = "fontoxide-subset"
 version = "0.0.0"
 dependencies = [
+ "fontoxide-misc",
+ "fontoxide-pens",
  "fontoxide-ttlib",
  "fontoxide-unicodedata",
  "log",

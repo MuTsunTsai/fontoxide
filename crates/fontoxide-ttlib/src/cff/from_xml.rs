@@ -159,6 +159,12 @@ fn read_font_dict(e: &Element) -> Result<FontDict> {
 				let value = read_plain(op.conv, child)?;
 				fd.values.insert(op.name, value);
 			}
+			// Not in the order of a font DICT: read, but neither dumped nor compiled
+			// (`FontDictCompiler` warns about these).
+			Conv::Encoding => {
+				read_encoding(child)?;
+				log::warn!("Some CFF FDArray/FontDict keys were ignored upon compile: {name}");
+			}
 			// Only plain values and the Private DICT matter in a font DICT.
 			_ => {
 				return Err(Error::ttx(format!(

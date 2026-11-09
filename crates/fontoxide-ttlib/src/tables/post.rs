@@ -317,6 +317,7 @@ impl TableType for Post {
 						.collect(),
 				));
 			}
+			2.0 if font.skip_post_glyph_names => post.glyph_order = Some(None),
 			2.0 => {
 				let count = font.glyph_count()?;
 				post.decode_format_2_0(rest, count)?;

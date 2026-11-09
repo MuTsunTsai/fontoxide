@@ -9,15 +9,15 @@ use fontoxide_ttlib::ot::types as ot;
 use fontoxide_ttlib::tables::kern::KernSubtable;
 use fontoxide_ttlib::tables::name::{NameRecord, NameString};
 use fontoxide_ttlib::tables::{
-	Cmap, Cpal, Fvar, Gpos, Gsub, Gvar, Hdmx, Head, Hmtx, Kern, Maxp, Name, Os2, Post, Stat, Vmtx,
-	Vorg,
+	Cmap, Cpal, Dsig, Fvar, Gpos, Gsub, Gvar, Hdmx, Head, Hmtx, Kern, Maxp, Name, Os2, Post, Stat,
+	Vmtx, Vorg,
 };
 use fontoxide_ttlib::{Font, Tag};
 
 use crate::options::{has_int, has_str};
 use crate::{
-	Error, Result, Subsetter, aat, bitmap, cff, cmap, colr, glyf, layout, math, strip, varc,
-	varstore,
+	Error, Result, Subsetter, aat, bitmap, cff, cmap, colr, glyf, layout, math, max_context, strip,
+	svg, varc, varstore,
 };
 
 fn unsupported<T>(tag: Tag) -> Result<T> {
@@ -82,7 +82,13 @@ pub(crate) fn prune_pre_subset(
 			tables.retain(|t| matches!(t, KernSubtable::Format0(_)));
 			!tables.is_empty()
 		}
-		b"DSIG" => return unsupported(tag),
+		b"DSIG" => {
+			// Drop all signatures since they will be invalid.
+			let dsig = font.require::<Dsig>()?;
+			dsig.num_sigs = 0;
+			dsig.signature_records = Some(Vec::new());
+			true
+		}
 		_ => return Ok(None),
 	}))
 }
@@ -178,9 +184,7 @@ pub(crate) fn subset_glyphs(s: &mut Subsetter, font: &mut Font, tag: Tag) -> Res
 			});
 			!tables.is_empty()
 		}
-		b"SVG " => {
-			return unsupported(tag);
-		}
+		b"SVG " => svg::subset_glyphs(s, font)?,
 		b"MATH" => math::subset_glyphs(s, font)?,
 		b"VARC" => varc::subset_glyphs(s, font)?,
 		b"ankr" => aat::ankr_subset_glyphs(s, font)?,
@@ -262,7 +266,21 @@ pub(crate) fn os2_prune(s: &Subsetter, font: &mut Font) -> Result<()> {
 		log::info!("OS/2 xAvgCharWidth: {avg}");
 	}
 	if s.options.recalc_max_context {
-		return Err(Error::Unsupported("recalc_max_context".into()));
+		let max_context = max_context::max_ctx_font(font)?;
+		let os2 = font.require::<Os2>()?;
+		// UPSTREAM-BUG(B23): the attribute only exists from version 2, and fontTools
+		// reads it before comparing, so older tables fail.
+		if os2.version < 2 {
+			return Err(fontoxide_ttlib::Error::ttlib(
+				"AttributeError: 'table_O_S_2f_2' object has no attribute 'usMaxContext'",
+			)
+			.into());
+		}
+		let max_context = fontoxide_ttlib::binary::fit(max_context, "usMaxContext")?;
+		if max_context != os2.us_max_context {
+			os2.us_max_context = max_context;
+			log::info!("OS/2 usMaxContext updated: {max_context}");
+		}
 	}
 	Ok(())
 }

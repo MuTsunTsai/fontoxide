@@ -108,6 +108,9 @@ impl Table for Head {
 		if font.recalc_bboxes {
 			// For TrueType-flavored fonts, the bounding box is set in maxp.recalc().
 			if font.contains(Tag::new(b"VARC")) {
+				// Loading the outlines may need this table, which is detached from the
+				// font while compiling; a copy stands in until that is over.
+				font.insert(self.clone_table());
 				let glyph_set = crate::glyph_set::GlyphSet::new(font)?;
 				let mut pen = fontoxide_pens::BoundsPen::new_bounds(Some(&glyph_set));
 				for name in glyph_set.glyph_order().names() {

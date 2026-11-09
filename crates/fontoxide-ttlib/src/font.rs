@@ -154,6 +154,8 @@ pub struct Font {
 	/// default) uses it for tables before version 1.2, `Some(true)` always,
 	/// `Some(false)` never. fontTools does this when uharfbuzz is installed.
 	pub use_harfbuzz_repacker: Option<bool>,
+	/// Set while [`Font::load_post_without_glyph_names`] loads `post`.
+	pub(crate) skip_post_glyph_names: bool,
 }
 
 impl Clone for Font {
@@ -178,6 +180,7 @@ impl Clone for Font {
 			disassemble_instructions: self.disassemble_instructions,
 			bitmap_glyph_data_format: self.bitmap_glyph_data_format.clone(),
 			use_harfbuzz_repacker: self.use_harfbuzz_repacker,
+			skip_post_glyph_names: self.skip_post_glyph_names,
 		}
 	}
 }
@@ -212,7 +215,22 @@ impl Font {
 			disassemble_instructions: true,
 			bitmap_glyph_data_format: "raw".into(),
 			use_harfbuzz_repacker: None,
+			skip_post_glyph_names: false,
 		}
+	}
+
+	/// Loads `post` without decoding the names of a format 2 table, which becomes
+	/// format 3. This is the hack of `fontTools.subset.load_font`, which avoids
+	/// trouble with broken fonts when glyph names are not needed.
+	pub fn load_post_without_glyph_names(&mut self) -> Result<()> {
+		self.skip_post_glyph_names = true;
+		let post = self.require::<crate::tables::Post>().map(|post| {
+			if post.format_type == 2.0 {
+				post.format_type = 3.0;
+			}
+		});
+		self.skip_post_glyph_names = false;
+		post
 	}
 
 	/// Maps the glyph IDs of every loaded table with `f`, then sets the glyph
@@ -472,6 +490,33 @@ impl Font {
 			self.glyph_names_from_cmap()?;
 		}
 		Ok(self.glyph_order.clone().unwrap_or_default())
+	}
+
+	/// The effective best Unicode character map of the font (`getBestCmap`): the
+	/// mappings of `DMAP`, except to glyph zero, over those of `cmap`. `None` if
+	/// neither has a Unicode subtable.
+	pub fn get_best_cmap(
+		&mut self,
+		preferences: &[(u16, u16)],
+	) -> Result<Option<crate::tables::cmap::CharMap>> {
+		let cmap = match self.get::<crate::tables::Cmap>()? {
+			Some(t) => t.get_best_cmap(preferences).cloned(),
+			None => None,
+		};
+		let dmap = match self.get::<crate::tables::Dmap>()? {
+			Some(t) => t.0.get_best_cmap(preferences).cloned(),
+			None => None,
+		};
+		let Some(mut dmap) = dmap else {
+			return Ok(cmap);
+		};
+		// Glyph zero is a miss and must allow cmap fallback.
+		dmap.retain(|_, g| *g != 0);
+		let Some(mut cmap) = cmap else {
+			return Ok(Some(dmap));
+		};
+		cmap.extend(dmap);
+		Ok(Some(cmap))
 	}
 
 	/// The name of a glyph (`getGlyphName`).

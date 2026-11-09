@@ -23,12 +23,15 @@
 mod aat;
 mod bitmap;
 mod cff;
+mod cli;
 mod cmap;
 mod colr;
 mod glyf;
 mod layout;
 mod math;
+mod max_context;
 pub mod options;
+mod svg;
 mod tables;
 mod varc;
 mod varstore;
@@ -38,6 +41,7 @@ use std::sync::Arc;
 
 use fontoxide_ttlib::{Font, GlyphOrder, Tag};
 
+pub use cli::{load_font, main, parse_gids, parse_glyphs, parse_unicodes, save_font};
 pub use options::{Item, Options};
 
 /// An error while subsetting.
@@ -46,6 +50,9 @@ pub enum Error {
 	/// An error of the font library.
 	#[error(transparent)]
 	Ttlib(#[from] fontoxide_ttlib::Error),
+	/// An error reading or writing a file.
+	#[error(transparent)]
+	Io(#[from] std::io::Error),
 	/// `MissingGlyphsSubsettingError`: requested glyphs the font does not have.
 	#[error("MissingGlyphsSubsettingError: {0:?}")]
 	MissingGlyphs(Vec<String>),
