@@ -567,9 +567,40 @@ def export_codecs(out_dir: Path) -> None:
 			f.write("encode " + " ".join(encode_diff) + "\n")
 
 
+def export_name_languages(path: Path) -> None:
+	"""The language code tables of the name table (`_n_a_m_e`), as Rust source."""
+	from fontTools.ttLib.tables import _n_a_m_e as name
+
+	def table(items, key_fmt, value_fmt):
+		return "".join(f"\t({key_fmt(k)}, {value_fmt(v)}),\n" for k, v in sorted(items))
+
+	text = (
+		"//! The language codes of the name table (`_WINDOWS_LANGUAGE_CODES`,\n"
+		"//! `_MAC_LANGUAGE_CODES` and `_MAC_LANGUAGE_TO_SCRIPT` of\n"
+		"//! `fontTools.ttLib.tables._n_a_m_e`), exported from fontTools\n"
+		f"//! {fontTools.version} by `tools/reference/reference.py export-data`.\n"
+		"//! Sorted by key.\n\n"
+		"/// Lowercase BCP 47 language tag to Windows language ID.\n"
+		"pub(crate) const WINDOWS_LANGUAGE_CODES: &[(&str, u16)] = &[\n"
+		+ table(name._WINDOWS_LANGUAGE_CODES.items(), lambda k: f'"{k}"', lambda v: f"0x{v:04X}")
+		+ "];\n\n"
+		"/// Lowercase BCP 47 language tag to Macintosh language ID.\n"
+		"pub(crate) const MAC_LANGUAGE_CODES: &[(&str, u16)] = &[\n"
+		+ table(name._MAC_LANGUAGE_CODES.items(), lambda k: f'"{k}"', str)
+		+ "];\n\n"
+		"/// Macintosh language ID to Macintosh script ID.\n"
+		"pub(crate) const MAC_LANGUAGE_TO_SCRIPT: &[(u16, u16)] = &[\n"
+		+ table(name._MAC_LANGUAGE_TO_SCRIPT.items(), str, str)
+		+ "];\n"
+	)
+	path.write_text(text, encoding="utf-8", newline="\n")
+
+
 def export_data(out_dir: Path) -> None:
 	"""Write data tables that fontoxide embeds verbatim."""
 	from fontTools import agl
+
+	export_name_languages(out_dir / "fontoxide-ttlib" / "src" / "tables" / "name_languages.rs")
 	from fontTools.ttLib.standardGlyphOrder import standardGlyphOrder
 
 	agl_dir = out_dir / "fontoxide-agl" / "data"

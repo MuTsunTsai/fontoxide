@@ -487,6 +487,262 @@ impl Name {
 		self.add_name(string, &[(1, 0, 0), (3, 1, 0x409)], 255)
 	}
 
+	/// The name ID of existing records that hold all of `names` (BCP 47
+	/// language tag to string), at least `min_name_id`; `None` if there are none
+	/// (`findMultilingualName` without a font: names that would need an `ltag`
+	/// table are left out). See [`find_multilingual_name`] for the version with a
+	/// font.
+	pub fn find_multilingual_name(
+		&self,
+		names: &[(&str, &str)],
+		windows: bool,
+		mac: bool,
+		min_name_id: u16,
+	) -> Result<Option<u16>> {
+		self.find_multilingual_name_with(names, windows, mac, min_name_id, &mut no_ltag)
+	}
+
+	/// `findMultilingualName`, with `ltag` adding a language tag to the font's
+	/// `ltag` table (`None` without a font).
+	fn find_multilingual_name_with(
+		&self,
+		names: &[(&str, &str)],
+		windows: bool,
+		mac: bool,
+		min_name_id: u16,
+		ltag: &mut LtagFn<'_>,
+	) -> Result<Option<u16>> {
+		let mut sorted = names.to_vec();
+		sorted.sort();
+		let mut requested: Vec<(String, u16, u16, u16)> = Vec::new();
+		let mut add = |r: NameRecord| {
+			let key = (r.text(), r.platform_id, r.plat_enc_id, r.lang_id);
+			if !requested.contains(&key) {
+				requested.push(key);
+			}
+		};
+		for &(lang, name) in &sorted {
+			if windows && let Some(r) = make_windows_name(name, 0, lang) {
+				add(r);
+			}
+			if mac && let Some(r) = make_mac_name(name, 0, lang, ltag)? {
+				add(r);
+			}
+		}
+		let mut matching: std::collections::BTreeMap<u16, Vec<(String, u16, u16, u16)>> =
+			std::collections::BTreeMap::new();
+		for record in &self.names {
+			let Ok(s) = record.to_unicode() else {
+				continue;
+			};
+			let key = (s, record.platform_id, record.plat_enc_id, record.lang_id);
+			if requested.contains(&key) && record.name_id >= min_name_id {
+				let set = matching.entry(record.name_id).or_default();
+				if !set.contains(&key) {
+					set.push(key);
+				}
+			}
+		}
+		Ok(matching
+			.into_iter()
+			.find(|(_, set)| set.len() == requested.len())
+			.map(|(id, _)| id))
+	}
+
+	/// Adds records for a name in several languages (BCP 47 language tag to
+	/// string) and returns its name ID (`addMultilingualName` without a font).
+	///
+	/// Without `name_id`, the ID of existing matching records is reused if there
+	/// are any, otherwise an unused ID is picked. Names that would need an `ltag`
+	/// table are left out; see [`add_multilingual_name`] for the version with a
+	/// font.
+	pub fn add_multilingual_name(
+		&mut self,
+		names: &[(&str, &str)],
+		name_id: Option<u16>,
+		windows: bool,
+		mac: bool,
+		min_name_id: u16,
+	) -> Result<u16> {
+		self.add_multilingual_name_with(names, name_id, windows, mac, min_name_id, &mut no_ltag)
+	}
+
+	fn add_multilingual_name_with(
+		&mut self,
+		names: &[(&str, &str)],
+		name_id: Option<u16>,
+		windows: bool,
+		mut mac: bool,
+		min_name_id: u16,
+		ltag: &mut LtagFn<'_>,
+	) -> Result<u16> {
+		let name_id = match name_id {
+			Some(id) => id,
+			None => {
+				if let Some(id) =
+					self.find_multilingual_name_with(names, windows, mac, min_name_id, ltag)?
+				{
+					return Ok(id);
+				}
+				// fontTools does not pass minNameID here.
+				self.find_unused_name_id(256)?
+			}
+		};
+		let mut sorted = names.to_vec();
+		sorted.sort();
+		for (lang, name) in sorted {
+			if windows {
+				match make_windows_name(name, name_id, lang) {
+					Some(r) => self.names.push(r),
+					// Without a Windows name, make sure there is a Mac name.
+					None => mac = true,
+				}
+			}
+			if mac && let Some(r) = make_mac_name(name, name_id, lang, ltag)? {
+				self.names.push(r);
+			}
+		}
+		Ok(name_id)
+	}
+}
+
+/// Adds a language tag to the font's `ltag` table and returns its index.
+type LtagFn<'a> = dyn FnMut(&str) -> Result<Option<u16>> + 'a;
+
+fn no_ltag(_: &str) -> Result<Option<u16>> {
+	Ok(None)
+}
+
+/// The `ltag` table function for a font: like fontTools, it adds a new `ltag` table
+/// unless the font has one decompiled already.
+fn font_ltag(font: &mut Font) -> impl FnMut(&str) -> Result<Option<u16>> + '_ {
+	move |lang| {
+		let tag = <crate::tables::misc_tables::Ltag as TableType>::TAG;
+		if !font.is_loaded(tag) {
+			font.insert(Box::new(crate::tables::misc_tables::Ltag::default()));
+		}
+		let ltag = font.require::<crate::tables::misc_tables::Ltag>()?;
+		crate::binary::fit(ltag.add_tag(lang) as u64, "langID").map(Some)
+	}
+}
+
+/// `font["name"].findMultilingualName(names, ..., ttFont=font)`: see
+/// [`Name::find_multilingual_name`]. Names in languages that need it may add
+/// tags to the font's `ltag` table, as in fontTools.
+pub fn find_multilingual_name(
+	font: &mut Font,
+	names: &[(&str, &str)],
+	windows: bool,
+	mac: bool,
+	min_name_id: u16,
+) -> Result<Option<u16>> {
+	font.with_table(<Name as TableType>::TAG, |t, font| {
+		let name = name_table(t)?;
+		name.find_multilingual_name_with(names, windows, mac, min_name_id, &mut font_ltag(font))
+	})
+}
+
+/// `font["name"].addMultilingualName(names, ttFont=font, ...)`: see
+/// [`Name::add_multilingual_name`]. Names that a Macintosh encoding cannot
+/// represent are added as Unicode records whose language is a tag of the
+/// font's `ltag` table.
+pub fn add_multilingual_name(
+	font: &mut Font,
+	names: &[(&str, &str)],
+	name_id: Option<u16>,
+	windows: bool,
+	mac: bool,
+	min_name_id: u16,
+) -> Result<u16> {
+	font.with_table(<Name as TableType>::TAG, |t, font| {
+		let name = name_table(t)?;
+		name.add_multilingual_name_with(
+			names,
+			name_id,
+			windows,
+			mac,
+			min_name_id,
+			&mut font_ltag(font),
+		)
+	})
+}
+
+fn name_table(t: &mut dyn Table) -> Result<&mut Name> {
+	t.as_any_mut()
+		.downcast_mut::<Name>()
+		.ok_or(Error::WrongTableType(<Name as TableType>::TAG))
+}
+
+fn lookup(table: &[(&str, u16)], key: &str) -> Option<u16> {
+	table
+		.binary_search_by(|(k, _)| (*k).cmp(key))
+		.ok()
+		.map(|i| table[i].1)
+}
+
+/// A Windows name record for a BCP 47 language, if Windows has a language ID for
+/// it (`_makeWindowsName`).
+fn make_windows_name(name: &str, name_id: u16, language: &str) -> Option<NameRecord> {
+	let lang = language.to_lowercase();
+	match lookup(super::name_languages::WINDOWS_LANGUAGE_CODES, &lang) {
+		Some(lang_id) => Some(NameRecord::new(name, name_id, 3, 1, lang_id)),
+		None => {
+			log::warn!(
+				"cannot add Windows name in language {language} because fonttools does not yet support name table format 1"
+			);
+			None
+		}
+	}
+}
+
+/// A Macintosh name record for a BCP 47 language (`_makeMacName`): with a legacy
+/// language and encoding if possible, otherwise Unicode with an `ltag` language.
+fn make_mac_name(
+	name: &str,
+	name_id: u16,
+	language: &str,
+	ltag: &mut LtagFn<'_>,
+) -> Result<Option<NameRecord>> {
+	let lang = language.to_lowercase();
+	let mac_lang = lookup(super::name_languages::MAC_LANGUAGE_CODES, &lang);
+	let mac_script = mac_lang.and_then(|l| {
+		let table = super::name_languages::MAC_LANGUAGE_TO_SCRIPT;
+		table
+			.binary_search_by_key(&l, |&(k, _)| k)
+			.ok()
+			.map(|i| table[i].1)
+	});
+	if let (Some(mac_lang), Some(mac_script)) = (mac_lang, mac_script) {
+		let encoding = get_encoding(1, mac_script, mac_lang).unwrap_or("ascii");
+		if codecs::encode(encoding, name).is_ok() {
+			return Ok(Some(NameRecord::new(
+				name, name_id, 1, mac_script, mac_lang,
+			)));
+		}
+	}
+	match ltag(language)? {
+		// 0 = Unicode; 4 = Unicode 2.0 or later semantics.
+		Some(index) => Ok(Some(NameRecord::new(name, name_id, 0, 4, index))),
+		None => {
+			log::warn!(
+				"cannot store language {language} into 'ltag' table without having access to the TTFont object"
+			);
+			Ok(None)
+		}
+	}
+}
+
+impl NameRecord {
+	/// The string as text, for records made from text.
+	fn text(&self) -> String {
+		match &self.string {
+			NameString::Text(s) => s.clone(),
+			NameString::Bytes(_) => self.to_str_lossy(),
+		}
+	}
+}
+
+impl Name {
 	/// Sorts the records as the specification requires (`names.sort()`).
 	pub fn sort(&mut self) {
 		let mut keyed: Vec<(NameRecord, Option<Vec<u8>>)> = self

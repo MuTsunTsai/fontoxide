@@ -16,9 +16,10 @@ use fontoxide_ttlib::{Font, Tag};
 
 use crate::options::{has_int, has_str};
 use crate::{
-	Error, Result, Subsetter, aat, bitmap, cff, cmap, colr, glyf, layout, math, max_context, strip,
-	svg, varc, varstore,
+	Error, Result, Subsetter, aat, bitmap, cff, cmap, colr, glyf, layout, math, strip, svg, varc,
+	varstore,
 };
+use fontoxide_otllib::max_context_calc as max_context;
 
 fn unsupported<T>(tag: Tag) -> Result<T> {
 	Err(Error::Unsupported(strip(tag)))

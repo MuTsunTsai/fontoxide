@@ -1,6 +1,4 @@
 //! `fontTools.otlLib.maxContextCalc`: the `OS/2.usMaxContext` value of a font.
-//!
-//! This moves to `fontoxide-otllib` once `otlLib` is ported.
 
 use fontoxide_ttlib::Font;
 use fontoxide_ttlib::ot::types as ot;
@@ -27,8 +25,9 @@ enum Tag {
 	Gpos,
 }
 
-/// `maxCtxFont`: the `usMaxContext` value of an entire font.
-pub(crate) fn max_ctx_font(font: &mut Font) -> Result<u32> {
+/// The `usMaxContext` value of a font (`maxCtxFont`): the longest context of
+/// its GSUB and GPOS rules.
+pub fn max_ctx_font(font: &mut Font) -> Result<u32> {
 	let mut max_ctx = 0;
 	if let Some(table) = font.get::<Gsub>()? {
 		// `_getLookupList`: `LookupList2` takes precedence.
@@ -261,7 +260,7 @@ mod tests {
 	use super::*;
 
 	fn import(path: PathBuf) -> Result<Font> {
-		let text = std::fs::read_to_string(path).map_err(crate::Error::Io)?;
+		let text = std::fs::read_to_string(path).map_err(fontoxide_ttlib::Error::from)?;
 		let mut font = Font::new();
 		font.import_ttx(&text)?;
 		Ok(font)

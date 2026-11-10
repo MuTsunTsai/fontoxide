@@ -26,6 +26,7 @@ pub mod maxp;
 pub mod metrics;
 pub mod misc_tables;
 pub mod name;
+mod name_languages;
 pub mod os2;
 pub mod os2_ranges;
 pub mod otl;

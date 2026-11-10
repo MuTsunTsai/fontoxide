@@ -29,7 +29,6 @@ mod colr;
 mod glyf;
 mod layout;
 mod math;
-mod max_context;
 pub mod options;
 mod svg;
 mod tables;
@@ -52,6 +51,9 @@ pub enum Error {
 	/// An error of the font library.
 	#[error(transparent)]
 	Ttlib(#[from] fontoxide_ttlib::Error),
+	/// An error of otlLib.
+	#[error(transparent)]
+	Otllib(#[from] fontoxide_otllib::Error),
 	/// An error reading or writing a file.
 	#[error(transparent)]
 	Io(#[from] std::io::Error),

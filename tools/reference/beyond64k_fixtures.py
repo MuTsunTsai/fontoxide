@@ -38,6 +38,7 @@ from fontTools.ttLib.woff2 import WOFF2FlavorData
 TESTS = ROOT / "upstream" / "fonttools" / "Tests"
 TTLIB = ROOT / "crates" / "fontoxide-ttlib" / "tests" / "data" / "beyond64k"
 SUBSET = ROOT / "crates" / "fontoxide-subset" / "tests" / "data"
+OTLLIB = ROOT / "crates" / "fontoxide-otllib" / "tests" / "data"
 INSTANCER = ROOT / "crates" / "fontoxide-varlib" / "tests" / "data" / "instancer"
 
 
@@ -465,7 +466,7 @@ def main():
         TTLIB / "woff2_fontfile.ttx",
     )
 
-    write_tables(layout, SUBSET / "beyond64k_contextual_layout.ttx", ["GSUB", "GPOS"])
+    write_tables(layout, OTLLIB / "beyond64k_contextual_layout.ttx", ["GSUB", "GPOS"])
     write_tables(
         subset_contextual_font(beyond64k_test),
         SUBSET / "beyond64k_subset_contextual.ttx",

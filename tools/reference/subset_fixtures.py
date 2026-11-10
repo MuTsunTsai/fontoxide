@@ -25,6 +25,7 @@ from fontTools.ttLib.tables.TupleVariation import TupleVariation
 from fontTools.varLib.builder import buildVarData, buildVarRegionList, buildVarStore
 
 OUT = ROOT / "crates" / "fontoxide-subset" / "tests" / "data"
+OTLLIB = ROOT / "crates" / "fontoxide-otllib" / "tests" / "data"
 
 
 def roundtrip(font):
@@ -569,7 +570,8 @@ def max_context_font():
     font["maxp"] = newTable("maxp")
     font["maxp"].tableVersion = 0x00005000
     font["maxp"].numGlyphs = len(font.getGlyphOrder())
-    with open(OUT / "max_context.ttx", "w", encoding="utf-8", newline="\n") as f:
+    OTLLIB.mkdir(parents=True, exist_ok=True)
+    with open(OTLLIB / "max_context.ttx", "w", encoding="utf-8", newline="\n") as f:
         font.saveXML(f, newlinestr="\n")
     print("max_context")
 

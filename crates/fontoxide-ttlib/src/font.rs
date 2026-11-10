@@ -181,6 +181,14 @@ pub struct Font {
 	/// default) uses it for tables before version 1.2, `Some(true)` always,
 	/// `Some(false)` never. fontTools does this when uharfbuzz is installed.
 	pub use_harfbuzz_repacker: Option<bool>,
+	/// How much `otlLib` compacts the class-based PairPos subtables it builds
+	/// (`fontTools.otlLib.optimize.gpos:COMPRESSION_LEVEL`), 0 to 9: 0 (the
+	/// default) does not compact them.
+	pub gpos_compression_level: u8,
+	/// Whether `otlLib` writes contextual positioning without context as GPOS
+	/// lookup type 7 (`fontTools.otlLib.builder:WRITE_GPOS7`). The default,
+	/// `false`, always writes type 8, for older macOS versions.
+	pub write_gpos7: bool,
 	/// Set while [`Font::load_post_without_glyph_names`] loads `post`.
 	pub(crate) skip_post_glyph_names: bool,
 }
@@ -207,6 +215,8 @@ impl Clone for Font {
 			disassemble_instructions: self.disassemble_instructions,
 			bitmap_glyph_data_format: self.bitmap_glyph_data_format.clone(),
 			use_harfbuzz_repacker: self.use_harfbuzz_repacker,
+			gpos_compression_level: self.gpos_compression_level,
+			write_gpos7: self.write_gpos7,
 			skip_post_glyph_names: self.skip_post_glyph_names,
 		}
 	}
@@ -242,6 +252,8 @@ impl Font {
 			disassemble_instructions: true,
 			bitmap_glyph_data_format: "raw".into(),
 			use_harfbuzz_repacker: None,
+			gpos_compression_level: 0,
+			write_gpos7: false,
 			skip_post_glyph_names: false,
 		}
 	}

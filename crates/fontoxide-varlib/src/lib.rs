@@ -10,6 +10,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod avar_builder;
 pub mod instancer;
 pub mod iup;
 pub mod models;

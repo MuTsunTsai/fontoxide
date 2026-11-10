@@ -91,6 +91,13 @@ impl WriterGraph {
 		OtWriter { graph: self, id: 0 }
 	}
 
+	/// Names the root writer (`writer.name`, `writer.repeatIndex`), as overflow
+	/// records report it, for compiling a part of a table on its own.
+	pub fn set_root_name(&mut self, name: &'static str, repeat_index: Option<usize>) {
+		self.nodes[0].name = name;
+		self.nodes[0].repeat_index = repeat_index;
+	}
+
 	fn data_length(&self, id: NodeId) -> usize {
 		self.nodes[id]
 			.items

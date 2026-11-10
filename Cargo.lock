@@ -247,6 +247,7 @@ dependencies = [
  "fontoxide-agl",
  "fontoxide-cu2qu",
  "fontoxide-misc",
+ "fontoxide-otllib",
  "fontoxide-pens",
  "fontoxide-qu2cu",
  "fontoxide-repack",
@@ -254,6 +255,7 @@ dependencies = [
  "fontoxide-ttlib",
  "fontoxide-unicodedata",
  "fontoxide-varlib",
+ "indexmap",
 ]
 
 [[package]]
@@ -278,6 +280,17 @@ version = "0.0.0"
 dependencies = [
  "log",
  "roxmltree",
+ "thiserror",
+]
+
+[[package]]
+name = "fontoxide-otllib"
+version = "0.0.0"
+dependencies = [
+ "fontoxide-misc",
+ "fontoxide-ttlib",
+ "indexmap",
+ "log",
  "thiserror",
 ]
 
@@ -313,6 +326,7 @@ name = "fontoxide-subset"
 version = "0.0.0"
 dependencies = [
  "fontoxide-misc",
+ "fontoxide-otllib",
  "fontoxide-pens",
  "fontoxide-ttlib",
  "fontoxide-unicodedata",
