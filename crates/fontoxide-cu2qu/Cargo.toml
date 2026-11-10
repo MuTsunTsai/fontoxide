@@ -1,0 +1,19 @@
+[package]
+name = "fontoxide-cu2qu"
+description = "Cubic to quadratic curve conversion; a port of fontTools.cu2qu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+fontoxide-misc.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

@@ -96,9 +96,25 @@ impl Transform {
 		points.iter().map(|&p| self.transform_point(p)).collect()
 	}
 
+	/// `Scale(x, y)`: a scaling; `y` defaults to `x`.
+	pub fn scaling(x: f64, y: Option<f64>) -> Self {
+		Transform::new(x, 0.0, 0.0, y.unwrap_or(x), 0.0, 0.0)
+	}
+
 	/// `transformVector`: the point transformed without the offset.
 	pub fn transform_vector(&self, (dx, dy): Point) -> Point {
 		(self.xx * dx + self.yx * dy, self.xy * dx + self.yy * dy)
+	}
+
+	/// `transformVectors`.
+	pub fn transform_vectors(&self, vectors: &[Point]) -> Vec<Point> {
+		vectors.iter().map(|&v| self.transform_vector(v)).collect()
+	}
+
+	/// `toPS()`: `[xx xy yx yy dx dy]`, formatted with `%s`.
+	pub fn to_ps(&self) -> String {
+		let v: Vec<String> = self.to_array().iter().map(|&x| py_num(x)).collect();
+		format!("[{}]", v.join(" "))
 	}
 
 	/// `translate(x, y)`.
@@ -159,6 +175,27 @@ impl Transform {
 	/// `toDecomposed()`.
 	pub fn to_decomposed(&self) -> DecomposedTransform {
 		DecomposedTransform::from_transform(self)
+	}
+}
+
+/// `str()` of a number that fontTools keeps as an `int` when it is integral.
+fn py_num(x: f64) -> String {
+	if x.fract() == 0.0 && x.abs() < 1e16 {
+		format!("{}", x as i64)
+	} else {
+		crate::py::float_repr(x)
+	}
+}
+
+/// `repr(transform)`: `<Transform [xx xy yx yy dx dy]>`, each with `%g`.
+impl std::fmt::Display for Transform {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		let v: Vec<String> = self
+			.to_array()
+			.iter()
+			.map(|&x| crate::py::format_g_lower(x, 6))
+			.collect();
+		write!(f, "<Transform [{}]>", v.join(" "))
 	}
 }
 

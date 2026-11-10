@@ -240,6 +240,191 @@ pub fn format_g(value: f64, precision: usize) -> String {
 	}
 }
 
+/// `"%g" % value` (`"%.{precision}g"`): like [`format_g`], in lower case.
+pub fn format_g_lower(value: f64, precision: usize) -> String {
+	format_g(value, precision).to_ascii_lowercase()
+}
+
+/// `round(value, ndigits)`: the float closest to the value rounded to
+/// `ndigits` decimal digits, ties to even on the exact binary value (CPython's
+/// `double_round` through `_Py_dg_dtoa`). NaNs and infinities pass through.
+///
+/// ```
+/// use fontoxide_misc::py::round_digits;
+/// assert_eq!(round_digits(2.675, 2), 2.67); // 2.675 is 2.67499999…
+/// assert_eq!(round_digits(0.125, 2), 0.12);
+/// assert!(round_digits(-1e-9, 6).is_sign_negative());
+/// ```
+pub fn round_digits(value: f64, ndigits: i32) -> f64 {
+	if !value.is_finite() || value == 0.0 {
+		return value;
+	}
+	if ndigits >= 0 {
+		// Rust formats with the exact decimal expansion, rounded half to even.
+		let s = format!("{:.*}", ndigits as usize, value);
+		s.parse().unwrap_or(value)
+	} else {
+		let pow = 10f64.powi(-ndigits);
+		let y = value / pow;
+		let z = y.round_ties_even();
+		let r = z * pow;
+		if r == 0.0 { 0.0f64.copysign(value) } else { r }
+	}
+}
+
+/// `math.isclose(a, b)` with the default tolerances (`rel_tol=1e-09`,
+/// `abs_tol=0.0`).
+pub fn is_close(a: f64, b: f64) -> bool {
+	is_close_tol(a, b, 1e-9, 0.0)
+}
+
+/// `math.isclose(a, b, rel_tol=rel_tol, abs_tol=abs_tol)`.
+pub fn is_close_tol(a: f64, b: f64, rel_tol: f64, abs_tol: f64) -> bool {
+	if a == b {
+		return true;
+	}
+	if a.is_infinite() || b.is_infinite() {
+		return false;
+	}
+	let diff = (b - a).abs();
+	diff <= (rel_tol * b).abs() || diff <= (rel_tol * a).abs() || diff <= abs_tol
+}
+
+/// `math.hypot(*coordinates)`: CPython's `vector_norm`, which is more accurate
+/// than C's `hypot` (and differs from it, and from `f64::hypot`, in about one
+/// case out of six). `abs(complex)` uses C's `hypot` instead.
+///
+/// ```
+/// use fontoxide_misc::py::hypot;
+/// assert_eq!(hypot(&[3.0, 4.0]), 5.0);
+/// assert_eq!(hypot(&[-2.0]), 2.0);
+/// assert_eq!(hypot(&[]), 0.0);
+/// ```
+pub fn hypot(coordinates: &[f64]) -> f64 {
+	let mut found_nan = false;
+	let mut max = 0.0f64;
+	let mut vec: Vec<f64> = coordinates
+		.iter()
+		.map(|&x| {
+			let x = x.abs();
+			found_nan |= x.is_nan();
+			if x > max {
+				max = x;
+			}
+			x
+		})
+		.collect();
+	vector_norm(&mut vec, max, found_nan)
+}
+
+/// `dl_fast_sum`: error-free addition, with `|a| >= |b|`.
+fn dl_fast_sum(a: f64, b: f64) -> (f64, f64) {
+	let x = a + b;
+	let y = (a - x) + b;
+	(x, y)
+}
+
+/// `dl_mul`: error-free multiplication.
+fn dl_mul(x: f64, y: f64) -> (f64, f64) {
+	let z = x * y;
+	let zz = x.mul_add(y, -z);
+	(z, zz)
+}
+
+/// `vector_norm` of CPython's `mathmodule.c`.
+fn vector_norm(vec: &mut [f64], max: f64, found_nan: bool) -> f64 {
+	if max.is_infinite() {
+		return max;
+	}
+	if found_nan {
+		return f64::NAN;
+	}
+	if max == 0.0 || vec.len() <= 1 {
+		return max;
+	}
+	let max_e = frexp_exponent(max);
+	if max_e < -1023 {
+		// ldexp(1.0, -max_e) would overflow: subnormals become normals.
+		for v in vec.iter_mut() {
+			*v /= f64::MIN_POSITIVE;
+		}
+		return f64::MIN_POSITIVE * vector_norm(vec, max / f64::MIN_POSITIVE, found_nan);
+	}
+	let scale = 2f64.powi(-max_e);
+	let (mut csum, mut frac1, mut frac2) = (1.0f64, 0.0f64, 0.0f64);
+	for &v in vec.iter() {
+		// Lossless scaling and squaring, lossless and lossy additions.
+		let x = v * scale;
+		let (hi, lo) = dl_mul(x, x);
+		let (s, sl) = dl_fast_sum(csum, hi);
+		csum = s;
+		frac1 += lo;
+		frac2 += sl;
+	}
+	let mut h = (csum - 1.0 + (frac1 + frac2)).sqrt();
+	let (hi, lo) = dl_mul(-h, h);
+	let (s, sl) = dl_fast_sum(csum, hi);
+	csum = s;
+	frac1 += lo;
+	frac2 += sl;
+	let x = csum - 1.0 + (frac1 + frac2);
+	// Differential correction.
+	h += x / (2.0 * h);
+	h / scale
+}
+
+/// The exponent of C's `frexp`: `x == m * 2**e` with `0.5 <= |m| < 1`.
+fn frexp_exponent(x: f64) -> i32 {
+	let bits = x.to_bits();
+	let exp = ((bits >> 52) & 0x7ff) as i32;
+	if exp == 0 {
+		// A subnormal: normalize it first.
+		let m = x * 2f64.powi(54);
+		return frexp_exponent(m) - 54;
+	}
+	exp - 1022
+}
+
+/// `sum(values)` of floats in CPython 3.12+: Neumaier's compensated
+/// summation, starting with the integer 0.
+///
+/// ```
+/// use fontoxide_misc::py::sum_floats;
+/// assert_eq!(sum_floats([0.1; 10]), 1.0); // A plain loop gives 0.9999999999999999.
+/// assert_eq!(sum_floats([1e100, 1.0, -1e100]), 1.0);
+/// assert_eq!(sum_floats([]), 0.0);
+/// ```
+pub fn sum_floats(values: impl IntoIterator<Item = f64>) -> f64 {
+	let mut it = values.into_iter();
+	let Some(first) = it.next() else {
+		return 0.0;
+	};
+	// `0 + first`, then the float loop of `builtin_sum_impl`.
+	let mut f = 0.0 + first;
+	let mut c = 0.0;
+	for x in it {
+		let t = f + x;
+		if f.abs() >= x.abs() {
+			c += (f - t) + x;
+		} else {
+			c += (x - t) + f;
+		}
+		f = t;
+	}
+	// Adding the compensation must not lose the sign of a negative result,
+	// nor turn an infinite sum into a NaN.
+	if c != 0.0 && c.is_finite() {
+		f += c;
+	}
+	f
+}
+
+/// `list.sort()` of floats: a stable sort with `<`, so that equal values such
+/// as `-0.0` and `0.0` keep their order. NaNs compare as equal to everything.
+pub fn sort_floats(values: &mut [f64]) {
+	values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+}
+
 /// Encodes a string as Latin-1, as `str.encode("latin-1")` does. Returns `None` if
 /// a character is outside Latin-1.
 pub fn latin1_encode(s: &str) -> Option<Vec<u8>> {

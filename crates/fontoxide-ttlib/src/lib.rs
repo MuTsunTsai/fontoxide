@@ -24,6 +24,7 @@ mod generated;
 pub mod glyph_order;
 pub mod glyph_set;
 pub mod ot;
+pub mod pens;
 pub mod remove_overlaps;
 pub mod sfnt;
 pub mod sstruct;

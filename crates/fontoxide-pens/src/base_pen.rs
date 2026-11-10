@@ -2,8 +2,11 @@
 
 use fontoxide_misc::transform::Transform;
 
-use crate::transform_pen::TransformPen;
-use crate::{Error, GlyphSet, Pen, Point, Result};
+use crate::{Decomposer, Error, GlyphSet, Pen, Point, Result, ReverseFlipped};
+
+/// `0.66666666666666667` in fontTools: the double just below 2/3. (The literal
+/// `0.6666666666666667` would be the one just above.)
+const TWO_THIRDS: f64 = 0.666_666_666_666_666_6;
 
 /// The plain segments a [`BasePen`] reduces drawing to: what a `BasePen`
 /// subclass overrides (`_moveTo`, `_lineTo`, `_curveToOne`, …).
@@ -31,10 +34,10 @@ pub trait SegmentPen {
 		})?;
 		let (pt1x, pt1y) = pt1;
 		let (pt2x, pt2y) = pt2;
-		let mid1x = pt0x + 0.666_666_666_666_666_7 * (pt1x - pt0x);
-		let mid1y = pt0y + 0.666_666_666_666_666_7 * (pt1y - pt0y);
-		let mid2x = pt2x + 0.666_666_666_666_666_7 * (pt1x - pt2x);
-		let mid2y = pt2y + 0.666_666_666_666_666_7 * (pt1y - pt2y);
+		let mid1x = pt0x + TWO_THIRDS * (pt1x - pt0x);
+		let mid1y = pt0y + TWO_THIRDS * (pt1y - pt0y);
+		let mid2x = pt2x + TWO_THIRDS * (pt1x - pt2x);
+		let mid2y = pt2y + TWO_THIRDS * (pt1y - pt2y);
 		self.curve_to_one(current, (mid1x, mid1y), (mid2x, mid2y), pt2)
 	}
 
@@ -59,6 +62,9 @@ pub struct BasePen<'g, S> {
 	/// Whether a missing component is skipped with a warning rather than an
 	/// error (`skipMissingComponents`, true by default).
 	pub skip_missing_components: bool,
+	/// Whether flipped components are drawn with their contours reversed
+	/// (`reverseFlipped`).
+	pub reverse_flipped: bool,
 	current: Option<Point>,
 }
 
@@ -80,6 +86,7 @@ impl<'g, S> BasePen<'g, S> {
 			inner,
 			glyph_set,
 			skip_missing_components: true,
+			reverse_flipped: false,
 			current: None,
 		}
 	}
@@ -115,7 +122,7 @@ impl<S: SegmentPen> Pen for BasePen<'_, S> {
 				Ok(())
 			}
 			_ => {
-				for (pt1, pt2, pt3) in decompose_super_bezier_segment(points) {
+				for (pt1, pt2, pt3) in decompose_super_bezier_segment(points)? {
 					self.inner.curve_to_one(self.current, pt1, pt2, pt3)?;
 					self.current = Some(pt3);
 				}
@@ -142,7 +149,7 @@ impl<S: SegmentPen> Pen for BasePen<'_, S> {
 		if off_curves.is_empty() {
 			return self.line_to(points[0]);
 		}
-		for (pt1, pt2) in decompose_quadratic_segment(&points) {
+		for (pt1, pt2) in decompose_quadratic_segment(&points)? {
 			self.inner.q_curve_to_one(self.current, pt1, pt2)?;
 			self.current = Some(pt2);
 		}
@@ -166,24 +173,25 @@ impl<S: SegmentPen> Pen for BasePen<'_, S> {
 		let glyph_set = self.glyph_set.ok_or_else(|| {
 			Error::Usage("TypeError: 'NoneType' object is not subscriptable".into())
 		})?;
-		let found = if transformation.is_identity() {
-			glyph_set.draw_glyph(glyph_name, self)?
-		} else {
-			glyph_set.draw_glyph(glyph_name, &mut TransformPen::new(self, transformation))?
-		};
-		if !found {
-			if !self.skip_missing_components {
-				return Err(Error::MissingComponent(glyph_name.to_owned()));
-			}
-			log::warn!("glyph '{glyph_name}' is missing from glyphSet; skipped");
+		Decomposer {
+			glyph_set,
+			skip_missing_components: self.skip_missing_components,
+			reverse_flipped: if self.reverse_flipped {
+				ReverseFlipped::KeepStart
+			} else {
+				ReverseFlipped::No
+			},
 		}
-		Ok(())
+		.draw_component(self, glyph_name, transformation)
 	}
 }
 
 /// `decomposeSuperBezierSegment`: splits a "super Bézier" (off-curve points,
 /// then the end point; at least three points) into cubic segments.
-pub fn decompose_super_bezier_segment(points: &[Point]) -> Vec<(Point, Point, Point)> {
+pub fn decompose_super_bezier_segment(points: &[Point]) -> Result<Vec<(Point, Point, Point)>> {
+	if points.len() < 3 {
+		return Err(Error::Usage("AssertionError: n > 1".into()));
+	}
 	let n = points.len() - 1;
 	let mut segments = Vec::new();
 	let mut pt1 = points[0];
@@ -210,12 +218,15 @@ pub fn decompose_super_bezier_segment(points: &[Point]) -> Vec<(Point, Point, Po
 		}
 	}
 	segments.push((pt1, points[n - 1], points[n]));
-	segments
+	Ok(segments)
 }
 
 /// `decomposeQuadraticSegment`: splits quadratic curves (off-curve points, then
 /// the end point; at least two points) into single quadratic segments.
-pub fn decompose_quadratic_segment(points: &[Point]) -> Vec<(Point, Point)> {
+pub fn decompose_quadratic_segment(points: &[Point]) -> Result<Vec<(Point, Point)>> {
+	if points.len() < 2 {
+		return Err(Error::Usage("AssertionError: n > 0".into()));
+	}
 	let n = points.len() - 1;
 	let mut segments = Vec::with_capacity(n);
 	for i in 0..n - 1 {
@@ -225,7 +236,7 @@ pub fn decompose_quadratic_segment(points: &[Point]) -> Vec<(Point, Point)> {
 		segments.push((points[i], implied));
 	}
 	segments.push((points[n - 1], points[n]));
-	segments
+	Ok(segments)
 }
 
 #[cfg(test)]
@@ -281,12 +292,12 @@ mod tests {
 	#[test]
 	fn decompose() {
 		assert_eq!(
-			decompose_quadratic_segment(&[(0.0, 0.0), (10.0, 0.0), (10.0, 10.0)]),
-			[((0.0, 0.0), (5.0, 0.0)), ((10.0, 0.0), (10.0, 10.0))]
+			decompose_quadratic_segment(&[(0.0, 0.0), (10.0, 0.0), (10.0, 10.0)]).ok(),
+			Some(vec![((0.0, 0.0), (5.0, 0.0)), ((10.0, 0.0), (10.0, 10.0))])
 		);
 		assert_eq!(
-			decompose_super_bezier_segment(&[(1.0, 1.0), (2.0, 2.0), (3.0, 3.0)]),
-			[((1.0, 1.0), (2.0, 2.0), (3.0, 3.0))]
+			decompose_super_bezier_segment(&[(1.0, 1.0), (2.0, 2.0), (3.0, 3.0)]).ok(),
+			Some(vec![((1.0, 1.0), (2.0, 2.0), (3.0, 3.0))])
 		);
 	}
 }

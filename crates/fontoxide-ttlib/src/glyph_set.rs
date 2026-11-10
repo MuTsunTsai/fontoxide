@@ -274,6 +274,20 @@ impl<'f> GlyphSet<'f> {
 		gid: u32,
 		pen: &mut dyn Pen,
 	) -> Result<()> {
+		self.with_glyf_glyph(glyf, gvar, gid, &mut |glyph, order, offset| {
+			glyph.draw(order, pen, offset)
+		})
+	}
+
+	/// The glyph to draw and its offset (`_getGlyphAndOffset`), passed to
+	/// `draw`, with the nesting depth kept as `pushDepth` does.
+	fn with_glyf_glyph(
+		&self,
+		glyf: &Glyf,
+		gvar: Option<&Gvar>,
+		gid: u32,
+		draw: &mut dyn FnMut(&Glyph, &GlyphOrder, f64) -> Result<()>,
+	) -> Result<()> {
 		let mut lsb = self.metric(gid)?.1 as i64;
 		let location_set = !self.state.borrow().location.is_empty();
 		let instance;
@@ -300,7 +314,7 @@ impl<'f> GlyphSet<'f> {
 		} else {
 			0.0
 		};
-		let result = glyph.draw(&self.order, pen, offset);
+		let result = draw(glyph, &self.order, offset);
 		self.state.borrow_mut().glyf_depth -= 1;
 		result
 	}
@@ -650,6 +664,33 @@ impl fontoxide_pens::GlyphSet for GlyphSet<'_> {
 		};
 		self.draw_gid(gid, pen, false)
 			.map_err(Error::into_pen_error)?;
+		Ok(true)
+	}
+
+	/// `drawPoints`: `glyf` glyphs draw their points as they are
+	/// (`_TTGlyphGlyf`); the others are drawn through a `SegmentToPointPen`
+	/// (`_TTGlyph`).
+	fn draw_glyph_points(
+		&self,
+		glyph_name: &str,
+		pen: &mut dyn fontoxide_pens::PointPen,
+	) -> fontoxide_pens::Result<bool> {
+		let Ok(gid) = self.lookup(glyph_name) else {
+			return Ok(false);
+		};
+		match &self.outlines {
+			Outlines::Glyf { glyf, gvar } if !self.varc_index.contains_key(&gid) => {
+				self.with_glyf_glyph(glyf, *gvar, gid, &mut |glyph, order, offset| {
+					glyph.draw_points(order, pen, offset)
+				})
+				.map_err(Error::into_pen_error)?;
+			}
+			_ => {
+				let mut seg = fontoxide_pens::SegmentToPointPen::new(pen, true);
+				self.draw_gid(gid, &mut seg, false)
+					.map_err(Error::into_pen_error)?;
+			}
+		}
 		Ok(true)
 	}
 }

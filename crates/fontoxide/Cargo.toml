@@ -14,8 +14,10 @@ categories.workspace = true
 
 [dependencies]
 fontoxide-agl.workspace = true
+fontoxide-cu2qu.workspace = true
 fontoxide-misc.workspace = true
 fontoxide-pens.workspace = true
+fontoxide-qu2cu.workspace = true
 fontoxide-repack.workspace = true
 fontoxide-subset.workspace = true
 fontoxide-unicodedata.workspace = true

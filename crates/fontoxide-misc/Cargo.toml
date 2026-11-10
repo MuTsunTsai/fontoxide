@@ -14,6 +14,7 @@ categories.workspace = true
 [dependencies]
 log.workspace = true
 roxmltree.workspace = true
+thiserror.workspace = true
 
 [lints]
 workspace = true

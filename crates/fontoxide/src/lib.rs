@@ -6,17 +6,24 @@
 //! | fontoxide            | fontTools          |
 //! |----------------------|--------------------|
 //! | [`agl`]              | `fontTools.agl`    |
+//! | [`cu2qu`]            | `fontTools.cu2qu`  |
 //! | [`misc`]             | `fontTools.misc`   |
 //! | [`pens`]             | `fontTools.pens`   |
+//! | [`qu2cu`]            | `fontTools.qu2cu`  |
 //! | [`repack`]           | the HarfBuzz repacker (uharfbuzz's `serialize_with_tag`) |
 //! | [`subset`]           | `fontTools.subset` |
 //! | [`ttlib`]            | `fontTools.ttLib`  |
 //! | [`unicodedata`]      | `fontTools.unicodedata` |
 //! | [`varlib`]           | `fontTools.varLib` |
+//!
+//! `fontTools.pens.ttGlyphPen` and `fontTools.pens.t2CharStringPen` are in
+//! [`ttlib::pens`], as they build `glyf` glyphs and CFF charstrings.
 
 pub use fontoxide_agl as agl;
+pub use fontoxide_cu2qu as cu2qu;
 pub use fontoxide_misc as misc;
 pub use fontoxide_pens as pens;
+pub use fontoxide_qu2cu as qu2cu;
 pub use fontoxide_repack as repack;
 pub use fontoxide_subset as subset;
 pub use fontoxide_ttlib as ttlib;

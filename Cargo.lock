@@ -245,8 +245,10 @@ name = "fontoxide"
 version = "0.0.0"
 dependencies = [
  "fontoxide-agl",
+ "fontoxide-cu2qu",
  "fontoxide-misc",
  "fontoxide-pens",
+ "fontoxide-qu2cu",
  "fontoxide-repack",
  "fontoxide-subset",
  "fontoxide-ttlib",
@@ -259,6 +261,14 @@ name = "fontoxide-agl"
 version = "0.0.0"
 
 [[package]]
+name = "fontoxide-cu2qu"
+version = "0.0.0"
+dependencies = [
+ "fontoxide-misc",
+ "thiserror",
+]
+
+[[package]]
 name = "fontoxide-encodings"
 version = "0.0.0"
 
@@ -268,14 +278,25 @@ version = "0.0.0"
 dependencies = [
  "log",
  "roxmltree",
+ "thiserror",
 ]
 
 [[package]]
 name = "fontoxide-pens"
 version = "0.0.0"
 dependencies = [
+ "fontoxide-cu2qu",
  "fontoxide-misc",
+ "fontoxide-qu2cu",
  "log",
+ "thiserror",
+]
+
+[[package]]
+name = "fontoxide-qu2cu"
+version = "0.0.0"
+dependencies = [
+ "fontoxide-misc",
  "thiserror",
 ]
 

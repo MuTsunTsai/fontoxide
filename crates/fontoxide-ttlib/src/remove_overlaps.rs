@@ -102,7 +102,7 @@ impl Pen for PathPen<'_, '_> {
 	}
 
 	fn curve_to(&mut self, points: &[Point]) -> fontoxide_pens::Result<()> {
-		for (a, b, c) in decompose_super_bezier_segment(points) {
+		for (a, b, c) in decompose_super_bezier_segment(points)? {
 			self.path.curve_to(a, b, c);
 			self.current = Some(c);
 		}
@@ -132,7 +132,7 @@ impl Pen for PathPen<'_, '_> {
 			self.line_to(points[0])?;
 			return Ok(());
 		}
-		for (a, b) in decompose_quadratic_segment(&points) {
+		for (a, b) in decompose_quadratic_segment(&points)? {
 			self.path.quad_to(a, b);
 			self.current = Some(b);
 		}

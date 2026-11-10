@@ -15,11 +15,13 @@
 //! | [`xml_writer`]      | `fontTools.misc.xmlWriter`    |
 //! | [`xml_reader`]      | `fontTools.misc.xmlReader`    |
 //!
-//! [`py`] reproduces the Python formatting rules that fontTools output relies on.
+//! [`py`] reproduces the Python formatting rules that fontTools output relies on,
+//! and [`complex`] Python's complex arithmetic, which the curve math uses.
 
 pub mod array_tools;
 pub mod bezier_tools;
 pub mod cli_tools;
+pub mod complex;
 pub mod encoding_tools;
 pub mod fixed_tools;
 pub mod ift_sparse_bit_set;

@@ -121,6 +121,24 @@ rust = ["fontoxide-pens"]
 upstream = "Tests/pens/"
 rust = ["fontoxide-pens"]
 
+# The pens that build glyf glyphs and CFF charstrings live in fontoxide-ttlib (its
+# `pens` module), which fontoxide-pens cannot depend on.
+[[map]]
+upstream = "Lib/fontTools/pens/ttGlyphPen.py"
+rust = ["fontoxide-ttlib"]
+
+[[map]]
+upstream = "Lib/fontTools/pens/t2CharStringPen.py"
+rust = ["fontoxide-ttlib"]
+
+[[map]]
+upstream = "Tests/pens/ttGlyphPen_test.py"
+rust = ["fontoxide-ttlib"]
+
+[[map]]
+upstream = "Tests/pens/t2CharStringPen_test.py"
+rust = ["fontoxide-ttlib"]
+
 [[map]]
 upstream = "Lib/fontTools/qu2cu/"
 rust = ["fontoxide-qu2cu"]

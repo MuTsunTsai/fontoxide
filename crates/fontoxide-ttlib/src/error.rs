@@ -81,6 +81,7 @@ impl From<fontoxide_pens::Error> for Error {
 				Error::TtLib(format!("MissingComponentError: {name}"))
 			}
 			fontoxide_pens::Error::Usage(msg) => Error::TtLib(msg),
+			fontoxide_pens::Error::Pen(msg) => Error::TtLib(format!("PenError: {msg}")),
 		}
 	}
 }

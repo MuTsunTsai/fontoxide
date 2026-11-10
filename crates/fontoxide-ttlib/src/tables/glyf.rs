@@ -13,7 +13,7 @@ use fontoxide_misc::transform::Transform;
 use fontoxide_misc::xml_reader::Element;
 use fontoxide_misc::xml_writer::{AttrValue, XmlWriter};
 
-use fontoxide_pens::Pen;
+use fontoxide_pens::{Pen, PointPen, SegmentType};
 
 use crate::binary::fit;
 use crate::glyph_order::GlyphOrder;
@@ -624,6 +624,84 @@ impl Glyph {
 				}
 			}
 			pen.close_path()?;
+		}
+		Ok(())
+	}
+
+	/// Draws the glyph onto a point pen, moved right by `offset`
+	/// (`drawPoints`). Unlike [`Glyph::draw`], the point indices are kept;
+	/// cubic contours without on-curve points cannot be drawn this way
+	/// (`NotImplementedError`). Components are passed on to the pen.
+	pub fn draw_points(
+		&self,
+		order: &GlyphOrder,
+		pen: &mut dyn PointPen,
+		offset: f64,
+	) -> Result<()> {
+		if self.is_composite() {
+			for c in &self.components {
+				let (gid, t) = Self::component_info(c)?;
+				pen.add_component(&order.name(gid), t, None)?;
+			}
+			return Ok(());
+		}
+		if self.number_of_contours <= 0 {
+			return Ok(());
+		}
+		let flag = |i: usize| self.flags.get(i).copied().unwrap_or(0);
+		let ends: Vec<usize> = self
+			.end_pts_of_contours
+			.iter()
+			.map(|&e| usize::try_from(e + 1).unwrap_or(0))
+			.collect();
+		// Validate every contour before drawing.
+		let mut start = 0;
+		for &end in &ends {
+			let range = start..end.max(start);
+			start = end;
+			if !range.clone().any(|i| flag(i) & FLAG_ON_CURVE != 0)
+				&& range.clone().any(|i| flag(i) & FLAG_CUBIC != 0)
+			{
+				return Err(Error::ttlib(
+					"NotImplementedError: All-off-curve cubic contours are not supported by drawPoints; use draw instead",
+				));
+			}
+		}
+		let mut coordinates = self.coordinates.clone();
+		if offset != 0.0 {
+			translate(&mut coordinates, (offset, 0.0));
+		}
+		let mut start = 0;
+		for &end in &ends {
+			let end = end.clamp(start, coordinates.len());
+			let contour = &coordinates[start..end];
+			let first = start;
+			start = end;
+			pen.begin_path(None)?;
+			// Start with the type of the final segment.
+			let last = flag(end.saturating_sub(1));
+			let mut segment_type = if last & FLAG_ON_CURVE != 0 {
+				SegmentType::Line
+			} else if last & FLAG_CUBIC != 0 {
+				SegmentType::Curve
+			} else {
+				SegmentType::QCurve
+			};
+			for (i, &pt) in contour.iter().enumerate() {
+				let f = flag(first + i);
+				if f & FLAG_ON_CURVE != 0 {
+					pen.add_point(pt, Some(segment_type), false, None, None)?;
+					segment_type = SegmentType::Line;
+				} else {
+					pen.add_point(pt, None, false, None, None)?;
+					segment_type = if f & FLAG_CUBIC != 0 {
+						SegmentType::Curve
+					} else {
+						SegmentType::QCurve
+					};
+				}
+			}
+			pen.end_path()?;
 		}
 		Ok(())
 	}
@@ -1426,6 +1504,22 @@ impl Glyf {
 		Ok(data)
 	}
 
+	/// `glyfTable[name].compile(glyfTable, recalcBBoxes)`: the binary data of a
+	/// glyph, with its bounding box recalculated first if `recalc_bboxes`.
+	pub fn glyph_data(
+		&mut self,
+		gid: u32,
+		order: &GlyphOrder,
+		recalc_bboxes: bool,
+	) -> Result<Vec<u8>> {
+		self.compile_glyph(gid, order, recalc_bboxes, &mut HashSet::new())
+	}
+
+	/// `glyfTable[name].recalcBounds(glyfTable)`.
+	pub fn recalc_glyph_bounds(&mut self, gid: u32, order: &GlyphOrder) -> Result<()> {
+		self.recalc_bounds(gid, order, &mut HashSet::new(), &mut vec![gid])
+	}
+
 	/// `getCompositeMaxpValues`: points, contours and component depth of a
 	/// flattened composite glyph.
 	pub fn composite_maxp_values(
@@ -1693,6 +1787,143 @@ impl Glyph {
 		}
 		Ok(())
 	}
+}
+
+/// `_is_mid_point`: whether `p1` is halfway between `p0` and `p2`, before or
+/// after rounding.
+fn is_mid_point(p0: (f64, f64), p1: (f64, f64), p2: (f64, f64)) -> bool {
+	use fontoxide_misc::py::is_close;
+	let mid = ((p0.0 + p2.0) * 0.5, (p0.1 + p2.1) * 0.5);
+	if is_close(mid.0, p1.0) && is_close(mid.1, p1.1) {
+		return true;
+	}
+	let r = |p: (f64, f64)| (ot_round(p.0), ot_round(p.1));
+	let (r0, r1, r2) = (r(p0), r(p1), r(p2));
+	r0.0 + r2.0 == r1.0 * 2 && r0.1 + r2.1 == r1.1 * 2
+}
+
+/// `dropImpliedOnCurvePoints`: removes the on-curve points that are halfway
+/// between two off-curve points, in place. Several glyphs are taken as
+/// interpolatable masters: only the points impliable in all of them are
+/// dropped. Composite and empty glyphs are skipped. Returns the indices of
+/// the dropped points.
+pub fn drop_implied_on_curve_points(
+	glyphs: &mut [&mut Glyph],
+) -> Result<std::collections::BTreeSet<usize>> {
+	use std::collections::BTreeSet;
+	let mut statics: Option<(i64, Vec<u8>, Vec<i64>)> = None;
+	let mut drop: Option<BTreeSet<usize>> = None;
+	let mut simple = Vec::new();
+	for (index, glyph) in glyphs.iter().enumerate() {
+		if glyph.number_of_contours < 1 {
+			// Composite or empty.
+			continue;
+		}
+		match &statics {
+			None => {
+				statics = Some((
+					glyph.number_of_contours,
+					glyph.flags.clone(),
+					glyph.end_pts_of_contours.clone(),
+				))
+			}
+			Some((n, flags, ends)) => {
+				let mismatch = if *n != glyph.number_of_contours {
+					Some("numberOfContours")
+				} else if *flags != glyph.flags {
+					Some("flags")
+				} else if *ends != glyph.end_pts_of_contours {
+					Some("endPtsOfContours")
+				} else {
+					None
+				};
+				if let Some(attr) = mismatch {
+					return Err(Error::value(format!(
+						"Incompatible {attr} for glyph at master index {index}"
+					)));
+				}
+			}
+		}
+		let Some((_, flags, ends)) = &statics else {
+			continue;
+		};
+		let flag = |i: usize| flags.get(i).copied().unwrap_or(0);
+		let coords = &glyph.coordinates;
+		let mut may_drop = BTreeSet::new();
+		let mut start = 0usize;
+		for &last in ends {
+			let last = usize::try_from(last).unwrap_or(0);
+			for i in start..=last {
+				if flag(i) & FLAG_ON_CURVE == 0 {
+					continue;
+				}
+				let prv = if i > start { i - 1 } else { last };
+				let nxt = if i < last { i + 1 } else { start };
+				if flag(prv) & FLAG_ON_CURVE != 0 || flag(prv) != flag(nxt) {
+					continue;
+				}
+				// The on-curve point may go if halfway between its neighbors.
+				let (Some(&a), Some(&b), Some(&c)) =
+					(coords.get(prv), coords.get(i), coords.get(nxt))
+				else {
+					continue;
+				};
+				if !is_mid_point(a, b, c) {
+					continue;
+				}
+				may_drop.insert(i);
+			}
+			start = last + 1;
+		}
+		// Only the points impliable in all the glyphs are dropped.
+		drop = Some(match drop {
+			None => may_drop,
+			Some(d) => d.intersection(&may_drop).copied().collect(),
+		});
+		simple.push(index);
+	}
+
+	let drop = drop.unwrap_or_default();
+	if drop.is_empty() {
+		return Ok(drop);
+	}
+	let Some((_, flags, ends)) = statics else {
+		return Ok(drop);
+	};
+	let new_flags: Vec<u8> = flags
+		.iter()
+		.enumerate()
+		.filter(|(i, _)| !drop.contains(i))
+		.map(|(_, &f)| f)
+		.collect();
+	let mut new_ends = Vec::with_capacity(ends.len());
+	let mut i = 0;
+	let mut delta = 0;
+	for &d in &drop {
+		while i < ends.len() && d as i64 > ends[i] {
+			new_ends.push(ends[i] - delta);
+			i += 1;
+		}
+		delta += 1;
+	}
+	while i < ends.len() {
+		new_ends.push(ends[i] - delta);
+		i += 1;
+	}
+	for index in simple {
+		let glyph = &mut glyphs[index];
+		glyph.coordinates = glyph
+			.coordinates
+			.iter()
+			.enumerate()
+			.filter(|(i, _)| !drop.contains(i))
+			.map(|(_, &p)| p)
+			.collect();
+		glyph.flags = new_flags.clone();
+		glyph.end_pts_of_contours = new_ends.clone();
+		glyph.data = None;
+	}
+	Ok(drop)
 }
 
 impl TableType for Glyf {
