@@ -56,6 +56,7 @@ impl TempDir {
 			&path,
 			font.write(&WriteOptions {
 				reorder_tables: None,
+				..WriteOptions::default()
 			})?,
 		)?;
 		Ok(path)

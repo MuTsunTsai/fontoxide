@@ -132,27 +132,48 @@ pub fn timestamp_from_string(value: &str) -> Option<i64> {
 	Some(seconds - EPOCH_DIFF)
 }
 
+/// The clock set by [`set_clock`].
+static CLOCK: std::sync::RwLock<Option<fn() -> f64>> = std::sync::RwLock::new(None);
+
+/// Sets the clock of [`timestamp_now`], a function returning the seconds since the
+/// Unix epoch, in place of the system clock.
+///
+/// `std::time::SystemTime` is unavailable on `wasm32-unknown-unknown`, so set one
+/// there (for example from `js_sys::Date::now() / 1000.0`) before writing fonts
+/// whose `recalc_timestamp` is on.
+pub fn set_clock(clock: fn() -> f64) {
+	*CLOCK.write().unwrap_or_else(|e| e.into_inner()) = Some(clock);
+}
+
 /// The current time as an OpenType timestamp (`timestampNow`). Honors
-/// `SOURCE_DATE_EPOCH` for reproducible builds; returns `None` if it is set but not
-/// an integer (fontTools raises `ValueError`).
-#[cfg(not(target_family = "wasm"))]
+/// `SOURCE_DATE_EPOCH` for reproducible builds, then the clock of [`set_clock`];
+/// returns `None` if `SOURCE_DATE_EPOCH` is set but not an integer (fontTools
+/// raises `ValueError`), or if there is no clock (on `wasm32-unknown-unknown`
+/// without [`set_clock`]).
 pub fn timestamp_now() -> Option<i64> {
 	if let Ok(epoch) = std::env::var("SOURCE_DATE_EPOCH") {
 		return Some(crate::py::parse_int(&epoch)? as i64 - EPOCH_DIFF);
 	}
-	let now = std::time::SystemTime::now()
-		.duration_since(std::time::UNIX_EPOCH)
-		.map(|d| d.as_secs_f64())
-		.unwrap_or(0.0);
+	let clock = *CLOCK.read().unwrap_or_else(|e| e.into_inner());
+	let now = match clock {
+		Some(clock) => clock(),
+		None => system_time()?,
+	};
 	Some((now - EPOCH_DIFF as f64) as i64)
 }
 
-/// The current time as an OpenType timestamp (`timestampNow`).
-///
-/// `std::time::SystemTime` is unavailable on `wasm32-unknown-unknown`, so the caller
-/// has to supply timestamps there; this returns `None`.
+#[cfg(not(target_family = "wasm"))]
+fn system_time() -> Option<f64> {
+	Some(
+		std::time::SystemTime::now()
+			.duration_since(std::time::UNIX_EPOCH)
+			.map(|d| d.as_secs_f64())
+			.unwrap_or(0.0),
+	)
+}
+
 #[cfg(target_family = "wasm")]
-pub fn timestamp_now() -> Option<i64> {
+fn system_time() -> Option<f64> {
 	None
 }
 
@@ -190,4 +211,14 @@ mod tests {
 	// test_source_date_epoch mutates the process environment, which is not
 	// thread-safe in Rust's test harness; the logic is covered by `timestamp_now`
 	// being a direct port.
+
+	/// No other test of this crate reads the clock, so setting it is safe.
+	#[test]
+	fn set_clock_overrides_system_time() {
+		if std::env::var_os("SOURCE_DATE_EPOCH").is_some() {
+			return;
+		}
+		set_clock(|| 1_000_000_000.5);
+		assert_eq!(timestamp_now(), Some(1_000_000_000 - EPOCH_DIFF));
+	}
 }

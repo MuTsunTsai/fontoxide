@@ -11,6 +11,10 @@ use crate::sstruct::{F16Dot16, I16, U16, U32, U64, Value, eval};
 use crate::table::{Table, TableType};
 use crate::{Error, Font, Result};
 
+/// The error when `recalc_timestamp` is on but there is no current time.
+pub(crate) const NO_TIMESTAMP: &str =
+	"invalid SOURCE_DATE_EPOCH or no clock (on wasm, call fontoxide_ttlib::set_clock first)";
+
 crate::sstruct! {
 	/// Font Header table (`table__h_e_a_d`).
 	///
@@ -146,8 +150,7 @@ impl Table for Head {
 			}
 		}
 		if font.recalc_timestamp {
-			let now = timestamp_now()
-				.ok_or_else(|| Error::value("invalid SOURCE_DATE_EPOCH or no clock"))?;
+			let now = timestamp_now().ok_or_else(|| Error::value(NO_TIMESTAMP))?;
 			self.modified = crate::binary::fit(now, "modified")?;
 		}
 		let mut data = Vec::with_capacity(Self::SIZE);

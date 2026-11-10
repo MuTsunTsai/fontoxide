@@ -35,8 +35,9 @@ pub mod woff2;
 
 pub use collection::TtCollection;
 pub use error::{Error, Result};
-pub use font::{Font, ReadOptions, TableKey, TtxOptions, WriteOptions};
+pub use font::{Font, Progress, ReadOptions, TableKey, TtxOptions, WriteOptions};
 pub use fontoxide_misc::Tag;
+pub use fontoxide_misc::time_tools::set_clock;
 pub use glyph_order::GlyphOrder;
 pub use glyph_set::GlyphSet;
 pub use sfnt::{Flavor, FlavorData};

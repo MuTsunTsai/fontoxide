@@ -641,6 +641,15 @@ impl SfntWriter {
 		self.woff2.is_some()
 	}
 
+	/// Sets the Brotli quality and the progress callback of WOFF 2.0 output; see
+	/// [`crate::WriteOptions`]. Does nothing for other flavors.
+	pub fn set_woff2_compression(&mut self, quality: u32, progress: Option<crate::font::Progress>) {
+		if let Some(w) = &mut self.woff2 {
+			w.quality = quality;
+			w.progress = progress;
+		}
+	}
+
 	/// Adds a directory entry for table data that is already in the file, written
 	/// for another font of the collection (`setEntry`).
 	pub fn set_entry(&mut self, entry: DirectoryEntry) -> Result<()> {

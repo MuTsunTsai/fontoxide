@@ -50,20 +50,47 @@ impl Default for ReadOptions {
 	}
 }
 
+/// A progress callback, called with the fraction done, from 0.0 to 1.0. It need not
+/// be `Send`, so that it can call into JavaScript on wasm.
+pub type Progress = std::rc::Rc<dyn Fn(f64)>;
+
 /// Options for [`Font::write`] (`TTFont.save`).
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone)]
 pub struct WriteOptions {
 	/// `Some(true)` (the default) sorts tables as the OpenType specification
 	/// recommends; `Some(false)` keeps the original order; `None` writes them in
 	/// dependency order (`reorderTables`).
 	pub reorder_tables: Option<bool>,
+	/// The Brotli quality of WOFF 2.0 output, from 0 to 11. fontTools always uses
+	/// 11 (the default); lower values are much faster, but the file is larger.
+	pub woff2_quality: u32,
+	/// Called as the font data of WOFF 2.0 output is compressed, which takes nearly
+	/// all of the time, with the fraction of the data read by Brotli so far. It is
+	/// called thousands of times for a large font, so throttle in the callback if
+	/// needed. Not called for other flavors.
+	pub woff2_progress: Option<Progress>,
 }
 
 impl Default for WriteOptions {
 	fn default() -> Self {
 		WriteOptions {
 			reorder_tables: Some(true),
+			woff2_quality: 11,
+			woff2_progress: None,
 		}
+	}
+}
+
+impl std::fmt::Debug for WriteOptions {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("WriteOptions")
+			.field("reorder_tables", &self.reorder_tables)
+			.field("woff2_quality", &self.woff2_quality)
+			.field(
+				"woff2_progress",
+				&self.woff2_progress.as_ref().map(|_| ".."),
+			)
+			.finish()
 	}
 }
 
@@ -634,7 +661,7 @@ impl Font {
 
 	/// Compiles the font (`save`).
 	pub fn write(&mut self, options: &WriteOptions) -> Result<Vec<u8>> {
-		let (data, writer_reorders) = self.save_into(Vec::new(), None)?;
+		let (data, writer_reorders) = self.save_into(Vec::new(), None, Some(options))?;
 		match options.reorder_tables {
 			None => Ok(data),
 			_ if writer_reorders => Ok(data),
@@ -651,11 +678,13 @@ impl Font {
 
 	/// Writes the font's tables after the existing contents of `file` (`_save`),
 	/// optionally sharing identical tables through `cache`. Returns the file and
-	/// whether the writer already ordered the tables.
+	/// whether the writer already ordered the tables. `options` sets the WOFF 2.0
+	/// compression.
 	pub(crate) fn save_into(
 		&mut self,
 		file: Vec<u8>,
 		mut cache: Option<&mut TableCache>,
+		options: Option<&WriteOptions>,
 	) -> Result<(Vec<u8>, bool)> {
 		if self.recalc_timestamp && self.contains(HEAD) {
 			self.load(HEAD)?;
@@ -668,6 +697,9 @@ impl Font {
 			self.flavor,
 			self.flavor_data.clone(),
 		);
+		if let Some(options) = options {
+			writer.set_woff2_compression(options.woff2_quality, options.woff2_progress.clone());
+		}
 		let mut done = Vec::new();
 		for &tag in &tags {
 			self.write_table(tag, &mut writer, &mut done, cache.as_deref_mut())?;

@@ -159,6 +159,7 @@ pub fn save_font(font: &mut Font, flavor: Option<Flavor>, options: &Options) -> 
 	font.use_harfbuzz_repacker = options.harfbuzz_repacker;
 	Ok(font.write(&WriteOptions {
 		reorder_tables: options.canonical_order,
+		..WriteOptions::default()
 	})?)
 }
 

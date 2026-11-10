@@ -90,8 +90,8 @@ impl TtCollection {
 		{
 			if font.recalc_timestamp && font.contains(crate::Tag::new(b"head")) {
 				restore.push(i);
-				let now = now
-					.ok_or_else(|| crate::Error::value("invalid SOURCE_DATE_EPOCH or no clock"))?;
+				let now =
+					now.ok_or_else(|| crate::Error::value(crate::tables::head::NO_TIMESTAMP))?;
 				font.require::<crate::tables::Head>()?.modified =
 					crate::binary::fit(now, "modified")?;
 				font.recalc_timestamp = false;
@@ -138,12 +138,12 @@ impl TtCollection {
 		let mut legacy_offsets = Vec::new();
 		for font in self.legacy_fonts.iter_mut().flatten() {
 			legacy_offsets.push(file.len() as u32);
-			file = font.save_into(file, cache.as_deref_mut())?.0;
+			file = font.save_into(file, cache.as_deref_mut(), None)?.0;
 		}
 		let mut offsets = Vec::new();
 		for font in &mut self.fonts {
 			offsets.push(file.len() as u32);
-			file = font.save_into(file, cache.as_deref_mut())?.0;
+			file = font.save_into(file, cache.as_deref_mut(), None)?.0;
 		}
 
 		let write_u32s = |file: &mut Vec<u8>, at: usize, values: &[u32]| {

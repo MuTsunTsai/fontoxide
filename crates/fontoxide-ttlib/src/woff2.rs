@@ -8,6 +8,7 @@
 //! for larger ones; the decompressed data is identical.
 
 use std::collections::HashMap;
+use std::io::Read;
 use std::sync::{Arc, Mutex};
 
 use fontoxide_misc::Tag;
@@ -15,6 +16,7 @@ use fontoxide_misc::array_tools::calc_bounds;
 use fontoxide_misc::round_tools::ot_round;
 
 use crate::binary::{WriteBytes, calc_checksum, pad4};
+use crate::font::Progress;
 use crate::sfnt::{
 	DirectoryEntry, Flavor, FlavorData, SFNT_DIRECTORY_ENTRY_SIZE, SFNT_DIRECTORY_SIZE, SfntReader,
 	SfntReaderOptions, TableData, sfnt_directory,
@@ -151,10 +153,33 @@ fn brotli_decompress(data: &[u8]) -> Result<Vec<u8>> {
 	Ok(out)
 }
 
-fn brotli_compress(data: &[u8], font: bool) -> Result<Vec<u8>> {
+/// A reader that reports the fraction of `data` read so far.
+struct ProgressReader<'a> {
+	data: &'a [u8],
+	read: usize,
+	progress: &'a Progress,
+}
+
+impl Read for ProgressReader<'_> {
+	fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+		let n = (&self.data[self.read..]).read(buf)?;
+		self.read += n;
+		(self.progress)(self.read as f64 / self.data.len().max(1) as f64);
+		Ok(n)
+	}
+}
+
+/// Compresses `data` (the font data or, if not `font`, the metadata), reporting the
+/// fraction read to `progress`.
+fn brotli_compress(
+	data: &[u8],
+	font: bool,
+	quality: u32,
+	progress: Option<&Progress>,
+) -> Result<Vec<u8>> {
 	use brotli::enc::backward_references::BrotliEncoderMode;
 	let params = brotli::enc::BrotliEncoderParams {
-		quality: 11,
+		quality: quality.min(11) as i32,
 		lgwin: 22,
 		mode: if font {
 			BrotliEncoderMode::BROTLI_MODE_FONT
@@ -164,8 +189,22 @@ fn brotli_compress(data: &[u8], font: bool) -> Result<Vec<u8>> {
 		..Default::default()
 	};
 	let mut out = Vec::new();
-	brotli::BrotliCompress(&mut &data[..], &mut out, &params)
-		.map_err(|e| Error::ttlib(format!("brotli error: {e}")))?;
+	match progress {
+		None => brotli::BrotliCompress(&mut &data[..], &mut out, &params),
+		Some(progress) => {
+			progress(0.0);
+			let mut reader = ProgressReader {
+				data,
+				read: 0,
+				progress,
+			};
+			brotli::BrotliCompress(&mut reader, &mut out, &params)
+		}
+	}
+	.map_err(|e| Error::ttlib(format!("brotli error: {e}")))?;
+	if let Some(progress) = progress {
+		progress(1.0);
+	}
 	Ok(out)
 }
 
@@ -913,13 +952,30 @@ impl Decoder<'_> {
 // --- Writing (`WOFF2Writer`)
 
 /// Writes a WOFF 2.0 file (`WOFF2Writer`).
-#[derive(Debug)]
 pub struct Woff2Writer {
 	num_tables: usize,
 	sfnt_version: Tag,
 	flavor_data: FlavorData,
 	transformed_tables: Vec<Tag>,
 	tables: Vec<(Tag, Vec<u8>)>,
+	/// The Brotli quality; see [`crate::WriteOptions::woff2_quality`].
+	pub(crate) quality: u32,
+	/// See [`crate::WriteOptions::woff2_progress`].
+	pub(crate) progress: Option<Progress>,
+}
+
+impl std::fmt::Debug for Woff2Writer {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("Woff2Writer")
+			.field("num_tables", &self.num_tables)
+			.field("sfnt_version", &self.sfnt_version)
+			.field("flavor_data", &self.flavor_data)
+			.field("transformed_tables", &self.transformed_tables)
+			.field("tables", &self.tables)
+			.field("quality", &self.quality)
+			.field("progress", &self.progress.as_ref().map(|_| ".."))
+			.finish()
+	}
 }
 
 impl Woff2Writer {
@@ -939,6 +995,8 @@ impl Woff2Writer {
 			flavor_data,
 			transformed_tables,
 			tables: Vec::new(),
+			quality: 11,
+			progress: None,
 		}
 	}
 
@@ -1083,7 +1141,7 @@ impl Woff2Writer {
 		}
 		stream[at..at + 4].copy_from_slice(&adjustment.to_be_bytes());
 
-		let compressed = brotli_compress(&stream, true)?;
+		let compressed = brotli_compress(&stream, true, self.quality, self.progress.as_ref())?;
 		let total_sfnt_size = orig_offset;
 
 		// `_calcTotalSize` and `_calcFlavorDataOffsetsAndSize`.
@@ -1092,7 +1150,9 @@ impl Woff2Writer {
 		offset += compressed.len();
 		offset = (offset + 3) & !3;
 		let meta = match &self.flavor_data.meta_data {
-			Some(m) if !m.is_empty() => Some((m.len(), brotli_compress(m, false)?)),
+			Some(m) if !m.is_empty() => {
+				Some((m.len(), brotli_compress(m, false, self.quality, None)?))
+			}
 			_ => None,
 		};
 		let (meta_offset, meta_length, meta_orig_length) = match &meta {
@@ -1561,6 +1621,41 @@ mod tests {
 		assert_eq!(pack_255_ushort(252)?, [0xFC]);
 		assert_eq!(pack_255_ushort(506)?, [0xFE, 0x00]);
 		assert_eq!(pack_255_ushort(762)?, [0xFD, 0x02, 0xFA]);
+		Ok(())
+	}
+
+	fn sample_data() -> Vec<u8> {
+		(0..100_000_u32)
+			.map(|i| (i.wrapping_mul(2_654_435_761) >> 24) as u8 & 0x3F)
+			.collect()
+	}
+
+	/// The progress rises to 1.0, and does not change the output.
+	#[test]
+	fn brotli_progress() -> Result<()> {
+		let data = sample_data();
+		let seen = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+		let progress: Progress = {
+			let seen = seen.clone();
+			std::rc::Rc::new(move |p| seen.borrow_mut().push(p))
+		};
+		let with = brotli_compress(&data, true, 11, Some(&progress))?;
+		assert_eq!(with, brotli_compress(&data, true, 11, None)?);
+		let seen = seen.borrow();
+		assert!(seen.len() > 2, "{seen:?}");
+		assert_eq!(seen.first(), Some(&0.0));
+		assert_eq!(seen.last(), Some(&1.0));
+		assert!(seen.windows(2).all(|w| w[0] <= w[1]), "{seen:?}");
+		Ok(())
+	}
+
+	/// A lower quality gives other, still valid, data.
+	#[test]
+	fn brotli_quality() -> Result<()> {
+		let data = sample_data();
+		let fast = brotli_compress(&data, true, 5, None)?;
+		assert_ne!(fast, brotli_compress(&data, true, 11, None)?);
+		assert_eq!(brotli_decompress(&fast)?, data);
 		Ok(())
 	}
 }
