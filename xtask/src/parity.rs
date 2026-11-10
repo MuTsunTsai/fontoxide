@@ -10,7 +10,7 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use clap::ValueEnum;
 use fontoxide_ttlib::{Font, ReadOptions, Tag, TtxOptions, WriteOptions};
 use serde::Serialize;
@@ -52,6 +52,11 @@ pub struct Args {
 	/// `target/parity/mismatches`, for inspection.
 	#[arg(long)]
 	save_mismatches: bool,
+	/// Instead of comparing fonts, check that the harness itself reports failures:
+	/// partial or missing reference outputs, changed tables, different kinds of
+	/// errors and empty subset requests.
+	#[arg(long)]
+	self_test: bool,
 	/// Font files or directories to test (default: corpus/).
 	paths: Vec<PathBuf>,
 }
@@ -127,16 +132,6 @@ pub enum InstanceLimits {
 }
 
 impl InstanceLimits {
-	fn name(self) -> &'static str {
-		match self {
-			InstanceLimits::Pin => "pin",
-			InstanceLimits::Drop => "drop",
-			InstanceLimits::First => "first",
-			InstanceLimits::Range => "range",
-			InstanceLimits::Move => "move",
-		}
-	}
-
 	/// The limits for a font, by axis tag; empty if it is not a variable font. A
 	/// missing value keeps the one of `fvar`.
 	fn for_font(self, data: &[u8]) -> Vec<(String, Option<[Option<f64>; 3]>)> {
@@ -239,8 +234,16 @@ enum Outcome {
 	Match,
 	/// Both sides produced output, but it differs.
 	Mismatch,
-	/// Both sides rejected the font.
+	/// Both sides rejected the font, with the same kind of error.
 	BothFailed,
+	/// Both sides rejected the font, but with different kinds of errors, so the
+	/// failures may have nothing to do with each other.
+	FailedDifferently,
+	/// Both sides succeeded, but the comparison checked nothing of substance: every
+	/// table is unimplemented, or the subset request keeps no glyphs.
+	Vacuous,
+	/// The case has no input: fromttx of a font that fontTools cannot dump as TTX.
+	Skipped,
 	/// fontTools failed but fontoxide succeeded.
 	ReferenceFailed,
 	/// fontoxide failed but fontTools succeeded.
@@ -270,11 +273,109 @@ struct Record {
 	detail: Option<String>,
 }
 
+/// A font that fontoxide rejected: the Python exceptions that its error corresponds
+/// to, and the message.
+#[derive(Debug, Clone)]
+struct Failure {
+	kinds: Vec<String>,
+	message: String,
+}
+
+impl Failure {
+	fn new(kinds: &[&str], message: impl ToString) -> Self {
+		Failure {
+			kinds: kinds.iter().map(|k| (*k).to_owned()).collect(),
+			message: message.to_string(),
+		}
+	}
+
+	/// Whether fontTools failed with the same kind of error, given its error as
+	/// `reference.py` records it (`<exception class>: <message>`).
+	fn same_kind_as(&self, reference: &str) -> bool {
+		let kind = reference
+			.split_once(':')
+			.map_or(reference, |(k, _)| k)
+			.trim();
+		self.kinds.iter().any(|k| k == kind)
+	}
+}
+
+impl fmt::Display for Failure {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "[{}] {}", self.kinds.join("|"), self.message)
+	}
+}
+
+/// The class name at the start of a message that copies a Python exception, as in
+/// `KeyError: 'head'`.
+fn python_exception_prefix(message: &str) -> Option<&str> {
+	let (name, _) = message.split_once(':')?;
+	let valid = name.starts_with(|c: char| c.is_ascii_uppercase())
+		&& name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+		&& (name.ends_with("Error") || name.ends_with("Exception"));
+	valid.then_some(name)
+}
+
+impl From<fontoxide_ttlib::Error> for Failure {
+	fn from(e: fontoxide_ttlib::Error) -> Self {
+		use fontoxide_ttlib::Error as E;
+		let message = e.to_string();
+		let root = e.root_cause();
+		let root_message = root.to_string();
+		let inner = match root {
+			E::TtLib(m) | E::Struct(m) | E::Value(m) | E::Assertion(m) | E::TtxParse(m) => {
+				m.as_str()
+			}
+			_ => root_message.as_str(),
+		};
+		if let Some(name) = python_exception_prefix(inner) {
+			return Failure::new(&[name], message);
+		}
+		let kinds: &[&str] = match root {
+			E::TtLib(_) => &["TTLibError"],
+			E::FileIsCollection(_) => &["TTLibFileIsCollectionError"],
+			E::TableNotFound(_) | E::GlyphNotFound(_) => &["KeyError"],
+			E::Struct(_) => &["error"],
+			E::Assertion(_) => &["AssertionError"],
+			E::Value(_) => &["ValueError", "TypeError"],
+			E::TtxParse(_) => &["TTXParseError", "ExpatError"],
+			E::OffsetOverflow(_) => &["OTLOffsetOverflowError"],
+			E::Io(_) => &["OSError"],
+			// No fontTools counterpart: never the same kind.
+			_ => &[],
+		};
+		Failure::new(kinds, message)
+	}
+}
+
+impl From<fontoxide_subset::Error> for Failure {
+	fn from(e: fontoxide_subset::Error) -> Self {
+		use fontoxide_subset::Error as E;
+		match e {
+			E::Ttlib(e) => e.into(),
+			E::MissingGlyphs(_) => Failure::new(&["MissingGlyphsSubsettingError"], e),
+			E::MissingUnicodes(_) => Failure::new(&["MissingUnicodesSubsettingError"], e),
+			E::Option(_) => Failure::new(&["OptionError", "UnknownOptionError"], e),
+			E::Io(_) => Failure::new(&["OSError"], e),
+			_ => Failure::new(&[], e),
+		}
+	}
+}
+
+impl From<std::str::Utf8Error> for Failure {
+	fn from(e: std::str::Utf8Error) -> Self {
+		Failure::new(&["UnicodeDecodeError"], e)
+	}
+}
+
 const FONT_EXTENSIONS: &[&str] = &["ttf", "otf", "ttc", "otc", "woff", "woff2"];
 const FILE: &str = "<file>";
 const FONT: &str = "<font>";
 
 pub fn run(args: &Args) -> Result<()> {
+	if args.self_test {
+		return self_test();
+	}
 	let info = reference::info()?;
 	let ops: Vec<Op> = if args.ops.is_empty() {
 		Op::ALL.to_vec()
@@ -297,27 +398,20 @@ pub fn run(args: &Args) -> Result<()> {
 		return Ok(());
 	}
 
-	let mut flavor = if args.repacker { "-hb" } else { "" }.to_owned();
-	if !args.subset_options.is_empty() {
-		// Outputs with other subset options are cached apart.
-		let digest = Sha256::digest(args.subset_options.join("\0").as_bytes());
-		flavor.push_str("-s");
-		flavor.extend(digest[..4].iter().map(|b| format!("{b:02x}")));
-	}
-	if ops.contains(&Op::Instance) || ops.contains(&Op::Mutator) {
-		// Outputs with other limits are cached apart.
-		flavor.push_str("-i");
-		flavor.push_str(args.instance_limits.name());
-		for option in &args.instance_options {
-			flavor.push('-');
-			flavor.push_str(option.name());
-		}
-	}
+	// Reference outputs are keyed by the fontTools version, the script that makes
+	// them and its environment, the font content and every parameter of the job, so
+	// that a change to any of them never reuses a stale output.
+	let mut script = std::fs::read(reference::script())?;
+	script.extend(format!("{:?}", reference::ENV).bytes());
 	let ref_dir = root()
 		.join("target")
 		.join("parity")
 		.join("ref")
-		.join(format!("{}{flavor}", info.fonttools_version));
+		.join(format!(
+			"{}-r{}",
+			info.fonttools_version,
+			short_hash(&script)
+		));
 
 	// Plan reference jobs for everything not cached yet.
 	let mut cases = Vec::new();
@@ -332,7 +426,8 @@ pub fn run(args: &Args) -> Result<()> {
 			} else {
 				Vec::new()
 			};
-		let ttx_ref = ref_dir.join(Op::Ttx.name()).join(format!("{key}.ttx"));
+		let ttx_params = job_params(Op::Ttx, args.repacker);
+		let ttx_ref = reference_output(&ref_dir, Op::Ttx, &key, &ttx_params);
 		let mut scheduled_ttx = false;
 		for &op in ops
 			.iter()
@@ -341,9 +436,39 @@ pub fn run(args: &Args) -> Result<()> {
 			// Only variable fonts can be instantiated.
 			.filter(|&&op| !matches!(op, Op::Instance | Op::Mutator) || !instance_limits.is_empty())
 		{
-			let out = ref_dir
-				.join(op.name())
-				.join(format!("{key}.{}", op.extension()));
+			let mut params = job_params(op, args.repacker);
+			let mut vacuous = None;
+			if op == Op::Subset {
+				let (unicodes, gids) = subset_request(&std::fs::read(font)?);
+				vacuous = subset_request_is_vacuous(&unicodes, &gids)
+					.then(|| "the subset request keeps no glyph but .notdef".to_owned());
+				params["unicodes"] = serde_json::json!(unicodes);
+				params["gids"] = serde_json::json!(gids);
+				params["options"] = serde_json::json!(args.subset_options);
+			}
+			if matches!(op, Op::Instance | Op::Mutator) {
+				params["options"] = serde_json::json!(
+					args.instance_options
+						.iter()
+						.map(|o| o.name())
+						.collect::<Vec<_>>()
+				);
+			}
+			if op == Op::Mutator {
+				params["location"] = serde_json::json!(
+					mutator_location(&instance_limits)
+						.into_iter()
+						.collect::<serde_json::Map<String, serde_json::Value>>()
+				);
+			}
+			if op == Op::Instance {
+				let limits: serde_json::Map<String, serde_json::Value> = instance_limits
+					.iter()
+					.map(|(tag, value)| (tag.clone(), serde_json::json!(value)))
+					.collect();
+				params["limits"] = serde_json::Value::Object(limits);
+			}
+			let out = reference_output(&ref_dir, op, &key, &params);
 			let err = out.with_extension("err");
 			// fromttx reads fontTools' TTX dump, which must be produced first.
 			let input = if ttx_input {
@@ -352,66 +477,26 @@ pub fn run(args: &Args) -> Result<()> {
 			} else if op == Op::Fromttx {
 				let ttx_err = ttx_ref.with_extension("err");
 				if !scheduled_ttx && !(ttx_ref.exists() || ttx_err.exists()) {
-					jobs.push(serde_json::json!({
-						"op": Op::Ttx.name(),
-						"input": font,
-						"output": ttx_ref,
-						"font_number": 0,
-						"repacker": args.repacker,
-					}));
+					jobs.push(job(&ttx_params, font, &ttx_ref));
 				}
 				ttx_ref.clone()
 			} else {
 				font.clone()
 			};
 			if args.rebuild_reference || !(out.exists() || err.exists()) {
-				let _ = std::fs::remove_file(&out);
-				let _ = std::fs::remove_file(&err);
-				let mut job = serde_json::json!({
-					"op": op.name(),
-					"input": input,
-					"output": out,
-					"font_number": 0,
-					"repacker": args.repacker,
-				});
-				if op == Op::Subset {
-					let (unicodes, gids) = subset_request(&std::fs::read(font)?);
-					job["unicodes"] = serde_json::json!(unicodes);
-					job["gids"] = serde_json::json!(gids);
-					job["options"] = serde_json::json!(args.subset_options);
-				}
-				if op == Op::Mutator {
-					job["options"] = serde_json::json!(
-						args.instance_options
-							.iter()
-							.map(|o| o.name())
-							.collect::<Vec<_>>()
-					);
-					job["location"] = serde_json::json!(
-						mutator_location(&instance_limits)
-							.into_iter()
-							.collect::<serde_json::Map<String, serde_json::Value>>()
-					);
-				}
-				if op == Op::Instance {
-					job["options"] = serde_json::json!(
-						args.instance_options
-							.iter()
-							.map(|o| o.name())
-							.collect::<Vec<_>>()
-					);
-					let limits: serde_json::Map<String, serde_json::Value> = instance_limits
-						.iter()
-						.map(|(tag, value)| (tag.clone(), serde_json::json!(value)))
-						.collect();
-					job["limits"] = serde_json::Value::Object(limits);
-				}
-				jobs.push(job);
+				jobs.push(job(&params, &input, &out));
 				if op == Op::Ttx {
 					scheduled_ttx = true;
 				}
 			}
-			cases.push((font.clone(), op, input, out, err));
+			cases.push(Case {
+				font: font.clone(),
+				op,
+				input,
+				out,
+				err,
+				vacuous,
+			});
 		}
 	}
 
@@ -424,47 +509,10 @@ pub fn run(args: &Args) -> Result<()> {
 		run_reference_jobs(&ref_dir, &jobs)?;
 	}
 
+	println!("Comparing {} case(s)…", cases.len());
 	let mut records = Vec::new();
-	for (font, op, input, out, err) in cases {
-		let reference = if err.exists() || !out.exists() {
-			Err(std::fs::read_to_string(&err).unwrap_or_default())
-		} else {
-			Ok(std::fs::read(&out)?)
-		};
-		let input = std::fs::read(&input).unwrap_or_default();
-		let mut push = |table: &str, outcome, detail| {
-			records.push(Record {
-				font: font.clone(),
-				op,
-				table: table.to_owned(),
-				outcome,
-				detail,
-			});
-		};
-		match (
-			ours(
-				op,
-				&input,
-				args.repacker,
-				&args.subset_options,
-				args.instance_limits,
-				&args.instance_options,
-			),
-			reference,
-		) {
-			(Ok(a), Ok(b)) => {
-				let results = compare(op, &a, &b);
-				if args.save_mismatches && results.iter().any(|r| r.1 == Outcome::Mismatch) {
-					save_mismatch(&font, op, &a, &b)?;
-				}
-				for (table, outcome, detail) in results {
-					push(&table, outcome, detail);
-				}
-			}
-			(Err(e), Err(_)) => push(FONT, Outcome::BothFailed, Some(e)),
-			(Ok(_), Err(e)) => push(FONT, Outcome::ReferenceFailed, Some(e)),
-			(Err(e), Ok(_)) => push(FONT, Outcome::OursFailed, Some(e)),
-		}
+	for result in par_map(&cases, |case| evaluate(case, args)) {
+		records.extend(result?);
 	}
 	if !args.tables.is_empty() {
 		records.retain(|r| {
@@ -478,6 +526,269 @@ pub fn run(args: &Args) -> Result<()> {
 	std::fs::write(&report, serde_json::to_string_pretty(&records)?)?;
 	print_summary(&records, args.verbose);
 	println!("\nDetails: {}", report.display());
+	Ok(())
+}
+
+/// One font and operation to compare.
+struct Case {
+	font: PathBuf,
+	op: Op,
+	/// What both sides read: the font, or fontTools' TTX dump of it for fromttx.
+	input: PathBuf,
+	/// The reference output, or its error (`err`).
+	out: PathBuf,
+	err: PathBuf,
+	/// Why the case checks nothing, if known before running it.
+	vacuous: Option<String>,
+}
+
+/// Runs fontoxide's side of a case and compares it with the reference output.
+fn evaluate(case: &Case, args: &Args) -> Result<Vec<Record>> {
+	let mut records = Vec::new();
+	let mut push = |table: &str, outcome, detail| {
+		records.push(Record {
+			font: case.font.clone(),
+			op: case.op,
+			table: table.to_owned(),
+			outcome,
+			detail,
+		});
+	};
+	if case.op == Op::Fromttx
+		&& case.input != case.font
+		&& read_reference(&case.input, &case.input.with_extension("err"))?.is_err()
+	{
+		// fontTools could not dump the TTX that the case compiles; the failure is
+		// reported by the ttx op.
+		push(
+			FONT,
+			Outcome::Skipped,
+			Some("fontTools could not dump the font as TTX".into()),
+		);
+		return Ok(records);
+	}
+	let reference = read_reference(&case.out, &case.err)?;
+	let input =
+		std::fs::read(&case.input).with_context(|| format!("reading {}", case.input.display()))?;
+	match (
+		ours(
+			case.op,
+			&input,
+			args.repacker,
+			&args.subset_options,
+			args.instance_limits,
+			&args.instance_options,
+		),
+		reference,
+	) {
+		(Ok(a), Ok(b)) => {
+			let results = compare(case.op, &a, &b);
+			if args.save_mismatches && results.iter().any(|r| r.1 == Outcome::Mismatch) {
+				save_mismatch(&case.font, case.op, &a, &b)?;
+			}
+			let vacuous = case.vacuous.clone().or_else(|| {
+				results
+					.iter()
+					.all(|r| r.1 == Outcome::Unimplemented)
+					.then(|| "every table is unimplemented".to_owned())
+			});
+			for (table, outcome, detail) in results {
+				push(&table, outcome, detail);
+			}
+			if let Some(reason) = vacuous {
+				push(FONT, Outcome::Vacuous, Some(reason));
+			}
+		}
+		(Err(e), Err(r)) => push(
+			FONT,
+			both_failed(&e, &r),
+			Some(format!("fontoxide {e} / fontTools {r}")),
+		),
+		(Ok(_), Err(e)) => push(FONT, Outcome::ReferenceFailed, Some(e)),
+		(Err(e), Ok(_)) => push(FONT, Outcome::OursFailed, Some(e.to_string())),
+	}
+	Ok(records)
+}
+
+/// Maps `f` over `items` on every core, keeping their order.
+fn par_map<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -> Vec<R> {
+	use std::sync::Mutex;
+	use std::sync::atomic::{AtomicUsize, Ordering};
+
+	let threads = std::thread::available_parallelism()
+		.map_or(1, |n| n.get())
+		.min(items.len());
+	let next = AtomicUsize::new(0);
+	let slots: Vec<Mutex<Option<R>>> = items.iter().map(|_| Mutex::new(None)).collect();
+	std::thread::scope(|scope| {
+		for _ in 0..threads {
+			scope.spawn(|| {
+				loop {
+					let i = next.fetch_add(1, Ordering::Relaxed);
+					let Some(item) = items.get(i) else { break };
+					let result = f(item);
+					*slots[i].lock().unwrap_or_else(|e| e.into_inner()) = Some(result);
+				}
+			});
+		}
+	});
+	// A panicking thread re-raises its panic at the end of the scope, so every
+	// slot is filled here.
+	slots
+		.into_iter()
+		.filter_map(|slot| slot.into_inner().unwrap_or_else(|e| e.into_inner()))
+		.collect()
+}
+
+/// Negative controls: checks that the harness reports each kind of failure it is
+/// meant to catch, rather than passing it off as a match.
+fn self_test() -> Result<()> {
+	use anyhow::ensure;
+
+	let dir = root().join("target").join("parity").join("self-test");
+	let _ = std::fs::remove_dir_all(&dir);
+	std::fs::create_dir_all(&dir)?;
+	let font_path = root().join("upstream/fonttools/Tests/ttLib/data/Test-Regular.ttf");
+	let font = std::fs::read(&font_path).with_context(|| {
+		format!(
+			"reading {}; is the submodule checked out?",
+			font_path.display()
+		)
+	})?;
+	let ours = |op: Op, input: &[u8]| {
+		ours(op, input, false, &[], InstanceLimits::Pin, &[]).map_err(|e| anyhow::anyhow!("{e}"))
+	};
+	let outcomes = |results: &[(String, Outcome, Option<String>)]| -> BTreeMap<String, Outcome> {
+		results.iter().map(|(t, o, _)| (t.clone(), *o)).collect()
+	};
+
+	// Reference jobs leave their output only when they succeed.
+	let ttx_params = job_params(Op::Ttx, false);
+	let ok_out = dir.join("ok.ttx");
+	let fail_out = dir.join("fail.bin");
+	let missing_out = dir.join("missing.ttx");
+	run_reference_jobs(
+		&dir,
+		&[
+			job(&ttx_params, &font_path, &ok_out),
+			job(
+				&serde_json::json!({"op": "self-test-fail"}),
+				&font_path,
+				&fail_out,
+			),
+			job(&ttx_params, &dir.join("no-such-font.ttf"), &missing_out),
+		],
+	)?;
+	ensure!(
+		read_reference(&ok_out, &ok_out.with_extension("err"))?.is_ok(),
+		"a successful reference job left no output"
+	);
+	match read_reference(&fail_out, &fail_out.with_extension("err"))? {
+		Ok(_) => bail!("the partial output of a failed reference job was kept"),
+		Err(e) => ensure!(e.starts_with("ValueError:"), "unexpected error: {e}"),
+	}
+	ensure!(
+		read_reference(&missing_out, &missing_out.with_extension("err"))?.is_err(),
+		"a reference job without input succeeded"
+	);
+
+	// A reference process that dies leaves neither output nor error, and the run
+	// fails.
+	let crash_out = dir.join("crash.bin");
+	ensure!(
+		run_reference_jobs(
+			&dir,
+			&[job(
+				&serde_json::json!({"op": "self-test-crash"}),
+				&font_path,
+				&crash_out
+			)]
+		)
+		.is_err(),
+		"a crashed reference process went unnoticed"
+	);
+	ensure!(
+		read_reference(&crash_out, &crash_out.with_extension("err")).is_err(),
+		"a crashed reference job left a usable output"
+	);
+
+	// Positive control: fontoxide's TTX matches fontTools'.
+	let ttx = ours(Op::Ttx, &font)?;
+	let results = outcomes(&compare(Op::Ttx, &ttx, &std::fs::read(&ok_out)?));
+	ensure!(
+		results.values().all(|o| *o == Outcome::Match) && results.contains_key("head"),
+		"the TTX of {} does not match: {results:?}",
+		font_path.display()
+	);
+
+	// A changed TTX line is a mismatch of its table only.
+	let changed = String::from_utf8(ttx.clone())?.replacen(
+		"<unitsPerEm value=\"",
+		"<unitsPerEm value=\"1",
+		1,
+	);
+	let results = outcomes(&compare(Op::Ttx, changed.as_bytes(), &ttx));
+	ensure!(
+		results.get("head") == Some(&Outcome::Mismatch)
+			&& results
+				.iter()
+				.all(|(t, o)| t == "head" || *o == Outcome::Match),
+		"a changed TTX table was not reported: {results:?}"
+	);
+
+	// A changed binary table is a mismatch, and a removed one is missing.
+	let compiled = ours(Op::Roundtrip, &font)?;
+	let read = || {
+		Font::read(
+			compiled.clone(),
+			ReadOptions {
+				recalc_timestamp: false,
+				..Default::default()
+			},
+		)
+	};
+	let mut changed = read()?;
+	changed
+		.require::<fontoxide_ttlib::tables::Head>()?
+		.font_revision += 1.0;
+	let changed = changed.write(&WriteOptions::default())?;
+	let results = outcomes(&compare(Op::Roundtrip, &changed, &compiled));
+	ensure!(
+		results.get("head") == Some(&Outcome::Mismatch),
+		"a changed table was not reported: {results:?}"
+	);
+	let mut removed = read()?;
+	removed.remove(Tag::new(b"name"));
+	let removed = removed.write(&WriteOptions::default())?;
+	let results = outcomes(&compare(Op::Roundtrip, &removed, &compiled));
+	ensure!(
+		results.get("name") == Some(&Outcome::Missing),
+		"a removed table was not reported: {results:?}"
+	);
+
+	// Failures of different kinds are told apart.
+	let not_found = Failure::from(fontoxide_ttlib::Error::TableNotFound(Tag::new(b"head")));
+	ensure!(both_failed(&not_found, "KeyError: 'head'") == Outcome::BothFailed);
+	ensure!(both_failed(&not_found, "ValueError: bad") == Outcome::FailedDifferently);
+	let copied = Failure::from(fontoxide_ttlib::Error::ttlib("AttributeError: x"));
+	ensure!(both_failed(&copied, "AttributeError: x") == Outcome::BothFailed);
+	ensure!(both_failed(&copied, "TTLibError: x") == Outcome::FailedDifferently);
+
+	// A font without a cmap is subset by glyph ID, not to nothing.
+	let mut no_cmap = read()?;
+	no_cmap.remove(Tag::new(b"cmap"));
+	let no_cmap = no_cmap.write(&WriteOptions::default())?;
+	for data in [&compiled, &no_cmap] {
+		let (unicodes, gids) = subset_request(data);
+		ensure!(
+			!subset_request_is_vacuous(&unicodes, &gids),
+			"the subset request keeps nothing"
+		);
+	}
+	ensure!(subset_request_is_vacuous(&[], &[0]));
+
+	let _ = std::fs::remove_dir_all(&dir);
+	println!("Self-test passed.");
 	Ok(())
 }
 
@@ -501,7 +812,7 @@ fn ours(
 	subset_options: &[String],
 	instance_limits: InstanceLimits,
 	instance_options: &[InstanceOption],
-) -> Result<Vec<u8>, String> {
+) -> Result<Vec<u8>, Failure> {
 	let options = ReadOptions {
 		font_number: Some(0),
 		recalc_timestamp: false,
@@ -509,23 +820,23 @@ fn ours(
 		..Default::default()
 	};
 	if op.is_collection_op() {
-		let mut collection = fontoxide_ttlib::TtCollection::read(input.to_vec(), options)
-			.map_err(|e| e.to_string())?;
+		let mut collection =
+			fontoxide_ttlib::TtCollection::read(input.to_vec(), options).map_err(Failure::from)?;
 		return match op {
 			Op::TtcTtx => collection
 				.to_ttx(&TtxOptions::default())
 				.map(String::into_bytes)
-				.map_err(|e| e.to_string()),
+				.map_err(Failure::from),
 			_ => {
 				for font in &mut collection.fonts {
-					font.ensure_decompiled().map_err(|e| e.to_string())?;
+					font.ensure_decompiled().map_err(Failure::from)?;
 				}
-				collection.write(true).map_err(|e| e.to_string())
+				collection.write(true).map_err(Failure::from)
 			}
 		};
 	}
 	if op == Op::Fromttx {
-		let text = std::str::from_utf8(input).map_err(|e| e.to_string())?;
+		let text = std::str::from_utf8(input).map_err(Failure::from)?;
 		let mut font = Font::new();
 		font.recalc_timestamp = false;
 		font.use_harfbuzz_repacker = Some(repacker);
@@ -535,10 +846,8 @@ fn ours(
 				skip_unimplemented: true,
 			},
 		)
-		.map_err(|e| e.to_string())?;
-		return font
-			.write(&WriteOptions::default())
-			.map_err(|e| e.to_string());
+		.map_err(Failure::from)?;
+		return font.write(&WriteOptions::default()).map_err(Failure::from);
 	}
 	if op == Op::Subset {
 		let mut font = Font::read(
@@ -548,33 +857,27 @@ fn ours(
 				..options
 			},
 		)
-		.map_err(|e| e.to_string())?;
+		.map_err(Failure::from)?;
 		let mut subset_opts = fontoxide_subset::Options::default();
 		let argv: Vec<&str> = subset_options.iter().map(String::as_str).collect();
-		subset_opts
-			.parse_opts(&argv, &[])
-			.map_err(|e| e.to_string())?;
+		subset_opts.parse_opts(&argv, &[]).map_err(Failure::from)?;
 		let mut subsetter = fontoxide_subset::Subsetter::new(subset_opts);
 		let (unicodes, gids) = subset_request(input);
 		subsetter.populate(&[], &gids, &unicodes, "");
-		subsetter.subset(&mut font).map_err(|e| e.to_string())?;
-		return font
-			.write(&WriteOptions::default())
-			.map_err(|e| e.to_string());
+		subsetter.subset(&mut font).map_err(Failure::from)?;
+		return font.write(&WriteOptions::default()).map_err(Failure::from);
 	}
 	if matches!(op, Op::Upper | Op::Lower) {
 		use fontoxide_ttlib::beyond64k::{ConvertOptions, lower_tables, upper_tables};
-		let mut font = Font::read(input.to_vec(), options).map_err(|e| e.to_string())?;
-		upper_tables(&mut font, &ConvertOptions::default()).map_err(|e| e.to_string())?;
+		let mut font = Font::read(input.to_vec(), options).map_err(Failure::from)?;
+		upper_tables(&mut font, &ConvertOptions::default()).map_err(Failure::from)?;
 		if op == Op::Lower {
-			lower_tables(&mut font, &ConvertOptions::default()).map_err(|e| e.to_string())?;
+			lower_tables(&mut font, &ConvertOptions::default()).map_err(Failure::from)?;
 		}
-		return font
-			.write(&WriteOptions::default())
-			.map_err(|e| e.to_string());
+		return font.write(&WriteOptions::default()).map_err(Failure::from);
 	}
 	if op == Op::Mutator {
-		let mut font = Font::read(input.to_vec(), options).map_err(|e| e.to_string())?;
+		let mut font = Font::read(input.to_vec(), options).map_err(Failure::from)?;
 		let location: Vec<(String, f64)> = mutator_location(&instance_limits.for_font(input))
 			.into_iter()
 			.map(|(tag, v)| (tag, v.as_f64().unwrap_or_default()))
@@ -584,13 +887,11 @@ fn ours(
 			&location,
 			!instance_options.contains(&InstanceOption::NoOverlapFlag),
 		)
-		.map_err(|e| e.to_string())?;
-		return font
-			.write(&WriteOptions::default())
-			.map_err(|e| e.to_string());
+		.map_err(Failure::from)?;
+		return font.write(&WriteOptions::default()).map_err(Failure::from);
 	}
 	if op == Op::Instance {
-		let mut font = Font::read(input.to_vec(), options).map_err(|e| e.to_string())?;
+		let mut font = Font::read(input.to_vec(), options).map_err(Failure::from)?;
 		fontoxide_varlib::instancer::instantiate_variable_font(
 			&mut font,
 			&instance_limits.to_axis_limits(input),
@@ -606,17 +907,15 @@ fn ours(
 				downgrade_cff2: instance_options.contains(&InstanceOption::DowngradeCff2),
 			},
 		)
-		.map_err(|e| e.to_string())?;
-		return font
-			.write(&WriteOptions::default())
-			.map_err(|e| e.to_string());
+		.map_err(Failure::from)?;
+		return font.write(&WriteOptions::default()).map_err(Failure::from);
 	}
-	let mut font = Font::read(input.to_vec(), options).map_err(|e| e.to_string())?;
+	let mut font = Font::read(input.to_vec(), options).map_err(Failure::from)?;
 	match op {
 		Op::Ttx => font
 			.to_ttx(&TtxOptions::default())
 			.map(String::into_bytes)
-			.map_err(|e| e.to_string()),
+			.map_err(Failure::from),
 		Op::Roundtrip
 		| Op::TtcTtx
 		| Op::TtcRoundtrip
@@ -626,9 +925,8 @@ fn ours(
 		| Op::Mutator
 		| Op::Upper
 		| Op::Lower => {
-			font.ensure_decompiled().map_err(|e| e.to_string())?;
-			font.write(&WriteOptions::default())
-				.map_err(|e| e.to_string())
+			font.ensure_decompiled().map_err(Failure::from)?;
+			font.write(&WriteOptions::default()).map_err(Failure::from)
 		}
 	}
 }
@@ -646,8 +944,9 @@ fn mutator_location(
 		.collect()
 }
 
-/// The characters the `subset` op keeps: every third code point of the Unicode
-/// `cmap` subtables. Empty if the font cannot be read.
+/// The characters and glyphs the `subset` op keeps: every third code point of the
+/// Unicode `cmap` subtables or, without any, every third glyph ID. Empty if the
+/// font cannot be read.
 fn subset_request(data: &[u8]) -> (Vec<u32>, Vec<u32>) {
 	let read = || -> fontoxide_ttlib::Result<(Vec<u32>, Vec<u32>)> {
 		let mut font = Font::read(
@@ -670,8 +969,10 @@ fn subset_request(data: &[u8]) -> (Vec<u32>, Vec<u32>) {
 		if !all.is_empty() {
 			return Ok((all.into_iter().step_by(3).collect(), Vec::new()));
 		}
+		// From glyph 1: `.notdef` is always kept, and a font of two or three glyphs
+		// would otherwise keep nothing else.
 		let num_glyphs = font.glyph_order()?.len() as u32;
-		Ok((Vec::new(), (0..num_glyphs).step_by(3).collect()))
+		Ok((Vec::new(), (1..num_glyphs).step_by(3).collect()))
 	};
 	read().unwrap_or_default()
 }
@@ -883,33 +1184,134 @@ fn woff2_canonical(data: &[u8]) -> Result<Vec<u8>, String> {
 	Ok(out)
 }
 
+/// The parameters of a reference job: everything but its input and output paths.
+fn job_params(op: Op, repacker: bool) -> serde_json::Value {
+	serde_json::json!({
+		"op": op.name(),
+		"font_number": 0,
+		"repacker": repacker,
+	})
+}
+
+/// A reference job: its parameters, input and output.
+fn job(params: &serde_json::Value, input: &Path, output: &Path) -> serde_json::Value {
+	let mut job = params.clone();
+	job["input"] = serde_json::json!(input);
+	job["output"] = serde_json::json!(output);
+	job
+}
+
+/// Where the reference output of a job goes: keyed by the font content and the
+/// job parameters. Its error goes next to it, with the extension `err`.
+fn reference_output(ref_dir: &Path, op: Op, key: &str, params: &serde_json::Value) -> PathBuf {
+	let params = short_hash(params.to_string().as_bytes());
+	ref_dir
+		.join(op.name())
+		.join(format!("{key}-{params}.{}", op.extension()))
+}
+
+/// The reference output of a job, or its error. Exactly one of them must exist:
+/// `reference.py` renames the output into place only when the job succeeds.
+fn read_reference(out: &Path, err: &Path) -> Result<Result<Vec<u8>, String>> {
+	match (out.exists(), err.exists()) {
+		(true, false) => Ok(Ok(std::fs::read(out)?)),
+		(false, true) => Ok(Err(std::fs::read_to_string(err)?)),
+		(true, true) => bail!(
+			"both an output and an error for {}; delete the reference cache",
+			out.display()
+		),
+		(false, false) => bail!("no reference output for {}", out.display()),
+	}
+}
+
+/// The outcome when both sides reject a font.
+fn both_failed(ours: &Failure, reference: &str) -> Outcome {
+	if ours.same_kind_as(reference) {
+		Outcome::BothFailed
+	} else {
+		Outcome::FailedDifferently
+	}
+}
+
+fn job_path(job: &serde_json::Value, key: &str) -> PathBuf {
+	PathBuf::from(job[key].as_str().unwrap_or_default())
+}
+
+/// Runs the reference jobs, and checks that each left exactly one of its output
+/// and its error. fromttx jobs compile the output of ttx jobs, so they run
+/// afterwards; those whose TTX dump failed are left out, and leave nothing.
 fn run_reference_jobs(ref_dir: &Path, jobs: &[serde_json::Value]) -> Result<()> {
 	std::fs::create_dir_all(ref_dir)?;
-	let jobs_path = ref_dir.join("jobs.json");
-	let results_path = ref_dir.join("results.json");
-	std::fs::write(&jobs_path, serde_json::to_string(jobs)?)?;
-	reference::run([
-		"batch".as_ref(),
-		jobs_path.as_os_str(),
-		results_path.as_os_str(),
-	])?;
+	for job in jobs {
+		let out = job_path(job, "output");
+		let _ = std::fs::remove_file(&out);
+		let _ = std::fs::remove_file(out.with_extension("err"));
+	}
+	let (second, first): (Vec<_>, Vec<_>) = jobs
+		.iter()
+		.cloned()
+		.partition(|job| job["op"] == Op::Fromttx.name());
+	run_reference_batches(ref_dir, "a", &first)?;
+	let second: Vec<_> = second
+		.into_iter()
+		.filter(|job| job_path(job, "input").exists())
+		.collect();
+	run_reference_batches(ref_dir, "b", &second)
+}
 
-	#[derive(serde::Deserialize)]
-	struct JobResult {
-		ok: bool,
-		#[serde(default)]
-		error: String,
+/// Runs jobs that do not depend on each other, spread over as many `reference.py`
+/// processes as there are cores.
+fn run_reference_batches(ref_dir: &Path, name: &str, jobs: &[serde_json::Value]) -> Result<()> {
+	/// Fewer jobs than this per process are not worth the start-up of another one.
+	const MIN_JOBS_PER_BATCH: usize = 8;
+	if jobs.is_empty() {
+		return Ok(());
 	}
-	let results: Vec<JobResult> = serde_json::from_str(&std::fs::read_to_string(&results_path)?)?;
-	for (job, result) in jobs.iter().zip(results) {
-		if !result.ok {
-			let out = PathBuf::from(job["output"].as_str().unwrap_or_default());
-			// A failed `saveXML` leaves a partial dump behind.
-			let _ = std::fs::remove_file(&out);
-			std::fs::write(out.with_extension("err"), result.error)?;
+	let cores = std::thread::available_parallelism().map_or(1, |n| n.get());
+	let count = cores.min(jobs.len().div_ceil(MIN_JOBS_PER_BATCH));
+	// Interleaved, so that the slow jobs of one directory spread over the batches.
+	let batches: Vec<Vec<serde_json::Value>> = (0..count)
+		.map(|i| jobs.iter().skip(i).step_by(count).cloned().collect())
+		.collect();
+	let indexed: Vec<(usize, &Vec<serde_json::Value>)> = batches.iter().enumerate().collect();
+	let results = par_map(&indexed, |&(i, batch)| -> Result<()> {
+		let jobs_path = ref_dir.join(format!("jobs-{name}{i}.json"));
+		let results_path = ref_dir.join(format!("results-{name}{i}.json"));
+		let _ = std::fs::remove_file(&results_path);
+		std::fs::write(&jobs_path, serde_json::to_string(batch)?)?;
+		reference::run([
+			"batch".as_ref(),
+			jobs_path.as_os_str(),
+			results_path.as_os_str(),
+		])?;
+
+		#[derive(serde::Deserialize)]
+		struct JobResult {
+			ok: bool,
 		}
-	}
-	Ok(())
+		let results: Vec<JobResult> =
+			serde_json::from_str(&std::fs::read_to_string(&results_path)?)?;
+		if results.len() != batch.len() {
+			bail!(
+				"reference.py returned {} results for {} jobs",
+				results.len(),
+				batch.len()
+			);
+		}
+		for (job, result) in batch.iter().zip(results) {
+			let out = job_path(job, "output");
+			let found = (out.exists(), out.with_extension("err").exists());
+			if found != (result.ok, !result.ok) {
+				bail!(
+					"reference job left {found:?} (output, error) but reported ok = {}: {}",
+					result.ok,
+					out.display()
+				);
+			}
+		}
+		Ok(())
+	});
+	results.into_iter().collect()
 }
 
 /// TTX files made for parity runs (`*.parity.ttx`): only `fromttx` applies.
@@ -941,6 +1343,20 @@ fn collect_fonts(path: &Path, fonts: &mut Vec<PathBuf>) -> Result<()> {
 fn content_key(path: &Path) -> Result<String> {
 	let digest = Sha256::digest(std::fs::read(path)?);
 	Ok(digest[..12].iter().map(|b| format!("{b:02x}")).collect())
+}
+
+/// A shorter hash, for the parts of cache keys besides the font.
+fn short_hash(data: &[u8]) -> String {
+	Sha256::digest(data)[..4]
+		.iter()
+		.map(|b| format!("{b:02x}"))
+		.collect()
+}
+
+/// Whether a subset request keeps nothing: no characters, and no glyph but
+/// `.notdef`, which is always kept.
+fn subset_request_is_vacuous(unicodes: &[u32], gids: &[u32]) -> bool {
+	unicodes.is_empty() && gids.iter().all(|&g| g == 0)
 }
 
 fn first_difference(a: &[u8], b: &[u8]) -> String {

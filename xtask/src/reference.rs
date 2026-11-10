@@ -15,6 +15,16 @@ pub struct Info {
 	pub have_uharfbuzz: bool,
 }
 
+/// The environment of `reference.py`. fontTools' output can depend on the
+/// iteration order of string sets (B19, B20), which a random hash seed would make
+/// differ from run to run.
+pub const ENV: &[(&str, &str)] = &[("PYTHONHASHSEED", "0")];
+
+/// The path of `reference.py`.
+pub fn script() -> std::path::PathBuf {
+	root().join("tools").join("reference").join("reference.py")
+}
+
 /// Runs `reference.py` with the given arguments and returns its stdout.
 pub fn run<I, S>(args: I) -> Result<String>
 where
@@ -28,8 +38,9 @@ where
 		.arg("--project")
 		.arg(&project)
 		.arg("python")
-		.arg(project.join("reference.py"))
+		.arg(script())
 		.args(args)
+		.envs(ENV.iter().copied())
 		.current_dir(root())
 		.output()
 		.context("failed to run `uv`; is it installed and on PATH?")?;

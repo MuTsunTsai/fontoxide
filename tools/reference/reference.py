@@ -18,8 +18,10 @@ fonts with a single interpreter start-up.
 """
 
 import argparse
+import gc
 import importlib
 import json
+import os
 import pkgutil
 import re
 import sys
@@ -188,17 +190,54 @@ def run_job(job: dict) -> None:
 		raise ValueError(f"unknown op: {op}")
 
 
+def run_self_test_job(job: dict) -> bool:
+	"""Ops that only exist to test `cargo xtask parity --self-test`: they write a
+	partial output and then fail, so that the harness can check that such output is
+	never taken for a result. Returns whether the job was one of them."""
+	op = job["op"]
+	if op not in ("self-test-fail", "self-test-crash"):
+		return False
+	Path(job["output"]).write_bytes(b"partial output")
+	if op == "self-test-crash":
+		# Dies without cleaning up or writing the results, like a killed process.
+		os._exit(3)
+	raise ValueError("self-test failure after a partial write")
+
+
 def batch(jobs_path: Path, results_path: Path) -> None:
+	"""Runs the jobs. Every job leaves exactly one of two files: its output, which
+	only appears complete (written under another name and renamed when the job
+	succeeds), or `<output stem>.err` with the exception. A job that was cut short
+	leaves neither, so it is never mistaken for a result."""
 	jobs = json.loads(jobs_path.read_text(encoding="utf-8"))
 	results = []
 	for job in jobs:
+		output = Path(job["output"])
+		partial = output.with_name(output.name + ".partial")
+		error_path = output.with_suffix(".err")
+		for stale in (output, partial, error_path):
+			stale.unlink(missing_ok=True)
 		try:
-			run_job(job)
+			if not run_self_test_job({**job, "output": str(partial)}):
+				run_job({**job, "output": str(partial)})
+			if not partial.is_file():
+				raise RuntimeError("the job wrote no output")
+			partial.replace(output)
 			results.append({"ok": True})
 		except Exception as e:
+			# A failed `saveXML` can leave its file open until the writer is collected,
+			# and Windows cannot delete an open file. A leftover partial file is never
+			# read as a result, so failing to delete it is harmless.
+			gc.collect()
+			try:
+				partial.unlink(missing_ok=True)
+			except OSError:
+				pass
+			error = f"{type(e).__name__}: {e}"
+			error_path.write_text(error, encoding="utf-8", newline="\n")
 			results.append({
 				"ok": False,
-				"error": f"{type(e).__name__}: {e}",
+				"error": error,
 				"traceback": traceback.format_exc(),
 			})
 	results_path.write_text(json.dumps(results, indent="\t"), encoding="utf-8", newline="\n")

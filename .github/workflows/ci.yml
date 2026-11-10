@@ -39,3 +39,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Test manifest is in sync with upstream
         run: cargo xtask test-manifest --check
+      # Negative controls: the parity harness must report the failures it is meant
+      # to catch, rather than pass them off as matches.
+      - name: Parity harness self-test
+        run: cargo xtask parity --self-test
