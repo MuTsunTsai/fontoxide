@@ -133,6 +133,23 @@ def run_job(job: dict) -> None:
 			beyond64k.lower_tables(font)
 		font.save(output, reorderTables=True)
 		return
+	if op == "mutator":
+		from fontTools.varLib import mutator
+
+		font = TTFont(
+			job["input"],
+			fontNumber=job.get("font_number", 0),
+			recalcTimestamp=False,
+		)
+		font.cfg[otBase.USE_HARFBUZZ_REPACKER] = bool(job.get("repacker", False))
+		mutator.instantiateVariableFont(
+			font,
+			job["location"],
+			inplace=True,
+			overlap="no-overlap-flag" not in job.get("options", []),
+		)
+		font.save(output, reorderTables=True)
+		return
 	if op == "instance":
 		from fontTools.varLib import instancer
 

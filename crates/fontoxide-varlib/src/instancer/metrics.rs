@@ -25,7 +25,7 @@ fn add<T: Copy + Into<i64> + TryFrom<i64>>(field: &mut T, delta: i64, name: &str
 
 /// `MVAR_ENTRIES` and `setMvarDeltas`, for one value. Returns false for tags
 /// that are not known.
-fn apply_mvar_delta(font: &mut Font, tag: &Tag, delta: i64) -> Result<()> {
+pub(crate) fn apply_mvar_delta(font: &mut Font, tag: &Tag, delta: i64) -> Result<()> {
 	let no_attribute = |name: &str| {
 		Error::ttlib(format!(
 			"AttributeError: 'table_O_S_2f_2' object has no attribute '{name}'"
@@ -96,7 +96,7 @@ fn apply_mvar_delta(font: &mut Font, tag: &Tag, delta: i64) -> Result<()> {
 	}
 }
 
-fn is_mvar_entry(tag: &Tag) -> bool {
+pub(crate) fn is_mvar_entry(tag: &Tag) -> bool {
 	matches!(
 		&tag.0,
 		b"hasc"

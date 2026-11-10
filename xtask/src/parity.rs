@@ -76,6 +76,11 @@ pub enum Op {
 	/// Instantiate a variable font at `--instance-limits`. Not run unless asked for
 	/// (`--op instance`).
 	Instance,
+	/// Instantiate a variable font with `varLib.mutator`, at the location of
+	/// `--instance-limits`: the default of each limit, or its minimum; dropped axes
+	/// stay at their defaults. Only `--instance-option no-overlap-flag` applies. Not
+	/// run unless asked for (`--op mutator`).
+	Mutator,
 	/// Convert to the beyond-64k companion tables (`ttLib.beyond64k.upper_tables`). Not
 	/// run unless asked for (`--op upper`).
 	Upper,
@@ -198,6 +203,7 @@ impl Op {
 			Op::Fromttx => "fromttx",
 			Op::Subset => "subset",
 			Op::Instance => "instance",
+			Op::Mutator => "mutator",
 			Op::Upper => "upper",
 			Op::Lower => "lower",
 		}
@@ -211,6 +217,7 @@ impl Op {
 			| Op::Fromttx
 			| Op::Subset
 			| Op::Instance
+			| Op::Mutator
 			| Op::Upper
 			| Op::Lower => "bin",
 		}
@@ -297,7 +304,7 @@ pub fn run(args: &Args) -> Result<()> {
 		flavor.push_str("-s");
 		flavor.extend(digest[..4].iter().map(|b| format!("{b:02x}")));
 	}
-	if ops.contains(&Op::Instance) {
+	if ops.contains(&Op::Instance) || ops.contains(&Op::Mutator) {
 		// Outputs with other limits are cached apart.
 		flavor.push_str("-i");
 		flavor.push_str(args.instance_limits.name());
@@ -319,11 +326,12 @@ pub fn run(args: &Args) -> Result<()> {
 		let key = content_key(font)?;
 		let collection = is_collection(font);
 		let ttx_input = is_ttx_input(font);
-		let instance_limits = if ops.contains(&Op::Instance) && !ttx_input {
-			args.instance_limits.for_font(&std::fs::read(font)?)
-		} else {
-			Vec::new()
-		};
+		let instance_limits =
+			if (ops.contains(&Op::Instance) || ops.contains(&Op::Mutator)) && !ttx_input {
+				args.instance_limits.for_font(&std::fs::read(font)?)
+			} else {
+				Vec::new()
+			};
 		let ttx_ref = ref_dir.join(Op::Ttx.name()).join(format!("{key}.ttx"));
 		let mut scheduled_ttx = false;
 		for &op in ops
@@ -331,7 +339,7 @@ pub fn run(args: &Args) -> Result<()> {
 			.filter(|op| !op.is_collection_op() || collection)
 			.filter(|&&op| !ttx_input || op == Op::Fromttx)
 			// Only variable fonts can be instantiated.
-			.filter(|&&op| op != Op::Instance || !instance_limits.is_empty())
+			.filter(|&&op| !matches!(op, Op::Instance | Op::Mutator) || !instance_limits.is_empty())
 		{
 			let out = ref_dir
 				.join(op.name())
@@ -371,6 +379,19 @@ pub fn run(args: &Args) -> Result<()> {
 					job["unicodes"] = serde_json::json!(unicodes);
 					job["gids"] = serde_json::json!(gids);
 					job["options"] = serde_json::json!(args.subset_options);
+				}
+				if op == Op::Mutator {
+					job["options"] = serde_json::json!(
+						args.instance_options
+							.iter()
+							.map(|o| o.name())
+							.collect::<Vec<_>>()
+					);
+					job["location"] = serde_json::json!(
+						mutator_location(&instance_limits)
+							.into_iter()
+							.collect::<serde_json::Map<String, serde_json::Value>>()
+					);
 				}
 				if op == Op::Instance {
 					job["options"] = serde_json::json!(
@@ -552,6 +573,22 @@ fn ours(
 			.write(&WriteOptions::default())
 			.map_err(|e| e.to_string());
 	}
+	if op == Op::Mutator {
+		let mut font = Font::read(input.to_vec(), options).map_err(|e| e.to_string())?;
+		let location: Vec<(String, f64)> = mutator_location(&instance_limits.for_font(input))
+			.into_iter()
+			.map(|(tag, v)| (tag, v.as_f64().unwrap_or_default()))
+			.collect();
+		fontoxide_varlib::mutator::instantiate_variable_font(
+			&mut font,
+			&location,
+			!instance_options.contains(&InstanceOption::NoOverlapFlag),
+		)
+		.map_err(|e| e.to_string())?;
+		return font
+			.write(&WriteOptions::default())
+			.map_err(|e| e.to_string());
+	}
 	if op == Op::Instance {
 		let mut font = Font::read(input.to_vec(), options).map_err(|e| e.to_string())?;
 		fontoxide_varlib::instancer::instantiate_variable_font(
@@ -586,6 +623,7 @@ fn ours(
 		| Op::Fromttx
 		| Op::Subset
 		| Op::Instance
+		| Op::Mutator
 		| Op::Upper
 		| Op::Lower => {
 			font.ensure_decompiled().map_err(|e| e.to_string())?;
@@ -593,6 +631,19 @@ fn ours(
 				.map_err(|e| e.to_string())
 		}
 	}
+}
+
+/// The location of the `mutator` op: the default of each limit, or its minimum.
+fn mutator_location(
+	limits: &[(String, Option<[Option<f64>; 3]>)],
+) -> Vec<(String, serde_json::Value)> {
+	limits
+		.iter()
+		.filter_map(|(tag, value)| {
+			let [minimum, default, _] = (*value)?;
+			Some((tag.clone(), serde_json::json!(default.or(minimum)?)))
+		})
+		.collect()
 }
 
 /// The characters the `subset` op keeps: every third code point of the Unicode
@@ -660,6 +711,7 @@ fn compare(op: Op, ours: &[u8], reference: &[u8]) -> Vec<(String, Outcome, Optio
 		| Op::Fromttx
 		| Op::Subset
 		| Op::Instance
+		| Op::Mutator
 		| Op::Upper
 		| Op::Lower => match (split_sfnt(ours), split_sfnt(reference)) {
 			(Ok(a), Ok(b)) => (a, b),
@@ -687,6 +739,7 @@ fn compare(op: Op, ours: &[u8], reference: &[u8]) -> Vec<(String, Outcome, Optio
 					| Op::Fromttx
 					| Op::Subset
 					| Op::Instance
+					| Op::Mutator
 					| Op::Upper
 					| Op::Lower => first_difference(x, y),
 				}),

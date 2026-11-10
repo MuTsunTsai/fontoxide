@@ -27,7 +27,9 @@ const VARIATION_INDEX_DEVICE: u16 = 0x8000;
 
 /// `MutatorMerger`.
 struct Mutator<'a> {
-	deltas: &'a DefaultDeltas,
+	/// The delta of a variation index: the default deltas of the instancer, or a
+	/// `VarStoreInstancer` for the mutator.
+	deltas: &'a dyn Fn(u64) -> Result<f64>,
 	delete_variations: bool,
 	order: &'a GlyphOrder,
 }
@@ -89,7 +91,7 @@ fn coverage(glyphs: Vec<u32>) -> Option<Box<Coverage>> {
 impl Mutator<'_> {
 	fn device_delta(&self, device: &ot::Device) -> Result<i64> {
 		let index = (u64::from(device.start_size) << 16) + u64::from(device.end_size);
-		Ok(ot_round(self.deltas.get(index)?))
+		Ok(ot_round((self.deltas)(index)?))
 	}
 
 	/// The merger of `otBase.ValueRecord`.
@@ -947,7 +949,7 @@ fn instantiate_base(font: &mut Font, axes: &[String], limits: &NormalizedLimits)
 	let deltas = instantiate_item_variation_store(store, axes, limits)?;
 	let keep = has_regions(store);
 	let mutator = Mutator {
-		deltas: &deltas,
+		deltas: &|i| deltas.get(i),
 		delete_variations: !keep,
 		order: &order,
 	};
@@ -1045,6 +1047,25 @@ fn instantiate_condition_value_rows(
 	Ok(())
 }
 
+/// `MutatorMerger(font, instancer).mergeTables(font, [font], ["GDEF", "GPOS"])`, as
+/// `fontTools.varLib.mutator` does it: the deltas come from `deltas`, and the device
+/// tables are deleted.
+pub(crate) fn merge_gdef_gpos(font: &mut Font, deltas: &dyn Fn(u64) -> Result<f64>) -> Result<()> {
+	let order = font.glyph_order()?;
+	let mutator = Mutator {
+		deltas,
+		delete_variations: true,
+		order: &order,
+	};
+	if let Some(t) = font.get::<Gdef>()? {
+		merge_table(&mutator, &mut t.table)?;
+	}
+	if let Some(t) = font.get::<Gpos>()? {
+		merge_table(&mutator, &mut t.table)?;
+	}
+	Ok(())
+}
+
 /// Whether a `GDEF` has any of the fields of version 1.4.
 fn has_extended_gdef_fields(gdef: &Gdef) -> bool {
 	gdef.glyph_class_def2.is_some()
@@ -1123,7 +1144,7 @@ pub fn instantiate_otl(font: &mut Font, limits: &NormalizedLimits) -> Result<()>
 	// carets and MATH values, and deletes the device tables if the store is fully
 	// instanced.
 	let mutator = Mutator {
-		deltas: &deltas,
+		deltas: &|i| deltas.get(i),
 		delete_variations: !keep,
 		order: &order,
 	};
