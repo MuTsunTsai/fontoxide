@@ -483,7 +483,13 @@ pub fn run(args: &Args) -> Result<()> {
 			} else {
 				font.clone()
 			};
-			if args.rebuild_reference || !(out.exists() || err.exists()) {
+			// fromttx of a font whose TTX dump failed has no input: it is skipped.
+			let no_input = op == Op::Fromttx
+				&& !ttx_input
+				&& !scheduled_ttx
+				&& !args.rebuild_reference
+				&& ttx_ref.with_extension("err").exists();
+			if !no_input && (args.rebuild_reference || !(out.exists() || err.exists())) {
 				jobs.push(job(&params, &input, &out));
 				if op == Op::Ttx {
 					scheduled_ttx = true;

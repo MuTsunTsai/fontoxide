@@ -2,6 +2,7 @@
 
 mod codegen;
 mod codegen_ot;
+mod coverage;
 #[cfg(feature = "parity")]
 mod parity;
 mod reference;
@@ -35,6 +36,8 @@ enum Command {
 	/// Compare fontoxide against fontTools on a font corpus.
 	#[cfg(feature = "parity")]
 	Parity(parity::Args),
+	/// Measure the code coverage of the tests and of parity runs (cargo-llvm-cov).
+	Coverage(coverage::Args),
 	/// List upstream changes between two fontTools tags, grouped by fontoxide crate.
 	UpstreamReport {
 		/// The tag fontoxide is currently synced to, e.g. 4.68.0.
@@ -51,6 +54,7 @@ fn main() -> Result<()> {
 		Command::TestManifest { check } => test_manifest::run(check),
 		#[cfg(feature = "parity")]
 		Command::Parity(args) => parity::run(&args),
+		Command::Coverage(args) => coverage::run(&args),
 		Command::UpstreamReport { from, to } => upstream_report::run(&from, &to),
 	}
 }
