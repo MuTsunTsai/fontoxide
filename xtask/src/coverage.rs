@@ -111,7 +111,7 @@ fn instrumented_env(target_dir: &Path) -> Result<Vec<(String, String)>> {
 	let mut env: Vec<(String, String)> = String::from_utf8(output.stdout)?
 		.lines()
 		.filter_map(|line| line.split_once('='))
-		.map(|(k, v)| (k.to_owned(), v.to_owned()))
+		.map(|(k, v)| (k.to_owned(), shell_unquote(v, cfg!(not(windows)))))
 		.collect();
 	for (key, value) in &mut env {
 		if key == "LLVM_PROFILE_FILE" && cfg!(windows) && !value.starts_with(r"\\") {
@@ -129,6 +129,32 @@ fn instrumented_env(target_dir: &Path) -> Result<Vec<(String, String)>> {
 		bail!("cargo llvm-cov show-env did not set LLVM_PROFILE_FILE");
 	}
 	Ok(env)
+}
+
+/// Removes the shell quoting of a value printed by `show-env`, which quotes values
+/// with spaces on Unix (e.g. `RUSTFLAGS='-C instrument-coverage …'`) but not on
+/// Windows. A backslash outside quotes escapes the next character only on Unix
+/// (`posix`): on Windows, it separates the directories of paths.
+fn shell_unquote(value: &str, posix: bool) -> String {
+	let mut out = String::new();
+	let mut chars = value.chars();
+	while let Some(c) = chars.next() {
+		match c {
+			'\'' => out.extend(chars.by_ref().take_while(|&c| c != '\'')),
+			'"' => {
+				while let Some(c) = chars.next() {
+					match c {
+						'"' => break,
+						'\\' => out.extend(chars.next()),
+						c => out.push(c),
+					}
+				}
+			}
+			'\\' if posix => out.extend(chars.next()),
+			c => out.push(c),
+		}
+	}
+	out
 }
 
 pub fn run(args: &Args) -> Result<()> {
@@ -288,6 +314,28 @@ fn print_summary(summary: &serde_json::Value, worst: usize) {
 			"{:>6} uncovered {:>6.1}%  {path}",
 			counts.1 - counts.0,
 			percent(*counts)
+		);
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::shell_unquote;
+
+	#[test]
+	fn unquotes_show_env_values() {
+		// As printed on Linux in CI, with `RUSTFLAGS=-D warnings` already set.
+		assert_eq!(
+			shell_unquote("'-D warnings -C instrument-coverage --cfg=coverage'", true),
+			"-D warnings -C instrument-coverage --cfg=coverage"
+		);
+		assert_eq!(shell_unquote(r"'it'\''s'", true), "it's");
+		assert_eq!(shell_unquote(r#""a \"b\"""#, true), r#"a "b""#);
+		assert_eq!(shell_unquote("plain", true), "plain");
+		// As printed on Windows.
+		assert_eq!(
+			shell_unquote(r"C:\target\fontoxide-%p-%m.profraw", false),
+			r"C:\target\fontoxide-%p-%m.profraw"
 		);
 	}
 }
