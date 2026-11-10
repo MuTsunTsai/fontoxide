@@ -523,9 +523,9 @@ fn split_pair_pos(old: &mut PairPos, new: &mut PairPos) -> Result<bool> {
 				.map(|(&g, _)| g)
 				.collect();
 			let new_records = o.class1_record.split_off(at as usize);
-			// UPSTREAM-BUG(B12): glyphs of class `oldCount` itself are left out of
-			// the new ClassDef1 (`v > oldCount` instead of `>=`), so they fall into
-			// class 0 there and lose their kerning.
+			// Glyphs of class `at` become class 0 of the new subtable, which a
+			// ClassDef leaves out: they are in its coverage, so they still get
+			// the first record (formerly B12, withdrawn: not a bug).
 			let n = ot::PairPosFormat2 {
 				coverage: coverage(
 					glyphs

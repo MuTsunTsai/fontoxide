@@ -191,9 +191,12 @@ pub fn remap_device_varidxes<T: OtTable>(table: &mut T, map: &BTreeMap<u64, u64>
 		if let Some(d) = x.downcast_mut::<ot::Device>() {
 			if d.delta_format == 0x8000 {
 				let old = (u64::from(d.start_size) << 16) + u64::from(d.end_size);
-				// UPSTREAM-BUG(B18): `_pruneGDEF` leaves out the indices of delta
-				// sets that the store lacks, then fails to map them here.
-				let new = *map.get(&old).ok_or_else(|| key_error(old))?;
+				// UPSTREAM-BUG(B18), fixed here: `_pruneGDEF` leaves out the indices
+				// of delta sets that the store lacks, as they contribute zero, and
+				// fontTools then fails to map them (`KeyError`). They are mapped to
+				// NO_VARIATION_INDEX, as for ConditionTable, and as
+				// `VarStore.optimize` does for Devices whose deltas are all zero.
+				let new = map.get(&old).copied().unwrap_or(NO_VARIATION_INDEX);
 				d.start_size = (new >> 16) as u16;
 				d.end_size = (new & 0xFFFF) as u16;
 			}
@@ -357,4 +360,32 @@ pub(crate) fn vvar_subset_glyphs(s: &Subsetter, font: &mut Font) -> Result<bool>
 			&mut t.v_org_map,
 		],
 	)
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	fn device(var_idx: u32) -> ot::Device {
+		ot::Device {
+			start_size: (var_idx >> 16) as u16,
+			end_size: var_idx as u16,
+			delta_format: 0x8000,
+			..Default::default()
+		}
+	}
+
+	/// B18: a Device whose delta set the store lacks maps to NO_VARIATION_INDEX
+	/// rather than failing, as fontTools does with `KeyError`.
+	#[test]
+	fn device_of_missing_delta_set_maps_to_no_variation_index() -> Result<()> {
+		let map = BTreeMap::from([(NO_VARIATION_INDEX, NO_VARIATION_INDEX), (0x2_0005, 0x1)]);
+		let mut kept = device(0x2_0005);
+		remap_device_varidxes(&mut kept, &map)?;
+		assert_eq!((kept.start_size, kept.end_size), (0, 1));
+		let mut missing = device(0x22_001E);
+		remap_device_varidxes(&mut missing, &map)?;
+		assert_eq!((missing.start_size, missing.end_size), (0xFFFF, 0xFFFF));
+		Ok(())
+	}
 }
