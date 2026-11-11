@@ -26,12 +26,16 @@ fn resolve(arg: &str) -> String {
 /// Runs the command line and compares with the fixture, after replacing the
 /// file names and modification times as the fixture script does.
 fn check(name: &str, args: &[&str]) -> TestResult {
+	// The fixtures tell the two times apart by value, which is ambiguous when
+	// both files have the same time: compare them only as times.
 	let expected = std::fs::read_to_string(
 		Path::new(env!("CARGO_MANIFEST_DIR"))
 			.join("tests/data")
 			.join(format!("{name}.txt")),
 	)?
-	.replace("\r\n", "\n");
+	.replace("\r\n", "\n")
+	.replace("\t<mtime1>\n", "\t<mtime>\n")
+	.replace("\t<mtime2>\n", "\t<mtime>\n");
 	// `--diff=` uses the built-in diff even if there is a `diff` on the PATH.
 	let mut args: Vec<String> = args.iter().map(|a| resolve(a)).collect();
 	if !args.iter().any(|a| a == "--diff" || a == "-h") {
@@ -48,10 +52,30 @@ fn check(name: &str, args: &[&str]) -> TestResult {
 		.filter(|a| Path::new(a).is_file())
 		.take(2)
 		.collect();
-	for (n, file) in files.iter().enumerate() {
-		let mtime = get_file_modtime(file)?;
-		out = out.replace(&format!("\t{mtime}\n"), &format!("\t<mtime{}>\n", n + 1));
-	}
+	// The modification times end the `---` and `+++` header lines (after a
+	// colour code with `--color`).
+	let mtimes = files
+		.iter()
+		.map(get_file_modtime)
+		.collect::<Result<Vec<_>, _>>()?;
+	out = out
+		.split_inclusive('\n')
+		.map(|line| {
+			let mut plain = line;
+			while let Some((_, rest)) = plain.strip_prefix('\u{1b}').and_then(|l| l.split_once('m'))
+			{
+				plain = rest;
+			}
+			let header = plain.starts_with("--- ") || plain.starts_with("+++ ");
+			match mtimes
+				.iter()
+				.find_map(|m| line.strip_suffix(&format!("\t{m}\n")))
+			{
+				Some(head) if header => format!("{head}\t<mtime>\n"),
+				_ => line.to_owned(),
+			}
+		})
+		.collect();
 	for (n, file) in files.iter().enumerate() {
 		out = out.replace(file, &format!("<file{}>", n + 1));
 		err = err.replace(file, &format!("<file{}>", n + 1));
