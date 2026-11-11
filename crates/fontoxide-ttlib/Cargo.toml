@@ -24,6 +24,7 @@ kurbo.workspace = true
 linesweeper.workspace = true
 log.workspace = true
 lz4_flex.workspace = true
+zopfli.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]

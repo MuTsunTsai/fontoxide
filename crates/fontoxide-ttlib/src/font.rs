@@ -69,6 +69,10 @@ pub struct WriteOptions {
 	/// called thousands of times for a large font, so throttle in the callback if
 	/// needed. Not called for other flavors.
 	pub woff2_progress: Option<Progress>,
+	/// Compress WOFF 1.0 with zopfli instead of zlib (fontTools'
+	/// `sfnt.USE_ZOPFLI`, which `--with-zopfli` sets): smaller and much slower. The
+	/// compressed bytes may differ from fontTools', the decompressed data does not.
+	pub use_zopfli: bool,
 }
 
 impl Default for WriteOptions {
@@ -77,6 +81,7 @@ impl Default for WriteOptions {
 			reorder_tables: Some(true),
 			woff2_quality: 11,
 			woff2_progress: None,
+			use_zopfli: false,
 		}
 	}
 }
@@ -86,6 +91,7 @@ impl std::fmt::Debug for WriteOptions {
 		f.debug_struct("WriteOptions")
 			.field("reorder_tables", &self.reorder_tables)
 			.field("woff2_quality", &self.woff2_quality)
+			.field("use_zopfli", &self.use_zopfli)
 			.field(
 				"woff2_progress",
 				&self.woff2_progress.as_ref().map(|_| ".."),
@@ -828,10 +834,10 @@ impl Font {
 				None => Ok(data),
 				Some(r) => {
 					let order: Vec<Tag> = r.tags().collect();
-					reorder_font_tables(data, Some(&order))
+					reorder_font_tables(data, Some(&order), options.use_zopfli)
 				}
 			},
-			Some(true) => reorder_font_tables(data, None),
+			Some(true) => reorder_font_tables(data, None, options.use_zopfli),
 		}
 	}
 
@@ -858,6 +864,7 @@ impl Font {
 		);
 		if let Some(options) = options {
 			writer.set_woff2_compression(options.woff2_quality, options.woff2_progress.clone());
+			writer.set_use_zopfli(options.use_zopfli);
 		}
 		let mut done = Vec::new();
 		for &tag in &tags {

@@ -47,6 +47,10 @@ flate2 = "1.1.11"
 indexmap = "2.7"
 log = "0.4.35"
 # Graphite table compression (fontTools' `lz4.block`); block format only, safe code.
+# WOFF 1.0 with `--with-zopfli` (fontTools' `zopfli` module); pure Rust. Its output
+# differs slightly from the C zopfli that fontTools uses: only the decompressed
+# data is compared.
+zopfli = { version = "0.8", default-features = false, features = ["std", "zlib"] }
 lz4_flex = { version = "0.11", default-features = false, features = ["safe-encode", "safe-decode", "checked-decode"] }
 roxmltree = "0.21.2"
 thiserror = "2.0.21"

@@ -573,7 +573,36 @@ pub fn zlib_decompress(data: &[u8]) -> Result<Vec<u8>> {
 	Ok(out)
 }
 
-/// zlib-compresses data at the given level (`compress`).
+/// The zopfli iterations for each zlib level (`ZOPFLI_LEVELS`).
+const ZOPFLI_LEVELS: [u64; 10] = [0, 1, 3, 5, 8, 10, 15, 25, 50, 100];
+
+/// Compresses data to the zlib format at the given level (`sfnt.compress`): with
+/// zopfli when `use_zopfli` is set (fontTools' `USE_ZOPFLI`) and the level is not
+/// 0, with zlib otherwise.
+///
+/// The zopfli output is not always the same bytes as fontTools' (the C zopfli):
+/// only the decompressed data is the same.
+pub fn compress(data: &[u8], level: u32, use_zopfli: bool) -> Vec<u8> {
+	let iterations = ZOPFLI_LEVELS
+		.get(level as usize)
+		.copied()
+		.and_then(std::num::NonZeroU64::new);
+	match iterations {
+		Some(iteration_count) if use_zopfli => {
+			let options = zopfli::Options {
+				iteration_count,
+				..Default::default()
+			};
+			let mut out = Vec::new();
+			// Writing to a Vec cannot fail.
+			let _ = zopfli::compress(options, zopfli::Format::Zlib, data, &mut out);
+			out
+		}
+		_ => zlib_compress(data, level),
+	}
+}
+
+/// zlib-compresses data at the given level (`zlib.compress`).
 pub fn zlib_compress(data: &[u8], level: u32) -> Vec<u8> {
 	let mut encoder = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::new(level));
 	// Writing to a Vec cannot fail.
@@ -598,6 +627,8 @@ pub struct SfntWriter {
 	head_table: Option<Vec<u8>>,
 	tables: Vec<DirectoryEntry>,
 	woff2: Option<crate::woff2::Woff2Writer>,
+	/// Compress WOFF 1.0 with zopfli (`USE_ZOPFLI`).
+	use_zopfli: bool,
 }
 
 impl SfntWriter {
@@ -642,7 +673,14 @@ impl SfntWriter {
 			head_table: None,
 			tables: Vec::new(),
 			woff2,
+			use_zopfli: false,
 		}
+	}
+
+	/// Compresses the tables and metadata of WOFF 1.0 with zopfli instead of zlib
+	/// (fontTools' `sfnt.USE_ZOPFLI`).
+	pub fn set_use_zopfli(&mut self, use_zopfli: bool) {
+		self.use_zopfli = use_zopfli;
 	}
 
 	/// Whether the writer orders tables itself, so that the result must not be
@@ -704,7 +742,8 @@ impl SfntWriter {
 		let stored;
 		let raw: &[u8] = if self.flavor == Some(Flavor::Woff) {
 			// Compress unless that does not help; 'head' is always stored raw.
-			let compressed = (!is_head).then(|| zlib_compress(data, ZLIB_COMPRESSION_LEVEL));
+			let compressed =
+				(!is_head).then(|| compress(data, ZLIB_COMPRESSION_LEVEL, self.use_zopfli));
 			match compressed {
 				Some(c) if c.len() < data.len() => {
 					stored = c;
@@ -762,7 +801,7 @@ impl SfntWriter {
 			let (meta_offset, meta_length, meta_orig_length) = match &data.meta_data {
 				Some(meta) if !meta.is_empty() => {
 					let offset = self.file.len() as u32;
-					let compressed = zlib_compress(meta, ZLIB_COMPRESSION_LEVEL);
+					let compressed = compress(meta, ZLIB_COMPRESSION_LEVEL, self.use_zopfli);
 					self.file.extend_from_slice(&compressed);
 					(offset, compressed.len() as u32, meta.len() as u32)
 				}
@@ -851,8 +890,13 @@ pub(crate) fn sfnt_directory(sfnt_version: Tag, tables: &[DirectoryEntry], orig:
 }
 
 /// Rewrites a font with its tables in the given order, or in the order the
-/// OpenType specification recommends (`reorderFontTables`).
-pub fn reorder_font_tables(data: Vec<u8>, table_order: Option<&[Tag]>) -> Result<Vec<u8>> {
+/// OpenType specification recommends (`reorderFontTables`). WOFF 1.0 tables are
+/// compressed again, with zopfli if `use_zopfli` is set.
+pub fn reorder_font_tables(
+	data: Vec<u8>,
+	table_order: Option<&[Tag]>,
+	use_zopfli: bool,
+) -> Result<Vec<u8>> {
 	let reader = SfntReader::new(data, SfntReaderOptions::default())?;
 	let tags: Vec<Tag> = reader.tags().collect();
 	let mut writer = SfntWriter::new(
@@ -861,6 +905,7 @@ pub fn reorder_font_tables(data: Vec<u8>, table_order: Option<&[Tag]>) -> Result
 		reader.flavor,
 		reader.flavor_data.clone(),
 	);
+	writer.set_use_zopfli(use_zopfli);
 	for tag in crate::font::sorted_tag_list(&tags, table_order) {
 		writer.add(tag, &reader.table_data(tag)?)?;
 	}

@@ -863,13 +863,6 @@ pub fn tt_compile_with_io(
 		output
 	};
 	log::info!("Compiling \"{input_name}\" to \"{output_desc}\"...");
-	if options.use_zopfli {
-		// LENIENT(L26): as fontTools does without the zopfli module.
-		return Err(fontoxide_ttlib::Error::ttlib(
-			"--with-zopfli is not supported: fontoxide has no zopfli",
-		)
-		.into());
-	}
 	let recalc_timestamp = options.recalc_timestamp == Some(true);
 	let mut font = match &options.merge_file {
 		Some(path) => Font::read(
@@ -933,7 +926,11 @@ pub fn tt_compile_with_io(
 			.map_err(|_| fontoxide_ttlib::Error::Struct("argument out of range".into()))?;
 	}
 
-	let data = font.write(&WriteOptions::default())?;
+	// `sfnt.USE_ZOPFLI = True` for `--with-zopfli`.
+	let data = font.write(&WriteOptions {
+		use_zopfli: options.use_zopfli,
+		..WriteOptions::default()
+	})?;
 	if output == "-" {
 		io.stdout.write_all(&data)?;
 	} else {

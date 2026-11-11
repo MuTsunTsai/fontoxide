@@ -151,14 +151,12 @@ fn normalize_output_flavor(flavor: &str) -> Result<Option<Flavor>> {
 
 /// `save_font`: the compiled font, with the given flavor.
 pub fn save_font(font: &mut Font, flavor: Option<Flavor>, options: &Options) -> Result<Vec<u8>> {
-	if options.with_zopfli && flavor == Some(Flavor::Woff) {
-		// LENIENT(L26): as fontTools does without the zopfli module.
-		return Err(Error::Unsupported("zopfli".into()));
-	}
 	font.flavor = flavor;
 	font.use_harfbuzz_repacker = options.harfbuzz_repacker;
 	Ok(font.write(&WriteOptions {
 		reorder_tables: options.canonical_order,
+		// `sfnt.USE_ZOPFLI = True` for `--with-zopfli`; it only affects WOFF 1.0.
+		use_zopfli: options.with_zopfli,
 		..WriteOptions::default()
 	})?)
 }

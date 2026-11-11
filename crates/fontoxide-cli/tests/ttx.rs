@@ -727,14 +727,26 @@ const TTF_TABLES: [&[u8; 4]; 15] = [
 ];
 
 fn compile_with_flavor(inttx: &str, out_name: &str, flavor: Option<&str>) -> TestResult<Font> {
+	Ok(read_font(&compile_file(inttx, out_name, flavor, false)?.0)?)
+}
+
+/// Compiles `inttx` and returns the output path (in a directory kept alive by
+/// the returned guard).
+fn compile_file(
+	inttx: &str,
+	out_name: &str,
+	flavor: Option<&str>,
+	use_zopfli: bool,
+) -> TestResult<(String, TempDir)> {
 	let tmp = TempDir::new()?;
 	let out = tmp.join(out_name);
 	let mut options = Options::new(&[], 1)?;
 	options.flavor = flavor.map(str::to_owned);
+	options.use_zopfli = use_zopfli;
 	ttx::tt_compile(&getpath(inttx), &out, &options)?;
 	// Confirm that the font was built.
 	assert!(Path::new(&out).is_file());
-	Ok(read_font(&out)?)
+	Ok((out, tmp))
 }
 
 #[test]
@@ -782,16 +794,36 @@ fn test_ttcompile_ttf_to_woff2() -> TestResult {
 	Ok(())
 }
 
-/// The `zopfli` tests are not ported, as fontoxide has no zopfli: the option
-/// is rejected.
 #[test]
-fn ttcompile_with_zopfli_is_rejected() -> TestResult {
-	let tmp = TempDir::new()?;
-	let mut options = Options::new(&[], 1)?;
-	options.flavor = Some("woff".into());
-	options.use_zopfli = true;
-	let result = ttx::tt_compile(&getpath("TestTTF.ttx"), &tmp.join("TestTTF.woff"), &options);
-	assert!(result.is_err());
+fn test_ttcompile_otf_to_woff_with_zopfli() -> TestResult {
+	let (out, _tmp) = compile_file("TestOTF.ttx", "TestOTF.woff", Some("woff"), true)?;
+	assert_has_tables(&read_font(&out)?, &OTF_TABLES);
+	Ok(())
+}
+
+#[test]
+fn test_ttcompile_ttf_to_woff_with_zopfli() -> TestResult {
+	let (out, _tmp) = compile_file("TestTTF.ttx", "TestTTF.woff", Some("woff"), true)?;
+	assert_has_tables(&read_font(&out)?, &TTF_TABLES);
+	Ok(())
+}
+
+/// zopfli compresses better than zlib, and the tables are the same once
+/// decompressed. (The compressed bytes may differ from fontTools', whose zopfli
+/// is the C one.)
+#[test]
+fn ttcompile_with_zopfli_matches_zlib_when_decompressed() -> TestResult {
+	for inttx in ["TestTTF.ttx", "TestOTF.ttx"] {
+		let (zlib, _a) = compile_file(inttx, "zlib.woff", Some("woff"), false)?;
+		let (zopfli, _b) = compile_file(inttx, "zopfli.woff", Some("woff"), true)?;
+		let (zlib_data, zopfli_data) = (std::fs::read(&zlib)?, std::fs::read(&zopfli)?);
+		assert!(zopfli_data.len() < zlib_data.len(), "{inttx}");
+		let (mut a, mut b) = (read_font(&zlib)?, read_font(&zopfli)?);
+		assert_eq!(a.tags(), b.tags());
+		for tag in a.tags() {
+			assert_eq!(a.table_data(tag)?, b.table_data(tag)?, "{inttx} {tag}");
+		}
+	}
 	Ok(())
 }
 
