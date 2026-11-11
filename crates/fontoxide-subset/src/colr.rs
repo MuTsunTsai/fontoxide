@@ -1,14 +1,16 @@
-//! Subsetting of `COLR` and `CPAL` (`fontTools.subset`), and the parts of
-//! `fontTools.colorLib` it uses to rebuild the COLRv1 paint graph
-//! (`unbuildColrV1`, `buildColrV1`, `LayerReuseCache`, `build_n_ary_tree`).
+//! Subsetting of `COLR` and `CPAL` (`fontTools.subset`).
 //!
-//! fontTools turns the paints into plain dicts and builds new tables from them.
-//! That only changes the layer list: flattened and shared again. Fields keep
-//! their values: `_beforeBuildPaintRadialGradient` rounds the start circle, but
-//! is the identity on the integers that a table read from a font has.
+//! fontTools turns the paints into plain dicts (`unbuildColrV1`) and builds new
+//! tables from them (`buildColrV1`). That only changes the layer list:
+//! flattened and shared again. The paints are rebuilt here with
+//! [`LayerListBuilder::rebuild_paint`] of colorLib, which does the same without
+//! the round trip through dicts.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
+use fontoxide_colorlib::builder::{child_paints, child_paints_mut, layer_range};
+use fontoxide_colorlib::unbuilder::check_unbuild_paint;
+use fontoxide_colorlib::{GlyphIds, LayerListBuilder};
 use fontoxide_ttlib::ot::types::{self as ot, Paint};
 use fontoxide_ttlib::tables::Cpal;
 use fontoxide_ttlib::tables::colr::{Colr, LayerRecord};
@@ -16,55 +18,19 @@ use fontoxide_ttlib::{Error as TtError, Font, GlyphOrder, Tag};
 
 use crate::{GlyphSet, Result, Subsetter};
 
-/// `MAX_PAINT_COLR_LAYER_COUNT`.
-const MAX_PAINT_COLR_LAYER_COUNT: usize = 255;
-/// `_MAX_REUSE_LEN`; `_reuse_ranges` yields one more than this at most.
-const MAX_REUSE_LEN: usize = 32;
-/// How deep paints may nest when unbuilding.
-const MAX_DEPTH: usize = 100;
-
 type Layers = [Option<Box<Paint>>];
 
 fn no_paint() -> TtError {
 	TtError::ttlib("AttributeError: 'NoneType' object has no attribute 'Format'")
 }
 
-/// A shared or mutable reference, for `child_paints!`.
-macro_rules! reference {
-	(shared, $e:expr) => {
-		&$e
-	};
-	(mutable, $e:expr) => {
-		&mut $e
-	};
-}
-
-/// The fields holding the child paints of a paint, in the order of its
-/// converters.
-macro_rules! child_paints {
-	($paint:expr, $kind:ident) => {
-		child_paints!(@arms $paint, $kind,
-			Format10, Format12, Format13, Format14, Format15, Format16, Format17, Format18,
-			Format19, Format20, Format21, Format22, Format23, Format24, Format25, Format26,
-			Format27, Format28, Format29, Format30, Format31, Format33)
-	};
-	(@arms $paint:expr, $kind:ident, $($format:ident),*) => {
-		match $paint {
-			$(Paint::$format(t) => vec![reference!($kind, t.paint)],)*
-			Paint::Format32(t) => {
-				vec![reference!($kind, t.source_paint), reference!($kind, t.backdrop_paint)]
-			}
-			_ => Vec::new(),
-		}
-	};
-}
-
-fn children(paint: &Paint) -> Vec<&Option<Box<Paint>>> {
-	child_paints!(paint, shared)
-}
-
-fn children_mut(paint: &mut Paint) -> Vec<&mut Option<Box<Paint>>> {
-	child_paints!(paint, mutable)
+/// A colorLib error, as the error of the font library that it stands for.
+fn colorlib_error(error: fontoxide_colorlib::Error) -> crate::Error {
+	match error {
+		fontoxide_colorlib::Error::TtLib(e) => e.into(),
+		fontoxide_colorlib::Error::Assertion(m) => TtError::Assertion(m).into(),
+		other => TtError::ttlib(format!("{}: {other}", other.py_type_name())).into(),
+	}
 }
 
 /// The palette indices of a paint (`PaletteIndex`, or those of `ColorLine`).
@@ -102,31 +68,6 @@ fn colors(paint: &Paint) -> Result<Vec<u16>> {
 
 fn colors_mut(paint: &mut Paint) -> Result<Vec<&mut u16>> {
 	Ok(palette_indices!(paint, [&mut], as_deref_mut, iter_mut))
-}
-
-/// Sets `StopCount`, as `TableBuilder` does.
-fn set_stop_count(paint: &mut Paint) {
-	macro_rules! arms {
-		($($format:ident),*) => {
-			match paint {
-				$(Paint::$format(t) => {
-					if let Some(line) = &mut t.color_line {
-						line.stop_count = Some(line.color_stop.len() as u32);
-					}
-				})*
-				_ => {}
-			}
-		};
-	}
-	arms!(Format4, Format5, Format6, Format7, Format8, Format9);
-}
-
-/// `layers[FirstLayerIndex : FirstLayerIndex + NumLayers]`, as a range of
-/// `layers`.
-fn layer_range(t: &ot::PaintFormat1, layers: &Layers) -> std::ops::Range<usize> {
-	let start = (t.first_layer_index as usize).min(layers.len());
-	let end = (start + t.num_layers as usize).min(layers.len());
-	start..end
 }
 
 /// `Paint.traverse`: walks the paints reachable from some paints.
@@ -192,7 +133,7 @@ impl<'a> Traversal<'a> {
 					}
 				}
 				_ => {
-					for child in children(paint) {
+					for child in child_paints(paint) {
 						stack.push(child.as_deref().ok_or_else(no_paint)?);
 					}
 				}
@@ -268,233 +209,6 @@ fn paint_glyph(paint: &Paint) -> Option<u32> {
 	}
 }
 
-/// The errors that `LayerListUnbuilder.unbuildPaint` gives.
-fn check_unbuild(paint: Option<&Paint>, layers: &Layers, depth: usize) -> Result<()> {
-	let Some(paint) = paint else {
-		return Err(TtError::Assertion("isinstance(paint, ot.Paint)".into()).into());
-	};
-	if depth > MAX_DEPTH {
-		return Err(TtError::ttlib("RecursionError: maximum recursion depth exceeded").into());
-	}
-	if let Paint::Format1(t) = paint {
-		for layer in &layers[layer_range(t, layers)] {
-			check_unbuild(layer.as_deref(), layers, depth + 1)?;
-		}
-	}
-	for child in children(paint) {
-		check_unbuild(child.as_deref(), layers, depth + 1)?;
-	}
-	Ok(())
-}
-
-/// `_flatten_layers` of an unbuilt `PaintColrLayers`, whose `Layers` are
-/// flattened already.
-fn flatten_layers<'p>(paint: &'p ot::PaintFormat1, layers: &'p Layers, out: &mut Vec<&'p Paint>) {
-	for layer in layers[layer_range(paint, layers)].iter().flatten() {
-		match &**layer {
-			Paint::Format1(t) => flatten_layers(t, layers, out),
-			other => out.push(other),
-		}
-	}
-}
-
-/// A node of `build_n_ary_tree`.
-enum Tree {
-	Leaf(Paint),
-	Node(Vec<Tree>),
-}
-
-/// `build_n_ary_tree`.
-fn build_n_ary_tree(mut leaves: Vec<Tree>, n: usize) -> Vec<Tree> {
-	if leaves.is_empty() {
-		return leaves;
-	}
-	let depth = ((leaves.len() as f64).ln() / (n as f64).ln()).ceil() as u32;
-	if depth <= 1 {
-		return leaves;
-	}
-	// Fully populate complete subtrees of root until we have enough leaves left.
-	let mut root = Vec::new();
-	let mut unassigned = None;
-	let full_step = n.pow(depth - 1);
-	while !leaves.is_empty() {
-		let rest = leaves.split_off(full_step.min(leaves.len()));
-		let mut subtree = std::mem::replace(&mut leaves, rest);
-		if subtree.len() < full_step {
-			unassigned = Some(subtree);
-			break;
-		}
-		while subtree.len() > n {
-			let mut nodes = Vec::with_capacity(subtree.len() / n + 1);
-			while !subtree.is_empty() {
-				let rest = subtree.split_off(n.min(subtree.len()));
-				nodes.push(Tree::Node(std::mem::replace(&mut subtree, rest)));
-			}
-			subtree = nodes;
-		}
-		root.push(Tree::Node(subtree));
-	}
-	if let Some(unassigned) = unassigned {
-		// Recurse to fill the last subtree, the only partially populated one.
-		let subtree = build_n_ary_tree(unassigned, n);
-		if subtree.len() <= n - root.len() {
-			root.extend(subtree);
-		} else {
-			root.push(Tree::Node(subtree));
-		}
-	}
-	root
-}
-
-/// `LayerListBuilder`, with its `LayerReuseCache`.
-///
-/// The cache compares paints by value. Here each distinct paint gets a number,
-/// so that slices of layers are compared and hashed cheaply.
-struct LayerListBuilder<'a> {
-	old_layers: &'a Layers,
-	layers: Vec<Option<Box<Paint>>>,
-	numbers: HashMap<String, u32>,
-	/// `reusePool`.
-	reuse_pool: HashMap<Box<[u32]>, u32>,
-}
-
-impl<'a> LayerListBuilder<'a> {
-	fn new(old_layers: &'a Layers) -> Self {
-		LayerListBuilder {
-			old_layers,
-			layers: Vec::new(),
-			numbers: HashMap::new(),
-			reuse_pool: HashMap::new(),
-		}
-	}
-
-	/// `buildPaint` of an unbuilt paint.
-	fn build_paint(&mut self, paint: &Paint) -> Result<Paint> {
-		let mut paint = match paint {
-			Paint::Format1(t) => {
-				let old_layers = self.old_layers;
-				let mut flat = Vec::new();
-				flatten_layers(t, old_layers, &mut flat);
-				if let [only] = flat[..] {
-					return self.build_paint(only);
-				}
-				let mut layers = Vec::with_capacity(flat.len());
-				for layer in flat {
-					layers.push(self.build_paint(layer)?);
-				}
-				return self.colr_layers(layers);
-			}
-			Paint::Unknown(format) => {
-				return Err(TtError::Assertion(format!(
-					"<class 'fontTools.ttLib.tables.otTables.Paint'> invalid Format: {format}"
-				))
-				.into());
-			}
-			other => other.clone(),
-		};
-		for slot in children_mut(&mut paint) {
-			let child = slot.take().ok_or_else(no_paint)?;
-			*slot = Some(Box::new(self.build_paint(&child)?));
-		}
-		set_stop_count(&mut paint);
-		Ok(paint)
-	}
-
-	fn number(&mut self, paint: &Paint) -> u32 {
-		let next = self.numbers.len() as u32;
-		*self.numbers.entry(format!("{paint:?}")).or_insert(next)
-	}
-
-	/// `LayerReuseCache.try_reuse`: looks for reuse, preferring longer
-	/// sequences, and later ones among those of the same length.
-	fn try_reuse(&mut self, layers: &mut Vec<Paint>, numbers: &mut Vec<u32>) {
-		'found: loop {
-			let n = layers.len();
-			for len in (2..=n.min(MAX_REUSE_LEN + 1)).rev() {
-				for ubound in (len..=n).rev() {
-					let lbound = ubound - len;
-					let Some(&first) = self.reuse_pool.get(&numbers[lbound..ubound]) else {
-						continue;
-					};
-					let slice = Paint::Format1(ot::PaintFormat1 {
-						num_layers: len as u8,
-						first_layer_index: first,
-					});
-					let number = self.number(&slice);
-					layers.splice(lbound..ubound, [slice]);
-					numbers.splice(lbound..ubound, [number]);
-					continue 'found;
-				}
-			}
-			return;
-		}
-	}
-
-	/// `LayerReuseCache.add`.
-	fn add(&mut self, numbers: &[u32], first_layer_index: usize) {
-		for lbound in 0..numbers.len() {
-			for ubound in lbound + 2..=numbers.len().min(lbound + 1 + MAX_REUSE_LEN) {
-				let first = (lbound + first_layer_index) as u32;
-				match self.reuse_pool.get_mut(&numbers[lbound..ubound]) {
-					Some(value) => *value = first,
-					None => {
-						self.reuse_pool
-							.insert(numbers[lbound..ubound].into(), first);
-					}
-				}
-			}
-		}
-	}
-
-	/// `listToColrLayers`.
-	fn tree_to_paint(&mut self, node: Tree) -> Result<Paint> {
-		match node {
-			Tree::Leaf(paint) => Ok(paint),
-			Tree::Node(nodes) => {
-				let mut layers = Vec::with_capacity(nodes.len());
-				for node in nodes {
-					layers.push(self.tree_to_paint(node)?);
-				}
-				self.colr_layers(layers)
-			}
-		}
-	}
-
-	/// `_beforeBuildPaintColrLayers`, given the built layers.
-	fn colr_layers(&mut self, mut layers: Vec<Paint>) -> Result<Paint> {
-		// No reason to have a colr layers with just one entry.
-		if layers.len() == 1 {
-			return Ok(layers.remove(0));
-		}
-		let mut numbers: Vec<u32> = layers.iter().map(|p| self.number(p)).collect();
-		self.try_reuse(&mut layers, &mut numbers);
-
-		// The layer list is now final; if it's too big we need to tree it.
-		let is_tree = layers.len() > MAX_PAINT_COLR_LAYER_COUNT;
-		let leaves = layers.into_iter().map(Tree::Leaf).collect();
-		let mut layers = Vec::new();
-		for node in build_n_ary_tree(leaves, MAX_PAINT_COLR_LAYER_COUNT) {
-			layers.push(self.tree_to_paint(node)?);
-		}
-		if layers.len() == 1 {
-			return Ok(layers.remove(0));
-		}
-
-		let first = self.layers.len();
-		let paint = Paint::Format1(ot::PaintFormat1 {
-			num_layers: layers.len() as u8,
-			first_layer_index: first as u32,
-		});
-		self.layers
-			.extend(layers.into_iter().map(|p| Some(Box::new(p))));
-		// If we are a tree the leaves registered for reuse and that will suffice.
-		if !is_tree {
-			self.add(&numbers, first);
-		}
-		Ok(paint)
-	}
-}
-
 /// `subset_glyphs`.
 pub(crate) fn subset_glyphs(s: &Subsetter, font: &mut Font) -> Result<bool> {
 	// Only the glyphs after the COLR closure: see fontTools' comment and
@@ -525,7 +239,7 @@ pub(crate) fn subset_glyphs(s: &Subsetter, font: &mut Font) -> Result<bool> {
 	let mut index = HashMap::new();
 	let mut records: Vec<&ot::BaseGlyphPaintRecord> = Vec::new();
 	for rec in old_records {
-		check_unbuild(rec.paint.as_deref(), old_layers, 0)?;
+		check_unbuild_paint(rec.paint.as_deref(), old_layers).map_err(colorlib_error)?;
 		match index.get(&rec.base_glyph) {
 			Some(&i) => records[i] = rec,
 			None => {
@@ -535,21 +249,24 @@ pub(crate) fn subset_glyphs(s: &Subsetter, font: &mut Font) -> Result<bool> {
 		}
 	}
 
-	// buildColrV1.
-	let mut builder = LayerListBuilder::new(old_layers);
+	// buildColrV1, without a glyphMap.
+	let no_glyph_names = GlyphIds::new();
+	let mut builder = LayerListBuilder::new(&no_glyph_names, false, true);
 	let mut base_records = Vec::new();
 	for rec in records
 		.iter()
 		.filter(|rec| glyphs.contains(&rec.base_glyph))
 	{
 		let paint = rec.paint.as_deref().ok_or_else(no_paint)?;
+		let paint = builder
+			.rebuild_paint(paint, old_layers)
+			.map_err(colorlib_error)?;
 		base_records.push(ot::BaseGlyphPaintRecord {
 			base_glyph: rec.base_glyph,
-			paint: Some(Box::new(builder.build_paint(paint)?)),
+			paint: Some(Box::new(paint)),
 		});
 	}
-	let new_layers = std::mem::take(&mut builder.layers);
-	drop(builder);
+	let layer_list = builder.build();
 
 	if base_records.is_empty() {
 		// No more COLRv1 glyphs: downgrade to version 0.
@@ -560,12 +277,7 @@ pub(crate) fn subset_glyphs(s: &Subsetter, font: &mut Font) -> Result<bool> {
 		return Ok(retain);
 	}
 
-	table.layer_list = (!new_layers.is_empty()).then(|| {
-		Box::new(ot::LayerList {
-			layer_count: Some(new_layers.len() as u32),
-			paint: new_layers,
-		})
-	});
+	table.layer_list = layer_list.map(Box::new);
 	table.base_glyph_list = Some(Box::new(ot::BaseGlyphList {
 		base_glyph_count: Some(base_records.len() as u32),
 		base_glyph_paint_record: base_records,
@@ -611,7 +323,7 @@ fn remap_colors(paint: &mut Paint, map: &BTreeMap<u16, u16>) -> Result<()> {
 			*index = new;
 		}
 	}
-	for child in children_mut(paint) {
+	for child in child_paints_mut(paint) {
 		remap_colors(child.as_deref_mut().ok_or_else(no_paint)?, map)?;
 	}
 	Ok(())
@@ -713,55 +425,4 @@ mod tests {
 	}
 
 	use super::*;
-
-	/// The shape of a tree: the number of leaves or a list of shapes.
-	fn shape(nodes: &[Tree]) -> String {
-		let mut out = String::new();
-		let mut leaves = 0;
-		for node in nodes {
-			match node {
-				Tree::Leaf(_) => leaves += 1,
-				Tree::Node(nodes) => {
-					if leaves > 0 {
-						out += &format!("{leaves} ");
-						leaves = 0;
-					}
-					out += &format!("[{}] ", shape(nodes));
-				}
-			}
-		}
-		if leaves > 0 {
-			out += &format!("{leaves}");
-		}
-		out.trim_end().to_owned()
-	}
-
-	fn tree(leaves: usize, n: usize) -> String {
-		let leaves = (0..leaves).map(|_| Tree::Leaf(Paint::Unknown(0))).collect();
-		shape(&build_n_ary_tree(leaves, n))
-	}
-
-	/// Cases of `Tests/misc/treeTools_test.py`.
-	#[test]
-	fn n_ary_tree() {
-		assert_eq!(tree(0, 3), "");
-		assert_eq!(tree(1, 2), "1");
-		assert_eq!(tree(2, 2), "2");
-		assert_eq!(tree(3, 2), "[2] 1");
-		assert_eq!(tree(3, 3), "3");
-		assert_eq!(tree(4, 2), "[2] [2]");
-		assert_eq!(tree(4, 3), "[3] 1");
-		assert_eq!(tree(5, 3), "[3] 2");
-		assert_eq!(tree(6, 3), "[3] [3]");
-		assert_eq!(tree(7, 3), "[3] [3] 1");
-		assert_eq!(tree(8, 3), "[3] [3] [2]");
-		assert_eq!(tree(9, 3), "[3] [3] [3]");
-		assert_eq!(tree(10, 3), "[[3] [3] [3]] 1");
-		assert_eq!(tree(11, 3), "[[3] [3] [3]] 2");
-		assert_eq!(tree(12, 3), "[[3] [3] [3]] [3]");
-		assert_eq!(tree(13, 3), "[[3] [3] [3]] [3] 1");
-		assert_eq!(tree(14, 3), "[[3] [3] [3]] [[3] 2]");
-		assert_eq!(tree(15, 3), "[[3] [3] [3]] [3] [3]");
-		assert_eq!(tree(16, 3), "[[3] [3] [3]] [[3] [3] 1]");
-	}
 }

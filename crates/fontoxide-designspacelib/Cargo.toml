@@ -1,0 +1,21 @@
+[package]
+name = "fontoxide-designspacelib"
+description = "Designspace documents; a port of fontTools.designspaceLib"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+fontoxide-misc.workspace = true
+indexmap.workspace = true
+log.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

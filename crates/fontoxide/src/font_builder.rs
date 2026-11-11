@@ -19,9 +19,8 @@
 //! Like fontTools' keyword arguments, the values of the header tables are given
 //! by fontTools field name, as `(name, value)` pairs.
 //!
-//! Not ported yet: `addOpenTypeFeatures` (feaLib), `addFeatureVariations`
-//! (`varLib.featureVars`), `setupCOLR` and `setupCPAL` (colorLib), and the
-//! `mappings` of `setupAvar` (designspaceLib).
+//! Not ported yet: `addOpenTypeFeatures` (feaLib) and the `mappings` of
+//! `setupAvar` (avar 2).
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -982,6 +981,92 @@ impl FontBuilder {
 			flag: 0,
 			signature_records: Some(Vec::new()),
 		}));
+	}
+
+	/// Adds OpenType features to the font from a string in feature file syntax
+	/// (`addOpenTypeFeatures`); see
+	/// [`fontoxide_fealib::builder::add_open_type_features_from_string`].
+	///
+	/// `filename` is used in error messages and to find included files.
+	/// `tables` restricts the layout tables built. `debug` adds source
+	/// debugging information to the font in the `Debg` table.
+	pub fn add_open_type_features(
+		&mut self,
+		features: &str,
+		filename: Option<&str>,
+		tables: Option<&[&str]>,
+		debug: bool,
+	) -> fontoxide_fealib::Result<()> {
+		fontoxide_fealib::builder::add_open_type_features_from_string(
+			&mut self.font,
+			features,
+			filename,
+			tables,
+			debug,
+		)
+	}
+
+	/// Adds conditional substitutions to a variable font (`addFeatureVariations`);
+	/// see [`fontoxide_varlib::feature_vars::add_feature_variations`]. `fvar`
+	/// must be set up first.
+	pub fn add_feature_variations(
+		&mut self,
+		conditional_substitutions: &[(
+			fontoxide_varlib::feature_vars::Region,
+			fontoxide_varlib::feature_vars::Substitution,
+		)],
+		feature_tag: Tag,
+	) -> Result<()> {
+		if !self.font.contains(Tag::new(b"fvar")) {
+			return Err(Error::value(
+				"KeyError: \"'fvar' table is missing; can't add FeatureVariations.\"",
+			));
+		}
+		fontoxide_varlib::feature_vars::add_feature_variations(
+			&mut self.font,
+			conditional_substitutions,
+			&[feature_tag],
+		)
+	}
+
+	/// Builds a new `COLR` table from color layers by base glyph name
+	/// (`setupCOLR`); see [`fontoxide_colorlib::build_colr`].
+	pub fn setup_colr(
+		&mut self,
+		color_layers: indexmap::IndexMap<String, fontoxide_colorlib::Value>,
+		options: fontoxide_colorlib::BuildColrOptions,
+	) -> fontoxide_colorlib::Result<()> {
+		let glyphs = self.font.glyph_order()?.reverse_map().clone();
+		let options = fontoxide_colorlib::BuildColrOptions {
+			glyph_map: true,
+			..options
+		};
+		let colr = fontoxide_colorlib::build_colr(color_layers, &glyphs, options)?;
+		self.font.insert(Box::new(colr));
+		Ok(())
+	}
+
+	/// Builds a new `CPAL` table from palettes of (red, green, blue, alpha)
+	/// colors in the range 0 to 1 (`setupCPAL`); see
+	/// [`fontoxide_colorlib::build_cpal`]. Labels are added to the `name`
+	/// table.
+	pub fn setup_cpal(
+		&mut self,
+		palettes: &[Vec<[f64; 4]>],
+		palette_types: Option<&[fontoxide_colorlib::ColorPaletteType]>,
+		palette_labels: Option<&[Option<fontoxide_colorlib::LocalizedString>]>,
+		palette_entry_labels: Option<&[Option<fontoxide_colorlib::LocalizedString>]>,
+	) -> fontoxide_colorlib::Result<()> {
+		let name = self.font.get::<Name>()?;
+		let cpal = fontoxide_colorlib::build_cpal(
+			palettes,
+			palette_types,
+			palette_labels,
+			palette_entry_labels,
+			name,
+		)?;
+		self.font.insert(Box::new(cpal));
+		Ok(())
 	}
 
 	/// Builds a `STAT` table (`setupStat`); see

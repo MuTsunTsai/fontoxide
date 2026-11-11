@@ -12,6 +12,7 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
+fontoxide-colorlib.workspace = true
 fontoxide-misc.workspace = true
 fontoxide-otllib.workspace = true
 fontoxide-ttlib.workspace = true

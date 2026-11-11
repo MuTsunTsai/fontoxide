@@ -1,8 +1,4 @@
 //! `Tests/fontBuilder/fontBuilder_test.py`.
-//!
-//! The fonts of the end-to-end tests also have GSUB or GPOS features, from
-//! feaLib or `varLib.featureVars`, which are not ported yet: those tables are
-//! left out of the comparison, and `usMaxContext` is set to what feaLib sets.
 
 use std::collections::BTreeMap;
 
@@ -198,44 +194,8 @@ fn strip_variable_items(ttx: &str) -> String {
 	out
 }
 
-/// The expected TTX without some tables.
-fn without_tables(ttx: &str, tables: &[&str]) -> String {
-	let mut out = String::new();
-	let mut skipping: Option<String> = None;
-	for line in ttx.split_inclusive('\n') {
-		if let Some(end) = &skipping {
-			if line.trim_end() == end {
-				skipping = Some(String::new());
-			} else if end.is_empty() {
-				// The blank line after the table.
-				skipping = None;
-				if line.trim_end().is_empty() {
-					continue;
-				}
-				out.push_str(line);
-			}
-			continue;
-		}
-		if let Some(t) = tables
-			.iter()
-			.find(|t| line.trim_end() == format!("  <{t}>"))
-		{
-			skipping = Some(format!("  </{t}>"));
-			continue;
-		}
-		out.push_str(line);
-	}
-	out
-}
-
-/// `_verifyOutput`: the saved font, read back, dumps the TTX of the test data
-/// (without `skip`, the tables of features).
-fn verify_output(
-	fb: &mut FontBuilder,
-	file: &str,
-	skip: &[&str],
-	tables: Option<&[&str]>,
-) -> TestResult {
+/// `_verifyOutput`: the saved font, read back, dumps the TTX of the test data.
+fn verify_output(fb: &mut FontBuilder, file: &str, tables: Option<&[&str]>) -> TestResult {
 	let data = fb.save()?;
 	let mut font = Font::read(data, ReadOptions::default())?;
 	let options = TtxOptions {
@@ -248,7 +208,7 @@ fn verify_output(
 	};
 	let ttx = strip_variable_items(&font.to_ttx(&options)?);
 	let expected = std::fs::read_to_string(data_path(file))?.replace("\r\n", "\n");
-	let expected = strip_variable_items(&without_tables(&expected, skip));
+	let expected = strip_variable_items(&expected);
 	if ttx != expected {
 		let a: Vec<&str> = ttx.lines().collect();
 		let b: Vec<&str> = expected.lines().collect();
@@ -320,11 +280,10 @@ fn test_build_ttf() -> TestResult {
 	fb.setup_horizontal_header(&ascent_descent())?;
 	fb.setup_name_table(&name_strings, true, true)?;
 	fb.setup_os2(&[])?;
-	// What `addOpenTypeFeatures("feature salt { sub A by a; } salt;")` sets.
-	fb.font.require::<Os2>()?.us_max_context = 1;
+	fb.add_open_type_features("feature salt { sub A by a; } salt;", None, None, false)?;
 	fb.setup_post(true, &[])?;
 	fb.setup_dummy_dsig();
-	verify_output(&mut fb, "test.ttf.ttx", &["GSUB"], None)
+	verify_output(&mut fb, "test.ttf.ttx", None)
 }
 
 /// `_setupBeyond64kFontBuilder`.
@@ -529,11 +488,10 @@ fn test_build_otf() -> TestResult {
 	fb.setup_horizontal_header(&ascent_descent())?;
 	fb.setup_name_table(&name_strings, true, true)?;
 	fb.setup_os2(&[])?;
-	// What `addOpenTypeFeatures("feature kern { pos A a -50; } kern;")` sets.
-	fb.font.require::<Os2>()?.us_max_context = 2;
+	fb.add_open_type_features("feature kern { pos A a -50; } kern;", None, None, false)?;
 	fb.setup_post(true, &[])?;
 	fb.setup_dummy_dsig();
-	verify_output(&mut fb, "test.otf.ttx", &["GPOS"], None)
+	verify_output(&mut fb, "test.otf.ttx", None)
 }
 
 #[test]
@@ -625,6 +583,18 @@ fn test_build_var() -> TestResult {
 	.into_iter()
 	.collect();
 	fb.setup_gvar(variations)?;
+	let condition = |a: &str, b: &str| -> IndexMap<String, (f64, f64)> {
+		[(s(a), (0.8, 1.0)), (s(b), (0.8, 1.0))]
+			.into_iter()
+			.collect()
+	};
+	fb.add_feature_variations(
+		&[(
+			vec![condition("LEFT", "DOWN"), condition("RGHT", "UPPP")],
+			[(s("A"), s("a"))].into_iter().collect(),
+		)],
+		Tag::new(b"rclt"),
+	)?;
 
 	let stat_axes: Vec<StatAxis> = axes
 		.iter()
@@ -656,7 +626,7 @@ fn test_build_var() -> TestResult {
 	fb.setup_os2(&[])?;
 	fb.setup_post(true, &[])?;
 	fb.setup_dummy_dsig();
-	verify_output(&mut fb, "test_var.ttf.ttx", &["GSUB"], None)
+	verify_output(&mut fb, "test_var.ttf.ttx", None)
 }
 
 #[test]
@@ -678,7 +648,7 @@ fn test_build_cff2() -> TestResult {
 		("usWinDescent", Value::Int(200)),
 	])?;
 	fb.setup_post(true, &[])?;
-	verify_output(&mut fb, "test_var.otf.ttx", &[], None)
+	verify_output(&mut fb, "test_var.otf.ttx", None)
 }
 
 fn platform_ids(fb: &mut FontBuilder) -> Result<Vec<u16>, Box<dyn std::error::Error>> {
@@ -906,7 +876,7 @@ fn test_unicode_variation_sequences() -> TestResult {
 	fb.setup_name_table(&name_strings, true, true)?;
 	fb.setup_os2(&[])?;
 	fb.setup_post(true, &[])?;
-	verify_output(&mut fb, "test_uvs.ttf.ttx", &[], Some(&["cmap"]))?;
+	verify_output(&mut fb, "test_uvs.ttf.ttx", Some(&["cmap"]))?;
 
 	// The same subtable data, because cmap[0x0030] is "zero".
 	fb.setup_character_map(
@@ -917,7 +887,7 @@ fn test_unicode_variation_sequences() -> TestResult {
 		]),
 		false,
 	)?;
-	verify_output(&mut fb, "test_uvs.ttf.ttx", &[], Some(&["cmap"]))
+	verify_output(&mut fb, "test_uvs.ttf.ttx", Some(&["cmap"]))
 }
 
 #[test]

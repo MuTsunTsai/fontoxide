@@ -19,9 +19,12 @@ categories = ["parser-implementations", "encoding", "text-processing"]
 kurbo = "0.13"
 linesweeper = "0.5"
 fontoxide-agl = { path = "crates/fontoxide-agl", version = "0.0.0" }
+fontoxide-colorlib = { path = "crates/fontoxide-colorlib", version = "0.0.0" }
 fontoxide-cu2qu = { path = "crates/fontoxide-cu2qu", version = "0.0.0" }
 fontoxide-qu2cu = { path = "crates/fontoxide-qu2cu", version = "0.0.0" }
+fontoxide-designspacelib = { path = "crates/fontoxide-designspacelib", version = "0.0.0" }
 fontoxide-encodings = { path = "crates/fontoxide-encodings", version = "0.0.0" }
+fontoxide-fealib = { path = "crates/fontoxide-fealib", version = "0.0.0" }
 fontoxide-misc = { path = "crates/fontoxide-misc", version = "0.0.0" }
 fontoxide-otllib = { path = "crates/fontoxide-otllib", version = "0.0.0" }
 fontoxide-pens = { path = "crates/fontoxide-pens", version = "0.0.0" }
@@ -46,6 +49,11 @@ rust_2018_idioms = { level = "warn", priority = -1 }
 dbg_macro = "warn"
 todo = "warn"
 unwrap_used = "warn"
+
+# Line tables only: backtraces keep file names and line numbers, but the PDBs and
+# incremental caches of the large generated code stay several times smaller.
+[profile.dev]
+debug = "line-tables-only"
 
 [profile.release]
 lto = "thin"

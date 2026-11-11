@@ -84,6 +84,65 @@ fn test_build_var_data_no_optimize() {
 	}
 }
 
+/// Not from fontTools: the builders of `fontTools.varLib.builder` that its
+/// tests do not cover.
+#[test]
+fn builder_helpers() -> fontoxide_ttlib::Result<()> {
+	use std::collections::BTreeMap;
+
+	use fontoxide_varlib::builder::*;
+
+	let device = build_var_dev_table(0x0003_0005);
+	assert_eq!(
+		(device.delta_format, device.start_size, device.end_size),
+		(0x8000, 3, 5)
+	);
+
+	assert_eq!(build_delta_set_index_map([0, 1, 2]), None);
+	let map = build_delta_set_index_map([1, 0]).ok_or(Error::value("expected a map"))?;
+	assert_eq!((map.format, map.mapping), (Some(0), vec![1, 0]));
+	let map =
+		build_delta_set_index_map((0..0x10001).rev()).ok_or(Error::value("expected a map"))?;
+	assert_eq!(map.format, Some(1));
+
+	let map = build_var_idx_map([7, 8, 9], [0, 2]);
+	assert_eq!(map.mapping, BTreeMap::from([(0, 7), (2, 8)]));
+
+	let axes = ["wght".to_owned(), "wdth".to_owned()];
+	let support = BTreeMap::from([("wdth".to_owned(), (0.0, 1.0, 1.0))]);
+	let region = build_sparse_var_region(&support, &axes)?;
+	assert_eq!(region.sparse_region_count, Some(1));
+	let axis = region.sparse_var_region_axis[0]
+		.as_deref()
+		.ok_or(Error::value("no axis"))?;
+	assert_eq!(
+		(
+			axis.axis_index,
+			axis.start_coord,
+			axis.peak_coord,
+			axis.end_coord
+		),
+		(1, 0.0, 1.0, 1.0)
+	);
+	let list = build_sparse_var_region_list(&[support.clone(), BTreeMap::new()], &axes)?;
+	assert_eq!(list.region_count, Some(2));
+	let unknown = BTreeMap::from([("opsz".to_owned(), (0.0, 1.0, 1.0))]);
+	assert!(matches!(
+		build_sparse_var_region(&unknown, &axes),
+		Err(Error::Assertion(_))
+	));
+
+	let data = build_multi_var_data(vec![0], vec![vec![1, 2]])?;
+	let store = build_multi_var_store(list, vec![data]);
+	assert_eq!((store.format, store.multi_var_data_count), (1, Some(1)));
+
+	assert!(matches!(
+		build_var_data_checked(vec![0, 1], vec![vec![1]], false),
+		Err(Error::Assertion(_))
+	));
+	Ok(())
+}
+
 #[test]
 fn test_build_var_data_optimize() {
 	type Case<'a> = (&'a [&'a [i64]], u16, &'a [u16], &'a [&'a [i64]]);

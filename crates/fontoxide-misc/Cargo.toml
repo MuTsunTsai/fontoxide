@@ -12,6 +12,7 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
+indexmap.workspace = true
 log.workspace = true
 roxmltree.workspace = true
 thiserror.workspace = true

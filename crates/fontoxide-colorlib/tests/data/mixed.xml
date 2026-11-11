@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Version value="1"/>
+<!-- BaseGlyphRecordCount=1 -->
+<BaseGlyphRecordArray>
+  <BaseGlyphRecord index="0">
+    <BaseGlyph value="j"/>
+    <FirstLayerIndex value="0"/>
+    <NumLayers value="2"/>
+  </BaseGlyphRecord>
+</BaseGlyphRecordArray>
+<LayerRecordArray>
+  <LayerRecord index="0">
+    <LayerGlyph value="a"/>
+    <PaletteIndex value="0"/>
+  </LayerRecord>
+  <LayerRecord index="1">
+    <LayerGlyph value="b"/>
+    <PaletteIndex value="1"/>
+  </LayerRecord>
+</LayerRecordArray>
+<!-- LayerRecordCount=2 -->
+<BaseGlyphList>
+  <!-- BaseGlyphCount=6 -->
+  <BaseGlyphPaintRecord index="0">
+    <BaseGlyph value="c"/>
+    <Paint Format="1"><!-- PaintColrLayers -->
+      <NumLayers value="4"/>
+      <FirstLayerIndex value="0"/>
+    </Paint>
+  </BaseGlyphPaintRecord>
+  <BaseGlyphPaintRecord index="1">
+    <BaseGlyph value="b"/>
+    <Paint Format="1"><!-- PaintColrLayers -->
+      <NumLayers value="3"/>
+      <FirstLayerIndex value="4"/>
+    </Paint>
+  </BaseGlyphPaintRecord>
+  <BaseGlyphPaintRecord index="2">
+    <BaseGlyph value="d"/>
+    <Paint Format="1"><!-- PaintColrLayers -->
+      <NumLayers value="4"/>
+      <FirstLayerIndex value="7"/>
+    </Paint>
+  </BaseGlyphPaintRecord>
+  <BaseGlyphPaintRecord index="3">
+    <BaseGlyph value="i"/>
+    <Paint Format="10"><!-- PaintGlyph -->
+      <Paint Format="7"><!-- PaintVarRadialGradient -->
+        <ColorLine>
+          <Extend value="reflect"/>
+          <!-- StopCount=3 -->
+          <ColorStop index="0">
+            <StopOffset value="0.0"/>
+            <PaletteIndex value="3"/>
+            <Alpha value="1.0"/>
+            <VarIndexBase/>
+          </ColorStop>
+          <ColorStop index="1">
+            <StopOffset value="0.5"/>
+            <PaletteIndex value="4"/>
+            <Alpha value="0.25"/>
+            <VarIndexBase value="7"/>
+          </ColorStop>
+          <ColorStop index="2">
+            <StopOffset value="1.0"/>
+            <PaletteIndex value="5"/>
+            <Alpha value="1.0"/>
+            <VarIndexBase/>
+          </ColorStop>
+        </ColorLine>
+        <x0 value="2"/>
+        <y0 value="0"/>
+        <r0 value="0"/>
+        <x1 value="3"/>
+        <y1 value="0"/>
+        <r1 value="1"/>
+        <VarIndexBase value="9"/>
+      </Paint>
+      <Glyph value="i"/>
+    </Paint>
+  </BaseGlyphPaintRecord>
+  <BaseGlyphPaintRecord index="4">
+    <BaseGlyph value="h"/>
+    <Paint Format="32"><!-- PaintComposite -->
+      <SourcePaint Format="11"><!-- PaintColrGlyph -->
+        <Glyph value="c"/>
+      </SourcePaint>
+      <CompositeMode value="multiply"/>
+      <BackdropPaint Format="13"><!-- PaintVarTransform -->
+        <Paint Format="10"><!-- PaintGlyph -->
+          <Paint Format="2"><!-- PaintSolid -->
+            <PaletteIndex value="1"/>
+            <Alpha value="1.0"/>
+          </Paint>
+          <Glyph value="e"/>
+        </Paint>
+        <Transform>
+          <xx value="1.0"/>
+          <yx value="0.3333"/>
+          <xy value="-0.5"/>
+          <yy value="1.25"/>
+          <dx value="100.5"/>
+          <dy value="-20.0"/>
+          <VarIndexBase value="4"/>
+        </Transform>
+      </BackdropPaint>
+    </Paint>
+  </BaseGlyphPaintRecord>
+  <BaseGlyphPaintRecord index="5">
+    <BaseGlyph value="g"/>
+    <Paint Format="1"><!-- PaintColrLayers -->
+      <NumLayers value="3"/>
+      <FirstLayerIndex value="11"/>
+    </Paint>
+  </BaseGlyphPaintRecord>
+</BaseGlyphList>
+<LayerList>
+  <!-- LayerCount=14 -->
+  <Paint index="0" Format="10"><!-- PaintGlyph -->
+    <Paint Format="2"><!-- PaintSolid -->
+      <PaletteIndex value="2"/>
+      <Alpha value="0.8"/>
+    </Paint>
+    <Glyph value="a"/>
+  </Paint>
+  <Paint index="1" Format="10"><!-- PaintGlyph -->
+    <Paint Format="2"><!-- PaintSolid -->
+      <PaletteIndex value="2"/>
+      <Alpha value="0.8"/>
+    </Paint>
+    <Glyph value="b"/>
+  </Paint>
+  <Paint index="2" Format="10"><!-- PaintGlyph -->
+    <Paint Format="2"><!-- PaintSolid -->
+      <PaletteIndex value="2"/>
+      <Alpha value="0.8"/>
+    </Paint>
+    <Glyph value="c"/>
+  </Paint>
+  <Paint index="3" Format="10"><!-- PaintGlyph -->
+    <Paint Format="2"><!-- PaintSolid -->
+      <PaletteIndex value="2"/>
+      <Alpha value="0.8"/>
+    </Paint>
+    <Glyph value="d"/>
+  </Paint>
+  <Paint index="4" Format="1"><!-- PaintColrLayers -->
+    <NumLayers value="4"/>
+    <FirstLayerIndex value="0"/>
+  </Paint>
+  <Paint index="5" Format="10"><!-- PaintGlyph -->
+    <Paint Format="2"><!-- PaintSolid -->
+      <PaletteIndex value="2"/>
+      <Alpha value="0.8"/>
+    </Paint>
+    <Glyph value="e"/>
+  </Paint>
+  <Paint index="6" Format="10"><!-- PaintGlyph -->
+    <Paint Format="2"><!-- PaintSolid -->
+      <PaletteIndex value="2"/>
+      <Alpha value="0.8"/>
+    </Paint>
+    <Glyph value="f"/>
+  </Paint>
+  <Paint index="7" Format="1"><!-- PaintColrLayers -->
+    <NumLayers value="2"/>
+    <FirstLayerIndex value="2"/>
+  </Paint>
+  <Paint index="8" Format="1"><!-- PaintColrLayers -->
+    <NumLayers value="2"/>
+    <FirstLayerIndex value="5"/>
+  </Paint>
+  <Paint index="9" Format="10"><!-- PaintGlyph -->
+    <Paint Format="2"><!-- PaintSolid -->
+      <PaletteIndex value="2"/>
+      <Alpha value="0.8"/>
+    </Paint>
+    <Glyph value="g"/>
+  </Paint>
+  <Paint index="10" Format="10"><!-- PaintGlyph -->
+    <Paint Format="2"><!-- PaintSolid -->
+      <PaletteIndex value="2"/>
+      <Alpha value="0.8"/>
+    </Paint>
+    <Glyph value="h"/>
+  </Paint>
+  <Paint index="11" Format="8"><!-- PaintSweepGradient -->
+    <ColorLine>
+      <Extend value="pad"/>
+      <!-- StopCount=2 -->
+      <ColorStop index="0">
+        <StopOffset value="0.0"/>
+        <PaletteIndex value="0"/>
+        <Alpha value="1.0"/>
+      </ColorStop>
+      <ColorStop index="1">
+        <StopOffset value="1.0"/>
+        <PaletteIndex value="1"/>
+        <Alpha value="0.5"/>
+      </ColorStop>
+    </ColorLine>
+    <centerX value="11"/>
+    <centerY value="-3"/>
+    <startAngle value="45.0"/>
+    <endAngle value="270.5"/>
+  </Paint>
+  <Paint index="12" Format="26"><!-- PaintRotateAroundCenter -->
+    <Paint Format="11"><!-- PaintColrGlyph -->
+      <Glyph value="b"/>
+    </Paint>
+    <angle value="-30.25"/>
+    <centerX value="5"/>
+    <centerY value="6"/>
+  </Paint>
+  <Paint index="13" Format="31"><!-- PaintVarSkewAroundCenter -->
+    <Paint Format="10"><!-- PaintGlyph -->
+      <Paint Format="2"><!-- PaintSolid -->
+        <PaletteIndex value="2"/>
+        <Alpha value="0.8"/>
+      </Paint>
+      <Glyph value="a"/>
+    </Paint>
+    <xSkewAngle value="10.0"/>
+    <ySkewAngle value="0.5"/>
+    <centerX value="0"/>
+    <centerY value="0"/>
+    <VarIndexBase/>
+  </Paint>
+</LayerList>
+<ClipList Format="1">
+  <Clip>
+    <Glyph value="b"/>
+    <ClipBox Format="2">
+      <xMin value="0"/>
+      <yMin value="0"/>
+      <xMax value="1000"/>
+      <yMax value="1000"/>
+      <VarIndexBase value="3"/>
+    </ClipBox>
+  </Clip>
+  <Clip>
+    <Glyph value="c"/>
+    <ClipBox Format="1">
+      <xMin value="-101"/>
+      <yMin value="-201"/>
+      <xMax value="1101"/>
+      <yMax value="1201"/>
+    </ClipBox>
+  </Clip>
+  <Clip>
+    <Glyph value="d"/>
+    <Glyph value="i"/>
+    <ClipBox Format="1">
+      <xMin value="0"/>
+      <yMin value="0"/>
+      <xMax value="10"/>
+      <yMax value="10"/>
+    </ClipBox>
+  </Clip>
+</ClipList>

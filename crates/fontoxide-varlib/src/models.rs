@@ -609,8 +609,17 @@ impl VariationModel {
 		&self,
 		items: &[Option<f64>],
 	) -> Result<(Vec<f64>, Vec<Support>)> {
+		self.get_deltas_and_supports_rounded(items, |v| v)
+	}
+
+	/// `getDeltasAndSupports(items, round=round)`.
+	pub fn get_deltas_and_supports_rounded(
+		&self,
+		items: &[Option<f64>],
+		round: impl Fn(f64) -> f64,
+	) -> Result<(Vec<f64>, Vec<Support>)> {
 		let (model, items) = self.get_sub_model(items)?;
-		Ok((model.get_deltas(&items)?, model.supports))
+		Ok((model.get_deltas_rounded(&items, round)?, model.supports))
 	}
 
 	/// `getScalars`: the scalars of each delta, for the given location.

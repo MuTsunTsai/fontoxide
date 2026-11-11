@@ -14,7 +14,10 @@ categories.workspace = true
 
 [dependencies]
 fontoxide-agl.workspace = true
+fontoxide-colorlib.workspace = true
 fontoxide-cu2qu.workspace = true
+fontoxide-designspacelib.workspace = true
+fontoxide-fealib.workspace = true
 fontoxide-misc.workspace = true
 fontoxide-otllib.workspace = true
 fontoxide-pens.workspace = true

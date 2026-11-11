@@ -6,7 +6,10 @@
 //! | fontoxide            | fontTools          |
 //! |----------------------|--------------------|
 //! | [`agl`]              | `fontTools.agl`    |
+//! | [`colorlib`]         | `fontTools.colorLib` |
 //! | [`cu2qu`]            | `fontTools.cu2qu`  |
+//! | [`designspacelib`]   | `fontTools.designspaceLib` |
+//! | [`fealib`]           | `fontTools.feaLib` |
 //! | [`misc`]             | `fontTools.misc`   |
 //! | [`otllib`]           | `fontTools.otlLib` |
 //! | [`pens`]             | `fontTools.pens`   |
@@ -23,7 +26,10 @@
 //! [`ttlib::pens`], as they build `glyf` glyphs and CFF charstrings.
 
 pub use fontoxide_agl as agl;
+pub use fontoxide_colorlib as colorlib;
 pub use fontoxide_cu2qu as cu2qu;
+pub use fontoxide_designspacelib as designspacelib;
+pub use fontoxide_fealib as fealib;
 pub use fontoxide_misc as misc;
 pub use fontoxide_otllib as otllib;
 pub use fontoxide_pens as pens;

@@ -13,8 +13,10 @@ categories.workspace = true
 
 [dependencies]
 fontoxide-misc.workspace = true
+fontoxide-otllib.workspace = true
 fontoxide-subset.workspace = true
 fontoxide-ttlib.workspace = true
+indexmap.workspace = true
 log.workspace = true
 
 [dev-dependencies]

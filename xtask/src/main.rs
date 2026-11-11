@@ -6,6 +6,7 @@ mod coverage;
 #[cfg(feature = "parity")]
 mod parity;
 mod reference;
+mod sweep;
 mod test_manifest;
 mod upstream_report;
 
@@ -38,6 +39,8 @@ enum Command {
 	Parity(parity::Args),
 	/// Measure the code coverage of the tests and of parity runs (cargo-llvm-cov).
 	Coverage(coverage::Args),
+	/// Remove stale test binaries and unused incremental caches from target/.
+	Sweep(sweep::Args),
 	/// List upstream changes between two fontTools tags, grouped by fontoxide crate.
 	UpstreamReport {
 		/// The tag fontoxide is currently synced to, e.g. 4.68.0.
@@ -55,6 +58,7 @@ fn main() -> Result<()> {
 		#[cfg(feature = "parity")]
 		Command::Parity(args) => parity::run(&args),
 		Command::Coverage(args) => coverage::run(&args),
+		Command::Sweep(args) => sweep::run(&args),
 		Command::UpstreamReport { from, to } => upstream_report::run(&from, &to),
 	}
 }

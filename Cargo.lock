@@ -245,7 +245,10 @@ name = "fontoxide"
 version = "0.0.0"
 dependencies = [
  "fontoxide-agl",
+ "fontoxide-colorlib",
  "fontoxide-cu2qu",
+ "fontoxide-designspacelib",
+ "fontoxide-fealib",
  "fontoxide-misc",
  "fontoxide-otllib",
  "fontoxide-pens",
@@ -263,6 +266,17 @@ name = "fontoxide-agl"
 version = "0.0.0"
 
 [[package]]
+name = "fontoxide-colorlib"
+version = "0.0.0"
+dependencies = [
+ "fontoxide-misc",
+ "fontoxide-ttlib",
+ "indexmap",
+ "log",
+ "thiserror",
+]
+
+[[package]]
 name = "fontoxide-cu2qu"
 version = "0.0.0"
 dependencies = [
@@ -271,13 +285,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "fontoxide-designspacelib"
+version = "0.0.0"
+dependencies = [
+ "fontoxide-misc",
+ "indexmap",
+ "log",
+ "thiserror",
+]
+
+[[package]]
 name = "fontoxide-encodings"
 version = "0.0.0"
+
+[[package]]
+name = "fontoxide-fealib"
+version = "0.0.0"
+dependencies = [
+ "fontoxide-designspacelib",
+ "fontoxide-encodings",
+ "fontoxide-misc",
+ "fontoxide-otllib",
+ "fontoxide-ttlib",
+ "fontoxide-varlib",
+ "indexmap",
+ "log",
+ "thiserror",
+]
 
 [[package]]
 name = "fontoxide-misc"
 version = "0.0.0"
 dependencies = [
+ "indexmap",
  "log",
  "roxmltree",
  "thiserror",
@@ -325,6 +365,7 @@ dependencies = [
 name = "fontoxide-subset"
 version = "0.0.0"
 dependencies = [
+ "fontoxide-colorlib",
  "fontoxide-misc",
  "fontoxide-otllib",
  "fontoxide-pens",
@@ -363,9 +404,11 @@ name = "fontoxide-varlib"
 version = "0.0.0"
 dependencies = [
  "fontoxide-misc",
+ "fontoxide-otllib",
  "fontoxide-pens",
  "fontoxide-subset",
  "fontoxide-ttlib",
+ "indexmap",
  "log",
 ]
 

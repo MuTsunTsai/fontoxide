@@ -308,14 +308,7 @@ fn effective_var_idx(
 
 /// `builder.buildDeltaSetIndexMap`: `None` for the identity mapping.
 fn build_delta_set_index_map(mapping: Vec<u64>) -> Option<Box<DeltaSetIndexMap>> {
-	if mapping.iter().enumerate().all(|(i, &v)| i as u64 == v) {
-		return None;
-	}
-	let format = u16::from(mapping.len() > 0xFFFF);
-	Some(Box::new(DeltaSetIndexMap {
-		format: Some(format),
-		mapping,
-	}))
+	crate::builder::build_delta_set_index_map(mapping).map(Box::new)
 }
 
 fn coordinate_is_nonzero(var: &TupleVariation, inner: usize) -> Result<bool> {

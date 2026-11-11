@@ -1,0 +1,22 @@
+[package]
+name = "fontoxide-colorlib"
+description = "Building COLR and CPAL tables; a port of fontTools.colorLib"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+fontoxide-misc.workspace = true
+fontoxide-ttlib.workspace = true
+indexmap.workspace = true
+log.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true
