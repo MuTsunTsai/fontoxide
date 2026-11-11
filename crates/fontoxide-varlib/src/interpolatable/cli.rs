@@ -16,7 +16,7 @@ use indexmap::IndexSet;
 
 use super::helpers::Location;
 use super::{
-	Backend, DEFAULT_KINKINESS, DEFAULT_TOLERANCE, DEFAULT_UPEM, InterpolatableError,
+	DEFAULT_KINKINESS, DEFAULT_TOLERANCE, DEFAULT_UPEM, InterpolatableError,
 	InterpolatableGlyphSet, Problem, Problems, Result, TestOptions, problems_to_json,
 	sort_problems, test_gen,
 };
@@ -683,19 +683,10 @@ pub fn main(args: &[&str]) -> Result<i32> {
 /// `main(args)`: checks the fonts given on the command line, writes the report
 /// to `out` (or to `--output`), and returns the problems, sorted by
 /// [`sort_problems`], or `None` if there are none.
-pub fn run(args: &[&str], out: &mut dyn Write) -> Result<Option<Problems>> {
-	run_with_backend(args, out, Backend::default())
-}
-
-/// [`run`] with the given [`Backend`].
 ///
 /// LENIENT(L40): the PDF, PostScript and HTML reports, and `.glyphs` sources, are
 /// not supported.
-pub fn run_with_backend(
-	args: &[&str],
-	out: &mut dyn Write,
-	backend: Backend,
-) -> Result<Option<Problems>> {
+pub fn run(args: &[&str], out: &mut dyn Write) -> Result<Option<Problems>> {
 	let args = parse_args(args)?;
 	if args.help {
 		out.write_all(HELP.as_bytes())?;
@@ -948,7 +939,6 @@ pub fn run_with_backend(
 		upem,
 		show_all: args.show_all,
 		discrete_axes,
-		backend,
 	};
 	let sets: Vec<&dyn InterpolatableGlyphSet> = glyph_sets
 		.iter()

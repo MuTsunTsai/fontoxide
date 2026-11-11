@@ -1567,17 +1567,17 @@ fonttools = "4.68.0"
 "Tests/pens/filterPen_test.py::test_decomposing_filter_point_pen_reverse_flipped_no" = "ported"
 "Tests/pens/filterPen_test.py::test_decomposing_filter_point_pen_reverse_flipped_on_curve_first" = "ported"
 "Tests/pens/filterPen_test.py::test_filter_point_pen_positional_identifier" = "ported"
-"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_bbox_and_cbox" = "pending"
-"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_contain" = "pending"
-"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_cubic_vs_quadratic" = "pending"
-"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_draw" = "pending"
-"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_empty" = "pending"
-"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_even_odd_fill" = "pending"
-"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_non_zero_fill" = "pending"
-"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_none_size" = "pending"
-"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_rotate" = "pending"
-"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_skew" = "pending"
-"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_zero_size" = "pending"
+"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_bbox_and_cbox" = { status = "n/a", note = "rasterizes with FreeType; fontoxide provides the outlines, not the rendering" }
+"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_contain" = { status = "n/a", note = "rasterizes with FreeType; fontoxide provides the outlines, not the rendering" }
+"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_cubic_vs_quadratic" = { status = "n/a", note = "rasterizes with FreeType; fontoxide provides the outlines, not the rendering" }
+"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_draw" = { status = "n/a", note = "rasterizes with FreeType; fontoxide provides the outlines, not the rendering" }
+"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_empty" = { status = "n/a", note = "rasterizes with FreeType; fontoxide provides the outlines, not the rendering" }
+"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_even_odd_fill" = { status = "n/a", note = "rasterizes with FreeType; fontoxide provides the outlines, not the rendering" }
+"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_non_zero_fill" = { status = "n/a", note = "rasterizes with FreeType; fontoxide provides the outlines, not the rendering" }
+"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_none_size" = { status = "n/a", note = "rasterizes with FreeType; fontoxide provides the outlines, not the rendering" }
+"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_rotate" = { status = "n/a", note = "rasterizes with FreeType; fontoxide provides the outlines, not the rendering" }
+"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_skew" = { status = "n/a", note = "rasterizes with FreeType; fontoxide provides the outlines, not the rendering" }
+"Tests/pens/freetypePen_test.py::FreeTypePenTest::test_zero_size" = { status = "n/a", note = "rasterizes with FreeType; fontoxide provides the outlines, not the rendering" }
 "Tests/pens/hashPointPen_test.py::HashPointPenTest::test_NestedComponents" = "ported"
 "Tests/pens/hashPointPen_test.py::HashPointPenTest::test_addComponent" = "ported"
 "Tests/pens/hashPointPen_test.py::HashPointPenTest::test_addComponent_missing_raises" = "ported"

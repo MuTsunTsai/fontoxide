@@ -6,9 +6,11 @@ hardly any problems. This script saves, for each font set the tests use and
 for a few more:
 
 - <case>.txt: the output of `main` with several options (text and JSON
-  reports, `--show-all`) and the problems it returns, with SciPy;
-- <case>.fallback.txt: the same without SciPy and munkres (brute-force
-  matching, masters compared in order), simulated by hiding them.
+  reports, `--show-all`) and the problems it returns.
+
+fontoxide matches fontTools with all its extras, so SciPy (a dependency of the
+reference environment) is used; the fallbacks fontTools takes without it are
+not ported, and have no fixtures.
 
 It also builds synthetic masters with every kind of problem (contour order,
 starting points, reversed contours, kinks, underweight contours, incompatible
@@ -33,13 +35,12 @@ import random
 import shutil
 import sys
 import tempfile
-from contextlib import contextmanager, redirect_stdout
+from contextlib import redirect_stdout
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "upstream" / "fonttools" / "Lib"))
 sys.dont_write_bytecode = True
 
-import numpy as np
 from scipy.optimize import linear_sum_assignment
 from scipy.sparse.csgraph import minimum_spanning_tree
 
@@ -50,7 +51,6 @@ from fontTools.pens.ttGlyphPen import TTGlyphPen
 from fontTools.ttLib import TTFont
 from fontTools.ttLib.beyond64k import upper_tables
 from fontTools.ufoLib import UFOWriter
-import fontTools.varLib.interpolatableHelpers as H
 from fontTools.varLib.interpolatable import main
 
 DATA = ROOT / "upstream" / "fonttools" / "Tests" / "varLib" / "data"
@@ -64,27 +64,13 @@ VARIANTS = [[], ["--json"], ["--show-all"], ["--show-all", "--json"], ["--ignore
 
 def synthetic_variants(small):
 	"""The option sets of the synthetic masters: `small` are the glyphs with at
-	most six contours, which the brute-force matching of fontTools can handle."""
+	most six contours."""
 	return [
 		[],
 		["--json"],
 		["--quiet", "--tolerance", "0.99", "--kinkiness", "0.2"],
 		["--show-all", "--glyphs", " ".join(small)],
 	]
-
-
-@contextmanager
-def fallback():
-	"""fontTools without SciPy and munkres."""
-	saved = H.min_cost_perfect_bipartite_matching
-	csgraph = sys.modules.get("scipy.sparse.csgraph")
-	H.min_cost_perfect_bipartite_matching = H.min_cost_perfect_bipartite_matching_bruteforce
-	sys.modules["scipy.sparse.csgraph"] = None  # import raises ImportError
-	try:
-		yield
-	finally:
-		H.min_cost_perfect_bipartite_matching = saved
-		sys.modules["scipy.sparse.csgraph"] = csgraph
 
 
 def compile_font(path, suffix, temp_dir):
@@ -119,15 +105,8 @@ def run(args, inputs):
 
 
 def save_case(name, inputs, variants=VARIANTS):
-	for suffix, ctx in ((".txt", None), (".fallback.txt", fallback)):
-		text = ""
-		for args in variants:
-			if ctx is None:
-				text += run(args, inputs)
-			else:
-				with ctx():
-					text += run(args, inputs)
-		(OUT / (name + suffix)).write_text(text, encoding="utf-8", newline="\n")
+	text = "".join(run(args, inputs) for args in variants)
+	(OUT / (name + ".txt")).write_text(text, encoding="utf-8", newline="\n")
 
 
 # ---------------------------------------------------------------------------

@@ -9,12 +9,11 @@
 //! | [`test_starting_point()`] | `fontTools.varLib.interpolatableTestStartingPoint` |
 //! | [`scipy`]                 | the SciPy routines fontTools uses                  |
 //!
-//! fontTools prefers SciPy for the minimum-cost matching of contours and for
-//! ordering the masters, and falls back on its own code when SciPy (and
-//! `munkres`) are not installed. The two give different results, so both are
-//! available as a [`Backend`]; the default is SciPy, which the `interpolatable`
-//! extra of fontTools installs. Without SciPy, fontTools cannot match glyphs of
-//! more than six contours.
+//! fontTools uses SciPy, when installed, for the minimum-cost matching of
+//! contours and for ordering the masters; the `interpolatable` extra of
+//! fontTools installs it. Like the rest of fontoxide, this module matches
+//! fontTools with all its extras: both SciPy routines are ported exactly (see
+//! [`scipy`]), and the fallbacks fontTools takes without SciPy are not.
 //!
 //! The PDF, PostScript and HTML reports (`interpolatablePlot`, which needs
 //! cairo) are not ported; the text and JSON reports are.
@@ -36,7 +35,7 @@ use fontoxide_pens::statistics_pen::{Statistics, StatisticsControlPen, Statistic
 use fontoxide_pens::{Pen, Point};
 use indexmap::IndexMap;
 
-pub use cli::{main, run, run_with_backend};
+pub use cli::{main, run};
 pub use helpers::{
 	ContourVector, Isomorphism, Location, PerContourOrComponentPen, SimpleRecordingPointPen,
 	add_isomorphisms, contour_vector_from_stats, find_parents_and_order, matching_for_vectors,
@@ -93,20 +92,6 @@ pub enum InterpolatableError {
 
 /// A `Result` with an [`InterpolatableError`].
 pub type Result<T> = std::result::Result<T, InterpolatableError>;
-
-/// Which optional Python modules fontTools would find.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum Backend {
-	/// SciPy is installed: contours are matched with
-	/// `scipy.optimize.linear_sum_assignment`, and the masters are compared
-	/// along a minimum spanning tree of their locations.
-	#[default]
-	Scipy,
-	/// Neither SciPy nor `munkres` is installed: contours are matched by brute
-	/// force, which fails beyond six contours, and each master is compared to
-	/// the previous one.
-	Fallback,
-}
 
 /// The kinds of problems (`InterpolatableProblem`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -779,8 +764,6 @@ pub struct TestOptions {
 	pub show_all: bool,
 	/// The names of the discrete axes (`discrete_axes`).
 	pub discrete_axes: BTreeSet<String>,
-	/// Which optional modules fontTools would find.
-	pub backend: Backend,
 }
 
 impl Default for TestOptions {
@@ -793,7 +776,6 @@ impl Default for TestOptions {
 			upem: DEFAULT_UPEM,
 			show_all: false,
 			discrete_axes: BTreeSet::new(),
-			backend: Backend::default(),
 		}
 	}
 }
@@ -869,7 +851,6 @@ pub fn test_gen(
 		glyph_sets.len(),
 		options.locations.as_deref(),
 		&options.discrete_axes,
-		options.backend,
 	)?;
 
 	let pair = |m0: usize, m1: usize| MasterPair {
@@ -997,7 +978,7 @@ pub fn test_gen(
 			// InterpolatableProblem.CONTOUR_ORDER check
 			//
 
-			let (this_tolerance, matching) = test_contour_order(glyph0, glyph1, options.backend)?;
+			let (this_tolerance, matching) = test_contour_order(glyph0, glyph1)?;
 			if this_tolerance < tolerance
 				&& let Some(matching) = matching
 			{

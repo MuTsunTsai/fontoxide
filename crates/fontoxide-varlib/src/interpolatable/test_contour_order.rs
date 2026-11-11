@@ -1,7 +1,7 @@
 //! Port of `fontTools.varLib.interpolatableTestContourOrder`.
 
 use super::helpers::{ContourVector, matching_for_vectors};
-use super::{Backend, Glyph, Result};
+use super::{Glyph, Result};
 
 /// The contour vectors, if all the contours have them.
 fn all_vectors(vectors: &[Option<ContourVector>]) -> Option<Vec<ContourVector>> {
@@ -21,11 +21,7 @@ fn all_vectors(vectors: &[Option<ContourVector>]) -> Option<Vec<ContourVector>> 
 /// LENIENT(L40): fontTools fails with a `TypeError` when a glyph of several
 /// contours has an open contour, which has no vector; such glyphs are not
 /// checked here.
-pub fn test_contour_order(
-	glyph0: &Glyph,
-	glyph1: &Glyph,
-	backend: Backend,
-) -> Result<(f64, Option<Vec<usize>>)> {
+pub fn test_contour_order(glyph0: &Glyph, glyph1: &Glyph) -> Result<(f64, Option<Vec<usize>>)> {
 	let n = glyph0.control_vectors.len();
 	let mut matching = None;
 	let mut matching_cost = 0.0;
@@ -44,7 +40,7 @@ pub fn test_contour_order(
 	let mut control = None;
 	if !done {
 		let (matching_control, matching_cost_control, identity_cost_control) =
-			matching_for_vectors(&m0_control, &m1_control, backend)?;
+			matching_for_vectors(&m0_control, &m1_control)?;
 		done = matching_cost_control == identity_cost_control;
 		control = Some((
 			matching_control,
@@ -55,7 +51,7 @@ pub fn test_contour_order(
 	let mut green = None;
 	if !done {
 		let (matching_green, matching_cost_green, identity_cost_green) =
-			matching_for_vectors(&m0_green, &m1_green, backend)?;
+			matching_for_vectors(&m0_green, &m1_green)?;
 		done = matching_cost_green == identity_cost_green;
 		green = Some((matching_green, matching_cost_green, identity_cost_green));
 	}
@@ -76,11 +72,11 @@ pub fn test_contour_order(
 				.collect()
 		};
 		let (_, matching_cost_control_reversed, identity_cost_control_reversed) =
-			matching_for_vectors(&m0_control, &reversed(&m1_control), backend)?;
+			matching_for_vectors(&m0_control, &reversed(&m1_control))?;
 		done = matching_cost_control_reversed == identity_cost_control_reversed;
 		if !done {
 			let (_, matching_cost_green_reversed, identity_cost_green_reversed) =
-				matching_for_vectors(&m0_green, &reversed(&m1_green), backend)?;
+				matching_for_vectors(&m0_green, &reversed(&m1_green))?;
 			done = matching_cost_green_reversed == identity_cost_green_reversed;
 		}
 

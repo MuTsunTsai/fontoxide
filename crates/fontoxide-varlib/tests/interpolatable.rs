@@ -3,8 +3,8 @@
 //! Besides the assertions of the upstream tests, the complete reports of
 //! `main` (text, JSON, `--show-all`, and the problems returned) are compared
 //! with those of fontTools for every font set the tests use, a few more, and
-//! synthetic masters with every kind of problem, with and without SciPy. The
-//! references come from `tools/reference/interpolatable_fixtures.py`.
+//! synthetic masters with every kind of problem. The references come from
+//! `tools/reference/interpolatable_fixtures.py` (fontTools with SciPy).
 
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
@@ -22,8 +22,8 @@ use fontoxide_ufolib::{
 use fontoxide_varlib::interpolatable::helpers::Location;
 use fontoxide_varlib::interpolatable::scipy::{linear_sum_assignment, minimum_spanning_tree};
 use fontoxide_varlib::interpolatable::{
-	Backend, InterpolatableError, MasterPair, Problem, Problems, find_parents_and_order,
-	problems_to_json, run, run_with_backend,
+	InterpolatableError, MasterPair, Problem, Problems, find_parents_and_order, problems_to_json,
+	run,
 };
 
 type TestResult<T = ()> = Result<T, Box<dyn std::error::Error>>;
@@ -134,11 +134,11 @@ fn strs(v: &[String]) -> Vec<&str> {
 }
 
 /// The report of `main` as the fixture script writes it.
-fn report(args: &[&str], inputs: &[String], backend: Backend) -> String {
+fn report(args: &[&str], inputs: &[String]) -> String {
 	let mut all: Vec<&str> = args.to_vec();
 	all.extend(strs(inputs));
 	let mut out = Vec::new();
-	let result = run_with_backend(&all, &mut out, backend);
+	let result = run(&all, &mut out);
 	let mut text = format!("=== {}\n{}", args.join("\t"), String::from_utf8_lossy(&out));
 	match result {
 		Ok(None) => text.push_str("--- return\nNone\n"),
@@ -156,45 +156,39 @@ fn report(args: &[&str], inputs: &[String], backend: Backend) -> String {
 	text
 }
 
-/// Compares the reports of `main` with those of fontTools, with and without
-/// SciPy. `lenient` lists the option sets whose fontTools report ends with an
-/// error that fontoxide does not raise.
+/// Compares the reports of `main` with those of fontTools. `lenient` lists the
+/// option sets whose fontTools report ends with an error that fontoxide does
+/// not raise.
 fn check_case_with(name: &str, inputs: &[String], lenient: &[&str]) -> TestResult {
-	for (suffix, backend) in [
-		(".txt", Backend::Scipy),
-		(".fallback.txt", Backend::Fallback),
-	] {
-		let expected =
-			std::fs::read_to_string(Path::new(FIXTURES).join(format!("{name}{suffix}")))?;
-		let expected = expected.replace("\r\n", "\n");
-		for block in expected.split("=== ").skip(1) {
-			let header = block.lines().next().unwrap_or_default();
-			let args: Vec<&str> = header.split('\t').filter(|a| !a.is_empty()).collect();
-			let expected = format!("=== {block}");
-			let actual = report(&args, inputs, backend);
-			if lenient.contains(&header) {
-				// fontTools fails; fontoxide reports the same lines first.
-				let (expected_head, _) = expected
-					.split_once("--- error\n")
-					.ok_or("expected an error")?;
-				assert!(
-					actual.starts_with(expected_head),
-					"{name}{suffix} [{header}]:\n{actual}"
-				);
-				continue;
-			}
-			if actual != expected {
-				let first = actual
-					.lines()
-					.zip(expected.lines())
-					.position(|(a, b)| a != b)
-					.unwrap_or(0);
-				panic!(
-					"{name}{suffix} [{header}] differs at line {first}:\n  actual:   {:?}\n  expected: {:?}",
-					actual.lines().nth(first),
-					expected.lines().nth(first)
-				);
-			}
+	let expected = std::fs::read_to_string(Path::new(FIXTURES).join(format!("{name}.txt")))?;
+	let expected = expected.replace("\r\n", "\n");
+	for block in expected.split("=== ").skip(1) {
+		let header = block.lines().next().unwrap_or_default();
+		let args: Vec<&str> = header.split('\t').filter(|a| !a.is_empty()).collect();
+		let expected = format!("=== {block}");
+		let actual = report(&args, inputs);
+		if lenient.contains(&header) {
+			// fontTools fails; fontoxide reports the same lines first.
+			let (expected_head, _) = expected
+				.split_once("--- error\n")
+				.ok_or("expected an error")?;
+			assert!(
+				actual.starts_with(expected_head),
+				"{name} [{header}]:\n{actual}"
+			);
+			continue;
+		}
+		if actual != expected {
+			let first = actual
+				.lines()
+				.zip(expected.lines())
+				.position(|(a, b)| a != b)
+				.unwrap_or(0);
+			panic!(
+				"{name} [{header}] differs at line {first}:\n  actual:   {:?}\n  expected: {:?}",
+				actual.lines().nth(first),
+				expected.lines().nth(first)
+			);
 		}
 	}
 	Ok(())
@@ -775,7 +769,7 @@ fn test_find_parents_and_order_scipy() -> TestResult {
 	for (locations, discrete_axes, parents, order) in cases {
 		let discrete: BTreeSet<String> = discrete_axes.iter().map(|s| (*s).to_owned()).collect();
 		let (actual_parents, actual_order) =
-			find_parents_and_order(locations.len(), Some(&locations), &discrete, Backend::Scipy)?;
+			find_parents_and_order(locations.len(), Some(&locations), &discrete)?;
 		assert_eq!(actual_parents, parents);
 		assert_eq!(actual_order, order);
 	}
@@ -784,11 +778,9 @@ fn test_find_parents_and_order_scipy() -> TestResult {
 
 #[test]
 fn test_find_parents_and_order_without_locations() -> TestResult {
-	for backend in [Backend::Scipy, Backend::Fallback] {
-		let (parents, order) = find_parents_and_order(3, None, &BTreeSet::new(), backend)?;
-		assert_eq!(parents, [None, Some(0), Some(1)]);
-		assert_eq!(order, [0, 1, 2]);
-	}
+	let (parents, order) = find_parents_and_order(3, None, &BTreeSet::new())?;
+	assert_eq!(parents, [None, Some(0), Some(1)]);
+	assert_eq!(order, [0, 1, 2]);
 	Ok(())
 }
 

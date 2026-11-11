@@ -41,6 +41,9 @@ indexmap = "2.7"
 log = "0.4.35"
 roxmltree = "0.21.2"
 thiserror = "2.0.21"
+# Zipped UFOs: deflate only, through flate2, whose backend is the pure-Rust default
+# (miniz_oxide) of the `flate2` entry above, so that it builds for wasm32-unknown-unknown.
+zip = { version = "9.5.1", default-features = false, features = ["deflate-flate2"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

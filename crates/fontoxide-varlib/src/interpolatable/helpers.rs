@@ -10,7 +10,7 @@ use fontoxide_pens::statistics_pen::Statistics;
 use fontoxide_pens::{BasePen, Pen, Point, PointPen, SegmentType, Transform};
 
 use super::scipy::{linear_sum_assignment, minimum_spanning_tree};
-use super::{Backend, InterpolatableError, Problem, ProblemType, Problems, Result};
+use super::{InterpolatableError, Problem, ProblemType, Problems, Result};
 
 /// A location as a Python `dict`: axis names and values, in insertion order.
 pub type Location = Vec<(String, f64)>;
@@ -252,62 +252,10 @@ pub fn min_cost_perfect_bipartite_matching_scipy(g: &[Vec<f64>]) -> Result<(Vec<
 	Ok((cols, cost))
 }
 
-/// `min_cost_perfect_bipartite_matching_bruteforce(G)`: the first permutation,
-/// in lexicographic order, of the lowest cost. Fails beyond six rows, as
-/// fontTools does.
-pub fn min_cost_perfect_bipartite_matching_bruteforce(g: &[Vec<f64>]) -> Result<(Vec<usize>, f64)> {
-	let n = g.len();
-	if n > 6 {
-		return Err(InterpolatableError::Value(
-			"Install Python module 'munkres' or 'scipy >= 0.17.0'".into(),
-		));
-	}
-	// `itertools.permutations(range(n))` yields the permutations in
-	// lexicographic order.
-	let mut p: Vec<usize> = (0..n).collect();
-	let mut best = p.clone();
-	let mut best_cost = matching_cost(g, &best);
-	while next_permutation(&mut p) {
-		let cost = matching_cost(g, &p);
-		if cost < best_cost {
-			best.clone_from(&p);
-			best_cost = cost;
-		}
-	}
-	Ok((best, best_cost))
-}
-
-/// The next permutation in lexicographic order; false after the last one.
-fn next_permutation(p: &mut [usize]) -> bool {
-	let n = p.len();
-	if n < 2 {
-		return false;
-	}
-	let mut i = n - 1;
-	while i > 0 && p[i - 1] >= p[i] {
-		i -= 1;
-	}
-	if i == 0 {
-		return false;
-	}
-	let mut j = n - 1;
-	while p[j] <= p[i - 1] {
-		j -= 1;
-	}
-	p.swap(i - 1, j);
-	p[i..].reverse();
-	true
-}
-
-/// `min_cost_perfect_bipartite_matching(G)` with the given backend.
-pub fn min_cost_perfect_bipartite_matching(
-	g: &[Vec<f64>],
-	backend: Backend,
-) -> Result<(Vec<usize>, f64)> {
-	match backend {
-		Backend::Scipy => min_cost_perfect_bipartite_matching_scipy(g),
-		Backend::Fallback => min_cost_perfect_bipartite_matching_bruteforce(g),
-	}
+/// `min_cost_perfect_bipartite_matching(G)`: fontTools picks the SciPy
+/// implementation when SciPy is installed, as it is with `fonttools[all]`.
+pub fn min_cost_perfect_bipartite_matching(g: &[Vec<f64>]) -> Result<(Vec<usize>, f64)> {
+	min_cost_perfect_bipartite_matching_scipy(g)
 }
 
 /// `contour_vector_from_stats(stats)`.
@@ -329,14 +277,13 @@ pub fn contour_vector_from_stats(stats: &Statistics) -> ContourVector {
 pub fn matching_for_vectors(
 	m0: &[ContourVector],
 	m1: &[ContourVector],
-	backend: Backend,
 ) -> Result<(Vec<usize>, f64, f64)> {
 	let n = m0.len();
 	let costs: Vec<Vec<f64>> = m0
 		.iter()
 		.map(|v0| m1.iter().map(|v1| vdiff_hypot2(v0, v1)).collect())
 		.collect();
-	let (matching, matching_cost) = min_cost_perfect_bipartite_matching(&costs, backend)?;
+	let (matching, matching_cost) = min_cost_perfect_bipartite_matching(&costs)?;
 	let identity_cost = sum_floats((0..n).map(|i| costs[i].get(i).copied().unwrap_or(f64::NAN)));
 	Ok((matching, matching_cost, identity_cost))
 }
@@ -439,21 +386,19 @@ pub fn add_isomorphisms(
 /// master each master is compared to, and the order in which they are
 /// compared, for `count` masters.
 ///
-/// With [`Backend::Scipy`], the masters form a minimum spanning tree of their
-/// locations, traversed from the base masters; otherwise each master is
+/// With locations, the masters form a minimum spanning tree of their
+/// locations, traversed from the base masters; without, each master is
 /// compared to the previous one.
 pub fn find_parents_and_order(
 	count: usize,
 	locations: Option<&[Location]>,
 	discrete_axes: &BTreeSet<String>,
-	backend: Backend,
 ) -> Result<(Vec<Option<usize>>, Vec<usize>)> {
-	let mut parents: Vec<Option<usize>> = (0..count)
-		.map(|i| if i == 0 { None } else { Some(i - 1) })
-		.collect();
-	let mut order: Vec<usize> = (0..count).collect();
 	let Some(locations) = locations.filter(|l| !l.is_empty()) else {
-		return Ok((parents, order));
+		let parents = (0..count)
+			.map(|i| if i == 0 { None } else { Some(i - 1) })
+			.collect();
+		return Ok((parents, (0..count).collect()));
 	};
 	// Order base master first
 	let bases: Vec<usize> = locations
@@ -472,67 +417,65 @@ pub fn find_parents_and_order(
 		log::info!("Found {} base masters: {:?}", bases.len(), bases);
 	}
 
-	if backend == Backend::Scipy {
-		// Form a minimum spanning tree of the locations
-		let n = locations.len();
-		let mut graph = vec![vec![0.0f64; n]; n];
-		let axes: BTreeSet<&String> = locations.iter().flatten().map(|(k, _)| k).collect();
-		let axes: Vec<&String> = axes.into_iter().collect();
-		let get = |l: &Location, k: &str| {
-			l.iter()
-				.rev()
-				.find(|(name, _)| name == k)
-				.map_or(0.0, |(_, v)| *v)
-		};
-		let vectors: Vec<Vec<f64>> = locations
-			.iter()
-			.map(|l| axes.iter().map(|k| get(l, k)).collect())
-			.collect();
-		for i in 0..n {
-			for j in i + 1..n {
-				let discrete = |v: &[f64]| -> Vec<f64> {
-					axes.iter()
-						.zip(v)
-						.filter(|(k, _)| discrete_axes.contains(k.as_str()))
-						.map(|(_, v)| *v)
-						.collect()
-				};
-				if discrete(&vectors[i]) != discrete(&vectors[j]) {
-					continue;
-				}
-				graph[i][j] = vdiff_hypot2(&vectors[i], &vectors[j]);
+	// Form a minimum spanning tree of the locations
+	let n = locations.len();
+	let mut graph = vec![vec![0.0f64; n]; n];
+	let axes: BTreeSet<&String> = locations.iter().flatten().map(|(k, _)| k).collect();
+	let axes: Vec<&String> = axes.into_iter().collect();
+	let get = |l: &Location, k: &str| {
+		l.iter()
+			.rev()
+			.find(|(name, _)| name == k)
+			.map_or(0.0, |(_, v)| *v)
+	};
+	let vectors: Vec<Vec<f64>> = locations
+		.iter()
+		.map(|l| axes.iter().map(|k| get(l, k)).collect())
+		.collect();
+	for i in 0..n {
+		for j in i + 1..n {
+			let discrete = |v: &[f64]| -> Vec<f64> {
+				axes.iter()
+					.zip(v)
+					.filter(|(k, _)| discrete_axes.contains(k.as_str()))
+					.map(|(_, v)| *v)
+					.collect()
+			};
+			if discrete(&vectors[i]) != discrete(&vectors[j]) {
+				continue;
 			}
+			graph[i][j] = vdiff_hypot2(&vectors[i], &vectors[j]);
 		}
+	}
 
-		let tree = minimum_spanning_tree(&graph);
-		let mut adjacency: HashMap<usize, BTreeSet<usize>> = HashMap::new();
-		for (row, col) in tree {
-			adjacency.entry(row).or_default().insert(col);
-			adjacency.entry(col).or_default().insert(row);
-		}
+	let tree = minimum_spanning_tree(&graph);
+	let mut adjacency: HashMap<usize, BTreeSet<usize>> = HashMap::new();
+	for (row, col) in tree {
+		adjacency.entry(row).or_default().insert(col);
+		adjacency.entry(col).or_default().insert(row);
+	}
 
-		// Traverse graph from the base and assign parents
-		parents = vec![None; n];
-		order = Vec::new();
-		let mut visited = vec![false; n];
-		let mut queue: VecDeque<usize> = bases.iter().copied().collect();
-		while let Some(i) = queue.pop_front() {
-			visited[i] = true;
-			order.push(i);
-			if let Some(neighbors) = adjacency.get(&i) {
-				for &j in neighbors {
-					if !visited[j] {
-						parents[j] = Some(i);
-						queue.push_back(j);
-					}
+	// Traverse graph from the base and assign parents
+	let mut parents = vec![None; n];
+	let mut order = Vec::new();
+	let mut visited = vec![false; n];
+	let mut queue: VecDeque<usize> = bases.iter().copied().collect();
+	while let Some(i) = queue.pop_front() {
+		visited[i] = true;
+		order.push(i);
+		if let Some(neighbors) = adjacency.get(&i) {
+			for &j in neighbors {
+				if !visited[j] {
+					parents[j] = Some(i);
+					queue.push_back(j);
 				}
 			}
 		}
-		if order.len() != parents.len() {
-			return Err(InterpolatableError::Assertion(
-				"Not all masters are reachable; report an issue".into(),
-			));
-		}
+	}
+	if order.len() != parents.len() {
+		return Err(InterpolatableError::Assertion(
+			"Not all masters are reachable; report an issue".into(),
+		));
 	}
 
 	log::info!("Parents: {parents:?}");

@@ -28,7 +28,7 @@ pub struct Args {
 /// The parity runs measured: the arguments of `cargo xtask parity`.
 const PARITY_RUNS: &[&[&str]] = &[
 	&[],
-	&["--repacker"],
+	&["--no-repacker"],
 	&["--op", "subset"],
 	&["--op", "instance"],
 	&["--op", "mutator"],

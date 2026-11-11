@@ -1,3 +1,0 @@
-=== --json
---- error
-Install Python module 'munkres' or 'scipy >= 0.17.0'

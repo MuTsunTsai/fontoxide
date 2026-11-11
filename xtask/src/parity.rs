@@ -23,9 +23,11 @@ pub struct Args {
 	/// Operations to compare (default: all).
 	#[arg(long = "op", value_enum)]
 	ops: Vec<Op>,
-	/// Compare against fontTools with the HarfBuzz repacker enabled.
+	/// Pack GSUB and GPOS without the HarfBuzz repacker on both sides
+	/// (fontTools' `USE_HARFBUZZ_REPACKER=False`). By default both use it, as
+	/// fontTools does when uharfbuzz is installed.
 	#[arg(long)]
-	repacker: bool,
+	no_repacker: bool,
 	/// Options of the `subset` op, as `pyftsubset` takes them (e.g.
 	/// `--subset-option=--desubroutinize`).
 	#[arg(long = "subset-option", allow_hyphen_values = true)]
@@ -426,7 +428,7 @@ pub fn run(args: &Args) -> Result<()> {
 			} else {
 				Vec::new()
 			};
-		let ttx_params = job_params(Op::Ttx, args.repacker);
+		let ttx_params = job_params(Op::Ttx, !args.no_repacker);
 		let ttx_ref = reference_output(&ref_dir, Op::Ttx, &key, &ttx_params);
 		let mut scheduled_ttx = false;
 		for &op in ops
@@ -436,7 +438,7 @@ pub fn run(args: &Args) -> Result<()> {
 			// Only variable fonts can be instantiated.
 			.filter(|&&op| !matches!(op, Op::Instance | Op::Mutator) || !instance_limits.is_empty())
 		{
-			let mut params = job_params(op, args.repacker);
+			let mut params = job_params(op, !args.no_repacker);
 			let mut vacuous = None;
 			if op == Op::Subset {
 				let (unicodes, gids) = subset_request(&std::fs::read(font)?);
@@ -580,7 +582,7 @@ fn evaluate(case: &Case, args: &Args) -> Result<Vec<Record>> {
 		ours(
 			case.op,
 			&input,
-			args.repacker,
+			!args.no_repacker,
 			&args.subset_options,
 			args.instance_limits,
 			&args.instance_options,

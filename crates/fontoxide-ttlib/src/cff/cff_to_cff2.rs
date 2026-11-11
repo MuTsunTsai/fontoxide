@@ -272,6 +272,9 @@ fn convert_font_set(cff: &mut CffFontSet, font: &mut Font) -> Result<()> {
 /// `convertCFFToCFF2`: converts the `CFF ` table of a font to a `CFF2` table.
 pub fn convert_cff_to_cff2(font: &mut Font) -> Result<()> {
 	let mut cff = std::mem::take(&mut font.require::<Cff>()?.cff);
+	// UPSTREAM-BUG(B51): the CFF table is removed before the glyph order of a freshly
+	// read font is known, so it is then derived from `post` or `cmap`, and compiling
+	// the CFF2 table fails when those names differ from the CFF charset.
 	font.remove(Tag::new(b"CFF "));
 	convert_font_set(&mut cff, font)?;
 	font.insert(Box::new(Cff2 { cff }));
