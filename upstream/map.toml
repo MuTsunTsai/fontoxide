@@ -4,12 +4,8 @@
 # leave it out until the part is ported, and update it after each sync.
 
 [[map]]
-upstream = "Lib/fontTools/afmLib/"
-rust = ["fontoxide-afmlib"]
-
-[[map]]
 upstream = "Tests/afmLib/"
-rust = ["fontoxide-afmlib"]
+rust = ["fontoxide-misc"]
 
 # cffLib lives in fontoxide-ttlib (its `cff` module), since CFF2 uses the
 # generated OpenType types and the tables are tied to `Font`.
@@ -172,12 +168,8 @@ upstream = "Tests/t1Lib/"
 rust = ["fontoxide-t1lib"]
 
 [[map]]
-upstream = "Lib/fontTools/tfmLib/"
-rust = ["fontoxide-tfmlib"]
-
-[[map]]
 upstream = "Tests/tfmLib/"
-rust = ["fontoxide-tfmlib"]
+rust = ["fontoxide-misc"]
 
 [[map]]
 upstream = "Lib/fontTools/ttLib/"
@@ -229,13 +221,14 @@ rust = ["fontoxide-voltlib"]
 upstream = "Tests/voltLib/"
 rust = ["fontoxide-voltlib"]
 
+# The small top-level modules agl, afmLib and tfmLib are modules of fontoxide-misc.
 [[map]]
 upstream = "Lib/fontTools/afmLib.py"
-rust = ["fontoxide-afmlib"]
+rust = ["fontoxide-misc"]
 
 [[map]]
 upstream = "Lib/fontTools/agl.py"
-rust = ["fontoxide-agl"]
+rust = ["fontoxide-misc"]
 
 [[map]]
 upstream = "Lib/fontTools/fontBuilder.py"
@@ -255,7 +248,7 @@ rust = ["fontoxide-unicodedata"]
 
 [[map]]
 upstream = "Lib/fontTools/tfmLib.py"
-rust = ["fontoxide-tfmlib"]
+rust = ["fontoxide-misc"]
 
 [[map]]
 upstream = "Lib/fontTools/__main__.py"
@@ -305,7 +298,7 @@ rust = ["fontoxide-cli"]
 
 [[map]]
 upstream = "Tests/agl_test.py"
-rust = ["fontoxide-agl"]
+rust = ["fontoxide-misc"]
 
 [[map]]
 upstream = "Tests/config_test.py"

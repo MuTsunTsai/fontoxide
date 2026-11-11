@@ -114,7 +114,14 @@ pub enum Error {
 }
 
 fn usage(message: impl std::fmt::Display) -> Error {
-	Error::Usage(format!("{USAGE}\nqu2cu: error: {message}"))
+	Error::Usage(
+		fontoxide_misc::cli_tools::program_text(
+			&format!("{USAGE}\nqu2cu: error: {message}"),
+			"qu2cu",
+			"qu2cu",
+		)
+		.into_owned(),
+	)
 }
 
 /// The options of [`font_to_cubic`] (the keyword arguments of
@@ -232,7 +239,10 @@ fn basename(path: &str) -> &str {
 pub fn main(args: &[&str]) -> Result<i32, Error> {
 	let parsed = argparse::parse(args, SPECS, "INPUT").map_err(usage)?;
 	if parsed.flag("--help") {
-		print!("{HELP}");
+		print!(
+			"{}",
+			fontoxide_misc::cli_tools::program_text(HELP, "qu2cu", "qu2cu")
+		);
 		return Ok(0);
 	}
 	if parsed.flag("--version") {

@@ -12,7 +12,6 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-fontoxide-agl.workspace = true
 fontoxide-encodings.workspace = true
 fontoxide-misc.workspace = true
 fontoxide-pens.workspace = true

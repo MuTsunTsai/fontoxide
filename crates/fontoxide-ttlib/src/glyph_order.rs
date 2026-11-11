@@ -89,7 +89,7 @@ pub fn synthesized_name(gid: u32) -> String {
 /// A glyph name for a code point (`TTFont._makeGlyphName`): its AGL name if it has
 /// one, otherwise `uniXXXX` or `uXXXXX`.
 pub fn make_glyph_name(codepoint: u32) -> String {
-	if let Some(name) = fontoxide_agl::uv2agl(codepoint) {
+	if let Some(name) = fontoxide_misc::agl::uv2agl(codepoint) {
 		name.to_owned()
 	} else if codepoint <= 0xFFFF {
 		format!("uni{codepoint:04X}")

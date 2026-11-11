@@ -1,6 +1,6 @@
 [package]
 name = "fontoxide-misc"
-description = "Miscellaneous font utilities; a port of fontTools.misc"
+description = "Miscellaneous font utilities; a port of fontTools.misc, agl, afmLib and tfmLib"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

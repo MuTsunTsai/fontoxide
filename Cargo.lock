@@ -271,8 +271,6 @@ dependencies = [
 name = "fontoxide"
 version = "0.0.0"
 dependencies = [
- "fontoxide-afmlib",
- "fontoxide-agl",
  "fontoxide-colorlib",
  "fontoxide-cu2qu",
  "fontoxide-designspacelib",
@@ -287,7 +285,6 @@ dependencies = [
  "fontoxide-subset",
  "fontoxide-svglib",
  "fontoxide-t1lib",
- "fontoxide-tfmlib",
  "fontoxide-ttlib",
  "fontoxide-ufolib",
  "fontoxide-unicodedata",
@@ -295,19 +292,6 @@ dependencies = [
  "fontoxide-voltlib",
  "indexmap",
 ]
-
-[[package]]
-name = "fontoxide-afmlib"
-version = "0.0.0"
-dependencies = [
- "fontoxide-misc",
- "indexmap",
- "thiserror",
-]
-
-[[package]]
-name = "fontoxide-agl"
-version = "0.0.0"
 
 [[package]]
 name = "fontoxide-cli"
@@ -492,21 +476,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "fontoxide-tfmlib"
-version = "0.0.0"
-dependencies = [
- "fontoxide-misc",
- "indexmap",
- "thiserror",
-]
-
-[[package]]
 name = "fontoxide-ttlib"
 version = "0.0.0"
 dependencies = [
  "brotli",
  "flate2",
- "fontoxide-agl",
  "fontoxide-encodings",
  "fontoxide-misc",
  "fontoxide-pens",

@@ -37,7 +37,14 @@ options:
 
 /// An `argparse` error.
 fn usage(message: String) -> Error {
-	Error::value(format!("fonttools pens.svgPathPen: error: {message}"))
+	Error::value(
+		fontoxide_misc::cli_tools::program_text(
+			&format!("fonttools pens.svgPathPen: error: {message}"),
+			"fonttools pens.svgPathPen",
+			"pens.svgPathPen",
+		)
+		.into_owned(),
+	)
 }
 
 /// The command line `fonttools pens.svgPathPen` (`main`), "Generate
@@ -76,7 +83,14 @@ pub fn run(args: &[&str], out: &mut dyn Write) -> Result<i32> {
 		match name {
 			"--" => only_positional = true,
 			"-h" | "--help" => {
-				out.write_all(HELP.as_bytes())?;
+				out.write_all(
+					fontoxide_misc::cli_tools::program_text(
+						HELP,
+						"fonttools pens.svgPathPen",
+						"pens.svgPathPen",
+					)
+					.as_bytes(),
+				)?;
 				return Ok(0);
 			}
 			"-y" => y = Some(value("-y")?),

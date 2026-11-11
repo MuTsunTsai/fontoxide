@@ -128,7 +128,7 @@ impl Post {
 		for (i, &index) in indices.iter().take(glyph_count).enumerate() {
 			glyph_order[i] = if index == 0xFFFF {
 				String::new()
-			} else if let Some(name) = fontoxide_agl::uv2agl(index as u32) {
+			} else if let Some(name) = fontoxide_misc::agl::uv2agl(index as u32) {
 				name.to_owned()
 			} else {
 				format!("uni{index:04X}")
@@ -231,7 +231,7 @@ impl Post {
 		let mut data = Vec::with_capacity(2 * num_glyphs);
 		for name in glyph_order.names() {
 			let name = name.split('#').next().unwrap_or_default();
-			let index = if let Some(uv) = fontoxide_agl::agl2uv(name) {
+			let index = if let Some(uv) = fontoxide_misc::agl::agl2uv(name) {
 				crate::binary::fit(uv, "index")?
 			} else if name.chars().count() == 7 && name.starts_with("uni") {
 				let hex = &name[3..];

@@ -2497,7 +2497,14 @@ Build variable fonts from a designspace file and masters
 }
 
 fn usage(message: impl Into<String>) -> VarLibError {
-	VarLibError::Usage(format!("varLib: error: {}", message.into()))
+	VarLibError::Usage(
+		fontoxide_misc::cli_tools::program_text(
+			&format!("varLib: error: {}", message.into()),
+			"varLib",
+			"varLib",
+		)
+		.into_owned(),
+	)
 }
 
 /// `main`: builds the variable fonts of a designspace file from its masters.
@@ -2517,7 +2524,10 @@ pub fn main(args: &[&str]) -> Result<i32> {
 		};
 		match arg {
 			"-h" | "--help" => {
-				print!("{}", help());
+				print!(
+					"{}",
+					fontoxide_misc::cli_tools::program_text(help(), "varLib", "varLib")
+				);
 				return Ok(0);
 			}
 			"-o" => outfile = Some(value("-o")?),

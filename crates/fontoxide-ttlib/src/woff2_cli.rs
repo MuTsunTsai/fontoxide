@@ -140,7 +140,10 @@ pub fn run(args: &[&str], out: &mut dyn Write) -> Result<i32> {
 	let mut it = args.iter().copied();
 	// The main parser: `-h` and the sub-command.
 	let Some(arg) = it.next() else {
-		out.write_all(HELP.as_bytes())?;
+		out.write_all(
+			fontoxide_misc::cli_tools::program_text(HELP, "fonttools ttLib.woff2", "ttLib.woff2")
+				.as_bytes(),
+		)?;
 		return Ok(0);
 	};
 	let subcommand = {
@@ -149,8 +152,24 @@ pub fn run(args: &[&str], out: &mut dyn Write) -> Result<i32> {
 			"decompress" => Subcommand::Decompress,
 			_ if is_long(arg, "--help") || arg == "-h" => {
 				// `_HelpAction`: the help of every sub-command.
-				writeln!(out, "{COMPRESS_HELP}")?;
-				writeln!(out, "{DECOMPRESS_HELP}")?;
+				writeln!(
+					out,
+					"{}",
+					fontoxide_misc::cli_tools::program_text(
+						COMPRESS_HELP,
+						"fonttools ttLib.woff2",
+						"ttLib.woff2"
+					)
+				)?;
+				writeln!(
+					out,
+					"{}",
+					fontoxide_misc::cli_tools::program_text(
+						DECOMPRESS_HELP,
+						"fonttools ttLib.woff2",
+						"ttLib.woff2"
+					)
+				)?;
 				return Ok(0);
 			}
 			_ if arg.starts_with('-') && arg != "-" => {
@@ -195,7 +214,14 @@ pub fn run(args: &[&str], out: &mut dyn Write) -> Result<i32> {
 			} else {
 				DECOMPRESS_HELP
 			};
-			out.write_all(help.as_bytes())?;
+			out.write_all(
+				fontoxide_misc::cli_tools::program_text(
+					help,
+					"fonttools ttLib.woff2",
+					"ttLib.woff2",
+				)
+				.as_bytes(),
+			)?;
 			return Ok(0);
 		} else if name == "-v" || is_long(name, "--verbose") {
 			if quiet {

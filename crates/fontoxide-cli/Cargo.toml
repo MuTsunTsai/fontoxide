@@ -1,6 +1,6 @@
 [package]
 name = "fontoxide-cli"
-description = "The fontTools command lines: ttx and the fonttools dispatcher; a port of fontTools.ttx and fontTools.__main__"
+description = "The fontoxide executable, which runs the fontTools command lines (ttx, subset, merge, varLib.instancer, ...); a port of fontTools.ttx and fontTools.__main__"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -10,6 +10,35 @@ repository.workspace = true
 homepage.workspace = true
 keywords.workspace = true
 categories.workspace = true
+
+[features]
+# Also installs fontTools' console scripts `fonttools`, `ttx`, `pyftsubset` and
+# `pyftmerge`, with fontTools' usage and help texts.
+fonttools-names = []
+
+[[bin]]
+name = "fontoxide"
+path = "src/bin/fontoxide.rs"
+
+[[bin]]
+name = "fonttools"
+path = "src/bin/fonttools.rs"
+required-features = ["fonttools-names"]
+
+[[bin]]
+name = "ttx"
+path = "src/bin/ttx.rs"
+required-features = ["fonttools-names"]
+
+[[bin]]
+name = "pyftsubset"
+path = "src/bin/pyftsubset.rs"
+required-features = ["fonttools-names"]
+
+[[bin]]
+name = "pyftmerge"
+path = "src/bin/pyftmerge.rs"
+required-features = ["fonttools-names"]
 
 [dependencies]
 fontoxide-cu2qu.workspace = true

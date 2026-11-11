@@ -3,15 +3,20 @@
 //! | fontoxide-cli    | fontTools            |
 //! |------------------|----------------------|
 //! | [`ttx`]          | `fontTools.ttx`      |
-//! | [`fonttools_main`], [`run_module`], [`help`] | `fontTools.__main__`, `fontTools.help` |
+//! | [`fontoxide_main`], [`fonttools_main`], [`run_module`], [`help`] | `fontTools.__main__`, `fontTools.help` |
 //! | [`svg_path_pen`] | `fontTools.pens.svgPathPen.main` |
 //! | [`logging`]      | `fontTools.misc.loggingTools.configLogger` |
 //! | [`getopt`]       | Python's `getopt.gnu_getopt` |
 //!
-//! The binaries `fonttools`, `ttx`, `pyftsubset` and `pyftmerge` are fontTools'
-//! console scripts. `fonttools <module> args...` runs the command line of a
-//! module, as `python -m fontTools.<module> args...` does; [`MODULES`] lists
-//! the modules that fontoxide has.
+//! The binary `fontoxide` runs the command lines: `fontoxide <module> args...`
+//! runs the command line of a module, as `python -m fontTools.<module> args...`
+//! and fontTools' `fonttools <module> args...` do ([`fontoxide_main`]);
+//! [`MODULES`] lists the modules that fontoxide has. Its usage and help texts
+//! name the program `fontoxide <module>` ([`Program::Fontoxide`]).
+//!
+//! With the feature `fonttools-names`, the binaries `fonttools`, `ttx`,
+//! `pyftsubset` and `pyftmerge` are installed too: fontTools' console scripts,
+//! with fontTools' texts ([`fonttools_main`], [`run_module`]).
 //!
 //! The command lines themselves are in the crates of their modules, except for
 //! `ttx`; they read and write files with `std::fs`.
@@ -215,14 +220,61 @@ pub fn find_module(name: &str) -> Option<&'static Module> {
 	MODULES.iter().find(|m| m.name == name)
 }
 
+/// The name of the `fontoxide` executable.
+pub const FONTOXIDE: &str = "fontoxide";
+
+/// The name a command line runs under, which its usage and help texts show.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Program {
+	/// fontTools' console scripts (`fonttools <module>`, `ttx`, `pyftsubset`,
+	/// `pyftmerge`): the texts are fontTools'.
+	#[default]
+	FontTools,
+	/// The `fontoxide` executable: the texts name `fontoxide <module>` where
+	/// fontTools names `fonttools <module>`, `ttx`, or an `argparse` `prog`
+	/// such as `cu2qu` (see [`fontoxide_misc::cli_tools::program_text`]).
+	Fontoxide,
+}
+
+impl Program {
+	/// Runs `f` with the command lines naming themselves as this program.
+	pub fn run<R>(self, f: impl FnOnce() -> R) -> R {
+		match self {
+			Program::FontTools => f(),
+			Program::Fontoxide => fontoxide_misc::cli_tools::with_program_name(FONTOXIDE, f),
+		}
+	}
+}
+
+/// The version that `fontoxide --version` prints, e.g.
+/// `fontoxide 0.1.0 (fontTools 4.68.0)`.
+pub fn version() -> String {
+	format!(
+		"{FONTOXIDE} {} (fontTools {})",
+		env!("CARGO_PKG_VERSION"),
+		fontoxide_ttlib::FONTTOOLS_VERSION
+	)
+}
+
 /// `fonttools help` (`fontTools.help`): the version and the modules with
 /// their descriptions. fontTools lists all of its modules; this lists those
 /// in [`MODULES`].
+///
+/// Under the `fontoxide` executable (in [`run_module_as`] with
+/// [`Program::Fontoxide`]), the first line is [`version`] and the modules are
+/// listed as `fontoxide <module>`.
 pub fn help(out: &mut dyn Write) -> std::io::Result<()> {
-	let mut text = format!("fonttools v{}\n\n", fontoxide_ttlib::FONTTOOLS_VERSION);
+	let (program, header) = match fontoxide_misc::cli_tools::program_name() {
+		None => (
+			"fonttools",
+			format!("fonttools v{}", fontoxide_ttlib::FONTTOOLS_VERSION),
+		),
+		Some(name) => (name, version()),
+	};
+	let mut text = format!("{header}\n\n");
 	for module in MODULES {
 		if let Some(description) = module.description {
-			text.push_str(&format!("fonttools {:<25} {description}\n", module.name));
+			text.push_str(&format!("{program} {:<25} {description}\n", module.name));
 		}
 	}
 	out.write_all(text.as_bytes())
@@ -231,6 +283,16 @@ pub fn help(out: &mut dyn Write) -> std::io::Result<()> {
 /// Runs the command line of a module (`runpy.run_module("fontTools." + name)`),
 /// reporting errors on standard error. Returns the exit code.
 pub fn run_module(name: &str, args: &[&str]) -> i32 {
+	run_module_as(Program::FontTools, name, args)
+}
+
+/// [`run_module`] under the name `program`, which the usage and help texts of
+/// the module show.
+pub fn run_module_as(program: Program, name: &str, args: &[&str]) -> i32 {
+	program.run(|| run_module_inner(name, args))
+}
+
+fn run_module_inner(name: &str, args: &[&str]) -> i32 {
 	let Some(module) = find_module(name) else {
 		let message = if MISSING_MODULES.iter().any(|(m, _)| *m == name) {
 			format!("ERROR: fontoxide does not have the command line of fontTools.{name} yet")
@@ -253,10 +315,35 @@ pub fn run_module(name: &str, args: &[&str]) -> i32 {
 /// runs a module's command line; without a module, or with `-h` or `--help`,
 /// shows the help. Returns the exit code.
 pub fn fonttools_main(args: &[&str]) -> i32 {
+	dispatch(Program::FontTools, args)
+}
+
+/// The command line `fontoxide <module> args...`: [`fonttools_main`], with
+/// the texts naming `fontoxide <module>` (see [`Program::Fontoxide`]); in
+/// addition, `--version` and `-V` print [`version`]. Returns the exit code.
+pub fn fontoxide_main(args: &[&str]) -> i32 {
+	fontoxide_main_with_output(args, &mut std::io::stdout())
+}
+
+/// [`fontoxide_main`], with the output of `--version` written to `out`.
+pub fn fontoxide_main_with_output(args: &[&str], out: &mut dyn Write) -> i32 {
+	if let Some(&("--version" | "-V")) = args.first() {
+		return match writeln!(out, "{}", version()) {
+			Ok(()) => 0,
+			Err(e) => {
+				eprintln!("ERROR: {e}");
+				1
+			}
+		};
+	}
+	dispatch(Program::Fontoxide, args)
+}
+
+fn dispatch(program: Program, args: &[&str]) -> i32 {
 	match args.split_first() {
-		None => run_module("help", &[]),
-		Some((&("-h" | "--help"), rest)) => run_module("help", rest),
-		Some((name, rest)) => run_module(name, rest),
+		None => run_module_as(program, "help", &[]),
+		Some((&("-h" | "--help"), rest)) => run_module_as(program, "help", rest),
+		Some((name, rest)) => run_module_as(program, name, rest),
 	}
 }
 

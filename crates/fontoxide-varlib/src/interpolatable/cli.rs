@@ -99,9 +99,17 @@ const LONG_OPTIONS: &[(&str, bool)] = &[
 ];
 
 fn usage(message: String) -> InterpolatableError {
-	InterpolatableError::Usage(format!(
+	let text = format!(
 		"usage: fonttools varLib.interpolatable [-h] ... FILE [FILE ...]\nfonttools varLib.interpolatable: error: {message}"
-	))
+	);
+	InterpolatableError::Usage(
+		fontoxide_misc::cli_tools::program_text(
+			&text,
+			"fonttools varLib.interpolatable",
+			"varLib.interpolatable",
+		)
+		.into_owned(),
+	)
 }
 
 /// Whether `argparse` takes an argument as a negative number rather than an
@@ -689,7 +697,14 @@ pub fn main(args: &[&str]) -> Result<i32> {
 pub fn run(args: &[&str], out: &mut dyn Write) -> Result<Option<Problems>> {
 	let args = parse_args(args)?;
 	if args.help {
-		out.write_all(HELP.as_bytes())?;
+		out.write_all(
+			fontoxide_misc::cli_tools::program_text(
+				HELP,
+				"fonttools varLib.interpolatable",
+				"varLib.interpolatable",
+			)
+			.as_bytes(),
+		)?;
 		return Ok(None);
 	}
 	for (option, value) in [

@@ -185,7 +185,16 @@ fn format_g(v: f64) -> String {
 
 /// `fontTools.varLib.avar.map.main`.
 pub fn map_main(args: &[&str]) -> Result<Vec<String>> {
-	let usage = |m: String| VarLibError::Usage(format!("fonttools varLib.avar.map: error: {m}"));
+	let usage = |m: String| {
+		VarLibError::Usage(
+			fontoxide_misc::cli_tools::program_text(
+				&format!("fonttools varLib.avar.map: error: {m}"),
+				"fonttools varLib.avar.map",
+				"varLib.avar.map",
+			)
+			.into_owned(),
+		)
+	};
 	let (mut f, mut i, mut o) = (false, false, false);
 	let mut positional = Vec::new();
 	for &a in args {

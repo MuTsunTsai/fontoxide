@@ -73,7 +73,14 @@ pub enum Error {
 }
 
 fn usage(message: impl std::fmt::Display) -> Error {
-	Error::Usage(format!("{USAGE}\nfonttools mtiLib: error: {message}"))
+	Error::Usage(
+		fontoxide_misc::cli_tools::program_text(
+			&format!("{USAGE}\nfonttools mtiLib: error: {message}"),
+			"fonttools mtiLib",
+			"mtiLib",
+		)
+		.into_owned(),
+	)
 }
 
 /// Converts FontDame OTL files to TTX on standard output (`main`), with the
@@ -96,7 +103,9 @@ pub fn main_with(
 ) -> Result<i32, Error> {
 	let parsed = argparse::parse(args, SPECS, "FILE").map_err(usage)?;
 	if parsed.flag("--help") {
-		out.write_all(HELP.as_bytes())?;
+		out.write_all(
+			fontoxide_misc::cli_tools::program_text(HELP, "fonttools mtiLib", "mtiLib").as_bytes(),
+		)?;
 		return Ok(0);
 	}
 	let table_tag = parsed.value("--table").and_then(|s| s.value.clone());

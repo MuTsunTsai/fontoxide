@@ -1,7 +1,11 @@
-//! Port of `fontTools.misc`: low-level helpers shared by the other crates.
+//! Port of `fontTools.misc`: low-level helpers shared by the other crates, and of
+//! the small top-level modules `fontTools.agl`, `fontTools.afmLib` and
+//! `fontTools.tfmLib`.
 //!
 //! | fontoxide           | fontTools                     |
 //! |---------------------|-------------------------------|
+//! | [`afm_lib`]         | `fontTools.afmLib`            |
+//! | [`agl`]             | `fontTools.agl`               |
 //! | [`array_tools`]     | `fontTools.misc.arrayTools`   |
 //! | [`bezier_tools`]    | `fontTools.misc.bezierTools`  |
 //! | [`classify_tools`]  | `fontTools.misc.classifyTools` |
@@ -19,6 +23,7 @@
 //! | [`ps_operators`]    | `fontTools.misc.psOperators`  |
 //! | [`round_tools`]     | `fontTools.misc.roundTools`   |
 //! | [`text_tools`]      | `fontTools.misc.textTools`    |
+//! | [`tfm_lib`]         | `fontTools.tfmLib`            |
 //! | [`time_tools`]      | `fontTools.misc.timeTools`    |
 //! | [`transform`]       | `fontTools.misc.transform`    |
 //! | [`tree_tools`]      | `fontTools.misc.treeTools`    |
@@ -28,6 +33,8 @@
 //! [`py`] reproduces the Python formatting rules that fontTools output relies on,
 //! and [`complex`] Python's complex arithmetic, which the curve math uses.
 
+pub mod afm_lib;
+pub mod agl;
 pub mod array_tools;
 pub mod bezier_tools;
 pub mod classify_tools;
@@ -47,6 +54,7 @@ pub mod ps_operators;
 pub mod py;
 pub mod round_tools;
 pub mod text_tools;
+pub mod tfm_lib;
 pub mod time_tools;
 pub mod transform;
 pub mod tree_tools;

@@ -1305,7 +1305,14 @@ pub fn main(args: &[&str]) -> Result<i32> {
 	while let Some(&arg) = it.next() {
 		match arg {
 			"-h" | "--help" => {
-				print!("{HELP}");
+				print!(
+					"{}",
+					fontoxide_misc::cli_tools::program_text(
+						HELP,
+						"fonttools ttLib.beyond64k",
+						"ttLib.beyond64k"
+					)
+				);
 				return Ok(0);
 			}
 			"-o" | "--output" => {

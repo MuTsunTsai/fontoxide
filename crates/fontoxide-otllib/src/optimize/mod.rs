@@ -43,7 +43,14 @@ pub fn main(args: &[&str]) -> Result<i32> {
 		};
 		match name {
 			"-h" | "--help" => {
-				print!("{HELP}");
+				print!(
+					"{}",
+					fontoxide_misc::cli_tools::program_text(
+						HELP,
+						"otlLib.optimize",
+						"otlLib.optimize"
+					)
+				);
 				return Ok(0);
 			}
 			"-o" => {

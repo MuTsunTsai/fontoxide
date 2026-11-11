@@ -4,9 +4,10 @@
 //! Standard input and output (the file name `-`) go through an [`Io`], so
 //! that they can be replaced; [`main`] uses the process's.
 
+use std::borrow::Cow;
 use std::io::{Read, Write};
 
-use fontoxide_misc::cli_tools::make_output_file_name;
+use fontoxide_misc::cli_tools::{make_output_file_name, program_text};
 use fontoxide_ttlib::binary::calc_checksum;
 use fontoxide_ttlib::tables::Head;
 use fontoxide_ttlib::{
@@ -125,6 +126,11 @@ Compile options
              performance will be improved with HarfBuzz and other text
              layout engines.
 "#;
+
+/// [`DOC`], naming the program as [`program_text`] does.
+fn doc() -> Cow<'static, str> {
+	program_text(DOC, "ttx", "ttx")
+}
 
 /// The errors of the command line.
 #[derive(Debug, thiserror::Error)]
@@ -342,7 +348,7 @@ impl Options {
 				"-h" => {
 					return Err(Error::Exit {
 						code: 0,
-						output: format!("{DOC}\n"),
+						output: format!("{}\n", doc()),
 					});
 				}
 				"--version" => {
@@ -965,7 +971,7 @@ pub fn main_with_io(args: &[&str], io: &mut Io<'_>) -> Result<i32> {
 	let (jobs, options) = match parse_options_with_io(args, io) {
 		Ok(parsed) => parsed,
 		Err(Error::Getopt(e)) => {
-			io.eprint(&format!("{DOC}\nERROR: {e}\n"))?;
+			io.eprint(&format!("{}\nERROR: {e}\n", doc()))?;
 			return Ok(2);
 		}
 		Err(Error::Exit { code, output }) => {

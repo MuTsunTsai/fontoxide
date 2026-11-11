@@ -42,7 +42,10 @@ pub fn main(args: &[&str]) -> Result<i32> {
 	fontfiles.extend(args);
 
 	if fontfiles.is_empty() {
-		eprintln!("{USAGE}");
+		eprintln!(
+			"{}",
+			fontoxide_misc::cli_tools::program_text(USAGE, "fonttools merge", "merge")
+		);
 		return Ok(1);
 	}
 

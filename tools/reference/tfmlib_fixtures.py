@@ -1,4 +1,4 @@
-"""Generates the fixtures of crates/fontoxide-tfmlib/tests/data.
+"""Generates the fixtures of crates/fontoxide-misc/tests/data/tfm_lib.
 
 For each TFM file of upstream Tests/tfmLib/data, saves <file>.txt with the
 `repr` of every attribute of `tfmLib.TFM`, one `name=repr` line each, so that
@@ -18,7 +18,7 @@ sys.dont_write_bytecode = True
 from fontTools import tfmLib
 
 DATA = ROOT / "upstream" / "fonttools" / "Tests" / "tfmLib" / "data"
-OUT = ROOT / "crates" / "fontoxide-tfmlib" / "tests" / "data"
+OUT = ROOT / "crates" / "fontoxide-misc" / "tests" / "data" / "tfm_lib"
 
 ATTRS = [
 	"checksum",

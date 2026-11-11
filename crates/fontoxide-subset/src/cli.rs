@@ -10,8 +10,11 @@ use crate::{Error, Options, Result, Subsetter};
 const USAGE: &str = "fonttools subset font-file [glyph...] [--option=value]...";
 
 fn usage() {
-	eprintln!("usage: {USAGE}");
-	eprintln!("Try fonttools subset --help for more information.\n");
+	let text = format!("usage: {USAGE}\nTry fonttools subset --help for more information.\n");
+	eprintln!(
+		"{}",
+		fontoxide_misc::cli_tools::program_text(&text, "fonttools subset", "subset")
+	);
 }
 
 fn value_error(message: String) -> Error {
@@ -188,7 +191,10 @@ fn all_unicodes(cmap: &Cmap, unicodes: &mut Vec<u32>) {
 /// `main`: the OpenType font subsetter and optimizer. Returns the exit code.
 pub fn main(args: &[&str]) -> Result<i32> {
 	if args.contains(&"--help") {
-		println!("{USAGE}");
+		println!(
+			"{}",
+			fontoxide_misc::cli_tools::program_text(USAGE, "fonttools subset", "subset")
+		);
 		return Ok(0);
 	}
 	let mut options = Options::default();

@@ -18,8 +18,6 @@ categories = ["parser-implementations", "encoding", "text-processing"]
 [workspace.dependencies]
 kurbo = "0.13"
 linesweeper = "0.5"
-fontoxide-afmlib = { path = "crates/fontoxide-afmlib", version = "0.0.0" }
-fontoxide-agl = { path = "crates/fontoxide-agl", version = "0.0.0" }
 fontoxide-cli = { path = "crates/fontoxide-cli", version = "0.0.0" }
 fontoxide-colorlib = { path = "crates/fontoxide-colorlib", version = "0.0.0" }
 fontoxide-cu2qu = { path = "crates/fontoxide-cu2qu", version = "0.0.0" }
@@ -36,7 +34,6 @@ fontoxide-repack = { path = "crates/fontoxide-repack", version = "0.0.0" }
 fontoxide-subset = { path = "crates/fontoxide-subset", version = "0.0.0" }
 fontoxide-svglib = { path = "crates/fontoxide-svglib", version = "0.0.0" }
 fontoxide-t1lib = { path = "crates/fontoxide-t1lib", version = "0.0.0" }
-fontoxide-tfmlib = { path = "crates/fontoxide-tfmlib", version = "0.0.0" }
 fontoxide-ttlib = { path = "crates/fontoxide-ttlib", version = "0.0.0" }
 fontoxide-ufolib = { path = "crates/fontoxide-ufolib", version = "0.0.0" }
 fontoxide-unicodedata = { path = "crates/fontoxide-unicodedata", version = "0.0.0" }

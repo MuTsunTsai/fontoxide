@@ -10,11 +10,11 @@
 use std::fmt::Write as _;
 use std::path::Path;
 
-use fontoxide_misc::py;
+use crate::py;
 use indexmap::IndexMap;
 use thiserror::Error;
 
-/// Errors of this crate.
+/// Errors of this module.
 #[derive(Debug, Error)]
 pub enum Error {
 	/// `TFMException`.
@@ -29,7 +29,7 @@ pub enum Error {
 	Python(String),
 }
 
-/// The result type of this crate.
+/// The result type of this module.
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// The `fonttype` of a font without special parameters.

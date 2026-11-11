@@ -13,7 +13,8 @@ It is pure safe Rust and compiles to `wasm32-unknown-unknown`.
 ## Crates
 
 Each crate corresponds to a fontTools subpackage, e.g. `fontoxide-ttlib` ↔
-`fontTools.ttLib`, `fontoxide-subset` ↔ `fontTools.subset`. The `fontoxide` crate
+`fontTools.ttLib`, `fontoxide-subset` ↔ `fontTools.subset`; small top-level modules such
+as `fontTools.agl` are modules of `fontoxide-misc`. The `fontoxide` crate
 re-exports all of them. Names follow Rust conventions (`TTFont` → `Font`,
 `instantiateVariableFont` → `instantiate_variable_font`), and the rustdoc of each item
 names its fontTools counterpart.
@@ -63,3 +64,6 @@ Only the latest stable Rust is supported while fontoxide is pre-1.0.
 ## License
 
 MIT, like fontTools. See [LICENSE](LICENSE).
+
+The Adobe Glyph List data in `crates/fontoxide-misc/data/agl` is copyright Adobe,
+under the BSD-3-Clause license stated at the top of those files.

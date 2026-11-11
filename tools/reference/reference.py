@@ -603,7 +603,7 @@ def export_data(out_dir: Path) -> None:
 	export_name_languages(out_dir / "fontoxide-ttlib" / "src" / "tables" / "name_languages.rs")
 	from fontTools.ttLib.standardGlyphOrder import standardGlyphOrder
 
-	agl_dir = out_dir / "fontoxide-agl" / "data"
+	agl_dir = out_dir / "fontoxide-misc" / "data" / "agl"
 	agl_dir.mkdir(parents=True, exist_ok=True)
 	(agl_dir / "glyphlist.txt").write_text(agl._aglText, encoding="utf-8", newline="\n")
 	(agl_dir / "aglfn.txt").write_text(agl._aglfnText, encoding="utf-8", newline="\n")

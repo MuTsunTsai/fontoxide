@@ -127,7 +127,10 @@ pub fn main(args: &[&str]) -> Result<i32> {
 		};
 		match name {
 			"-h" | "--help" => {
-				print!("{HELP}");
+				print!(
+					"{}",
+					fontoxide_misc::cli_tools::program_text(HELP, "fonttools voltLib", "voltLib")
+				);
 				return Ok(0);
 			}
 			"-f" | "--font" => input_font = Some(value("-f/--font")?),

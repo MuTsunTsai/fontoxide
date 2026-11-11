@@ -1,7 +1,8 @@
 //! A Rust port of [fontTools](https://github.com/fonttools/fonttools).
 //!
 //! This umbrella crate re-exports the individual `fontoxide-*` crates, each of
-//! which corresponds to a subpackage of `fontTools`:
+//! which corresponds to a subpackage of `fontTools`. The small top-level modules
+//! [`afmlib`], [`agl`] and [`tfmlib`] live in `fontoxide-misc`:
 //!
 //! | fontoxide            | fontTools          |
 //! |----------------------|--------------------|
@@ -33,14 +34,15 @@
 //! `fontTools.pens.ttGlyphPen` and `fontTools.pens.t2CharStringPen` are in
 //! [`ttlib::pens`], as they build `glyf` glyphs and CFF charstrings.
 
-pub use fontoxide_afmlib as afmlib;
-pub use fontoxide_agl as agl;
 pub use fontoxide_colorlib as colorlib;
 pub use fontoxide_cu2qu as cu2qu;
 pub use fontoxide_designspacelib as designspacelib;
 pub use fontoxide_fealib as fealib;
 pub use fontoxide_merge as merge;
 pub use fontoxide_misc as misc;
+pub use fontoxide_misc::afm_lib as afmlib;
+pub use fontoxide_misc::agl;
+pub use fontoxide_misc::tfm_lib as tfmlib;
 pub use fontoxide_mtilib as mtilib;
 pub use fontoxide_otllib as otllib;
 pub use fontoxide_pens as pens;
@@ -49,7 +51,6 @@ pub use fontoxide_repack as repack;
 pub use fontoxide_subset as subset;
 pub use fontoxide_svglib as svglib;
 pub use fontoxide_t1lib as t1lib;
-pub use fontoxide_tfmlib as tfmlib;
 pub use fontoxide_ttlib as ttlib;
 pub use fontoxide_ufolib as ufolib;
 pub use fontoxide_unicodedata as unicodedata;

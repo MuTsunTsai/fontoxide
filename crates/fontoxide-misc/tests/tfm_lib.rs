@@ -5,7 +5,9 @@
 use std::path::PathBuf;
 
 use fontoxide_misc::py::{float_repr, str_repr};
-use fontoxide_tfmlib::{Face, HeaderString, Tfm, repr_fontdimens, repr_kerning, repr_ligatures};
+use fontoxide_misc::tfm_lib::{
+	Face, HeaderString, Tfm, repr_fontdimens, repr_kerning, repr_ligatures,
+};
 
 type TestResult = Result<(), Box<dyn std::error::Error>>;
 
@@ -13,7 +15,7 @@ fn data_dir() -> PathBuf {
 	PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../upstream/fonttools/Tests/tfmLib/data")
 }
 
-fn open(name: &str) -> fontoxide_tfmlib::Result<Tfm> {
+fn open(name: &str) -> fontoxide_misc::tfm_lib::Result<Tfm> {
 	Tfm::open(data_dir().join(name))
 }
 
@@ -241,7 +243,7 @@ fn dump(tfm: &Tfm) -> String {
 
 #[test]
 fn fonttools_output() -> TestResult {
-	let fixtures = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/data");
+	let fixtures = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/data/tfm_lib");
 	for name in ["cmex10.tfm", "cmr10.tfm", "cmsy10.tfm", "dummy-space.tfm"] {
 		let expected = std::fs::read_to_string(fixtures.join(format!("{name}.txt")))?;
 		assert_eq!(dump(&open(name)?), expected, "{name}");

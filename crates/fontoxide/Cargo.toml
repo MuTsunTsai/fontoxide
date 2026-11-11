@@ -13,8 +13,6 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-fontoxide-afmlib.workspace = true
-fontoxide-agl.workspace = true
 fontoxide-colorlib.workspace = true
 fontoxide-cu2qu.workspace = true
 fontoxide-designspacelib.workspace = true
@@ -29,7 +27,6 @@ fontoxide-repack.workspace = true
 fontoxide-subset.workspace = true
 fontoxide-svglib.workspace = true
 fontoxide-t1lib.workspace = true
-fontoxide-tfmlib.workspace = true
 fontoxide-ttlib.workspace = true
 fontoxide-ufolib.workspace = true
 fontoxide-unicodedata.workspace = true

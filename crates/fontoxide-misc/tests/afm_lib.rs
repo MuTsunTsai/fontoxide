@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use fontoxide_afmlib::{Afm, AttrValue};
+use fontoxide_misc::afm_lib::{Afm, AttrValue};
 
 type TestResult = Result<(), Box<dyn std::error::Error>>;
 
@@ -42,7 +42,7 @@ fn test_read_afm() -> TestResult {
 fn write(afm: &Afm, sep: &str) -> Result<(Afm, String), Box<dyn std::error::Error>> {
 	static N: AtomicUsize = AtomicUsize::new(0);
 	let temp = std::env::temp_dir().join(format!(
-		"fontoxide-afmlib-{}-{}.afm",
+		"fontoxide-misc-afm-lib-{}-{}.afm",
 		std::process::id(),
 		N.fetch_add(1, Ordering::SeqCst)
 	));

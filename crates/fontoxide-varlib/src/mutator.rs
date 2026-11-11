@@ -889,7 +889,14 @@ pub fn main(args: &[&str]) -> Result<i32> {
 		match name {
 			"--" => only_positionals = true,
 			"-h" | "--help" => {
-				print!("{HELP}");
+				print!(
+					"{}",
+					fontoxide_misc::cli_tools::program_text(
+						HELP,
+						"fonttools varLib.mutator",
+						"varLib.mutator"
+					)
+				);
 				return Ok(0);
 			}
 			"-o" | "--output" => {

@@ -138,7 +138,14 @@ pub enum Error {
 }
 
 fn usage(message: impl std::fmt::Display) -> Error {
-	Error::Usage(format!("{USAGE}\ncu2qu: error: {message}"))
+	Error::Usage(
+		fontoxide_misc::cli_tools::program_text(
+			&format!("{USAGE}\ncu2qu: error: {message}"),
+			"cu2qu",
+			"cu2qu",
+		)
+		.into_owned(),
+	)
 }
 
 /// `_cpu_count`.
@@ -228,7 +235,10 @@ fn convert_font(
 pub fn main(args: &[&str]) -> Result<i32, Error> {
 	let parsed = argparse::parse(args, SPECS, "INPUT").map_err(usage)?;
 	if parsed.flag("--help") {
-		print!("{HELP}");
+		print!(
+			"{}",
+			fontoxide_misc::cli_tools::program_text(HELP, "cu2qu", "cu2qu")
+		);
 		return Ok(0);
 	}
 	if parsed.flag("--version") {
