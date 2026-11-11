@@ -134,6 +134,11 @@ impl State {
 		self.0.get(name)
 	}
 
+	/// Whether no value is present.
+	pub fn is_empty(&self) -> bool {
+		self.0.is_empty()
+	}
+
 	/// Whether a value is present.
 	pub fn contains(&self, name: &str) -> bool {
 		self.0.contains_key(name)

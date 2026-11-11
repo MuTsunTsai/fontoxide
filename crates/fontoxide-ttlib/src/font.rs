@@ -235,6 +235,67 @@ const POST: Tag = Tag::new(b"post");
 const CFF: Tag = Tag::new(b"CFF ");
 const CMAP: Tag = Tag::new(b"cmap");
 const DMAP: Tag = Tag::new(b"DMAP");
+const FVAR: Tag = Tag::new(b"fvar");
+const AVAR: Tag = Tag::new(b"avar");
+
+/// `varLib.models.normalizeValue(v, triple)`, without extrapolation.
+fn normalize_value(v: f64, (lower, default, upper): (f64, f64, f64)) -> Result<f64> {
+	if !(lower <= default && default <= upper) {
+		return Err(Error::value(format!(
+			"Invalid axis values, must be minimum, default, maximum: {lower:.3}, {default:.3}, {upper:.3}"
+		)));
+	}
+	let v = v.min(upper).max(lower);
+	if v == default || lower == upper {
+		return Ok(0.0);
+	}
+	if (v < default && lower != default) || (v > default && upper == default) {
+		Ok((v - default) / (default - lower))
+	} else {
+		Ok((v - default) / (upper - default))
+	}
+}
+
+/// `varLib.models.piecewiseLinearMap`, for a mapping in the order of a Python
+/// `dict`.
+pub(crate) fn piecewise_linear_map(v: f64, mapping: &[(f64, f64)]) -> f64 {
+	if mapping.is_empty() {
+		return v;
+	}
+	if let Some(&(_, to)) = mapping.iter().find(|(from, _)| *from == v) {
+		return to;
+	}
+	let extreme = |pick: fn(f64, f64) -> f64| {
+		mapping
+			.iter()
+			.copied()
+			.reduce(|a, b| if pick(a.0, b.0) == a.0 { a } else { b })
+	};
+	if let Some((k, to)) = extreme(f64::min)
+		&& v < k
+	{
+		return v + to - k;
+	}
+	if let Some((k, to)) = extreme(f64::max)
+		&& v > k
+	{
+		return v + to - k;
+	}
+	let below = mapping
+		.iter()
+		.copied()
+		.filter(|(k, _)| *k < v)
+		.reduce(|a, b| if a.0 >= b.0 { a } else { b });
+	let above = mapping
+		.iter()
+		.copied()
+		.filter(|(k, _)| *k > v)
+		.reduce(|a, b| if a.0 <= b.0 { a } else { b });
+	match (below, above) {
+		(Some((a, va)), Some((b, vb))) => va + (vb - va) * (v - a) / (b - a),
+		_ => v,
+	}
+}
 
 impl Font {
 	/// An empty TrueType font (`TTFont()`).
@@ -593,6 +654,84 @@ impl Font {
 		};
 		cmap.extend(dmap);
 		Ok(Some(cmap))
+	}
+
+	/// Normalizes a location in user coordinates (the axis ranges of `fvar`) to
+	/// the normalized −1…+1 space, with the mapping of `avar` if the font has one
+	/// (`normalizeLocation`). Every axis of `fvar` is in the result, except that a
+	/// version 2 `avar` drops the zeroes. Fails with "Not a variable font" if the
+	/// font has no `fvar`.
+	pub fn normalize_location(
+		&mut self,
+		location: &BTreeMap<String, f64>,
+	) -> Result<crate::var::Location> {
+		if !self.contains(FVAR) {
+			return Err(Error::ttlib("Not a variable font"));
+		}
+		let axes: Vec<(String, (f64, f64, f64))> = self
+			.require::<crate::tables::Fvar>()?
+			.axes
+			.iter()
+			.map(|a| (a.tag_text(), (a.min_value, a.default_value, a.max_value)))
+			.collect();
+		// `varLib.models.normalizeLocation`.
+		let mut out = crate::var::Location::new();
+		for (tag, triple) in &axes {
+			let v = location.get(tag).copied().unwrap_or(triple.1);
+			out.insert(tag.clone(), normalize_value(v, *triple)?);
+		}
+		if !self.contains(AVAR) {
+			return Ok(out);
+		}
+		// `avar.renormalizeLocation(location, font)`.
+		let avar = self.require::<crate::tables::Avar>()?;
+		if !matches!(avar.major_version, 1 | 2) {
+			return Err(Error::ttlib(
+				"NotImplementedError: Unknown avar table version",
+			));
+		}
+		for (tag, value) in &mut out {
+			let mapping = Tag::from_str_padded(tag).and_then(|t| avar.segments.get(&t));
+			if let Some(mapping) = mapping {
+				*value = piecewise_linear_map(*value, mapping);
+			}
+		}
+		if avar.major_version < 2 {
+			return Ok(out);
+		}
+		let tags: Vec<String> = axes.into_iter().map(|(tag, _)| tag).collect();
+		let store = avar.table.var_store.as_deref();
+		let map = avar.table.var_idx_map.as_deref();
+		let instancer = crate::var::VarStoreInstancer::new(store, &tags, out.clone());
+		let mut renormalized = crate::var::Location::new();
+		for (index, tag) in tags.iter().enumerate() {
+			let mut v = fontoxide_misc::fixed_tools::float_to_fixed(
+				out.get(tag).copied().unwrap_or(0.0),
+				14,
+			);
+			let var_idx = match map {
+				// A compiled map may be truncated: reads clamp to the last entry.
+				Some(map) => map
+					.mapping
+					.get(index)
+					.or(map.mapping.last())
+					.copied()
+					.ok_or_else(|| Error::ttlib("IndexError: list index out of range"))?,
+				None => index as u64,
+			};
+			if store.is_some() {
+				v += fontoxide_misc::round_tools::ot_round(instancer.get(var_idx)?);
+				v = v.clamp(-(1 << 14), 1 << 14);
+			}
+			// `dropZeroes`.
+			if v != 0 {
+				renormalized.insert(
+					tag.clone(),
+					fontoxide_misc::fixed_tools::fixed_to_float(v, 14),
+				);
+			}
+		}
+		Ok(renormalized)
 	}
 
 	/// The name of a glyph (`getGlyphName`).

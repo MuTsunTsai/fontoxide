@@ -10,6 +10,7 @@
 //! | [`cu2qu`]            | `fontTools.cu2qu`  |
 //! | [`designspacelib`]   | `fontTools.designspaceLib` |
 //! | [`fealib`]           | `fontTools.feaLib` |
+//! | [`merge`]            | `fontTools.merge`  |
 //! | [`misc`]             | `fontTools.misc`   |
 //! | [`otllib`]           | `fontTools.otlLib` |
 //! | [`pens`]             | `fontTools.pens`   |
@@ -17,6 +18,7 @@
 //! | [`repack`]           | the HarfBuzz repacker (uharfbuzz's `serialize_with_tag`) |
 //! | [`subset`]           | `fontTools.subset` |
 //! | [`ttlib`]            | `fontTools.ttLib`  |
+//! | [`ufolib`]           | `fontTools.ufoLib` |
 //! | [`unicodedata`]      | `fontTools.unicodedata` |
 //! | [`varlib`]           | `fontTools.varLib` |
 //!
@@ -30,6 +32,7 @@ pub use fontoxide_colorlib as colorlib;
 pub use fontoxide_cu2qu as cu2qu;
 pub use fontoxide_designspacelib as designspacelib;
 pub use fontoxide_fealib as fealib;
+pub use fontoxide_merge as merge;
 pub use fontoxide_misc as misc;
 pub use fontoxide_otllib as otllib;
 pub use fontoxide_pens as pens;
@@ -37,6 +40,7 @@ pub use fontoxide_qu2cu as qu2cu;
 pub use fontoxide_repack as repack;
 pub use fontoxide_subset as subset;
 pub use fontoxide_ttlib as ttlib;
+pub use fontoxide_ufolib as ufolib;
 pub use fontoxide_unicodedata as unicodedata;
 pub use fontoxide_varlib as varlib;
 

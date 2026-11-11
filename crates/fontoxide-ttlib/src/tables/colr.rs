@@ -10,6 +10,13 @@ use crate::binary::fit;
 use crate::generated::ot;
 use crate::ot::table::{OtTable, XmlCtx};
 use crate::ot::{OtReader, WriterGraph};
+use fontoxide_misc::array_tools::quantize_rect;
+use fontoxide_misc::transform::{IDENTITY, Transform};
+use fontoxide_pens::{BoundsPen, Pen, TransformPen};
+
+use crate::glyph_set::GlyphSet;
+use crate::ot::colr::ClipList;
+use crate::ot::types::Paint;
 use crate::sstruct::eval;
 use crate::table::{Table, TableType};
 use crate::{Error, Font, Result};
@@ -69,6 +76,174 @@ fn color_layers_v0(table: &ot::COLR) -> Result<BTreeMap<u32, Vec<LayerRecord>>> 
 	Ok(color_layers)
 }
 
+fn no_paint() -> Error {
+	Error::ttlib("AttributeError: 'NoneType' object has no attribute 'Format'")
+}
+
+/// How deep [`compute_clip_box`] follows paints.
+///
+/// LENIENT(L38): fontTools does not end if `PaintColrGlyph`s or `PaintColrLayers`
+/// form a cycle; fontoxide fails instead.
+const MAX_PAINT_DEPTH: usize = 1000;
+
+/// `Paint.getTransform`.
+fn paint_transform(paint: &Paint) -> Result<Transform> {
+	let around = |cx: i16, cy: i16, t: &dyn Fn(Transform) -> Transform| {
+		let (cx, cy) = (f64::from(cx), f64::from(cy));
+		t(IDENTITY.translate(cx, cy)).translate(-cx, -cy)
+	};
+	Ok(match paint {
+		Paint::Format12(p) => {
+			let t = p.transform.as_deref().ok_or_else(|| {
+				Error::ttlib("AttributeError: 'NoneType' object has no attribute 'xx'")
+			})?;
+			Transform::new(t.xx, t.yx, t.xy, t.yy, t.dx, t.dy)
+		}
+		Paint::Format14(p) => IDENTITY.translate(f64::from(p.dx), f64::from(p.dy)),
+		Paint::Format16(p) => IDENTITY.scale(p.scale_x, Some(p.scale_y)),
+		Paint::Format18(p) => around(p.center_x, p.center_y, &|t| {
+			t.scale(p.scale_x, Some(p.scale_y))
+		}),
+		Paint::Format20(p) => IDENTITY.scale(p.scale, None),
+		Paint::Format22(p) => around(p.center_x, p.center_y, &|t| t.scale(p.scale, None)),
+		Paint::Format24(p) => IDENTITY.rotate(p.angle.to_radians()),
+		Paint::Format26(p) => around(p.center_x, p.center_y, &|t| t.rotate(p.angle.to_radians())),
+		Paint::Format28(p) => {
+			IDENTITY.skew((-p.x_skew_angle).to_radians(), p.y_skew_angle.to_radians())
+		}
+		Paint::Format30(p) => around(p.center_x, p.center_y, &|t| {
+			t.skew((-p.x_skew_angle).to_radians(), p.y_skew_angle.to_radians())
+		}),
+		Paint::Format3(_)
+		| Paint::Format5(_)
+		| Paint::Format7(_)
+		| Paint::Format9(_)
+		| Paint::Format13(_)
+		| Paint::Format15(_)
+		| Paint::Format17(_)
+		| Paint::Format19(_)
+		| Paint::Format21(_)
+		| Paint::Format23(_)
+		| Paint::Format25(_)
+		| Paint::Format27(_)
+		| Paint::Format29(_)
+		| Paint::Format31(_) => {
+			return Err(Error::ttlib(format!(
+				"NotImplementedError: Variable Paints not supported: {}",
+				paint.format().unwrap_or_default()
+			)));
+		}
+		_ => IDENTITY,
+	})
+}
+
+/// `Paint.iterPaintSubTables`: the child paints, the layers of a
+/// `PaintColrLayers` and the paint of the base glyph of a `PaintColrGlyph`.
+fn paint_sub_tables<'a>(colr: &'a ot::COLR, paint: &'a Paint) -> Result<Vec<&'a Paint>> {
+	let children: Vec<&Option<Box<Paint>>> = match paint {
+		Paint::Format1(p) => {
+			let layers = colr.layer_list.as_deref().map_or(&[][..], |l| &l.paint[..]);
+			let start = (p.first_layer_index as usize).min(layers.len());
+			let end = (start + p.num_layers as usize).min(layers.len());
+			layers[start..end].iter().collect()
+		}
+		Paint::Format11(p) => {
+			let records = colr
+				.base_glyph_list
+				.as_deref()
+				.map_or(&[][..], |l| &l.base_glyph_paint_record[..]);
+			let record = records
+				.iter()
+				.find(|r| r.base_glyph == p.glyph)
+				.ok_or_else(|| Error::ttlib("KeyError: glyph not in colr.BaseGlyphList"))?;
+			vec![&record.paint]
+		}
+		Paint::Format10(p) => vec![&p.paint],
+		Paint::Format12(p) => vec![&p.paint],
+		Paint::Format13(p) => vec![&p.paint],
+		Paint::Format14(p) => vec![&p.paint],
+		Paint::Format15(p) => vec![&p.paint],
+		Paint::Format16(p) => vec![&p.paint],
+		Paint::Format17(p) => vec![&p.paint],
+		Paint::Format18(p) => vec![&p.paint],
+		Paint::Format19(p) => vec![&p.paint],
+		Paint::Format20(p) => vec![&p.paint],
+		Paint::Format21(p) => vec![&p.paint],
+		Paint::Format22(p) => vec![&p.paint],
+		Paint::Format23(p) => vec![&p.paint],
+		Paint::Format24(p) => vec![&p.paint],
+		Paint::Format25(p) => vec![&p.paint],
+		Paint::Format26(p) => vec![&p.paint],
+		Paint::Format27(p) => vec![&p.paint],
+		Paint::Format28(p) => vec![&p.paint],
+		Paint::Format29(p) => vec![&p.paint],
+		Paint::Format30(p) => vec![&p.paint],
+		Paint::Format31(p) => vec![&p.paint],
+		Paint::Format32(p) => vec![&p.source_paint, &p.backdrop_paint],
+		Paint::Format33(p) => vec![&p.paint],
+		_ => Vec::new(),
+	};
+	children
+		.into_iter()
+		.map(|c| c.as_deref().ok_or_else(no_paint))
+		.collect()
+}
+
+/// `Paint.computeClipBox`: the control bounds of the glyphs that a paint
+/// draws, transformed as the paints above them say, quantized.
+fn compute_clip_box(
+	colr: &ot::COLR,
+	paint: &Paint,
+	glyph_set: &GlyphSet<'_>,
+	quantization: i64,
+) -> Result<Option<ot::ClipBox>> {
+	/// The paints from the root to `paint`, with their transforms: fontTools only
+	/// computes these (`getTransform`) when it reaches a glyph paint, so the
+	/// errors are kept until then.
+	fn walk<'a>(
+		colr: &'a ot::COLR,
+		paint: &'a Paint,
+		path: &mut Vec<&'a Paint>,
+		glyph_set: &GlyphSet<'_>,
+		pen: &mut dyn Pen,
+	) -> Result<()> {
+		if path.len() > MAX_PAINT_DEPTH {
+			return Err(Error::ttlib("RecursionError: COLR paint graph is too deep"));
+		}
+		path.push(paint);
+		let children = paint_sub_tables(colr, paint)?;
+		if let Paint::Format10(ot::PaintFormat10 { glyph, .. })
+		| Paint::Format33(ot::PaintFormat33 { glyph, .. }) = paint
+		{
+			let mut transformation = IDENTITY;
+			for p in path.iter() {
+				transformation = transformation.transform(&paint_transform(p)?);
+			}
+			let mut transform_pen = TransformPen::new(&mut *pen, transformation);
+			glyph_set.draw(&glyph_set.glyph_order().name(*glyph), &mut transform_pen)?;
+		}
+		for child in children {
+			walk(colr, child, path, glyph_set, pen)?;
+		}
+		path.pop();
+		Ok(())
+	}
+
+	let mut pen = BoundsPen::new_control_bounds(Some(glyph_set), false);
+	walk(colr, paint, &mut Vec::new(), glyph_set, &mut pen)?;
+	let Some(bounds) = pen.bounds() else {
+		return Ok(None);
+	};
+	let [x_min, y_min, x_max, y_max] = quantize_rect(bounds, quantization as f64)
+		.ok_or_else(|| Error::value("factor must be >= 1"))?;
+	Ok(Some(ot::ClipBox::Format1(ot::ClipBoxFormat1 {
+		x_min: fit(x_min, "xMin")?,
+		y_min: fit(y_min, "yMin")?,
+		x_max: fit(x_max, "xMax")?,
+		y_max: fit(y_max, "yMax")?,
+	})))
+}
+
 fn no_color_layers() -> Error {
 	Error::ttlib("AttributeError: 'table_C_O_L_R_' object has no attribute 'ColorLayers'")
 }
@@ -111,6 +286,61 @@ impl Colr {
 				layer_record: layer_records,
 			})
 		});
+		Ok(())
+	}
+
+	/// Sets the clip box of each base glyph of a version 1 table to the
+	/// control bounds of its paint, quantized (`COLR.computeClipBoxes`). A glyph
+	/// set from [`GlyphSet::new`] draws the glyphs; version 0 tables are left
+	/// alone.
+	pub fn compute_clip_boxes(
+		&mut self,
+		glyph_set: &GlyphSet<'_>,
+		quantization: i64,
+	) -> Result<()> {
+		let Some(table) = &mut self.table else {
+			return Ok(());
+		};
+		if table.version == 0 {
+			return Ok(());
+		}
+		let records = &table
+			.base_glyph_list
+			.as_deref()
+			.ok_or_else(|| {
+				Error::ttlib(
+					"AttributeError: 'NoneType' object has no attribute 'BaseGlyphPaintRecord'",
+				)
+			})?
+			.base_glyph_paint_record;
+		let mut clips = BTreeMap::new();
+		for rec in records {
+			let clip_box = rec
+				.paint
+				.as_deref()
+				.ok_or_else(no_paint)
+				.and_then(|paint| compute_clip_box(table, paint, glyph_set, quantization))
+				.map_err(|e| {
+					Error::ttlib(format!(
+						"Failed to compute COLR ClipBox for '{}': {e}",
+						glyph_set.glyph_order().name(rec.base_glyph)
+					))
+				})?;
+			if let Some(clip_box) = clip_box {
+				clips.insert(rec.base_glyph, clip_box);
+			}
+		}
+		if clips.is_empty() {
+			table.clip_list = None;
+		} else {
+			let clip_list = table.clip_list.get_or_insert_with(|| {
+				Box::new(ClipList {
+					format: Some(1),
+					..Default::default()
+				})
+			});
+			clip_list.clips = clips;
+		}
 		Ok(())
 	}
 

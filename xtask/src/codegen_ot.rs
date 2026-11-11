@@ -714,7 +714,7 @@ impl Gen<'_> {
 				f.conv.name
 			),
 			Kind::FeatureVariations => format!(
-				"if {value}.is_some() {{ set_writer_feature_tags(w, self.feature_list.as_deref(), self.version); }} write_offset(w, font, {value}.as_deref(), 4, {:?}, {index})?;",
+				"if {value}.is_some() {{ set_writer_feature_tags(w, self.feature_list.as_deref(), self.feature_list2.as_deref(), self.version); }} write_offset(w, font, {value}.as_deref(), 4, {:?}, {index})?;",
 				f.conv.name
 			),
 			Kind::AlternateFeature(_) => format!(
@@ -1005,9 +1005,15 @@ impl Gen<'_> {
 		}
 	}
 
-	fn gen_to_xml2(&mut self, fields: &[Field]) {
+	fn gen_to_xml2(&mut self, class: &str, fields: &[Field]) {
 		self.line("\t\tlet t = self;");
 		self.line("\t\tlet _ = t;");
+		// `LookupList.toXML2` writes a comment with the feaLib debugging
+		// information (in a `Debg` table) before each lookup.
+		let lookup_debug = class == "LookupList";
+		if lookup_debug {
+			self.line("\t\tlet debug = lookup_list_debug_data(self, font)?;");
+		}
 		for f in fields {
 			let stmt = match (&f.repeat, &f.kind) {
 				(Some(_), Kind::DeltaValue) => {
@@ -1019,9 +1025,13 @@ impl Gen<'_> {
 						_ => "(*item)".to_owned(),
 					};
 					let stmt = self.xml_write_stmt(f, &item, "attrs");
-					let stmt = stmt
+					let mut stmt = stmt
 						.replace("(*item).as_deref()", "item.as_deref()")
 						.replace("&(*item)", "item");
+					if lookup_debug {
+						stmt =
+							format!("write_lookup_debug_comment(xw, debug.as_ref(), i)?; {stmt}");
+					}
 					format!(
 						"for (i, item) in self.{}.iter().enumerate() {{ let attrs: Attrs = vec![(\"index\", i.to_string())]; let _ = &attrs; {stmt} }}",
 						f.ident
@@ -1402,7 +1412,7 @@ impl Gen<'_> {
 		}
 		self.line("\tfn to_xml2(&self, xw: &mut XmlWriter, font: &mut Font) -> Result<()> {");
 		self.line("\t\tlet _ = (&mut *xw, &mut *font);");
-		self.gen_to_xml2(&fields);
+		self.gen_to_xml2(&class.name, &fields);
 		self.line("\t\tOk(())");
 		self.line("\t}");
 		self.line(
@@ -1735,7 +1745,9 @@ impl Gen<'_> {
 		self.line(
 			"\tpub fn read_offset(r: &mut OtReader<'_>, font: &mut Font) -> Result<Option<Box<Self>>> {",
 		);
-		self.line("\t\tlet tag = match r.get(\"FeatureTag\") { Some(StateValue::Tag(t)) => *t, _ => return Err(Error::ttlib(\"KeyError: 'FeatureTag'\")) };");
+		// `reader["FeatureTag"]` is `localState and localState[name]`: None without
+		// any propagated value.
+		self.line("\t\tlet tag = match r.get(\"FeatureTag\") { Some(StateValue::Tag(t)) => *t, None if r.state_is_empty() => None, _ => return Err(Error::ttlib(\"KeyError: 'FeatureTag'\")) };");
 		self.line("\t\tlet offset = r.read_u16()? as usize;");
 		self.line("\t\tif offset == 0 { return Ok(None); }");
 		self.line("\t\tlet mut sub = r.sub_reader(offset);");

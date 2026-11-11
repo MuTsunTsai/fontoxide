@@ -10,7 +10,7 @@ use fontoxide_misc::py::latin1_decode;
 use fontoxide_misc::transform::Transform;
 use fontoxide_pens::{BoundsPen, GlyphSet, Pen};
 
-use super::charstring::{Blender, Context, Interpreter, T2CharString, index_error};
+use super::charstring::{Blender, Context, HintPen, Interpreter, T2CharString, index_error};
 use super::dict::{
 	Conv, DictDecompiler, Operator, PRIVATE_DICT, PRIVATE_DICT2, TOP_DICT, TOP_DICT2, Value,
 	operator,
@@ -1329,6 +1329,49 @@ fn run_char_string_with_width(
 	blender: Option<Blender<'_>>,
 	width_out: Option<&mut Option<f64>>,
 ) -> Result<()> {
+	let run = match pen {
+		Some(pen) => Run::Pen(pen),
+		None => Run::Decompile,
+	};
+	run_char_string_as(top, global_subrs, gid, run, blender, width_out)
+}
+
+/// What [`run_char_string_as`] runs a charstring with.
+enum Run<'p> {
+	/// `SimpleT2Decompiler`.
+	Decompile,
+	/// `T2OutlineExtractor`.
+	Pen(&'p mut dyn Pen),
+	/// `MergeOutlineExtractor` of `fontTools.varLib.cff`.
+	Hints(&'p mut dyn HintPen),
+}
+
+impl CffFontSet {
+	/// Draws a glyph of the first font onto `pen`, passing the hints on to it, and
+	/// dropping any width (`MergeOutlineExtractor` of `fontTools.varLib.cff`).
+	pub fn draw_char_string_with_hints(&mut self, gid: usize, pen: &mut dyn HintPen) -> Result<()> {
+		let top = self.top_dicts.first_mut().ok_or_else(index_error)?;
+		run_char_string_as(
+			&mut *top,
+			&mut self.global_subrs,
+			gid,
+			Run::Hints(pen),
+			None,
+			None,
+		)
+	}
+}
+
+/// Runs a charstring of a Top DICT with a decompiler or an outline extractor.
+fn run_char_string_as(
+	top: &mut TopDict,
+	global_subrs: &mut [T2CharString],
+	gid: usize,
+	run: Run<'_>,
+	blender: Option<Blender<'_>>,
+	width_out: Option<&mut Option<f64>>,
+) -> Result<()> {
+	let drawing = !matches!(run, Run::Decompile);
 	let TopDict {
 		char_strings,
 		private,
@@ -1342,7 +1385,7 @@ fn run_char_string_with_width(
 		.get(gid)
 		.copied()
 		.ok_or_else(index_error)?;
-	if pen.is_none() && !char_strings.items[gid].needs_decompilation() {
+	if !drawing && !char_strings.items[gid].needs_decompilation() {
 		return Ok(());
 	}
 	let private: Option<&mut PrivateDict> = match private_ref {
@@ -1353,7 +1396,7 @@ fn run_char_string_with_width(
 			.and_then(|f| f.private.as_deref_mut()),
 		PrivateRef::None => None,
 	};
-	if pen.is_some() && private.is_none() {
+	if drawing && private.is_none() {
 		return Err(Error::ttlib(
 			"AttributeError: 'NoneType' object has no attribute 'nominalWidthX'",
 		));
@@ -1393,7 +1436,11 @@ fn run_char_string_with_width(
 		num_regions: &regions,
 		blender,
 	};
-	let mut interpreter = Interpreter::new(ctx, pen);
+	let mut interpreter = match run {
+		Run::Decompile => Interpreter::new(ctx, None),
+		Run::Pen(pen) => Interpreter::new(ctx, Some(pen)),
+		Run::Hints(pen) => Interpreter::with_hints(ctx, pen),
+	};
 	let result = interpreter.execute(&mut cs);
 	let width = interpreter.width();
 	char_strings.items[gid] = cs;

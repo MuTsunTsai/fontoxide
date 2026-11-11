@@ -25,12 +25,14 @@ fontoxide-qu2cu = { path = "crates/fontoxide-qu2cu", version = "0.0.0" }
 fontoxide-designspacelib = { path = "crates/fontoxide-designspacelib", version = "0.0.0" }
 fontoxide-encodings = { path = "crates/fontoxide-encodings", version = "0.0.0" }
 fontoxide-fealib = { path = "crates/fontoxide-fealib", version = "0.0.0" }
+fontoxide-merge = { path = "crates/fontoxide-merge", version = "0.0.0" }
 fontoxide-misc = { path = "crates/fontoxide-misc", version = "0.0.0" }
 fontoxide-otllib = { path = "crates/fontoxide-otllib", version = "0.0.0" }
 fontoxide-pens = { path = "crates/fontoxide-pens", version = "0.0.0" }
 fontoxide-repack = { path = "crates/fontoxide-repack", version = "0.0.0" }
 fontoxide-subset = { path = "crates/fontoxide-subset", version = "0.0.0" }
 fontoxide-ttlib = { path = "crates/fontoxide-ttlib", version = "0.0.0" }
+fontoxide-ufolib = { path = "crates/fontoxide-ufolib", version = "0.0.0" }
 fontoxide-unicodedata = { path = "crates/fontoxide-unicodedata", version = "0.0.0" }
 fontoxide-varlib = { path = "crates/fontoxide-varlib", version = "0.0.0" }
 brotli = { version = "9.1.1", default-features = false, features = ["std"] }

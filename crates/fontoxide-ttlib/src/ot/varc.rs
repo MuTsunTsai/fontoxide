@@ -216,7 +216,7 @@ impl Default for VarComponent {
 impl VarComponent {
 	/// Reads a component from `data[i..]` (`decompile`); returns the index after
 	/// it. `axis_counts` is the length of each `AxisIndicesList` item.
-	fn decompile(
+	pub fn decompile(
 		data: &[u8],
 		mut i: usize,
 		num_glyphs: usize,
@@ -314,8 +314,8 @@ impl VarComponent {
 		Ok(())
 	}
 
-	/// Writes the component (`compile`).
-	fn compile(&self, out: &mut Vec<u8>) -> Result<()> {
+	/// Writes the component (`compile`), appending it to `out`.
+	pub fn compile(&self, out: &mut Vec<u8>) -> Result<()> {
 		let mut data = Vec::new();
 		let mut flags = self.flags;
 
@@ -442,7 +442,8 @@ impl VarComponent {
 		Ok(())
 	}
 
-	fn from_xml(element: &Element, font: &mut Font) -> Result<Self> {
+	/// Reads a `<VarComponent>` element (`fromXML`).
+	pub fn from_xml(element: &Element, font: &mut Font) -> Result<Self> {
 		let mut c = VarComponent::default();
 		for e in element.elements() {
 			if e.elements().next().is_some() {
@@ -562,7 +563,7 @@ impl VarCompositeGlyph {
 }
 
 /// Reads a CFF2 INDEX (`CFF2Index.read`): the data of each item.
-fn read_index<'a>(r: &mut OtReader<'a>) -> Result<Vec<&'a [u8]>> {
+pub fn read_index<'a>(r: &mut OtReader<'a>) -> Result<Vec<&'a [u8]>> {
 	let count = r.read_u32()? as usize;
 	if count == 0 {
 		return Ok(Vec::new());

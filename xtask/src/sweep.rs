@@ -101,7 +101,11 @@ impl Sweeper {
 		let mut by_stem: HashMap<&str, Vec<(&String, SystemTime)>> = HashMap::new();
 		for ((stem, hash), files) in &groups {
 			if is_exe(files) {
-				let newest = files.iter().map(|f| modified(f)).max().unwrap_or(SystemTime::UNIX_EPOCH);
+				let newest = files
+					.iter()
+					.map(|f| modified(f))
+					.max()
+					.unwrap_or(SystemTime::UNIX_EPOCH);
 				by_stem.entry(stem).or_default().push((hash, newest));
 			}
 		}
@@ -170,7 +174,11 @@ pub fn run(args: &Args) -> Result<()> {
 	}
 	println!(
 		"{} {} items, {:.1} GB",
-		if args.dry_run { "would remove" } else { "removed" },
+		if args.dry_run {
+			"would remove"
+		} else {
+			"removed"
+		},
 		sweeper.removed,
 		sweeper.freed as f64 / 1e9
 	);

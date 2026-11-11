@@ -8,8 +8,8 @@ requires-python = ">=3.13"
 # nothing is ever built or written inside the submodule.
 #
 # These are the optional dependencies behind fontTools' extras that change what it
-# can read or write (woff, unicode, graphite, pathops, lxml). Plotting, reporting,
-# and symfont extras are intentionally left out.
+# can read or write or what it reports (woff, unicode, graphite, pathops, lxml,
+# interpolatable). Plotting, reporting, and symfont extras are intentionally left out.
 dependencies = [
   "brotli>=1.2.1",
   "zopfli>=0.1.4",
@@ -17,6 +17,9 @@ dependencies = [
   "lz4>=1.7.4.2",
   "skia-pathops>=0.5.0",
   "lxml>=4.0",
+  # varLib.interpolatable matches contours with scipy; without it, it falls back to
+  # a brute force that gives up beyond 6 contours and compares masters in order.
+  "scipy>=1.14",
   # For collecting the upstream test suite (`list-tests`). ufoLib2 pulls in a PyPI
   # copy of fontTools, but reference.py puts the submodule first on sys.path.
   "pytest>=8",

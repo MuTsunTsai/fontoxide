@@ -219,3 +219,54 @@ fn invalid_location_argument() {
 		);
 	}
 }
+
+#[test]
+fn test_varlib_mutator_ttf() -> TestResult {
+	use fontoxide_designspacelib::DesignSpaceDocument;
+	use fontoxide_varlib::build::{BuildOptions, SourceFonts, build};
+	let dir = TempDir::new("mutator-ttf")?;
+	let ttx_dir = data("master_ttx_interpolatable_ttf");
+	let mut names: Vec<String> = std::fs::read_dir(&ttx_dir)?
+		.filter_map(|e| e.ok())
+		.map(|e| e.file_name().to_string_lossy().into_owned())
+		.filter(|n| n.starts_with("TestFamily-") && n.ends_with(".ttx"))
+		.collect();
+	names.sort();
+	for name in &names {
+		let out = dir.file(&name.replace(".ttx", ".ttf"));
+		compile_font(&PathBuf::from(&ttx_dir).join(name).to_string_lossy(), &out)?;
+	}
+	let tempdir = dir.0.clone();
+	let finder = move |s: &str| {
+		let stem = std::path::Path::new(s)
+			.file_stem()
+			.map(|n| n.to_string_lossy().into_owned())
+			.unwrap_or_default();
+		tempdir
+			.join(format!("{stem}.ttf"))
+			.to_string_lossy()
+			.into_owned()
+	};
+	let mut ds = DesignSpaceDocument::from_file(data("Build.designspace"))?;
+	let (mut varfont, _, _) = build(
+		&mut ds,
+		&mut SourceFonts::new(),
+		&finder,
+		&BuildOptions::default(),
+	)?;
+	for t in [b"hmtx", b"vmtx"] {
+		if varfont.contains(Tag::new(t)) {
+			varfont.load(Tag::new(t))?;
+		}
+	}
+	let varfont_path = dir.file("Mutator.ttf");
+	std::fs::write(&varfont_path, varfont.write(&WriteOptions::default())?)?;
+	assert_eq!(mutator(&[&varfont_path, "wght=500", "cntr=50"])?, 0);
+	let mut instfont = Font::read(
+		std::fs::read(dir.file("Mutator-instance.ttf"))?,
+		ReadOptions::default(),
+	)?;
+	let tables = tables_but_head(&mut instfont);
+	let tables: Vec<&str> = tables.iter().map(String::as_str).collect();
+	expect_ttx(&mut instfont, &test_output("Mutator.ttx"), &tables)
+}

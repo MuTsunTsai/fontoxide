@@ -1,0 +1,95 @@
+=== 
+Glyph glyph00004 was not compatible:
+  Masters: '0000=-1.0', '0001=1.0':
+    Contour 0 interpolation is underweight: '0000=-1.0', '0001=1.0'
+--- return
+{"glyph00004": [{"type": "underweight", "contour": 0, "master_1": "'0000=-1.0'", "master_2": "'0001=1.0'", "master_1_idx": 1, "master_2_idx": 3, "tolerance": 0.9086604532075131}]}
+=== --json
+{"glyph00004": [{"type": "underweight", "contour": 0, "master_1": "'0000=-1.0'", "master_2": "'0001=1.0'", "master_1_idx": 1, "master_2_idx": 3, "tolerance": 0.9086604532075131}]}
+--- return
+{"glyph00004": [{"type": "underweight", "contour": 0, "master_1": "'0000=-1.0'", "master_2": "'0001=1.0'", "master_1_idx": 1, "master_2_idx": 3, "tolerance": 0.9086604532075131}]}
+=== --show-all
+Glyph glyph00004 was not compatible:
+  Masters: '', '0000=-1.0':
+    Showing '' and '0000=-1.0'
+  Masters: '0000=-1.0', '0001=1.0':
+    Contour 0 interpolation is underweight: '0000=-1.0', '0001=1.0'
+    Showing '0000=-1.0' and '0001=1.0'
+  Masters: '0001=1.0', '0002=-1.0':
+    Showing '0001=1.0' and '0002=-1.0'
+  Masters: '0002=-1.0', '0003=1.0':
+    Showing '0002=-1.0' and '0003=1.0'
+  Masters: '0003=1.0', '0004=1.0':
+    Showing '0003=1.0' and '0004=1.0'
+  Masters: '0004=1.0', '0005=1.0':
+    Showing '0004=1.0' and '0005=1.0'
+  Masters: '0005=1.0', 'wght=840.3':
+    Showing '0005=1.0' and 'wght=840.3'
+  Masters: 'wght=840.3', '0000=-1.0 0001=1.0':
+    Showing 'wght=840.3' and '0000=-1.0 0001=1.0'
+  Masters: '0000=-1.0 0001=1.0', '0000=-1.0 0002=-1.0':
+    Showing '0000=-1.0 0001=1.0' and '0000=-1.0 0002=-1.0'
+  Masters: '0000=-1.0 0002=-1.0', '0000=-1.0 wght=840.3':
+    Showing '0000=-1.0 0002=-1.0' and '0000=-1.0 wght=840.3'
+  Masters: '0000=-1.0 wght=840.3', '0001=1.0 0002=-1.0':
+    Showing '0000=-1.0 wght=840.3' and '0001=1.0 0002=-1.0'
+  Masters: '0001=1.0 0002=-1.0', '0001=1.0 wght=840.3':
+    Showing '0001=1.0 0002=-1.0' and '0001=1.0 wght=840.3'
+  Masters: '0001=1.0 wght=840.3', '0002=-1.0 wght=840.3':
+    Showing '0001=1.0 wght=840.3' and '0002=-1.0 wght=840.3'
+  Masters: '0002=-1.0 wght=840.3', '0000=-1.0 0001=1.0 0002=-1.0':
+    Showing '0002=-1.0 wght=840.3' and '0000=-1.0 0001=1.0 0002=-1.0'
+  Masters: '0000=-1.0 0001=1.0 0002=-1.0', '0000=-1.0 0001=1.0 wght=840.3':
+    Showing '0000=-1.0 0001=1.0 0002=-1.0' and '0000=-1.0 0001=1.0 wght=840.3'
+  Masters: '0000=-1.0 0001=1.0 wght=840.3', '0000=-1.0 0002=-1.0 wght=840.3':
+    Showing '0000=-1.0 0001=1.0 wght=840.3' and '0000=-1.0 0002=-1.0 wght=840.3'
+  Masters: '0000=-1.0 0002=-1.0 wght=840.3', '0001=1.0 0002=-1.0 wght=840.3':
+    Showing '0000=-1.0 0002=-1.0 wght=840.3' and '0001=1.0 0002=-1.0 wght=840.3'
+  Masters: '0001=1.0 0002=-1.0 wght=840.3', '0000=-1.0 0001=1.0 0002=-1.0 wght=840.3':
+    Showing '0001=1.0 0002=-1.0 wght=840.3' and '0000=-1.0 0001=1.0 0002=-1.0 wght=840.3'
+Glyph glyph00006 was not compatible:
+  Masters: '', '0000=-1.0':
+    Showing '' and '0000=-1.0'
+  Masters: '0000=-1.0', '0001=1.0':
+    Showing '0000=-1.0' and '0001=1.0'
+  Masters: '0001=1.0', '0002=1.0':
+    Showing '0001=1.0' and '0002=1.0'
+  Masters: '0002=1.0', '0003=-1.0':
+    Showing '0002=1.0' and '0003=-1.0'
+  Masters: '0003=-1.0', 'wght=840.3':
+    Showing '0003=-1.0' and 'wght=840.3'
+  Masters: 'wght=840.3', '0000=-1.0 wght=840.3':
+    Showing 'wght=840.3' and '0000=-1.0 wght=840.3'
+  Masters: '0000=-1.0 wght=840.3', '0002=1.0 wght=840.3':
+    Showing '0000=-1.0 wght=840.3' and '0002=1.0 wght=840.3'
+Glyph glyph00010 was not compatible:
+  Masters: '', '0000=-1.0':
+    Showing '' and '0000=-1.0'
+  Masters: '0000=-1.0', '0001=-1.0':
+    Showing '0000=-1.0' and '0001=-1.0'
+  Masters: '0001=-1.0', '0002=1.0':
+    Showing '0001=-1.0' and '0002=1.0'
+  Masters: '0002=1.0', '0003=1.0':
+    Showing '0002=1.0' and '0003=1.0'
+  Masters: '0003=1.0', 'wght=840.3':
+    Showing '0003=1.0' and 'wght=840.3'
+  Masters: 'wght=840.3', '0000=-1.0 0001=-1.0':
+    Showing 'wght=840.3' and '0000=-1.0 0001=-1.0'
+  Masters: '0000=-1.0 0001=-1.0', '0000=-1.0 wght=840.3':
+    Showing '0000=-1.0 0001=-1.0' and '0000=-1.0 wght=840.3'
+  Masters: '0000=-1.0 wght=840.3', '0001=-1.0 wght=840.3':
+    Showing '0000=-1.0 wght=840.3' and '0001=-1.0 wght=840.3'
+  Masters: '0001=-1.0 wght=840.3', '0000=-1.0 0001=-1.0 wght=840.3':
+    Showing '0001=-1.0 wght=840.3' and '0000=-1.0 0001=-1.0 wght=840.3'
+--- return
+{"glyph00004": [{"type": "nothing", "master_1": "''", "master_2": "'0000=-1.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "underweight", "contour": 0, "master_1": "'0000=-1.0'", "master_2": "'0001=1.0'", "master_1_idx": 1, "master_2_idx": 3, "tolerance": 0.9086604532075131}, {"type": "nothing", "master_1": "'0000=-1.0'", "master_2": "'0001=1.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'0001=1.0'", "master_2": "'0002=-1.0'", "master_1_idx": 3, "master_2_idx": 4}, {"type": "nothing", "master_1": "'0002=-1.0'", "master_2": "'0003=1.0'", "master_1_idx": 4, "master_2_idx": 7}, {"type": "nothing", "master_1": "'0003=1.0'", "master_2": "'0004=1.0'", "master_1_idx": 7, "master_2_idx": 8}, {"type": "nothing", "master_1": "'0004=1.0'", "master_2": "'0005=1.0'", "master_1_idx": 8, "master_2_idx": 9}, {"type": "nothing", "master_1": "'0005=1.0'", "master_2": "'wght=840.3'", "master_1_idx": 9, "master_2_idx": 10}, {"type": "nothing", "master_1": "'wght=840.3'", "master_2": "'0000=-1.0 0001=1.0'", "master_1_idx": 10, "master_2_idx": 12}, {"type": "nothing", "master_1": "'0000=-1.0 0001=1.0'", "master_2": "'0000=-1.0 0002=-1.0'", "master_1_idx": 12, "master_2_idx": 13}, {"type": "nothing", "master_1": "'0000=-1.0 0002=-1.0'", "master_2": "'0000=-1.0 wght=840.3'", "master_1_idx": 13, "master_2_idx": 14}, {"type": "nothing", "master_1": "'0000=-1.0 wght=840.3'", "master_2": "'0001=1.0 0002=-1.0'", "master_1_idx": 14, "master_2_idx": 16}, {"type": "nothing", "master_1": "'0001=1.0 0002=-1.0'", "master_2": "'0001=1.0 wght=840.3'", "master_1_idx": 16, "master_2_idx": 17}, {"type": "nothing", "master_1": "'0001=1.0 wght=840.3'", "master_2": "'0002=-1.0 wght=840.3'", "master_1_idx": 17, "master_2_idx": 18}, {"type": "nothing", "master_1": "'0002=-1.0 wght=840.3'", "master_2": "'0000=-1.0 0001=1.0 0002=-1.0'", "master_1_idx": 18, "master_2_idx": 21}, {"type": "nothing", "master_1": "'0000=-1.0 0001=1.0 0002=-1.0'", "master_2": "'0000=-1.0 0001=1.0 wght=840.3'", "master_1_idx": 21, "master_2_idx": 22}, {"type": "nothing", "master_1": "'0000=-1.0 0001=1.0 wght=840.3'", "master_2": "'0000=-1.0 0002=-1.0 wght=840.3'", "master_1_idx": 22, "master_2_idx": 23}, {"type": "nothing", "master_1": "'0000=-1.0 0002=-1.0 wght=840.3'", "master_2": "'0001=1.0 0002=-1.0 wght=840.3'", "master_1_idx": 23, "master_2_idx": 24}, {"type": "nothing", "master_1": "'0001=1.0 0002=-1.0 wght=840.3'", "master_2": "'0000=-1.0 0001=1.0 0002=-1.0 wght=840.3'", "master_1_idx": 24, "master_2_idx": 25}], "glyph00006": [{"type": "nothing", "master_1": "''", "master_2": "'0000=-1.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'0000=-1.0'", "master_2": "'0001=1.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'0001=1.0'", "master_2": "'0002=1.0'", "master_1_idx": 3, "master_2_idx": 5}, {"type": "nothing", "master_1": "'0002=1.0'", "master_2": "'0003=-1.0'", "master_1_idx": 5, "master_2_idx": 6}, {"type": "nothing", "master_1": "'0003=-1.0'", "master_2": "'wght=840.3'", "master_1_idx": 6, "master_2_idx": 10}, {"type": "nothing", "master_1": "'wght=840.3'", "master_2": "'0000=-1.0 wght=840.3'", "master_1_idx": 10, "master_2_idx": 14}, {"type": "nothing", "master_1": "'0000=-1.0 wght=840.3'", "master_2": "'0002=1.0 wght=840.3'", "master_1_idx": 14, "master_2_idx": 19}], "glyph00010": [{"type": "nothing", "master_1": "''", "master_2": "'0000=-1.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'0000=-1.0'", "master_2": "'0001=-1.0'", "master_1_idx": 1, "master_2_idx": 2}, {"type": "nothing", "master_1": "'0001=-1.0'", "master_2": "'0002=1.0'", "master_1_idx": 2, "master_2_idx": 5}, {"type": "nothing", "master_1": "'0002=1.0'", "master_2": "'0003=1.0'", "master_1_idx": 5, "master_2_idx": 7}, {"type": "nothing", "master_1": "'0003=1.0'", "master_2": "'wght=840.3'", "master_1_idx": 7, "master_2_idx": 10}, {"type": "nothing", "master_1": "'wght=840.3'", "master_2": "'0000=-1.0 0001=-1.0'", "master_1_idx": 10, "master_2_idx": 11}, {"type": "nothing", "master_1": "'0000=-1.0 0001=-1.0'", "master_2": "'0000=-1.0 wght=840.3'", "master_1_idx": 11, "master_2_idx": 14}, {"type": "nothing", "master_1": "'0000=-1.0 wght=840.3'", "master_2": "'0001=-1.0 wght=840.3'", "master_1_idx": 14, "master_2_idx": 15}, {"type": "nothing", "master_1": "'0001=-1.0 wght=840.3'", "master_2": "'0000=-1.0 0001=-1.0 wght=840.3'", "master_1_idx": 15, "master_2_idx": 20}]}
+=== --show-all	--json
+{"glyph00004": [{"type": "nothing", "master_1": "''", "master_2": "'0000=-1.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "underweight", "contour": 0, "master_1": "'0000=-1.0'", "master_2": "'0001=1.0'", "master_1_idx": 1, "master_2_idx": 3, "tolerance": 0.9086604532075131}, {"type": "nothing", "master_1": "'0000=-1.0'", "master_2": "'0001=1.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'0001=1.0'", "master_2": "'0002=-1.0'", "master_1_idx": 3, "master_2_idx": 4}, {"type": "nothing", "master_1": "'0002=-1.0'", "master_2": "'0003=1.0'", "master_1_idx": 4, "master_2_idx": 7}, {"type": "nothing", "master_1": "'0003=1.0'", "master_2": "'0004=1.0'", "master_1_idx": 7, "master_2_idx": 8}, {"type": "nothing", "master_1": "'0004=1.0'", "master_2": "'0005=1.0'", "master_1_idx": 8, "master_2_idx": 9}, {"type": "nothing", "master_1": "'0005=1.0'", "master_2": "'wght=840.3'", "master_1_idx": 9, "master_2_idx": 10}, {"type": "nothing", "master_1": "'wght=840.3'", "master_2": "'0000=-1.0 0001=1.0'", "master_1_idx": 10, "master_2_idx": 12}, {"type": "nothing", "master_1": "'0000=-1.0 0001=1.0'", "master_2": "'0000=-1.0 0002=-1.0'", "master_1_idx": 12, "master_2_idx": 13}, {"type": "nothing", "master_1": "'0000=-1.0 0002=-1.0'", "master_2": "'0000=-1.0 wght=840.3'", "master_1_idx": 13, "master_2_idx": 14}, {"type": "nothing", "master_1": "'0000=-1.0 wght=840.3'", "master_2": "'0001=1.0 0002=-1.0'", "master_1_idx": 14, "master_2_idx": 16}, {"type": "nothing", "master_1": "'0001=1.0 0002=-1.0'", "master_2": "'0001=1.0 wght=840.3'", "master_1_idx": 16, "master_2_idx": 17}, {"type": "nothing", "master_1": "'0001=1.0 wght=840.3'", "master_2": "'0002=-1.0 wght=840.3'", "master_1_idx": 17, "master_2_idx": 18}, {"type": "nothing", "master_1": "'0002=-1.0 wght=840.3'", "master_2": "'0000=-1.0 0001=1.0 0002=-1.0'", "master_1_idx": 18, "master_2_idx": 21}, {"type": "nothing", "master_1": "'0000=-1.0 0001=1.0 0002=-1.0'", "master_2": "'0000=-1.0 0001=1.0 wght=840.3'", "master_1_idx": 21, "master_2_idx": 22}, {"type": "nothing", "master_1": "'0000=-1.0 0001=1.0 wght=840.3'", "master_2": "'0000=-1.0 0002=-1.0 wght=840.3'", "master_1_idx": 22, "master_2_idx": 23}, {"type": "nothing", "master_1": "'0000=-1.0 0002=-1.0 wght=840.3'", "master_2": "'0001=1.0 0002=-1.0 wght=840.3'", "master_1_idx": 23, "master_2_idx": 24}, {"type": "nothing", "master_1": "'0001=1.0 0002=-1.0 wght=840.3'", "master_2": "'0000=-1.0 0001=1.0 0002=-1.0 wght=840.3'", "master_1_idx": 24, "master_2_idx": 25}], "glyph00006": [{"type": "nothing", "master_1": "''", "master_2": "'0000=-1.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'0000=-1.0'", "master_2": "'0001=1.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'0001=1.0'", "master_2": "'0002=1.0'", "master_1_idx": 3, "master_2_idx": 5}, {"type": "nothing", "master_1": "'0002=1.0'", "master_2": "'0003=-1.0'", "master_1_idx": 5, "master_2_idx": 6}, {"type": "nothing", "master_1": "'0003=-1.0'", "master_2": "'wght=840.3'", "master_1_idx": 6, "master_2_idx": 10}, {"type": "nothing", "master_1": "'wght=840.3'", "master_2": "'0000=-1.0 wght=840.3'", "master_1_idx": 10, "master_2_idx": 14}, {"type": "nothing", "master_1": "'0000=-1.0 wght=840.3'", "master_2": "'0002=1.0 wght=840.3'", "master_1_idx": 14, "master_2_idx": 19}], "glyph00010": [{"type": "nothing", "master_1": "''", "master_2": "'0000=-1.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'0000=-1.0'", "master_2": "'0001=-1.0'", "master_1_idx": 1, "master_2_idx": 2}, {"type": "nothing", "master_1": "'0001=-1.0'", "master_2": "'0002=1.0'", "master_1_idx": 2, "master_2_idx": 5}, {"type": "nothing", "master_1": "'0002=1.0'", "master_2": "'0003=1.0'", "master_1_idx": 5, "master_2_idx": 7}, {"type": "nothing", "master_1": "'0003=1.0'", "master_2": "'wght=840.3'", "master_1_idx": 7, "master_2_idx": 10}, {"type": "nothing", "master_1": "'wght=840.3'", "master_2": "'0000=-1.0 0001=-1.0'", "master_1_idx": 10, "master_2_idx": 11}, {"type": "nothing", "master_1": "'0000=-1.0 0001=-1.0'", "master_2": "'0000=-1.0 wght=840.3'", "master_1_idx": 11, "master_2_idx": 14}, {"type": "nothing", "master_1": "'0000=-1.0 wght=840.3'", "master_2": "'0001=-1.0 wght=840.3'", "master_1_idx": 14, "master_2_idx": 15}, {"type": "nothing", "master_1": "'0001=-1.0 wght=840.3'", "master_2": "'0000=-1.0 0001=-1.0 wght=840.3'", "master_1_idx": 15, "master_2_idx": 20}]}
+--- return
+{"glyph00004": [{"type": "nothing", "master_1": "''", "master_2": "'0000=-1.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "underweight", "contour": 0, "master_1": "'0000=-1.0'", "master_2": "'0001=1.0'", "master_1_idx": 1, "master_2_idx": 3, "tolerance": 0.9086604532075131}, {"type": "nothing", "master_1": "'0000=-1.0'", "master_2": "'0001=1.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'0001=1.0'", "master_2": "'0002=-1.0'", "master_1_idx": 3, "master_2_idx": 4}, {"type": "nothing", "master_1": "'0002=-1.0'", "master_2": "'0003=1.0'", "master_1_idx": 4, "master_2_idx": 7}, {"type": "nothing", "master_1": "'0003=1.0'", "master_2": "'0004=1.0'", "master_1_idx": 7, "master_2_idx": 8}, {"type": "nothing", "master_1": "'0004=1.0'", "master_2": "'0005=1.0'", "master_1_idx": 8, "master_2_idx": 9}, {"type": "nothing", "master_1": "'0005=1.0'", "master_2": "'wght=840.3'", "master_1_idx": 9, "master_2_idx": 10}, {"type": "nothing", "master_1": "'wght=840.3'", "master_2": "'0000=-1.0 0001=1.0'", "master_1_idx": 10, "master_2_idx": 12}, {"type": "nothing", "master_1": "'0000=-1.0 0001=1.0'", "master_2": "'0000=-1.0 0002=-1.0'", "master_1_idx": 12, "master_2_idx": 13}, {"type": "nothing", "master_1": "'0000=-1.0 0002=-1.0'", "master_2": "'0000=-1.0 wght=840.3'", "master_1_idx": 13, "master_2_idx": 14}, {"type": "nothing", "master_1": "'0000=-1.0 wght=840.3'", "master_2": "'0001=1.0 0002=-1.0'", "master_1_idx": 14, "master_2_idx": 16}, {"type": "nothing", "master_1": "'0001=1.0 0002=-1.0'", "master_2": "'0001=1.0 wght=840.3'", "master_1_idx": 16, "master_2_idx": 17}, {"type": "nothing", "master_1": "'0001=1.0 wght=840.3'", "master_2": "'0002=-1.0 wght=840.3'", "master_1_idx": 17, "master_2_idx": 18}, {"type": "nothing", "master_1": "'0002=-1.0 wght=840.3'", "master_2": "'0000=-1.0 0001=1.0 0002=-1.0'", "master_1_idx": 18, "master_2_idx": 21}, {"type": "nothing", "master_1": "'0000=-1.0 0001=1.0 0002=-1.0'", "master_2": "'0000=-1.0 0001=1.0 wght=840.3'", "master_1_idx": 21, "master_2_idx": 22}, {"type": "nothing", "master_1": "'0000=-1.0 0001=1.0 wght=840.3'", "master_2": "'0000=-1.0 0002=-1.0 wght=840.3'", "master_1_idx": 22, "master_2_idx": 23}, {"type": "nothing", "master_1": "'0000=-1.0 0002=-1.0 wght=840.3'", "master_2": "'0001=1.0 0002=-1.0 wght=840.3'", "master_1_idx": 23, "master_2_idx": 24}, {"type": "nothing", "master_1": "'0001=1.0 0002=-1.0 wght=840.3'", "master_2": "'0000=-1.0 0001=1.0 0002=-1.0 wght=840.3'", "master_1_idx": 24, "master_2_idx": 25}], "glyph00006": [{"type": "nothing", "master_1": "''", "master_2": "'0000=-1.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'0000=-1.0'", "master_2": "'0001=1.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'0001=1.0'", "master_2": "'0002=1.0'", "master_1_idx": 3, "master_2_idx": 5}, {"type": "nothing", "master_1": "'0002=1.0'", "master_2": "'0003=-1.0'", "master_1_idx": 5, "master_2_idx": 6}, {"type": "nothing", "master_1": "'0003=-1.0'", "master_2": "'wght=840.3'", "master_1_idx": 6, "master_2_idx": 10}, {"type": "nothing", "master_1": "'wght=840.3'", "master_2": "'0000=-1.0 wght=840.3'", "master_1_idx": 10, "master_2_idx": 14}, {"type": "nothing", "master_1": "'0000=-1.0 wght=840.3'", "master_2": "'0002=1.0 wght=840.3'", "master_1_idx": 14, "master_2_idx": 19}], "glyph00010": [{"type": "nothing", "master_1": "''", "master_2": "'0000=-1.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'0000=-1.0'", "master_2": "'0001=-1.0'", "master_1_idx": 1, "master_2_idx": 2}, {"type": "nothing", "master_1": "'0001=-1.0'", "master_2": "'0002=1.0'", "master_1_idx": 2, "master_2_idx": 5}, {"type": "nothing", "master_1": "'0002=1.0'", "master_2": "'0003=1.0'", "master_1_idx": 5, "master_2_idx": 7}, {"type": "nothing", "master_1": "'0003=1.0'", "master_2": "'wght=840.3'", "master_1_idx": 7, "master_2_idx": 10}, {"type": "nothing", "master_1": "'wght=840.3'", "master_2": "'0000=-1.0 0001=-1.0'", "master_1_idx": 10, "master_2_idx": 11}, {"type": "nothing", "master_1": "'0000=-1.0 0001=-1.0'", "master_2": "'0000=-1.0 wght=840.3'", "master_1_idx": 11, "master_2_idx": 14}, {"type": "nothing", "master_1": "'0000=-1.0 wght=840.3'", "master_2": "'0001=-1.0 wght=840.3'", "master_1_idx": 14, "master_2_idx": 15}, {"type": "nothing", "master_1": "'0001=-1.0 wght=840.3'", "master_2": "'0000=-1.0 0001=-1.0 wght=840.3'", "master_1_idx": 15, "master_2_idx": 20}]}
+=== --ignore-missing
+Glyph glyph00004 was not compatible:
+  Masters: '0000=-1.0', '0001=1.0':
+    Contour 0 interpolation is underweight: '0000=-1.0', '0001=1.0'
+--- return
+{"glyph00004": [{"type": "underweight", "contour": 0, "master_1": "'0000=-1.0'", "master_2": "'0001=1.0'", "master_1_idx": 1, "master_2_idx": 3, "tolerance": 0.9086604532075131}]}

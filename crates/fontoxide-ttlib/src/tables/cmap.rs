@@ -220,6 +220,13 @@ impl CmapSubtable {
 		self.platform_id == 0 || (self.platform_id == 3 && matches!(self.plat_enc_id, 0 | 1 | 10))
 	}
 
+	/// The codec of the subtable's encoding, `None` if unknown (`getEncoding()`).
+	pub fn encoding(&self) -> Option<&'static str> {
+		// Only a few small language IDs select a specific codec.
+		let language = self.language.unwrap_or(0).min(0xFFFF) as u16;
+		fontoxide_misc::encoding_tools::get_encoding(self.platform_id, self.plat_enc_id, language)
+	}
+
 	/// Whether the subtable is for the Symbol encoding (3, 0) (`isSymbol`).
 	pub fn is_symbol(&self) -> bool {
 		self.platform_id == 3 && self.plat_enc_id == 0

@@ -1,0 +1,59 @@
+=== 
+Glyph a was not compatible:
+  Masters: SparseMasters-Medium:
+    Glyph was missing in master SparseMasters-Medium
+Glyph dotabovecomb was not compatible:
+  Masters: SparseMasters-Medium:
+    Glyph was missing in master SparseMasters-Medium
+Glyph edotabove was not compatible:
+  Masters: SparseMasters-Medium:
+    Glyph was missing in master SparseMasters-Medium
+Glyph s was not compatible:
+  Masters: SparseMasters-Medium:
+    Glyph was missing in master SparseMasters-Medium
+--- return
+{"a": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}], "dotabovecomb": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}], "edotabove": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}], "s": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}]}
+=== --json
+{"a": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}], "dotabovecomb": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}], "edotabove": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}], "s": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}]}
+--- return
+{"a": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}], "dotabovecomb": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}], "edotabove": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}], "s": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}]}
+=== --show-all
+Glyph .notdef was not compatible:
+  Masters: SparseMasters-Bold, SparseMasters-Medium:
+    Showing SparseMasters-Bold and SparseMasters-Medium
+  Masters: SparseMasters-Medium, SparseMasters-Regular:
+    Showing SparseMasters-Medium and SparseMasters-Regular
+Glyph a was not compatible:
+  Masters: SparseMasters-Medium:
+    Glyph was missing in master SparseMasters-Medium
+  Masters: SparseMasters-Bold, SparseMasters-Regular:
+    Showing SparseMasters-Bold and SparseMasters-Regular
+Glyph dotabovecomb was not compatible:
+  Masters: SparseMasters-Medium:
+    Glyph was missing in master SparseMasters-Medium
+  Masters: SparseMasters-Bold, SparseMasters-Regular:
+    Showing SparseMasters-Bold and SparseMasters-Regular
+Glyph e was not compatible:
+  Masters: SparseMasters-Bold, SparseMasters-Medium:
+    Showing SparseMasters-Bold and SparseMasters-Medium
+  Masters: SparseMasters-Medium, SparseMasters-Regular:
+    Showing SparseMasters-Medium and SparseMasters-Regular
+Glyph edotabove was not compatible:
+  Masters: SparseMasters-Medium:
+    Glyph was missing in master SparseMasters-Medium
+  Masters: SparseMasters-Bold, SparseMasters-Regular:
+    Showing SparseMasters-Bold and SparseMasters-Regular
+Glyph s was not compatible:
+  Masters: SparseMasters-Medium:
+    Glyph was missing in master SparseMasters-Medium
+  Masters: SparseMasters-Bold, SparseMasters-Regular:
+    Showing SparseMasters-Bold and SparseMasters-Regular
+--- return
+{"a": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}, {"type": "nothing", "master_1": "SparseMasters-Bold", "master_2": "SparseMasters-Regular", "master_1_idx": 0, "master_2_idx": 2}], "dotabovecomb": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}, {"type": "nothing", "master_1": "SparseMasters-Bold", "master_2": "SparseMasters-Regular", "master_1_idx": 0, "master_2_idx": 2}], "edotabove": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}, {"type": "nothing", "master_1": "SparseMasters-Bold", "master_2": "SparseMasters-Regular", "master_1_idx": 0, "master_2_idx": 2}], "s": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}, {"type": "nothing", "master_1": "SparseMasters-Bold", "master_2": "SparseMasters-Regular", "master_1_idx": 0, "master_2_idx": 2}], ".notdef": [{"type": "nothing", "master_1": "SparseMasters-Bold", "master_2": "SparseMasters-Medium", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "SparseMasters-Medium", "master_2": "SparseMasters-Regular", "master_1_idx": 1, "master_2_idx": 2}], "e": [{"type": "nothing", "master_1": "SparseMasters-Bold", "master_2": "SparseMasters-Medium", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "SparseMasters-Medium", "master_2": "SparseMasters-Regular", "master_1_idx": 1, "master_2_idx": 2}]}
+=== --show-all	--json
+{".notdef": [{"type": "nothing", "master_1": "SparseMasters-Bold", "master_2": "SparseMasters-Medium", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "SparseMasters-Medium", "master_2": "SparseMasters-Regular", "master_1_idx": 1, "master_2_idx": 2}], "a": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}, {"type": "nothing", "master_1": "SparseMasters-Bold", "master_2": "SparseMasters-Regular", "master_1_idx": 0, "master_2_idx": 2}], "dotabovecomb": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}, {"type": "nothing", "master_1": "SparseMasters-Bold", "master_2": "SparseMasters-Regular", "master_1_idx": 0, "master_2_idx": 2}], "e": [{"type": "nothing", "master_1": "SparseMasters-Bold", "master_2": "SparseMasters-Medium", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "SparseMasters-Medium", "master_2": "SparseMasters-Regular", "master_1_idx": 1, "master_2_idx": 2}], "edotabove": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}, {"type": "nothing", "master_1": "SparseMasters-Bold", "master_2": "SparseMasters-Regular", "master_1_idx": 0, "master_2_idx": 2}], "s": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}, {"type": "nothing", "master_1": "SparseMasters-Bold", "master_2": "SparseMasters-Regular", "master_1_idx": 0, "master_2_idx": 2}]}
+--- return
+{"a": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}, {"type": "nothing", "master_1": "SparseMasters-Bold", "master_2": "SparseMasters-Regular", "master_1_idx": 0, "master_2_idx": 2}], "dotabovecomb": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}, {"type": "nothing", "master_1": "SparseMasters-Bold", "master_2": "SparseMasters-Regular", "master_1_idx": 0, "master_2_idx": 2}], "edotabove": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}, {"type": "nothing", "master_1": "SparseMasters-Bold", "master_2": "SparseMasters-Regular", "master_1_idx": 0, "master_2_idx": 2}], "s": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 1}, {"type": "nothing", "master_1": "SparseMasters-Bold", "master_2": "SparseMasters-Regular", "master_1_idx": 0, "master_2_idx": 2}], ".notdef": [{"type": "nothing", "master_1": "SparseMasters-Bold", "master_2": "SparseMasters-Medium", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "SparseMasters-Medium", "master_2": "SparseMasters-Regular", "master_1_idx": 1, "master_2_idx": 2}], "e": [{"type": "nothing", "master_1": "SparseMasters-Bold", "master_2": "SparseMasters-Medium", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "SparseMasters-Medium", "master_2": "SparseMasters-Regular", "master_1_idx": 1, "master_2_idx": 2}]}
+=== --ignore-missing
+--- return
+None

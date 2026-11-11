@@ -161,8 +161,8 @@ fn read_prefixed(data: &[u8], format: u16) -> Result<Vec<u8>> {
 }
 
 impl ParsedBitmapGlyph {
-	/// `decompile`.
-	fn parse(format: u16, data: &[u8]) -> Result<Self> {
+	/// Parses the data of a glyph in an image format (`decompile`).
+	pub fn parse(format: u16, data: &[u8]) -> Result<Self> {
 		let mut glyph = ParsedBitmapGlyph {
 			format,
 			..Default::default()
@@ -220,8 +220,8 @@ impl ParsedBitmapGlyph {
 			.ok_or_else(|| missing("imageData"))
 	}
 
-	/// `compile`.
-	fn compile(&self) -> Result<Vec<u8>> {
+	/// The data of the glyph (`compile`).
+	pub fn compile(&self) -> Result<Vec<u8>> {
 		let mut out = Vec::new();
 		self.pack_metrics(&mut out)?;
 		match self.format {
@@ -527,7 +527,9 @@ pub struct StrikeData {
 }
 
 impl StrikeData {
-	fn insert(&mut self, gid: u32, index: usize) {
+	/// Adds a glyph, by its index in [`BitmapData::glyphs`]; a glyph that is
+	/// already there keeps its place.
+	pub fn insert(&mut self, gid: u32, index: usize) {
 		if self.glyphs.insert(gid, index).is_none() {
 			self.order.push(gid);
 		}
@@ -1009,12 +1011,15 @@ mod tests {
 	/// `test_extfile_name_mapping_is_injective`.
 	#[test]
 	fn ext_file_names_are_injective() {
-		let names = [
+		let mut names: Vec<String> = [
 			"a", "b", "uni0041", "a.alt", "%", "%25", "%2Fb", "/b", "a/b", "../b", "..", ".", "",
 			"x/", "y/", "a\\b", "\u{e9}",
-		];
+		]
+		.map(str::to_owned)
+		.to_vec();
+		names.extend(["a/b", "", ".."].map(ext_file_name));
 		let mapped: BTreeSet<String> = names.iter().map(|n| ext_file_name(n)).collect();
-		assert_eq!(mapped.len(), names.len());
+		assert_eq!(mapped.len(), names.iter().collect::<BTreeSet<_>>().len());
 		assert!(
 			mapped
 				.iter()

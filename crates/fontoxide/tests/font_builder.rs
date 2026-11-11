@@ -495,6 +495,114 @@ fn test_build_otf() -> TestResult {
 }
 
 #[test]
+fn test_build_cff_to_cff2() -> TestResult {
+	let (mut fb, _, _) = setup_font_builder(false, 1000)?;
+	let mut pen = T2CharStringPen::new(Some(600.0), None, 0.5, false)?;
+	draw_test_glyph(&mut pen, false)?;
+	let char_string = pen.get_char_string(true)?;
+	let char_strings: IndexMap<String, T2CharString> = [".notdef", "A", "a", ".null"]
+		.iter()
+		.map(|n| (s(n), char_string.clone()))
+		.collect();
+	fb.setup_cff("TestFont", &[], char_strings, &[])?;
+
+	fontoxide::ttlib::cff::cff_to_cff2::convert_cff_to_cff2(&mut fb.font)?;
+	Ok(())
+}
+
+/// Not an upstream test: `setupAvar` with mappings, as fontTools builds it (the
+/// mappings keyed by axis index, see `setup_avar_with_mappings`).
+#[test]
+fn setup_avar_with_mappings_builds_avar2() -> TestResult {
+	use fontoxide::designspacelib::{AxisDescriptor, AxisMappingDescriptor, Number};
+	let mut fb = FontBuilder::new(1000, true, false)?;
+	fb.setup_glyph_order(vec![s(".notdef")]);
+	fb.setup_name_table(
+		&[
+			(NameKey::from("familyName"), NameValue::from("T")),
+			(NameKey::from("styleName"), NameValue::from("R")),
+		],
+		true,
+		true,
+	)?;
+	let fvar_axis = FvarAxis {
+		tag: Tag::new(b"wght"),
+		minimum: 100.0,
+		default: 400.0,
+		maximum: 900.0,
+		name: NameValue::from("Weight"),
+		hidden: false,
+	};
+	fb.setup_fvar(&[fvar_axis], &[])?;
+	let axis = AxisDescriptor {
+		tag: Some(s("wght")),
+		name: Some(s("Weight")),
+		minimum: Number::Int(100),
+		default: Number::Int(400),
+		maximum: Number::Int(900),
+		map: vec![
+			(Number::Int(100), Number::Int(100)),
+			(Number::Int(400), Number::Int(450)),
+			(Number::Int(900), Number::Int(900)),
+		],
+		..Default::default()
+	};
+	let location = |v: i64| [(s("0"), Number::Int(v))].into_iter().collect();
+	let mapping = AxisMappingDescriptor {
+		input_location: location(600),
+		output_location: location(700),
+		..Default::default()
+	};
+	// By axis name, as in fontTools, the axis is not found.
+	let mut by_name = mapping.clone();
+	by_name.input_location = [(s("Weight"), Number::Int(600))].into_iter().collect();
+	let err = fb
+		.setup_avar_with_mappings(std::slice::from_ref(&axis), &[by_name])
+		.expect_err("a KeyError");
+	assert!(err.to_string().contains("KeyError"), "{err}");
+
+	fb.setup_avar_with_mappings(&[axis], &[mapping])?;
+	let ttx = fb.font.to_ttx(&TtxOptions {
+		tables: vec![TableKey::Table(Tag::new(b"avar"))],
+		newline: "\n".into(),
+		..Default::default()
+	})?;
+	let expected = r#"  <avar>
+    <version major="2" minor="0"/>
+    <segment axis="wght">
+      <mapping from="-1.0" to="-1.0"/>
+      <mapping from="0.0" to="0.0"/>
+      <mapping from="1.0" to="1.0"/>
+    </segment>
+    <VarStore Format="1">
+      <Format value="1"/>
+      <VarRegionList>
+        <!-- RegionAxisCount=1 -->
+        <!-- RegionCount=1 -->
+        <Region index="0">
+          <VarRegionAxis index="0">
+            <StartCoord value="0.0"/>
+            <PeakCoord value="0.3333"/>
+            <EndCoord value="1.0"/>
+          </VarRegionAxis>
+        </Region>
+      </VarRegionList>
+      <!-- VarDataCount=1 -->
+      <VarData index="0">
+        <!-- ItemCount=1 -->
+        <NumShorts value="1"/>
+        <!-- VarRegionCount=1 -->
+        <VarRegionIndex index="0" value="0"/>
+        <Item index="0" value="[3641]"/>
+      </VarData>
+    </VarStore>
+  </avar>
+"#;
+	assert!(ttx.contains(expected), "{ttx}");
+	Ok(())
+}
+
+#[test]
 fn test_build_var() -> TestResult {
 	let (mut fb, advance_widths, name_strings) = setup_font_builder(true, 1024)?;
 	let order = fb.font.glyph_order()?;

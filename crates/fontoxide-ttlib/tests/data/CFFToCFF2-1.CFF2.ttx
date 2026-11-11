@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+  <CFF2>
+    <major value="2"/>
+    <minor value="0"/>
+    <CFFFont name="CFF2Font">
+      <FontMatrix value="0.001 0 0 0.001 0 0"/>
+      <FDArray>
+        <FontDict index="0">
+          <Private>
+            <BlueValues value="-12 0 486 498 518 530 574 586 638 650 656 668 712 724"/>
+            <OtherBlues value="-217 -205"/>
+            <FamilyBlues value="-12 0 486 498 518 530 574 586 638 650 656 668 712 724"/>
+            <FamilyOtherBlues value="-217 -205"/>
+            <BlueScale value="0.0625"/>
+            <BlueShift value="7"/>
+            <BlueFuzz value="0"/>
+            <StdHW value="67"/>
+            <StdVW value="84"/>
+            <StemSnapH value="67 78"/>
+            <StemSnapV value="84 95"/>
+            <LanguageGroup value="0"/>
+            <ExpansionFactor value="0.06"/>
+            <Subrs>
+              <!-- The 'index' attribute is only for humans; it is ignored when parsed. -->
+              <CharString index="0">
+                203 -106 callsubr
+              </CharString>
+              <CharString index="1">
+                367 rmoveto
+                -107 callgsubr
+              </CharString>
+              <CharString index="2">
+                -21 200 67 321 68</CharString>
+              <CharString index="3">
+                21 -105 callsubr
+              </CharString>
+            </Subrs>
+          </Private>
+        </FontDict>
+      </FDArray>
+      <CharStrings>
+        <CharString name=".notdef">
+        </CharString>
+        <CharString name="A">
+          -104 callsubr
+          -104 callgsubr
+        </CharString>
+      </CharStrings>
+    </CFFFont>
+
+    <GlobalSubrs>
+      <!-- The 'index' attribute is only for humans; it is ignored when parsed. -->
+      <CharString index="0">
+        24 73 21 72 20 76 rrcurveto
+        4 hlineto
+        21 -76 21 -72 24 -73 31 -100 rcurveline
+        -197 hlineto
+        -169 -267 rmoveto
+        85 hlineto
+        63 200 rlineto
+        239 hlineto
+        62 -200 rlineto
+        89 hlineto
+        -105 callgsubr
+      </CharString>
+      <CharString index="1">
+        vstem
+        -107 callsubr
+      </CharString>
+      <CharString index="2">
+        -222 656 rlineto
+        -94 hlineto
+      </CharString>
+      <CharString index="3">
+        hstem
+        3 538 -106 callgsubr
+      </CharString>
+    </GlobalSubrs>
+  </CFF2>
+
+</ttFont>

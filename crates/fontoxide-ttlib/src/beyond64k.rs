@@ -740,6 +740,21 @@ fn lower_glyf(glyf: &mut Glyf) {
 	}
 }
 
+/// The glyphs of a `glyf` table that becomes `GLYF`: fontTools expands the glyphs
+/// that were not expanded yet from their data as `GLYF` glyphs, which keeps the
+/// cubic flags and 24-bit component glyph IDs that `glyf` ignores.
+fn upper_glyf(glyf: &mut Glyf, num_glyph_names: usize) -> Result<()> {
+	for glyph in glyf.glyphs.values_mut() {
+		if let Some(data) = glyph.data.take() {
+			let mut expanded =
+				crate::tables::glyf::Glyph::decompile_ext(&data, num_glyph_names, true)?;
+			expanded.data = Some(data);
+			*glyph = expanded;
+		}
+	}
+	Ok(())
+}
+
 fn table_identity(tag: &str) -> Option<[u8; 4]> {
 	let bytes: [u8; 4] = tag.as_bytes().try_into().ok()?;
 	for (lower, upper) in TABLE_PAIRS {
@@ -1130,12 +1145,26 @@ fn convert_tables(font: &mut Font, options: &ConvertOptions<'_>, extended: bool)
 	}
 	for &(source, _, identity) in &pending {
 		match &identity {
-			b"glyf" => move_table::<Glyf>(font, source, |t| {
-				if !extended {
-					lower_glyf(t);
-				}
-				t.extended = extended;
-			})?,
+			b"glyf" => {
+				let unexpanded = font
+					.get_at::<Glyf>(source)?
+					.is_some_and(|t| t.glyphs.values().any(|g| g.data.is_some()));
+				let num_glyph_names = if extended && unexpanded {
+					font.glyph_order()?.len()
+				} else {
+					0
+				};
+				let mut upper = Ok(());
+				move_table::<Glyf>(font, source, |t| {
+					if extended {
+						upper = upper_glyf(t, num_glyph_names);
+					} else {
+						lower_glyf(t);
+					}
+					t.extended = extended;
+				})?;
+				upper?;
+			}
 			b"loca" => move_table::<Loca>(font, source, |t| t.extended = extended)?,
 			b"maxp" => move_table::<Maxp>(font, source, |t| t.extended = extended)?,
 			b"hhea" => move_table::<Hhea>(font, source, |t| t.extended = extended)?,

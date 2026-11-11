@@ -15,8 +15,11 @@ use super::{OtReader, OtWriter};
 use crate::generated::ot::{
 	ClassDefRaw, ClassDefRawFormat1, ClassDefRawFormat2, ClassDefRawFormat3, ClassDefRawFormat4,
 	ClassRangeRecord, ClassRangeRecord2, CoverageRaw, CoverageRawFormat1, CoverageRawFormat2,
-	CoverageRawFormat3, CoverageRawFormat4, RangeRecord, RangeRecord2,
+	CoverageRawFormat3, CoverageRawFormat4, LookupList, RangeRecord, RangeRecord2,
 };
+use crate::table::TableType;
+use crate::tables::Debg;
+use crate::tables::json::JsonValue;
 use crate::{Error, Font, Result};
 
 pub use super::colr::ClipList;
@@ -40,8 +43,8 @@ pub struct Coverage {
 }
 
 impl Coverage {
-	/// `postRead`.
-	fn from_raw(raw: CoverageRaw) -> Self {
+	/// `postRead`: the table from its binary layout.
+	pub fn from_raw(raw: CoverageRaw) -> Self {
 		let glyphs = match raw {
 			CoverageRaw::Format1(CoverageRawFormat1 { glyph_array, .. })
 			| CoverageRaw::Format3(CoverageRawFormat3 { glyph_array, .. }) => glyph_array,
@@ -220,8 +223,8 @@ pub struct ClassDef {
 }
 
 impl ClassDef {
-	/// `postRead`.
-	fn from_raw(raw: ClassDefRaw) -> Self {
+	/// `postRead`: the table from its binary layout.
+	pub fn from_raw(raw: ClassDefRaw) -> Self {
 		let mut class_defs = BTreeMap::new();
 		let mut array = |start: u32, classes: &mut dyn Iterator<Item = u32>| {
 			for (i, cls) in classes.enumerate() {
@@ -289,8 +292,8 @@ impl ClassDef {
 		ranges
 	}
 
-	/// `preWrite`.
-	fn to_raw(&self) -> Result<ClassDefRaw> {
+	/// `preWrite`: the table as it is written, with its format.
+	pub fn to_raw(&self) -> Result<ClassDefRaw> {
 		let ranges = self.class_ranges();
 		if ranges.is_empty() {
 			return Ok(ClassDefRaw::Format2(ClassDefRawFormat2 {
@@ -425,4 +428,215 @@ impl OtTable for ClassDef {
 	fn populate_defaults(&mut self, _ctx: &mut XmlCtx) -> Result<()> {
 		Ok(())
 	}
+}
+
+/// The key of feaLib's lookup debugging information in the `Debg` table
+/// (`LOOKUP_DEBUG_INFO_KEY`).
+pub const LOOKUP_DEBUG_INFO_KEY: &str = "com.github.fonttools.feaLib";
+
+/// The Python type name of a JSON value.
+fn py_type_name(value: &JsonValue) -> &'static str {
+	match value {
+		JsonValue::Null => "NoneType",
+		JsonValue::Bool(_) => "bool",
+		JsonValue::Int(_) => "int",
+		JsonValue::Float(_) => "float",
+		JsonValue::Str(_) => "str",
+		JsonValue::Array(_) => "list",
+		JsonValue::Object(_) => "dict",
+	}
+}
+
+/// `repr(value)` of a JSON value.
+fn py_repr(value: &JsonValue) -> String {
+	match value {
+		JsonValue::Null => "None".to_owned(),
+		JsonValue::Bool(true) => "True".to_owned(),
+		JsonValue::Bool(false) => "False".to_owned(),
+		JsonValue::Int(digits) => digits.clone(),
+		JsonValue::Float(v) => fontoxide_misc::py::float_repr(*v),
+		JsonValue::Str(s) => fontoxide_misc::py::str_repr(s),
+		JsonValue::Array(items) => {
+			let items: Vec<String> = items.iter().map(py_repr).collect();
+			format!("[{}]", items.join(", "))
+		}
+		JsonValue::Object(items) => {
+			let items: Vec<String> = items
+				.iter()
+				.map(|(k, v)| format!("{}: {}", fontoxide_misc::py::str_repr(k), py_repr(v)))
+				.collect();
+			format!("{{{}}}", items.join(", "))
+		}
+	}
+}
+
+/// `str(value)` (and `f"{value}"`) of a JSON value.
+fn py_str(value: &JsonValue) -> String {
+	match value {
+		JsonValue::Str(s) => s.clone(),
+		_ => py_repr(value),
+	}
+}
+
+/// `bool(value)` of a JSON value.
+fn py_truthy(value: &JsonValue) -> bool {
+	match value {
+		JsonValue::Null => false,
+		JsonValue::Bool(b) => *b,
+		JsonValue::Int(digits) => digits != "0",
+		JsonValue::Float(v) => *v != 0.0,
+		JsonValue::Str(s) => !s.is_empty(),
+		JsonValue::Array(items) => !items.is_empty(),
+		JsonValue::Object(items) => !items.is_empty(),
+	}
+}
+
+/// `key in container` for a string key.
+fn py_contains(container: &JsonValue, key: &str) -> Result<bool> {
+	match container {
+		JsonValue::Object(items) => Ok(items.iter().any(|(k, _)| k == key)),
+		JsonValue::Array(items) => Ok(items
+			.iter()
+			.any(|v| matches!(v, JsonValue::Str(s) if s == key))),
+		JsonValue::Str(s) => Ok(s.contains(key)),
+		other => Err(Error::ttlib(format!(
+			"TypeError: argument of type '{}' is not iterable",
+			py_type_name(other)
+		))),
+	}
+}
+
+/// `container[key]` for a string key.
+fn py_getitem<'a>(container: &'a JsonValue, key: &str) -> Result<&'a JsonValue> {
+	match container {
+		JsonValue::Object(_) => container.get(key).ok_or_else(|| {
+			Error::ttlib(format!("KeyError: {}", fontoxide_misc::py::str_repr(key)))
+		}),
+		JsonValue::Array(_) => Err(Error::ttlib(
+			"TypeError: list indices must be integers or slices, not str",
+		)),
+		JsonValue::Str(_) => Err(Error::ttlib(
+			"TypeError: string indices must be integers, not 'str'",
+		)),
+		other => Err(Error::ttlib(format!(
+			"TypeError: '{}' object is not subscriptable",
+			py_type_name(other)
+		))),
+	}
+}
+
+/// The items of an iterable JSON value (`list(value)`), `None` if it is not
+/// iterable.
+fn py_iter(value: &JsonValue) -> Option<Vec<JsonValue>> {
+	match value {
+		JsonValue::Array(items) => Some(items.clone()),
+		JsonValue::Object(items) => Some(
+			items
+				.iter()
+				.map(|(k, _)| JsonValue::Str(k.clone()))
+				.collect(),
+		),
+		JsonValue::Str(s) => Some(s.chars().map(|c| JsonValue::Str(c.to_string())).collect()),
+		_ => None,
+	}
+}
+
+/// The table that a `LookupList` belongs to (`LookupList.table`): `GSUB` or
+/// `GPOS`, after the class of the first subtable that tells.
+fn lookup_list_table(list: &LookupList) -> Result<&'static str> {
+	for lookup in &list.lookup {
+		let Some(lookup) = lookup else {
+			return Err(Error::ttlib(
+				"AttributeError: 'NoneType' object has no attribute 'SubTable'",
+			));
+		};
+		for st in lookup.sub_table.iter().flatten() {
+			let name = st.class_name();
+			if name.ends_with("Subst") {
+				return Ok("GSUB");
+			}
+			if name.ends_with("Pos") {
+				return Ok("GPOS");
+			}
+		}
+	}
+	Err(Error::ttlib("ValueError"))
+}
+
+/// The lookup debugging information of a `LookupList` (the first part of
+/// `LookupList.toXML2`): `font["Debg"].data[LOOKUP_DEBUG_INFO_KEY][self.table]`,
+/// or `None` if the font has no `Debg` table or no feaLib data in it. As in
+/// fontTools, a `Debg` table without data for the `LookupList`'s table is an
+/// error (`KeyError`).
+pub fn lookup_list_debug_data(list: &LookupList, font: &mut Font) -> Result<Option<JsonValue>> {
+	if !font.contains(Debg::TAG) {
+		return Ok(None);
+	}
+	let Some(debg) = font.get::<Debg>()? else {
+		return Ok(None);
+	};
+	if !py_contains(&debg.data, LOOKUP_DEBUG_INFO_KEY)? {
+		return Ok(None);
+	}
+	let info = py_getitem(&debg.data, LOOKUP_DEBUG_INFO_KEY)?.clone();
+	let table = lookup_list_table(list)?;
+	Ok(Some(py_getitem(&info, table)?.clone()))
+}
+
+/// Writes the comment with the debugging information of a lookup, if there is
+/// any (the loop of `LookupList.toXML2`), e.g.
+/// `<!-- SomeLookup: file.fea:4:5 in tst2 (DFLT/dflt) -->`.
+pub fn write_lookup_debug_comment(
+	xw: &mut XmlWriter,
+	debug: Option<&JsonValue>,
+	index: usize,
+) -> Result<()> {
+	let Some(debug) = debug else {
+		return Ok(());
+	};
+	let key = index.to_string();
+	if !py_contains(debug, &key)? {
+		return Ok(());
+	}
+	// LookupDebugInfo(*debugData[str(lookupIndex)])
+	let entry = py_getitem(debug, &key)?;
+	let fields = py_iter(entry).ok_or_else(|| {
+		Error::ttlib(format!(
+			"TypeError: LookupDebugInfo() argument after * must be an iterable, not {}",
+			py_type_name(entry)
+		))
+	})?;
+	let [location, name, feature] = <[JsonValue; 3]>::try_from(fields).map_err(|fields| {
+		Error::ttlib(format!(
+			"TypeError: LookupDebugInfo() takes 3 positional arguments but {} were given",
+			fields.len()
+		))
+	})?;
+	let mut tag = py_str(&location);
+	if py_truthy(&name) {
+		tag = format!("{}: {tag}", py_str(&name));
+	}
+	if py_truthy(&feature) {
+		let items = py_iter(&feature).ok_or_else(|| {
+			Error::ttlib(format!(
+				"TypeError: cannot unpack non-iterable {} object",
+				py_type_name(&feature)
+			))
+		})?;
+		let [script, language, feature] = <[JsonValue; 3]>::try_from(items).map_err(|items| {
+			Error::ttlib(format!(
+				"ValueError: wrong number of values to unpack (expected 3, got {})",
+				items.len()
+			))
+		})?;
+		tag = format!(
+			"{tag} in {} ({}/{})",
+			py_str(&feature),
+			py_str(&script),
+			py_str(&language)
+		);
+	}
+	xw.comment(&tag);
+	xw.newline();
+	Ok(())
 }

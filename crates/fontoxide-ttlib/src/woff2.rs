@@ -57,6 +57,29 @@ const HMTX: Tag = Tag::new(b"hmtx");
 const HEAD: Tag = Tag::new(b"head");
 const DSIG: Tag = Tag::new(b"DSIG");
 
+impl FlavorData {
+	/// WOFF 2.0 flavor data that transforms `transformed_tables`
+	/// (`WOFF2FlavorData(transformedTables=...)`); empty disables all transforms.
+	/// Fails unless `glyf` and `loca` are both transformed or both not.
+	pub fn woff2(transformed_tables: &[Tag]) -> Result<Self> {
+		if transformed_tables.contains(&GLYF) != transformed_tables.contains(&LOCA) {
+			return Err(Error::value(
+				"'glyf' and 'loca' must be transformed (or not) together",
+			));
+		}
+		let mut tables: Vec<Tag> = Vec::with_capacity(transformed_tables.len());
+		for &tag in transformed_tables {
+			if !tables.contains(&tag) {
+				tables.push(tag);
+			}
+		}
+		Ok(FlavorData {
+			transformed_tables: Some(tables),
+			..FlavorData::new(Flavor::Woff2)
+		})
+	}
+}
+
 /// `getKnownTagIndex`.
 fn known_tag_index(tag: Tag) -> u8 {
 	KNOWN_TAGS
@@ -323,12 +346,13 @@ struct Cache {
 
 /// Reads a WOFF 2.0 file (`WOFF2Reader`).
 pub(crate) fn read(file: Arc<[u8]>, options: SfntReaderOptions) -> Result<SfntReader> {
+	// The signature is checked first, as in fontTools, even for a short file.
+	if file.get(..4) != Some(b"wOF2") {
+		return Err(Error::ttlib("Not a WOFF2 font (bad signature)"));
+	}
 	let header = file
 		.get(..WOFF2_DIRECTORY_SIZE)
 		.ok_or_else(|| Error::ttlib("Not a WOFF2 font (not enough data)"))?;
-	if &header[..4] != b"wOF2" {
-		return Err(Error::ttlib("Not a WOFF2 font (bad signature)"));
-	}
 	let u32_at =
 		|i: usize| u32::from_be_bytes([header[i], header[i + 1], header[i + 2], header[i + 3]]);
 	let u16_at = |i: usize| u16::from_be_bytes([header[i], header[i + 1]]);
@@ -593,72 +617,81 @@ impl Woff2Data {
 				.collect::<Result<_>>()?
 		};
 
-		let data = self.raw(HMTX)?;
-		let flags = *data
-			.first()
-			.ok_or_else(|| Error::Struct("unpack requires a buffer of 1 bytes".into()))?;
-		let mut data = &data[1..];
-		if flags & 0b1111_1100 != 0 {
-			return Err(Error::ttlib("Bits 2-7 of 'hmtx' flags are reserved"));
-		}
-		let has_lsb_array = flags & 1 == 0;
-		let has_left_side_bearing_array = flags & 2 == 0;
-		if has_lsb_array && has_left_side_bearing_array {
-			return Err(Error::ttlib(
-				"either bits 0 or 1 (or both) must set in transformed 'hmtx' flags",
-			));
-		}
-		let num_glyphs = x_mins.len();
-		let number_of_h_metrics = (hhea.number_of_h_metrics as usize).min(num_glyphs);
-		let mut take = |n: usize| -> Result<Vec<u16>> {
-			if data.len() < 2 * n {
-				return Err(Error::Assertion("len(data) >= 2 * numberOfHMetrics".into()));
-			}
-			let (a, rest) = data.split_at(2 * n);
-			data = rest;
-			Ok(a.chunks(2)
-				.map(|c| u16::from_be_bytes([c[0], c[1]]))
-				.collect())
-		};
-		let advances = take(number_of_h_metrics)?;
-		let lsbs: Vec<i16> = if has_lsb_array {
-			take(number_of_h_metrics)?
-				.into_iter()
-				.map(|v| v as i16)
-				.collect()
-		} else {
-			x_mins[..number_of_h_metrics]
-				.iter()
-				.map(|&x| crate::binary::fit(x, "lsb"))
-				.collect::<Result<_>>()?
-		};
-		let number_of_side_bearings = num_glyphs - number_of_h_metrics;
-		let side_bearings: Vec<i16> = if has_left_side_bearing_array {
-			take(number_of_side_bearings)?
-				.into_iter()
-				.map(|v| v as i16)
-				.collect()
-		} else {
-			x_mins[number_of_h_metrics..]
-				.iter()
-				.map(|&x| crate::binary::fit(x, "leftSideBearing"))
-				.collect::<Result<_>>()?
-		};
-		if !data.is_empty() {
-			return Err(Error::ttlib("too much 'hmtx' table data"));
-		}
+		let metrics = reconstruct_hmtx(self.raw(HMTX)?, &x_mins, hhea.number_of_h_metrics)?;
 		let mut hmtx = Hmtx::default();
-		for i in 0..number_of_h_metrics {
-			hmtx.set(i as u32, (advances[i], lsbs[i]));
-		}
-		let last_advance = *advances
-			.last()
-			.ok_or_else(|| Error::ttlib("IndexError: array index out of range"))?;
-		for (i, &lsb) in side_bearings.iter().enumerate() {
-			hmtx.set((i + number_of_h_metrics) as u32, (last_advance, lsb));
+		for (gid, metric) in metrics.into_iter().enumerate() {
+			hmtx.set(gid as u32, metric);
 		}
 		hmtx.compile(&mut font)
 	}
+}
+
+/// `WOFF2HmtxTable.reconstruct`: the metrics of every glyph, given the `xMin` of
+/// every glyph (0 for empty glyphs) and `hhea.numberOfHMetrics`.
+fn reconstruct_hmtx(
+	data: &[u8],
+	x_mins: &[i64],
+	number_of_h_metrics: u32,
+) -> Result<Vec<(u16, i16)>> {
+	let flags = *data
+		.first()
+		.ok_or_else(|| Error::Struct("unpack requires a buffer of 1 bytes".into()))?;
+	let mut data = &data[1..];
+	if flags & 0b1111_1100 != 0 {
+		return Err(Error::ttlib("Bits 2-7 of 'hmtx' flags are reserved"));
+	}
+	let has_lsb_array = flags & 1 == 0;
+	let has_left_side_bearing_array = flags & 2 == 0;
+	if has_lsb_array && has_left_side_bearing_array {
+		return Err(Error::ttlib(
+			"either bits 0 or 1 (or both) must set in transformed 'hmtx' flags",
+		));
+	}
+	let num_glyphs = x_mins.len();
+	let number_of_h_metrics = (number_of_h_metrics as usize).min(num_glyphs);
+	let mut take = |n: usize| -> Result<Vec<u16>> {
+		if data.len() < 2 * n {
+			return Err(Error::Assertion("len(data) >= 2 * numberOfHMetrics".into()));
+		}
+		let (a, rest) = data.split_at(2 * n);
+		data = rest;
+		Ok(a.chunks(2)
+			.map(|c| u16::from_be_bytes([c[0], c[1]]))
+			.collect())
+	};
+	let advances = take(number_of_h_metrics)?;
+	let lsbs: Vec<i16> = if has_lsb_array {
+		take(number_of_h_metrics)?
+			.into_iter()
+			.map(|v| v as i16)
+			.collect()
+	} else {
+		x_mins[..number_of_h_metrics]
+			.iter()
+			.map(|&x| crate::binary::fit(x, "lsb"))
+			.collect::<Result<_>>()?
+	};
+	let number_of_side_bearings = num_glyphs - number_of_h_metrics;
+	let side_bearings: Vec<i16> = if has_left_side_bearing_array {
+		take(number_of_side_bearings)?
+			.into_iter()
+			.map(|v| v as i16)
+			.collect()
+	} else {
+		x_mins[number_of_h_metrics..]
+			.iter()
+			.map(|&x| crate::binary::fit(x, "leftSideBearing"))
+			.collect::<Result<_>>()?
+	};
+	if !data.is_empty() {
+		return Err(Error::ttlib("too much 'hmtx' table data"));
+	}
+	let mut metrics: Vec<(u16, i16)> = advances.iter().copied().zip(lsbs).collect();
+	let last_advance = *advances
+		.last()
+		.ok_or_else(|| Error::ttlib("IndexError: array index out of range"))?;
+	metrics.extend(side_bearings.into_iter().map(|lsb| (last_advance, lsb)));
+	Ok(metrics)
 }
 
 /// `WOFF2LocaTable.compile` with the `indexFormat` of the transformed `glyf`.
@@ -1550,11 +1583,13 @@ fn transform_hmtx(
 		hmtx.get(gid as u32)
 			.ok_or_else(|| Error::ttlib(format!("KeyError: glyph {gid}")))
 	};
-	if number_of_h_metrics > n {
-		return Err(Error::ttlib("IndexError: list index out of range"));
-	}
+	// A `numberOfHMetrics` beyond the glyph count fails only when the loop reaches
+	// the missing glyphs: not if an earlier proportional glyph needs the lsb array.
 	let mut has_lsb_array = false;
-	for (gid, &x_min) in x_mins.iter().enumerate().take(number_of_h_metrics) {
+	for gid in 0..number_of_h_metrics {
+		let x_min = *x_mins
+			.get(gid)
+			.ok_or_else(|| Error::ttlib("IndexError: list index out of range"))?;
 		if metric(gid)?.1 as i64 != x_min {
 			has_lsb_array = true;
 			break;
@@ -1578,11 +1613,11 @@ fn transform_hmtx(
 		flags |= 2;
 	}
 	let mut data = vec![flags];
-	for gid in 0..number_of_h_metrics {
+	for gid in 0..number_of_h_metrics.min(n) {
 		data.put_u16(metric(gid)?.0);
 	}
 	if has_lsb_array {
-		for gid in 0..number_of_h_metrics {
+		for gid in 0..number_of_h_metrics.min(n) {
 			data.put_i16(metric(gid)?.1);
 		}
 	}
@@ -1597,32 +1632,6 @@ fn transform_hmtx(
 #[cfg(test)]
 mod tests {
 	use super::*;
-
-	// Cases from fontTools' doctests and Tests/ttLib/woff2_test.py.
-	#[test]
-	fn base128() -> Result<()> {
-		assert_eq!(unpack_base128(b"\x3f\x00\x00")?, (63, 1));
-		assert_eq!(unpack_base128(b"\x8f\xff\xff\xff\x7f")?.0, u32::MAX);
-		assert!(unpack_base128(b"\x80\x80\x3f").is_err());
-		assert!(unpack_base128(b"\x8f\xff\xff\xff\xff\x7f").is_err());
-		assert!(unpack_base128(b"\x90\x80\x80\x80\x00").is_err());
-		assert_eq!(pack_base128(63), b"\x3f");
-		assert_eq!(pack_base128(u32::MAX), b"\x8f\xff\xff\xff\x7f");
-		assert_eq!(pack_base128(24567).len(), 3);
-		Ok(())
-	}
-
-	#[test]
-	fn ushort255() -> Result<()> {
-		assert_eq!(unpack_255_ushort(&[252])?.0, 252);
-		assert_eq!(unpack_255_ushort(&[254, 0])?.0, 506);
-		assert_eq!(unpack_255_ushort(&[255, 253])?.0, 506);
-		assert_eq!(unpack_255_ushort(&[253, 1, 250])?.0, 506);
-		assert_eq!(pack_255_ushort(252)?, [0xFC]);
-		assert_eq!(pack_255_ushort(506)?, [0xFE, 0x00]);
-		assert_eq!(pack_255_ushort(762)?, [0xFD, 0x02, 0xFA]);
-		Ok(())
-	}
 
 	fn sample_data() -> Vec<u8> {
 		(0..100_000_u32)
@@ -1656,6 +1665,503 @@ mod tests {
 		let fast = brotli_compress(&data, true, 5, None)?;
 		assert_ne!(fast, brotli_compress(&data, true, 11, None)?);
 		assert_eq!(brotli_decompress(&fast)?, data);
+		Ok(())
+	}
+}
+
+/// The parts of `Tests/ttLib/woff2_test.py` that test private types
+/// (`WOFF2DirectoryEntry`, `WOFF2LocaTable`, `WOFF2GlyfTable`, `WOFF2HmtxTable`);
+/// the rest is in `tests/woff2.rs`.
+#[cfg(test)]
+#[allow(non_snake_case)]
+mod upstream_tests {
+	use std::path::PathBuf;
+
+	use super::*;
+
+	fn err_contains<T: std::fmt::Debug>(result: Result<T>, message: &str) {
+		match result {
+			Ok(v) => panic!("expected an error with {message:?}, got {v:?}"),
+			Err(e) => assert!(e.to_string().contains(message), "{e} !~ {message:?}"),
+		}
+	}
+
+	// --- WOFF2DirectoryEntryTest
+
+	#[test]
+	fn test_not_enough_data_table_flags() {
+		err_contains(Entry::read(b""), "can't read table 'flags'");
+	}
+
+	#[test]
+	fn test_not_enough_data_table_tag() {
+		err_contains(Entry::read(&[0x3F, 0, 0, 0]), "can't read table 'tag'");
+	}
+
+	#[test]
+	fn test_loca_zero_transformLength() {
+		let mut data = vec![known_tag_index(LOCA)];
+		data.extend(pack_base128(57));
+		data.extend(pack_base128(1));
+		err_contains(
+			Entry::read(&data),
+			"transformLength of the 'loca' table must be 0",
+		);
+	}
+
+	#[test]
+	fn test_fromFile() -> Result<()> {
+		let unknown = Tag::new(b"ZZZZ");
+		let mut data = vec![known_tag_index(unknown)];
+		data.extend_from_slice(&unknown.0);
+		data.extend(pack_base128(42));
+		let expected = data.len();
+		data.extend([0; 100]);
+		let (entry, used) = Entry::read(&data)?;
+		assert_eq!(used, expected);
+		assert_eq!(entry.tag, unknown);
+		Ok(())
+	}
+
+	fn entry(tag: &[u8; 4], flags: u8, orig_length: u32, length: usize) -> Entry {
+		Entry {
+			tag: Tag::new(tag),
+			flags,
+			offset: 0,
+			length,
+			orig_length,
+		}
+	}
+
+	#[test]
+	fn test_transformed_toString() {
+		let e = entry(b"glyf", known_tag_index(GLYF), 150, 50);
+		let expected = 1 + pack_base128(150).len() + pack_base128(50).len();
+		assert_eq!(e.to_bytes().len(), expected);
+	}
+
+	#[test]
+	fn test_known_toString() {
+		let e = entry(b"head", known_tag_index(HEAD), 54, 0);
+		assert_eq!(e.to_bytes().len(), 1 + pack_base128(54).len());
+	}
+
+	#[test]
+	fn test_unknown_toString() {
+		let e = entry(b"ZZZZ", UNKNOWN_TAG_INDEX, 42, 0);
+		assert_eq!(e.to_bytes().len(), 1 + 4 + pack_base128(42).len());
+	}
+
+	#[test]
+	fn test_glyf_loca_transform_flags() {
+		for tag in [b"glyf", b"loca"] {
+			let mut e = entry(tag, known_tag_index(Tag::new(tag)), 0, 0);
+			assert_eq!(e.flags >> 6, 0);
+			assert!(e.transformed());
+			e.set_transformed(false);
+			assert_eq!(e.flags >> 6, 3);
+			assert_eq!(e.flags & 0b1100_0000, 3 << 6);
+			assert!(!e.transformed());
+		}
+	}
+
+	#[test]
+	fn test_other_transform_flags() {
+		let mut e = entry(b"ZZZZ", UNKNOWN_TAG_INDEX, 0, 0);
+		assert_eq!(e.flags >> 6, 0);
+		assert!(!e.transformed());
+		e.set_transformed(true);
+		assert_eq!(e.flags >> 6, 1);
+		assert_eq!(e.flags & 0b1100_0000, 1 << 6);
+		assert!(e.transformed());
+	}
+
+	// --- WOFF2ReaderTest.test_bad_signature (unreachable through `SfntReader`,
+	// which dispatches on the signature)
+
+	#[test]
+	fn test_bad_signature() {
+		err_contains(
+			read(Arc::from(&b"wOFF"[..]), SfntReaderOptions::default()),
+			"bad signature",
+		);
+	}
+
+	// --- WOFF2LocaTableTest (the `indexFormat` of a transformed `glyf`)
+
+	#[test]
+	fn test_compile_short_loca() -> Result<()> {
+		let locations: Vec<u32> = (0..0x20000).step_by(2).collect();
+		assert_eq!(compile_woff2_loca(&locations, 0)?.len(), 0x20000);
+		Ok(())
+	}
+
+	#[test]
+	fn test_compile_short_loca_overflow() {
+		let locations: Vec<u32> = (0..0x20001).collect();
+		err_contains(
+			compile_woff2_loca(&locations, 0),
+			"indexFormat is 0 but local offsets > 0x20000",
+		);
+	}
+
+	#[test]
+	fn test_compile_short_loca_not_multiples_of_2() {
+		err_contains(
+			compile_woff2_loca(&[1, 3, 5, 7], 0),
+			"offsets not multiples of 2",
+		);
+	}
+
+	#[test]
+	fn test_compile_long_loca() -> Result<()> {
+		let locations: Vec<u32> = (0..0x20001).collect();
+		assert_eq!(compile_woff2_loca(&locations, 1)?.len(), 0x20001 * 4);
+		Ok(())
+	}
+
+	// --- WOFF2GlyfTableTest
+
+	fn upstream(path: &str) -> PathBuf {
+		PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+			.join("../../upstream/fonttools/Tests")
+			.join(path)
+	}
+
+	/// The tables of `TestTTF-Regular.ttx` and its transformed `glyf` (the
+	/// `setUpClass` of the test).
+	struct Fixture {
+		maxp: Vec<u8>,
+		head: Vec<u8>,
+		loca: Vec<u8>,
+		glyf: Vec<u8>,
+		transformed_glyf: Vec<u8>,
+		num_glyphs: usize,
+	}
+
+	fn fixture() -> Result<Fixture> {
+		let text = std::fs::read_to_string(upstream("ttLib/data/TestTTF-Regular.ttx"))
+			.map_err(|e| Error::ttlib(e.to_string()))?;
+		let mut font = scratch_font();
+		font.import_ttx(&text)?;
+		// Compiled in inverse order, as in the test.
+		let glyf = font.table_data(GLYF)?;
+		let loca = font.table_data(LOCA)?;
+		let head = font.table_data(HEAD)?;
+		let maxp = font.table_data(Tag::new(b"maxp"))?;
+		let num_glyphs = font.require::<Maxp>()?.num_glyphs as usize;
+		font.flavor = Some(Flavor::Woff2);
+		let file = font.write(&crate::WriteOptions {
+			reorder_tables: None,
+			..Default::default()
+		})?;
+		// `reader.tables["glyf"].loadData(reader.transformBuffer)`.
+		let num_tables = u16::from_be_bytes([file[12], file[13]]);
+		let compressed_size = u32::from_be_bytes([file[20], file[21], file[22], file[23]]);
+		let mut pos = WOFF2_DIRECTORY_SIZE;
+		let mut offset = 0;
+		let mut glyf_range = None;
+		for _ in 0..num_tables {
+			let (e, used) = Entry::read(&file[pos..])?;
+			pos += used;
+			if e.tag == GLYF {
+				glyf_range = Some(offset..offset + e.length);
+			}
+			offset += e.length;
+		}
+		let stream = brotli_decompress(&file[pos..pos + compressed_size as usize])?;
+		let range = glyf_range.ok_or(Error::TableNotFound(GLYF))?;
+		Ok(Fixture {
+			maxp,
+			head,
+			loca,
+			glyf,
+			transformed_glyf: stream[range].to_vec(),
+			num_glyphs,
+		})
+	}
+
+	impl Fixture {
+		/// The font of `setUp`: `maxp`, `head`, `loca` and `glyf` decompiled.
+		fn font(&self) -> Result<Font> {
+			let mut font = scratch_font();
+			font.set_glyph_order(glyph_names(self.num_glyphs));
+			let maxp = Maxp::decompile(&self.maxp, &mut font)?;
+			font.insert(Box::new(maxp));
+			let head = Head::decompile(&self.head, &mut font)?;
+			font.insert(Box::new(head));
+			let loca = Loca::decompile(&self.loca, &mut font)?;
+			font.insert(Box::new(loca));
+			let glyf = Glyf::decompile(&self.glyf, &mut font)?;
+			font.insert(Box::new(glyf));
+			Ok(font)
+		}
+
+		/// `normalise_table(font, tag, padding)` for `glyf` and `loca`.
+		fn normalise(&self, tag: Tag, padding: u8) -> Result<Vec<u8>> {
+			let mut font = self.font()?;
+			let mut glyf = Glyf::decompile(&self.glyf, &mut font)?;
+			glyf.padding = padding;
+			let data = glyf.compile(&mut font)?;
+			if tag == GLYF {
+				return Ok(data);
+			}
+			font.with_table(LOCA, |table, font| table.compile(font))
+		}
+
+		/// `WOFF2GlyfTable().reconstruct(transformedGlyfData, font)`, then
+		/// `compile` with `padding`: the `glyf` and `loca` data.
+		fn reconstruct(&self, padding: u8) -> Result<(Vec<u8>, Vec<u8>)> {
+			let mut font = self.font()?;
+			let (glyphs, index_format) = decode_glyf(&self.transformed_glyf)?;
+			let mut glyf = Glyf {
+				glyphs: glyphs
+					.into_iter()
+					.enumerate()
+					.map(|(i, g)| (i as u32, g))
+					.collect(),
+				padding,
+				..Default::default()
+			};
+			font.insert(Box::new(Loca::default()));
+			let data = glyf.compile(&mut font)?;
+			let loca = compile_woff2_loca(font.require::<Loca>()?.locations(), index_format)?;
+			Ok((data, loca))
+		}
+	}
+
+	#[test]
+	fn test_reconstruct_glyf_padded_4() -> Result<()> {
+		let f = fixture()?;
+		assert_eq!(f.reconstruct(4)?.0, f.normalise(GLYF, 4)?);
+		Ok(())
+	}
+
+	#[test]
+	fn test_reconstruct_glyf_padded_2() -> Result<()> {
+		let f = fixture()?;
+		assert_eq!(f.reconstruct(2)?.0, f.normalise(GLYF, 2)?);
+		Ok(())
+	}
+
+	#[test]
+	fn test_reconstruct_glyf_unpadded() -> Result<()> {
+		let f = fixture()?;
+		assert_eq!(f.reconstruct(1)?.0, f.glyf);
+		Ok(())
+	}
+
+	/// The reader names the reconstructed glyphs as a font without names does.
+	#[test]
+	fn test_reconstruct_glyf_missing_glyphOrder() -> Result<()> {
+		let f = fixture()?;
+		let (glyphs, _) = decode_glyf(&f.transformed_glyf)?;
+		assert_eq!(glyphs.len(), f.num_glyphs);
+		let mut expected = vec![".notdef".to_owned()];
+		expected.extend((1..f.num_glyphs).map(|i| format!("glyph{i:05}")));
+		assert_eq!(glyph_names(glyphs.len()), expected);
+		Ok(())
+	}
+
+	#[test]
+	fn test_reconstruct_loca_padded_4() -> Result<()> {
+		let f = fixture()?;
+		assert_eq!(f.reconstruct(4)?.1, f.normalise(LOCA, 4)?);
+		Ok(())
+	}
+
+	#[test]
+	fn test_reconstruct_loca_padded_2() -> Result<()> {
+		let f = fixture()?;
+		assert_eq!(f.reconstruct(2)?.1, f.normalise(LOCA, 2)?);
+		Ok(())
+	}
+
+	#[test]
+	fn test_reconstruct_loca_unpadded() -> Result<()> {
+		let f = fixture()?;
+		assert_eq!(f.reconstruct(1)?.1, f.loca);
+		Ok(())
+	}
+
+	#[test]
+	fn test_reconstruct_glyf_header_not_enough_data() {
+		err_contains(decode_glyf(b""), "not enough 'glyf' data");
+	}
+
+	#[test]
+	fn test_reconstruct_glyf_table_incorrect_size() -> Result<()> {
+		let f = fixture()?;
+		let message = "incorrect size of transformed 'glyf'";
+		let mut longer = f.transformed_glyf.clone();
+		longer.push(0);
+		err_contains(decode_glyf(&longer), message);
+		let shorter = &f.transformed_glyf[..f.transformed_glyf.len() - 1];
+		err_contains(decode_glyf(shorter), message);
+		Ok(())
+	}
+
+	fn transform(font: &mut Font) -> Result<Vec<u8>> {
+		let index_format = font.require::<Head>()?.index_to_loc_format;
+		let num_names = font.glyph_order()?.len();
+		let glyf = font.require::<Glyf>()?;
+		transform_glyf(glyf, num_names, index_format)?.ok_or_else(|| Error::ttlib("no transform"))
+	}
+
+	#[test]
+	fn test_transform_glyf() -> Result<()> {
+		let f = fixture()?;
+		assert_eq!(transform(&mut f.font()?)?, f.transformed_glyf);
+		Ok(())
+	}
+
+	#[test]
+	fn test_roundtrip_glyf_reconstruct_and_transform() -> Result<()> {
+		let f = fixture()?;
+		let mut font = f.font()?;
+		let (glyphs, _) = decode_glyf(&f.transformed_glyf)?;
+		let glyf = Glyf {
+			glyphs: glyphs
+				.into_iter()
+				.enumerate()
+				.map(|(i, g)| (i as u32, g))
+				.collect(),
+			..Default::default()
+		};
+		font.insert(Box::new(glyf));
+		assert_eq!(transform(&mut font)?, f.transformed_glyf);
+		Ok(())
+	}
+
+	#[test]
+	fn test_roundtrip_glyf_transform_and_reconstruct() -> Result<()> {
+		let mut f = fixture()?;
+		f.transformed_glyf = transform(&mut f.font()?)?;
+		assert_eq!(f.reconstruct(4)?.0, f.normalise(GLYF, 4)?);
+		Ok(())
+	}
+
+	// --- WOFF2HmtxTableTest, with the metrics and `xMin`s of the `fontfile`
+	// fixture: .notdef, space, A, acutecomb, Aacute, zero, one, two;
+	// `numberOfHMetrics` is 6.
+
+	const METRICS: [(u16, i16); 8] = [
+		(500, 50),
+		(600, 0),
+		(550, 40),
+		(0, -40),
+		(550, 40),
+		(500, 30),
+		(500, 50),
+		(500, 40),
+	];
+	const X_MINS: [i64; 8] = [50, 0, 40, -40, 40, 30, 50, 40];
+
+	fn hmtx(metrics: &[(u16, i16)]) -> Hmtx {
+		let mut hmtx = Hmtx::default();
+		for (gid, &m) in metrics.iter().enumerate() {
+			hmtx.set(gid as u32, m);
+		}
+		hmtx
+	}
+
+	const ADVANCES: &[u8] = b"\x01\xf4\x02X\x02&\x00\x00\x02&\x01\xf4";
+
+	#[test]
+	fn test_transform_no_sidebearings() -> Result<()> {
+		let data = transform_hmtx(&hmtx(&METRICS), &X_MINS, 6)?;
+		assert_eq!(data, Some([b"\x03", ADVANCES].concat()));
+		Ok(())
+	}
+
+	const LSBS: &[u8] = b"\x002\x00\x00\x00'\xff\xd8\x00(\x00\x1e";
+
+	#[test]
+	fn test_transform_proportional_sidebearings() -> Result<()> {
+		let mut metrics = METRICS;
+		metrics[2] = (550, 39);
+		let data = transform_hmtx(&hmtx(&metrics), &X_MINS, 6)?;
+		assert_eq!(data, Some([b"\x02", ADVANCES, LSBS].concat()));
+		Ok(())
+	}
+
+	#[test]
+	fn test_transform_monospaced_sidebearings() -> Result<()> {
+		let mut x_mins = X_MINS;
+		x_mins[6] = 51;
+		let data = transform_hmtx(&hmtx(&METRICS), &x_mins, 6)?;
+		assert_eq!(data, Some([b"\x01", ADVANCES, b"\x002\x00("].concat()));
+		Ok(())
+	}
+
+	#[test]
+	fn test_transform_not_applicable() -> Result<()> {
+		let mut metrics = METRICS;
+		metrics[2] = (550, 39);
+		metrics[6] = (500, 51);
+		assert_eq!(transform_hmtx(&hmtx(&metrics), &X_MINS, 6)?, None);
+		Ok(())
+	}
+
+	#[test]
+	fn test_reconstruct_no_sidebearings() -> Result<()> {
+		let data = [b"\x03", ADVANCES].concat();
+		assert_eq!(reconstruct_hmtx(&data, &X_MINS, 6)?, METRICS);
+		Ok(())
+	}
+
+	#[test]
+	fn test_reconstruct_proportional_sidebearings() -> Result<()> {
+		let data = [b"\x02", ADVANCES, LSBS].concat();
+		let mut expected = METRICS;
+		expected[2] = (550, 39);
+		assert_eq!(reconstruct_hmtx(&data, &X_MINS, 6)?, expected);
+		Ok(())
+	}
+
+	#[test]
+	fn test_reconstruct_monospaced_sidebearings() -> Result<()> {
+		let data = [b"\x01", ADVANCES, b"\x003\x00("].concat();
+		let mut expected = METRICS;
+		expected[6] = (500, 51);
+		assert_eq!(reconstruct_hmtx(&data, &X_MINS, 6)?, expected);
+		Ok(())
+	}
+
+	#[test]
+	fn test_reconstruct_flags_reserved_bits() {
+		err_contains(
+			reconstruct_hmtx(b"\xff", &[], 0),
+			"Bits 2-7 of 'hmtx' flags are reserved",
+		);
+	}
+
+	#[test]
+	fn test_reconstruct_flags_required_bits() {
+		err_contains(
+			reconstruct_hmtx(b"\x00", &[], 0),
+			"either bits 0 or 1 (or both) must set",
+		);
+	}
+
+	#[test]
+	fn test_reconstruct_too_much_data() {
+		err_contains(
+			reconstruct_hmtx(b"\x03\x01\xf4\x02X\x02&", &X_MINS, 2),
+			"too much 'hmtx' table data",
+		);
+	}
+
+	/// fontTools only fails on a `numberOfHMetrics` beyond the glyph count when its
+	/// loops reach the missing glyphs (checked with fontTools 4.68.0).
+	#[test]
+	fn transform_hmtx_excess_number_of_h_metrics() -> Result<()> {
+		err_contains(transform_hmtx(&hmtx(&METRICS), &X_MINS, 11), "IndexError");
+		let mut metrics = METRICS;
+		metrics[0] = (500, 7);
+		let data =
+			transform_hmtx(&hmtx(&metrics), &X_MINS, 11)?.ok_or(Error::Assertion("".into()))?;
+		assert_eq!(data.len(), 1 + 2 * 8 + 2 * 8);
 		Ok(())
 	}
 }

@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont sfntVersion="\x00\x01\x00\x00" ttLibVersion="4.68">
+
+  <MATH>
+    <Version value="0x00010000"/>
+    <MathConstants>
+      <ScriptPercentScaleDown value="80"/>
+      <ScriptScriptPercentScaleDown value="60"/>
+      <DelimitedSubFormulaMinHeight value="3000"/>
+      <DisplayOperatorMinHeight value="2600"/>
+      <MathLeading>
+        <Value value="0"/>
+      </MathLeading>
+      <AxisHeight>
+        <Value value="0"/>
+      </AxisHeight>
+      <AccentBaseHeight>
+        <Value value="0"/>
+      </AccentBaseHeight>
+      <FlattenedAccentBaseHeight>
+        <Value value="0"/>
+      </FlattenedAccentBaseHeight>
+      <SubscriptShiftDown>
+        <Value value="0"/>
+      </SubscriptShiftDown>
+      <SubscriptTopMax>
+        <Value value="0"/>
+      </SubscriptTopMax>
+      <SubscriptBaselineDropMin>
+        <Value value="0"/>
+      </SubscriptBaselineDropMin>
+      <SuperscriptShiftUp>
+        <Value value="0"/>
+      </SuperscriptShiftUp>
+      <SuperscriptShiftUpCramped>
+        <Value value="0"/>
+      </SuperscriptShiftUpCramped>
+      <SuperscriptBottomMin>
+        <Value value="0"/>
+      </SuperscriptBottomMin>
+      <SuperscriptBaselineDropMax>
+        <Value value="0"/>
+      </SuperscriptBaselineDropMax>
+      <SubSuperscriptGapMin>
+        <Value value="0"/>
+      </SubSuperscriptGapMin>
+      <SuperscriptBottomMaxWithSubscript>
+        <Value value="0"/>
+      </SuperscriptBottomMaxWithSubscript>
+      <SpaceAfterScript>
+        <Value value="0"/>
+      </SpaceAfterScript>
+      <UpperLimitGapMin>
+        <Value value="0"/>
+      </UpperLimitGapMin>
+      <UpperLimitBaselineRiseMin>
+        <Value value="0"/>
+      </UpperLimitBaselineRiseMin>
+      <LowerLimitGapMin>
+        <Value value="0"/>
+      </LowerLimitGapMin>
+      <LowerLimitBaselineDropMin>
+        <Value value="0"/>
+      </LowerLimitBaselineDropMin>
+      <StackTopShiftUp>
+        <Value value="0"/>
+      </StackTopShiftUp>
+      <StackTopDisplayStyleShiftUp>
+        <Value value="0"/>
+      </StackTopDisplayStyleShiftUp>
+      <StackBottomShiftDown>
+        <Value value="0"/>
+      </StackBottomShiftDown>
+      <StackBottomDisplayStyleShiftDown>
+        <Value value="0"/>
+      </StackBottomDisplayStyleShiftDown>
+      <StackGapMin>
+        <Value value="0"/>
+      </StackGapMin>
+      <StackDisplayStyleGapMin>
+        <Value value="0"/>
+      </StackDisplayStyleGapMin>
+      <StretchStackTopShiftUp>
+        <Value value="0"/>
+      </StretchStackTopShiftUp>
+      <StretchStackBottomShiftDown>
+        <Value value="0"/>
+      </StretchStackBottomShiftDown>
+      <StretchStackGapAboveMin>
+        <Value value="0"/>
+      </StretchStackGapAboveMin>
+      <StretchStackGapBelowMin>
+        <Value value="0"/>
+      </StretchStackGapBelowMin>
+      <FractionNumeratorShiftUp>
+        <Value value="0"/>
+      </FractionNumeratorShiftUp>
+      <FractionNumeratorDisplayStyleShiftUp>
+        <Value value="0"/>
+      </FractionNumeratorDisplayStyleShiftUp>
+      <FractionDenominatorShiftDown>
+        <Value value="0"/>
+      </FractionDenominatorShiftDown>
+      <FractionDenominatorDisplayStyleShiftDown>
+        <Value value="0"/>
+      </FractionDenominatorDisplayStyleShiftDown>
+      <FractionNumeratorGapMin>
+        <Value value="0"/>
+      </FractionNumeratorGapMin>
+      <FractionNumDisplayStyleGapMin>
+        <Value value="0"/>
+      </FractionNumDisplayStyleGapMin>
+      <FractionRuleThickness>
+        <Value value="0"/>
+      </FractionRuleThickness>
+      <FractionDenominatorGapMin>
+        <Value value="0"/>
+      </FractionDenominatorGapMin>
+      <FractionDenomDisplayStyleGapMin>
+        <Value value="0"/>
+      </FractionDenomDisplayStyleGapMin>
+      <SkewedFractionHorizontalGap>
+        <Value value="0"/>
+      </SkewedFractionHorizontalGap>
+      <SkewedFractionVerticalGap>
+        <Value value="0"/>
+      </SkewedFractionVerticalGap>
+      <OverbarVerticalGap>
+        <Value value="0"/>
+      </OverbarVerticalGap>
+      <OverbarRuleThickness>
+        <Value value="0"/>
+      </OverbarRuleThickness>
+      <OverbarExtraAscender>
+        <Value value="0"/>
+      </OverbarExtraAscender>
+      <UnderbarVerticalGap>
+        <Value value="0"/>
+      </UnderbarVerticalGap>
+      <UnderbarRuleThickness>
+        <Value value="0"/>
+      </UnderbarRuleThickness>
+      <UnderbarExtraDescender>
+        <Value value="0"/>
+      </UnderbarExtraDescender>
+      <RadicalVerticalGap>
+        <Value value="0"/>
+      </RadicalVerticalGap>
+      <RadicalDisplayStyleVerticalGap>
+        <Value value="0"/>
+      </RadicalDisplayStyleVerticalGap>
+      <RadicalRuleThickness>
+        <Value value="0"/>
+      </RadicalRuleThickness>
+      <RadicalExtraAscender>
+        <Value value="0"/>
+      </RadicalExtraAscender>
+      <RadicalKernBeforeDegree>
+        <Value value="0"/>
+      </RadicalKernBeforeDegree>
+      <RadicalKernAfterDegree>
+        <Value value="0"/>
+      </RadicalKernAfterDegree>
+      <RadicalDegreeBottomRaisePercent value="55"/>
+    </MathConstants>
+    <MathVariants>
+      <MinConnectorOverlap value="100"/>
+      <VertGlyphCoverage>
+        <Glyph value="I"/>
+      </VertGlyphCoverage>
+      <!-- VertGlyphCount=1 -->
+      <!-- HorizGlyphCount=0 -->
+      <VertGlyphConstruction index="0">
+        <GlyphAssembly>
+          <ItalicsCorrection>
+            <Value value="0"/>
+          </ItalicsCorrection>
+          <!-- PartCount=1 -->
+          <PartRecords index="0">
+            <glyph value=".notdef"/>
+            <StartConnectorLength value="40"/>
+            <EndConnectorLength value="60"/>
+            <FullAdvance value="800"/>
+            <PartFlags value="1"/>
+          </PartRecords>
+        </GlyphAssembly>
+        <!-- VariantCount=2 -->
+        <MathGlyphVariantRecord index="0">
+          <VariantGlyph value="I"/>
+          <AdvanceMeasurement value="2000"/>
+        </MathGlyphVariantRecord>
+        <MathGlyphVariantRecord index="1">
+          <VariantGlyph value=".notdef"/>
+          <AdvanceMeasurement value="2800"/>
+        </MathGlyphVariantRecord>
+      </VertGlyphConstruction>
+    </MathVariants>
+  </MATH>
+
+</ttFont>

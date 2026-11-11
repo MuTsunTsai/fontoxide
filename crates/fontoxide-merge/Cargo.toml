@@ -1,0 +1,26 @@
+[package]
+name = "fontoxide-merge"
+description = "Merging fonts into one; a port of fontTools.merge"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+fontoxide-misc.workspace = true
+fontoxide-ttlib.workspace = true
+indexmap.workspace = true
+log.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+# FontBuilder, feaLib and otlLib, to build the fonts of the tests as fontTools does.
+fontoxide = { path = "../fontoxide" }
+
+[lints]
+workspace = true

@@ -82,12 +82,13 @@ macro_rules! lookup_subtable_impl {
 				&mut self,
 				element: &Element,
 				font: &mut Font,
-				_ctx: &mut XmlCtx,
+				ctx: &mut XmlCtx,
 			) -> Result<()> {
-				self.read_xml(element, font)
+				self.read_xml(element, font, ctx)
 			}
 
-			fn populate_defaults(&mut self, _ctx: &mut XmlCtx) -> Result<()> {
+			fn populate_defaults(&mut self, ctx: &mut XmlCtx) -> Result<()> {
+				ctx.old_coverage = None;
 				Ok(())
 			}
 		}
@@ -114,8 +115,8 @@ impl SingleSubst {
 		Ok(())
 	}
 
-	/// `postRead`.
-	fn from_raw(raw: SingleSubstRaw) -> Result<Self> {
+	/// `postRead`: the table from its binary layout.
+	pub fn from_raw(raw: SingleSubstRaw) -> Result<Self> {
 		let mut mapping = BTreeMap::new();
 		match raw {
 			SingleSubstRaw::Format1(SingleSubstRawFormat1 {
@@ -165,8 +166,8 @@ impl SingleSubst {
 		})
 	}
 
-	/// `preWrite`.
-	fn to_raw(&self, _w: &mut OtWriter<'_>, font: &mut Font) -> Result<SingleSubstRaw> {
+	/// `preWrite`: the table as it is written, with its format.
+	pub fn to_raw(&self, _w: &mut OtWriter<'_>, font: &mut Font) -> Result<SingleSubstRaw> {
 		let extended = any_extended(
 			font,
 			self.mapping.len(),
@@ -227,7 +228,7 @@ impl SingleSubst {
 		Ok(())
 	}
 
-	fn read_xml(&mut self, e: &Element, font: &mut Font) -> Result<()> {
+	fn read_xml(&mut self, e: &Element, font: &mut Font, _ctx: &mut XmlCtx) -> Result<()> {
 		let a = font.glyph_id(attr(e, "in")?)?;
 		let b = font.glyph_id(attr(e, "out")?)?;
 		self.mapping.insert(a, b);
@@ -258,8 +259,8 @@ impl MultipleSubst {
 		Ok(())
 	}
 
-	/// `postRead`.
-	fn from_raw(raw: MultipleSubstRaw) -> Result<Self> {
+	/// `postRead`: the table from its binary layout.
+	pub fn from_raw(raw: MultipleSubstRaw) -> Result<Self> {
 		let (glyphs, subst): (Vec<u32>, Vec<Vec<u32>>) = match raw {
 			MultipleSubstRaw::Format1(MultipleSubstRawFormat1 {
 				coverage, sequence, ..
@@ -295,8 +296,8 @@ impl MultipleSubst {
 		})
 	}
 
-	/// `preWrite`.
-	fn to_raw(&self, _w: &mut OtWriter<'_>, font: &mut Font) -> Result<MultipleSubstRaw> {
+	/// `preWrite`: the table as it is written, with its format.
+	pub fn to_raw(&self, _w: &mut OtWriter<'_>, font: &mut Font) -> Result<MultipleSubstRaw> {
 		let extended = any_extended(
 			font,
 			self.mapping.len(),
@@ -358,11 +359,43 @@ impl MultipleSubst {
 		Ok(())
 	}
 
-	fn read_xml(&mut self, e: &Element, font: &mut Font) -> Result<()> {
-		if matches!(e.name.as_str(), "Coverage" | "Sequence") {
-			return Err(Error::ttx(
-				"MultipleSubst in the TTX format of fontTools 3.0 and earlier is not supported",
-			));
+	fn read_xml(&mut self, e: &Element, font: &mut Font, ctx: &mut XmlCtx) -> Result<()> {
+		// The TTX format of fontTools 3.0 and earlier: a `Coverage`, then a
+		// `Sequence` of `Substitute` elements for each covered glyph.
+		if e.name == "Coverage" {
+			let mut glyphs = Vec::new();
+			for g in e.elements().filter(|g| g.name == "Glyph") {
+				glyphs.push(font.glyph_id(attr(g, "value")?)?);
+			}
+			ctx.old_coverage = Some(glyphs);
+			return Ok(());
+		}
+		if e.name == "Sequence" {
+			let index = match e.attr("index") {
+				Some(i) => super::table::parse_int::<i64>(i)?,
+				None => self.mapping.len() as i64,
+			};
+			let coverage = ctx.old_coverage.as_ref().ok_or_else(|| {
+				Error::ttx(
+					"AttributeError: 'MultipleSubst' object has no attribute 'old_coverage_'",
+				)
+			})?;
+			// Python indexing: negative indices count from the end.
+			let at = if index < 0 {
+				index + coverage.len() as i64
+			} else {
+				index
+			};
+			let glyph = *usize::try_from(at)
+				.ok()
+				.and_then(|i| coverage.get(i))
+				.ok_or_else(|| Error::ttx("IndexError: list index out of range"))?;
+			let mut outs = Vec::new();
+			for s in e.elements().filter(|s| s.name == "Substitute") {
+				outs.push(font.glyph_id(attr(s, "value")?)?);
+			}
+			self.mapping.insert(glyph, outs);
+			return Ok(());
 		}
 		let out = attr(e, "out")?;
 		let mut outs = Vec::new();
@@ -401,8 +434,8 @@ impl AlternateSubst {
 		Ok(())
 	}
 
-	/// `postRead`.
-	fn from_raw(raw: AlternateSubstRaw) -> Result<Self> {
+	/// `postRead`: the table from its binary layout.
+	pub fn from_raw(raw: AlternateSubstRaw) -> Result<Self> {
 		let (input, alts): (Vec<u32>, Vec<Vec<u32>>) = match raw {
 			AlternateSubstRaw::Format1(AlternateSubstRawFormat1 {
 				coverage,
@@ -445,8 +478,8 @@ impl AlternateSubst {
 		})
 	}
 
-	/// `preWrite`.
-	fn to_raw(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<AlternateSubstRaw> {
+	/// `preWrite`: the table as it is written, with its format.
+	pub fn to_raw(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<AlternateSubstRaw> {
 		let extended = any_extended(
 			font,
 			self.alternates.len(),
@@ -516,7 +549,7 @@ impl AlternateSubst {
 		Ok(())
 	}
 
-	fn read_xml(&mut self, e: &Element, font: &mut Font) -> Result<()> {
+	fn read_xml(&mut self, e: &Element, font: &mut Font, _ctx: &mut XmlCtx) -> Result<()> {
 		let glyph = font.glyph_id(attr(e, "glyph")?)?;
 		let mut set = Vec::new();
 		for child in e.elements() {
@@ -553,8 +586,8 @@ impl LigatureSubst {
 		Ok(())
 	}
 
-	/// `postRead`.
-	fn from_raw(raw: LigatureSubstRaw) -> Result<Self> {
+	/// `postRead`: the table from its binary layout.
+	pub fn from_raw(raw: LigatureSubstRaw) -> Result<Self> {
 		let (input, sets): (Vec<u32>, Vec<Vec<Ligature>>) = match raw {
 			LigatureSubstRaw::Format1(LigatureSubstRawFormat1 {
 				coverage,
@@ -699,7 +732,7 @@ impl LigatureSubst {
 		Ok(())
 	}
 
-	fn read_xml(&mut self, e: &Element, font: &mut Font) -> Result<()> {
+	fn read_xml(&mut self, e: &Element, font: &mut Font, _ctx: &mut XmlCtx) -> Result<()> {
 		let glyph = font.glyph_id(attr(e, "glyph")?)?;
 		let mut ligs = Vec::new();
 		for child in e.elements() {

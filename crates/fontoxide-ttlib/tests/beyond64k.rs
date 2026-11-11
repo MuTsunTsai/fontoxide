@@ -1807,3 +1807,139 @@ fn test_VarIdxMap_format1_beyond_64k() -> TestResult {
 	assert_eq!(table2.mapping[&0], 0);
 	Ok(())
 }
+
+/// A font of `tests/data/reorder_glyphs` (made by `tools/reference/reorder_scale_fixtures.py`).
+fn reorder_fixture(name: &str) -> String {
+	let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+		.join("tests/data/reorder_glyphs")
+		.join(format!("{name}.ttx"));
+	std::fs::read_to_string(path).expect("a fixture")
+}
+
+/// `getXML(font[tag].toXML, font)` of some tables, as one TTX document.
+fn tables_xml(font: &mut Font, tags: &[&str]) -> TestResult<String> {
+	let text = font.to_ttx(&fontoxide_ttlib::TtxOptions {
+		tables: tags
+			.iter()
+			.map(|t| {
+				fontoxide_ttlib::TableKey::Table(Tag::new(&t.as_bytes().try_into().expect("a tag")))
+			})
+			.collect(),
+		..Default::default()
+	})?;
+	// Without the `ttFont` element's attributes.
+	Ok(text
+		.lines()
+		.map(|l| {
+			if l.starts_with("<ttFont ") {
+				"<ttFont>"
+			} else {
+				l
+			}
+		})
+		.collect::<Vec<_>>()
+		.join("\n"))
+}
+
+fn reversed_order(font: &mut Font) -> TestResult<Vec<String>> {
+	let order = font.glyph_order()?.names().to_vec();
+	Ok(order[..1]
+		.iter()
+		.chain(order[1..].iter().rev())
+		.cloned()
+		.collect())
+}
+
+/// `test_reorder_extended_layout`, but for the `lazy` parameter. The reference is also
+/// compared with fontTools' result.
+#[test]
+fn test_reorder_extended_layout() -> TestResult {
+	use fontoxide_ttlib::reorder_glyphs::reorder_glyphs;
+
+	let layout = ["GDEF", "GSUB", "GPOS"];
+	let expected = reorder_fixture("extended_layout.expected");
+	for extended_header in [false, true] {
+		for extended_formats in [false, true] {
+			let mut built = Font::from_ttx(&reorder_fixture("extended_layout"))?;
+			let mut reference = save_and_read(&mut built)?;
+			let mut font = save_and_read(&mut built)?;
+			if extended_header {
+				upper_tables(&mut font, &tables(&layout))?;
+			}
+			convert_layout_formats(&mut font.require::<Gsub>()?.table, extended_formats)?;
+			convert_layout_formats(&mut font.require::<Gpos>()?.table, extended_formats)?;
+			let mut font = save_and_read(&mut font)?;
+			let new_order = reversed_order(&mut font)?;
+			reorder_glyphs(&mut reference, new_order.clone())?;
+			reorder_glyphs(&mut font, new_order)?;
+			let mut font = save_and_read(&mut font)?;
+			lower_tables(&mut font, &tables(&layout))?;
+			let reference_xml = tables_xml(&mut reference, &layout)?;
+			assert_eq!(
+				tables_xml(&mut font, &layout)?,
+				reference_xml,
+				"{extended_header} {extended_formats}"
+			);
+			let expected_xml = expected
+				.lines()
+				.map(|l| {
+					if l.starts_with("<ttFont ") {
+						"<ttFont>"
+					} else {
+						l
+					}
+				})
+				.collect::<Vec<_>>()
+				.join("\n");
+			assert_eq!(reference_xml, expected_xml);
+		}
+	}
+	Ok(())
+}
+
+/// `test_reorder_extended_contextual_layout`, but for the `lazy` parameter. The
+/// reference is also compared with fontTools' result.
+#[test]
+fn test_reorder_extended_contextual_layout() -> TestResult {
+	use fontoxide_ttlib::reorder_glyphs::reorder_glyphs;
+
+	let layout = ["GSUB", "GPOS"];
+	let expected = reorder_fixture("extended_contextual_layout.expected");
+	for extended_header in [false, true] {
+		let mut built = test_ttf()?;
+		built.import_ttx(&reorder_fixture("extended_contextual_layout"))?;
+		let mut reference = save_and_read(&mut built)?;
+		let mut font = built;
+		if extended_header {
+			upper_tables(&mut font, &tables(&layout))?;
+		} else {
+			convert_layout_formats(&mut font.require::<Gsub>()?.table, true)?;
+			convert_layout_formats(&mut font.require::<Gpos>()?.table, true)?;
+		}
+		let mut font = save_and_read(&mut font)?;
+		let order = reversed_order(&mut font)?;
+		reorder_glyphs(&mut reference, order.clone())?;
+		reorder_glyphs(&mut font, order)?;
+		let mut font = save_and_read(&mut font)?;
+		lower_tables(&mut font, &tables(&layout))?;
+		let reference_xml = tables_xml(&mut reference, &layout)?;
+		assert_eq!(
+			tables_xml(&mut font, &layout)?,
+			reference_xml,
+			"{extended_header}"
+		);
+		let expected_xml = expected
+			.lines()
+			.map(|l| {
+				if l.starts_with("<ttFont ") {
+					"<ttFont>"
+				} else {
+					l
+				}
+			})
+			.collect::<Vec<_>>()
+			.join("\n");
+		assert_eq!(reference_xml, expected_xml);
+	}
+	Ok(())
+}

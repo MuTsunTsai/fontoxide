@@ -176,7 +176,13 @@ macro_rules! header_table {
 					.iter()
 					.any(|t| font.is_loaded(Tag::new(t)));
 				if font.recalc_bboxes && outline_loaded {
+					// `recalc` loads the metrics, whose decompiling needs this table,
+					// which is detached from the font while compiling: a copy with
+					// the values from before compiling stands in, as fontTools never
+					// detaches it.
+					font.insert(self.clone_table());
 					self.recalc(font)?;
+					font.insert(self.clone_table());
 				}
 				self.table_version = version_as_long(self.table_version)?;
 				let mut data = Vec::with_capacity(Self::SIZE + 2);

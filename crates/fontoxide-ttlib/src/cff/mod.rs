@@ -2,6 +2,7 @@
 //! (`fontTools.misc.psCharStrings`).
 
 pub mod cff2_to_cff;
+pub mod cff_to_cff2;
 pub mod charstring;
 pub mod compile;
 pub mod dict;

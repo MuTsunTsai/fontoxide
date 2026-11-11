@@ -74,6 +74,11 @@ pub trait AatValue: Sized + Clone + PartialEq {
 	const SIZE: usize;
 	/// Reads a value (`converter.read`).
 	fn read(r: &mut OtReader<'_>, font: &mut Font) -> Result<Self>;
+	/// Reads `count` values (`converter.readArray`). Values read item by item fail
+	/// at the end of the data; the integer converters read as far as it goes.
+	fn read_array(r: &mut OtReader<'_>, font: &mut Font, count: usize) -> Result<Vec<Self>> {
+		(0..count).map(|_| Self::read(r, font)).collect()
+	}
 	/// Writes a value (`converter.write`).
 	fn write(&self, w: &mut OtWriter<'_>, font: &mut Font) -> Result<()>;
 	/// Writes the `Lookup` element of a glyph (`converter.xmlWrite`).
@@ -86,6 +91,9 @@ impl AatValue for u16 {
 	const SIZE: usize = 2;
 	fn read(r: &mut OtReader<'_>, _font: &mut Font) -> Result<Self> {
 		r.read_u16()
+	}
+	fn read_array(r: &mut OtReader<'_>, _font: &mut Font, count: usize) -> Result<Vec<Self>> {
+		r.read_u16_array(count)
 	}
 	fn write(&self, w: &mut OtWriter<'_>, _font: &mut Font) -> Result<()> {
 		w.write_u16(*self);
@@ -114,6 +122,12 @@ impl AatValue for u32 {
 	const SIZE: usize = 2;
 	fn read(r: &mut OtReader<'_>, _font: &mut Font) -> Result<Self> {
 		Ok(r.read_u16()? as u32)
+	}
+	fn read_array(r: &mut OtReader<'_>, _font: &mut Font, count: usize) -> Result<Vec<Self>> {
+		Ok(r.read_u16_array(count)?
+			.into_iter()
+			.map(u32::from)
+			.collect())
 	}
 	fn write(&self, w: &mut OtWriter<'_>, _font: &mut Font) -> Result<()> {
 		let v = u16::try_from(*self)
@@ -167,8 +181,10 @@ pub fn read_aat_lookup<V: AatValue>(r: &mut OtReader<'_>, font: &mut Font) -> Re
 	match r.read_u16()? {
 		0 => {
 			let n = font.glyph_order()?.len();
-			for gid in 0..n as u32 {
-				mapping.insert(gid, V::read(r, font)?);
+			// `enumerate(converter.readArray(...))`: a truncated array maps the glyphs
+			// it covers.
+			for (gid, value) in V::read_array(r, font, n)?.into_iter().enumerate() {
+				mapping.insert(gid as u32, value);
 			}
 		}
 		2 => {

@@ -17,6 +17,7 @@
 pub mod beyond64k;
 pub mod binary;
 pub mod cff;
+pub mod cli;
 pub mod collection;
 mod error;
 pub mod font;
@@ -26,6 +27,8 @@ pub mod glyph_set;
 pub mod ot;
 pub mod pens;
 pub mod remove_overlaps;
+pub mod reorder_glyphs;
+pub mod scale_upem;
 pub mod sfnt;
 pub mod sstruct;
 pub mod table;

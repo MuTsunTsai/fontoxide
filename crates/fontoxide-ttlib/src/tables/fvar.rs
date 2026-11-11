@@ -84,7 +84,9 @@ impl Axis {
 		crate::sstruct::bytes_to_py_str(&self.axis_tag)
 	}
 
-	fn to_xml(&self, writer: &mut XmlWriter, names: Option<&Name>) {
+	/// Writes the axis to TTX, after a comment with its name from `names`
+	/// (`toXML`).
+	pub fn to_xml(&self, writer: &mut XmlWriter, names: Option<&Name>) {
 		if let Some(name) = names.and_then(|n| n.get_debug_name(self.axis_name_id)) {
 			writer.newline();
 			writer.comment(&name);
@@ -112,7 +114,8 @@ impl Axis {
 		writer.newline();
 	}
 
-	fn from_xml(element: &Element) -> Result<Self> {
+	/// Reads an `<Axis>` element (`fromXML`).
+	pub fn from_xml(element: &Element) -> Result<Self> {
 		let mut axis = Axis::new(Tag::default());
 		axis.axis_tag = [0; 4];
 		for e in element.elements() {
@@ -176,7 +179,9 @@ impl Default for NamedInstance {
 }
 
 impl NamedInstance {
-	fn decompile(data: &[u8], axis_tags: &[Tag]) -> Result<Self> {
+	/// Parses an instance record of the given axes (`decompile`); without the
+	/// trailing PostScript name ID, it is 0xFFFF.
+	pub fn decompile(data: &[u8], axis_tags: &[Tag]) -> Result<Self> {
 		let (header, _) = InstanceHeader::unpack2(data)?;
 		let mut instance = NamedInstance {
 			subfamily_name_id: header.subfamily_name_id,
@@ -196,7 +201,8 @@ impl NamedInstance {
 		Ok(instance)
 	}
 
-	fn compile(
+	/// Appends the instance record for the given axes to `out` (`compile`).
+	pub fn compile(
 		&self,
 		axis_tags: &[Tag],
 		include_postscript_name: bool,
@@ -219,7 +225,14 @@ impl NamedInstance {
 		Ok(())
 	}
 
-	fn to_xml(&self, writer: &mut XmlWriter, names: Option<&Name>, axes: &[Axis]) -> Result<()> {
+	/// Writes the instance to TTX, after comments with its names from `names`
+	/// (`toXML`).
+	pub fn to_xml(
+		&self,
+		writer: &mut XmlWriter,
+		names: Option<&Name>,
+		axes: &[Axis],
+	) -> Result<()> {
 		if let Some(name) = names.and_then(|n| n.get_debug_name(self.subfamily_name_id)) {
 			writer.newline();
 			writer.comment(&name);
@@ -265,7 +278,8 @@ impl NamedInstance {
 		Ok(())
 	}
 
-	fn from_xml(element: &Element) -> Result<Self> {
+	/// Reads a `<NamedInstance>` element (`fromXML`).
+	pub fn from_xml(element: &Element) -> Result<Self> {
 		let int = |name: &str, default: Option<&str>| -> Result<u16> {
 			let text = element
 				.attr(name)

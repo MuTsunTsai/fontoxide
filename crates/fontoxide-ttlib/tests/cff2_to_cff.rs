@@ -1,16 +1,18 @@
-//! Port of the class `CFF2ToCFFTest` of fontTools' `Tests/cffLib/cffLib_test.py`, and of
-//! `Tests/cffLib/width_test.py`.
+//! Port of the classes `CFF2ToCFFTest` and `CFFToCFF2Test` of fontTools'
+//! `Tests/cffLib/cffLib_test.py`, and of `Tests/cffLib/width_test.py`.
 //!
 //! `_makeCFF2Font` is in `tools/reference/cff2_to_cff_fixtures.py`, as FontBuilder is not
-//! ported. It also saves what fontTools converts the fonts to, for comparing.
+//! ported. It also saves what fontTools converts the fonts to, for comparing;
+//! `tools/reference/cff_to_cff2_fixtures.py` does the same for `CFFToCFF2Test`.
 
 use std::path::PathBuf;
 
 use fontoxide_misc::transform::Transform;
 use fontoxide_pens::{Pen, Point};
+use fontoxide_ttlib::cff::cff_to_cff2::convert_cff_to_cff2;
 use fontoxide_ttlib::cff::cff2_to_cff::{convert_cff2_to_cff, get_hmtx_tag};
 use fontoxide_ttlib::cff::dict::Value;
-use fontoxide_ttlib::tables::{Cff, Hmtx};
+use fontoxide_ttlib::tables::{Cff, Cff2, Hmtx};
 use fontoxide_ttlib::{
 	DefaultTable, Font, GlyphSet, ReadOptions, Result, TableKey, Tag, TtxOptions, WriteOptions,
 };
@@ -225,5 +227,60 @@ fn uppercase_companion_is_not_ignored() -> Result<()> {
 		font.require::<fontoxide_ttlib::tables::Cff>()?.cff,
 		expected.require::<fontoxide_ttlib::tables::Cff>()?.cff
 	);
+	Ok(())
+}
+
+// `CFFToCFF2Test`.
+
+fn cff_lib_data(name: &str) -> PathBuf {
+	PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+		.join("../../upstream/fonttools/Tests/cffLib/data")
+		.join(name)
+}
+
+fn read_font(path: PathBuf, options: ReadOptions) -> Result<Font> {
+	Font::read(std::fs::read(path)?, options)
+}
+
+#[test]
+fn test_roundtrip_with_local_subrs() -> Result<()> {
+	let mut font = read_font(cff_lib_data("CFFToCFF2-1.otf"), ReadOptions::default())?;
+	let expected = draw_glyphs(&mut font)?;
+	convert_cff_to_cff2(&mut font)?;
+	// Load the CFF2 font without touching the charstrings, so that the local Subrs
+	// are still undecompiled when converting back to CFF.
+	let mut font = save_and_load(
+		&mut font,
+		ReadOptions {
+			recalc_bboxes: false,
+			..Default::default()
+		},
+	)?;
+	convert_cff2_to_cff(&mut font, true)?;
+	let mut font = save_and_load(&mut font, ReadOptions::default())?;
+	assert_eq!(draw_glyphs(&mut font)?, expected);
+	Ok(())
+}
+
+#[test]
+fn test_conversion() -> Result<()> {
+	let mut font = read_font(cff_lib_data("CFFToCFF2-1.otf"), ReadOptions::default())?;
+	convert_cff_to_cff2(&mut font)?;
+	let mut font = save_and_load(&mut font, ReadOptions::default())?;
+	assert!(!font.contains(Tag::new(b"CFF ")));
+	font.require::<Cff2>()?;
+	// What fontTools converts the font to.
+	let ttx = font.to_ttx(&TtxOptions {
+		tables: vec![TableKey::Table(Tag::new(b"CFF2"))],
+		newline: "\n".into(),
+		..Default::default()
+	})?;
+	let lines = |s: &str| {
+		s.lines()
+			.filter(|l| !l.starts_with("<ttFont "))
+			.map(str::to_owned)
+			.collect::<Vec<_>>()
+	};
+	assert_eq!(lines(&ttx), lines(&data("CFFToCFF2-1.CFF2.ttx")));
 	Ok(())
 }

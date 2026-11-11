@@ -779,6 +779,42 @@ impl FontBuilder {
 		Ok(())
 	}
 
+	/// Adds an `avar` table for designspace axes and axis mappings (`setupAvar`
+	/// with `mappings`, which make it `avar` version 2); see
+	/// [`fontoxide_varlib::build::add_avar`]. `fvar` must be set up first. Errors
+	/// of varLib that aren't ones of fontoxide-ttlib are passed on as
+	/// [`Error::TtLib`] with their message.
+	pub fn setup_avar_with_mappings(
+		&mut self,
+		axes: &[fontoxide_designspacelib::AxisDescriptor],
+		mappings: &[fontoxide_designspacelib::AxisMappingDescriptor],
+	) -> Result<()> {
+		let Some(fvar) = self.font.get::<Fvar>()? else {
+			return Err(Error::value(
+				"KeyError: \"'fvar' table is missing; can't add 'avar'.\"",
+			));
+		};
+		let axis_tags: Vec<String> = fvar
+			.axes
+			.iter()
+			.map(|a| Tag::new(&a.axis_tag).to_string())
+			.collect();
+		// Only the values are used.
+		// UPSTREAM-BUG(B50): but `_add_avar` looks the axes of the mappings up by the
+		// keys of their locations, so mappings by axis name fail with a KeyError:
+		// only locations keyed by the index of the axis ("0", "1", ...) work.
+		let axes: fontoxide_varlib::build::Axes = axes
+			.iter()
+			.enumerate()
+			.map(|(i, a)| (i.to_string(), a.clone()))
+			.collect();
+		match fontoxide_varlib::build::add_avar(&mut self.font, &axes, mappings, &axis_tags) {
+			Ok(_) => Ok(()),
+			Err(fontoxide_varlib::errors::VarLibError::Ttlib(e)) => Err(e),
+			Err(e) => Err(Error::TtLib(e.to_string())),
+		}
+	}
+
 	/// Creates the `gvar` table (or `GVAR`) from the variations of each glyph by
 	/// name (`setupGvar`).
 	pub fn setup_gvar(&mut self, variations: IndexMap<String, Vec<TupleVariation>>) -> Result<()> {

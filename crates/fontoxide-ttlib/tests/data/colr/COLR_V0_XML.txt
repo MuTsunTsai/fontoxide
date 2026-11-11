@@ -1,0 +1,6 @@
+<version value="0"/>
+<ColorGlyph name="glyph00006">
+  <layer colorID="0" name="glyph00007"/>
+  <layer colorID="1" name="glyph00008"/>
+  <layer colorID="2" name="glyph00009"/>
+</ColorGlyph>

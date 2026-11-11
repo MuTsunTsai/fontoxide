@@ -122,13 +122,16 @@ impl Table for Maxp {
 	}
 
 	fn compile(&mut self, font: &mut Font) -> Result<Vec<u8>> {
+		// Loading the glyph order or tables that `recalc` reads (`hmtx` needs
+		// `numGlyphs`) may need this table, which is detached from the font while
+		// compiling; a copy stands in until that is over. fontTools never detaches
+		// it, so those see the values from before compiling, as the copy does.
+		font.insert(self.clone_table());
 		let glyf = Font::locked_tag::<crate::tables::Glyf>(self.extended);
 		if font.contains(glyf) && font.is_loaded(glyf) && font.recalc_bboxes {
 			self.recalc(font)?;
+			font.insert(self.clone_table());
 		}
-		// Loading the glyph order may need this table, which is detached from the
-		// font while compiling; a copy stands in until that is over.
-		font.insert(self.clone_table());
 		self.num_glyphs = crate::binary::fit(font.glyph_order()?.len(), "numGlyphs")?;
 		if self.table_version != VERSION_0_5 {
 			self.table_version = 0x0001_0000;

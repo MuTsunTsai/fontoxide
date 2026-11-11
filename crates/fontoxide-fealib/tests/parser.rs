@@ -945,7 +945,7 @@ fn test_language_multiple() -> Result<()> {
 	let doc = parse("feature test {language AZE CRT KAZ TAT TRK exclude_dflt required;} test;")?;
 	let s = get!(first(&doc), LanguageStatement);
 	assert_eq!(s.languages, strs(&["AZE ", "CRT ", "KAZ ", "TAT ", "TRK "]));
-	// LENIENT: Python also warns here to use `.languages`.
+	// LENIENT(L33): Python also warns here to use `.languages`.
 	assert_eq!(s.language(), "AZE ");
 	assert!(!s.include_default);
 	assert!(s.required);

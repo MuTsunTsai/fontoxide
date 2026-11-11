@@ -10,6 +10,7 @@ use fontoxide_misc::xml_reader::Element;
 use fontoxide_misc::xml_writer::XmlWriter;
 use fontoxide_pens::Pen;
 
+use super::specializer::Arg;
 use crate::{Error, Result};
 
 /// A token of a charstring program.
@@ -456,12 +457,41 @@ pub struct Context<'a> {
 	pub blender: Option<Blender<'a>>,
 }
 
+/// A pen that also takes the hints of a charstring, as `MergeOutlineExtractor`
+/// of `fontTools.varLib.cff` passes them on.
+pub trait HintPen: Pen {
+	/// A stem hint operator (`hstem`, `vstem`, `hstemhm` or `vstemhm`) with its
+	/// arguments, without the width (`add_hint`).
+	fn add_hint(&mut self, op: &'static str, args: &[Arg]) -> Result<()>;
+
+	/// A `hintmask` or `cntrmask` operator with its mask bytes (`add_hintmask`).
+	fn add_hintmask(&mut self, op: &'static str, mask: &[u8]) -> Result<()>;
+}
+
+/// How the interpreter treats the width at the start of a charstring.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum WidthMode {
+	/// `T2WidthExtractor`: the width is `nominalWidthX` plus the argument; an
+	/// argument is an error in CFF2.
+	Extract,
+	/// `CFFToCFF2OutlineExtractor`: the argument is dropped, and the width is
+	/// `defaultWidthX`.
+	Drop,
+	/// `T2WidthExtractor` with a `nominalWidthX` that cannot be added to, as
+	/// `convertCFFToCFF2` uses it: an explicit width stops the run.
+	Detect,
+}
+
 /// The interpreter (`SimpleT2Decompiler`, or `T2OutlineExtractor` when there is
 /// a pen).
 #[allow(missing_debug_implementations)]
 pub struct Interpreter<'a, 'p> {
 	ctx: Context<'a>,
 	pen: Option<&'p mut dyn Pen>,
+	hint_pen: Option<&'p mut dyn HintPen>,
+	width_mode: WidthMode,
+	/// Whether [`WidthMode::Detect`] found an explicit width.
+	explicit_width: bool,
 	stack: Vec<Num>,
 	hint_count: usize,
 	hint_mask_bytes: usize,
@@ -485,6 +515,9 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 		Interpreter {
 			ctx,
 			pen,
+			hint_pen: None,
+			width_mode: WidthMode::Extract,
+			explicit_width: false,
 			stack: Vec::new(),
 			hint_count: 0,
 			hint_mask_bytes: 0,
@@ -499,8 +532,48 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 		}
 	}
 
+	/// An interpreter that draws onto `pen` and passes the hints on to it, dropping
+	/// any width (`MergeOutlineExtractor` of `fontTools.varLib.cff`).
+	pub fn with_hints(ctx: Context<'a>, pen: &'p mut dyn HintPen) -> Self {
+		let mut interpreter = Interpreter::new(ctx, None);
+		interpreter.hint_pen = Some(pen);
+		interpreter.width_mode = WidthMode::Drop;
+		interpreter
+	}
+
+	/// An interpreter that only finds out whether a charstring has an explicit
+	/// width (`T2WidthExtractor` with a `nominalWidthX` that raises when added
+	/// to, as `convertCFFToCFF2` runs it): it stops there. See
+	/// [`Interpreter::has_explicit_width`].
+	pub fn width_detector(ctx: Context<'a>) -> Self {
+		let mut interpreter = Interpreter::new(ctx, None);
+		interpreter.width_mode = WidthMode::Detect;
+		interpreter
+	}
+
+	/// Whether a [`Interpreter::width_detector`] stopped at an explicit width.
+	/// [`Interpreter::execute`] then returns an error.
+	pub fn has_explicit_width(&self) -> bool {
+		self.explicit_width
+	}
+
 	fn drawing(&self) -> bool {
-		self.pen.is_some()
+		self.pen.is_some() || self.hint_pen.is_some()
+	}
+
+	/// Whether the operators that can carry the width look for it.
+	fn extracts_width(&self) -> bool {
+		self.drawing() || self.width_mode == WidthMode::Detect
+	}
+
+	fn pen_mut(&mut self) -> Option<&mut dyn Pen> {
+		if let Some(pen) = self.hint_pen.as_deref_mut() {
+			return Some(pen);
+		}
+		match self.pen.as_deref_mut() {
+			Some(pen) => Some(pen),
+			None => None,
+		}
 	}
 
 	/// The width of what was drawn (`width`).
@@ -575,13 +648,30 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 		let mut args = self.popall();
 		if !self.got_width {
 			if (even_odd ^ (args.len() % 2)) != 0 {
-				if self.ctx.default_width_x.is_none() {
-					return Err(Error::Assertion(
-						"CFF2 CharStrings must not have an initial width value".into(),
-					));
+				match self.width_mode {
+					WidthMode::Extract => {
+						if self.ctx.default_width_x.is_none() {
+							return Err(Error::Assertion(
+								"CFF2 CharStrings must not have an initial width value".into(),
+							));
+						}
+						if args.is_empty() {
+							return Err(index_error());
+						}
+						let width = args.remove(0);
+						self.width = self.ctx.nominal_width_x.map(|n| n + width.value());
+					}
+					WidthMode::Drop => {
+						if !args.is_empty() {
+							args.remove(0);
+						}
+						self.width = self.ctx.default_width_x;
+					}
+					WidthMode::Detect => {
+						self.explicit_width = true;
+						return Err(Error::ttlib("the charstring has an explicit width"));
+					}
 				}
-				let width = args.remove(0);
-				self.width = self.ctx.nominal_width_x.map(|n| n + width.value());
 			} else {
 				self.width = self.ctx.default_width_x;
 			}
@@ -590,13 +680,28 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 		Ok(args)
 	}
 
-	fn count_hints(&mut self) -> Result<()> {
-		let args = if self.drawing() {
+	fn count_hints(&mut self) -> Result<Vec<Num>> {
+		let args = if self.extracts_width() {
 			self.popall_width(0)?
 		} else {
 			self.popall()
 		};
 		self.hint_count += args.len() / 2;
+		Ok(args)
+	}
+
+	/// Passes a stem hint on to the hint pen, if any.
+	fn hint(&mut self, op: &'static str, args: &[Num]) -> Result<()> {
+		if let Some(pen) = self.hint_pen.as_deref_mut() {
+			let args: Vec<Arg> = args
+				.iter()
+				.map(|n| match *n {
+					Num::Int(i) => Arg::Int(i),
+					Num::Float(f) => Arg::Float(f),
+				})
+				.collect();
+			pen.add_hint(op, &args)?;
+		}
 		Ok(())
 	}
 
@@ -631,22 +736,42 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 	/// Runs an operator; returns the mask bytes of `hintmask` / `cntrmask`.
 	fn operator(
 		&mut self,
-		op: &str,
+		op: &'static str,
 		cs: &T2CharString,
 		index: usize,
 	) -> Result<Option<(Vec<u8>, usize)>> {
 		match op {
 			"return" | "ignore" => {}
-			"endchar" if !self.drawing() => {}
+			"endchar" if !self.drawing() => {
+				if self.width_mode == WidthMode::Detect {
+					self.popall_width(0)?;
+				}
+			}
+			"rmoveto" if self.width_mode == WidthMode::Detect => {
+				self.popall_width(0)?;
+			}
+			"hmoveto" | "vmoveto" if self.width_mode == WidthMode::Detect => {
+				self.popall_width(1)?;
+			}
 			"callsubr" => self.call(false)?,
 			"callgsubr" => self.call(true)?,
-			"hstem" | "vstem" | "hstemhm" | "vstemhm" => self.count_hints()?,
+			"hstem" | "vstem" | "hstemhm" | "vstemhm" => {
+				let args = self.count_hints()?;
+				self.hint(op, &args)?;
+			}
 			"hintmask" | "cntrmask" => {
 				if self.hint_mask_bytes == 0 {
-					self.count_hints()?;
+					let args = self.count_hints()?;
+					if !args.is_empty() {
+						self.hint("vstemhm", &args)?;
+					}
 					self.hint_mask_bytes = self.hint_count.div_ceil(8);
 				}
-				return cs.bytes(index, self.hint_mask_bytes).map(Some);
+				let (mask, next) = cs.bytes(index, self.hint_mask_bytes)?;
+				if let Some(pen) = self.hint_pen.as_deref_mut() {
+					pen.add_hintmask(op, &mask)?;
+				}
+				return Ok(Some((mask, next)));
 			}
 			"blend" => self.blend()?,
 			"vsindex" => {
@@ -719,7 +844,7 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 
 	fn r_move_to(&mut self, p: (f64, f64)) -> Result<()> {
 		let p = self.next_point(p);
-		if let Some(pen) = self.pen.as_mut() {
+		if let Some(pen) = self.pen_mut() {
 			pen.move_to(p)?;
 		}
 		self.saw_move_to = true;
@@ -731,7 +856,7 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 			self.r_move_to((0.0, 0.0))?;
 		}
 		let p = self.next_point(p);
-		if let Some(pen) = self.pen.as_mut() {
+		if let Some(pen) = self.pen_mut() {
 			pen.line_to(p)?;
 		}
 		Ok(())
@@ -744,7 +869,7 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 		let a = self.next_point(p1);
 		let b = self.next_point(p2);
 		let c = self.next_point(p3);
-		if let Some(pen) = self.pen.as_mut() {
+		if let Some(pen) = self.pen_mut() {
 			pen.curve_to(&[a, b, c])?;
 		}
 		Ok(())
@@ -752,7 +877,7 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 
 	fn end_path(&mut self) -> Result<()> {
 		if self.saw_move_to
-			&& let Some(pen) = self.pen.as_mut()
+			&& let Some(pen) = self.pen_mut()
 		{
 			pen.close_path()?;
 		}
@@ -801,7 +926,7 @@ impl<'a, 'p> Interpreter<'a, 'p> {
 					let enc = &crate::generated::cff_strings::STANDARD_ENCODING;
 					let base = *enc.get(code(args[2])?).ok_or_else(index_error)?;
 					let accent = *enc.get(code(args[3])?).ok_or_else(index_error)?;
-					if let Some(pen) = self.pen.as_mut() {
+					if let Some(pen) = self.pen_mut() {
 						pen.add_component(base, Transform::new(1.0, 0.0, 0.0, 1.0, 0.0, 0.0))?;
 						pen.add_component(accent, Transform::new(1.0, 0.0, 0.0, 1.0, v[0], v[1]))?;
 					}

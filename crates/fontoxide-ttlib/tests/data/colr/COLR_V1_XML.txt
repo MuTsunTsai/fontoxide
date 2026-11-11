@@ -1,0 +1,211 @@
+<Version value="1"/>
+<!-- BaseGlyphRecordCount=1 -->
+<BaseGlyphRecordArray>
+  <BaseGlyphRecord index="0">
+    <BaseGlyph value="glyph00006"/>
+    <FirstLayerIndex value="0"/>
+    <NumLayers value="3"/>
+  </BaseGlyphRecord>
+</BaseGlyphRecordArray>
+<LayerRecordArray>
+  <LayerRecord index="0">
+    <LayerGlyph value="glyph00007"/>
+    <PaletteIndex value="0"/>
+  </LayerRecord>
+  <LayerRecord index="1">
+    <LayerGlyph value="glyph00008"/>
+    <PaletteIndex value="1"/>
+  </LayerRecord>
+  <LayerRecord index="2">
+    <LayerGlyph value="glyph00009"/>
+    <PaletteIndex value="2"/>
+  </LayerRecord>
+</LayerRecordArray>
+<!-- LayerRecordCount=3 -->
+<BaseGlyphList>
+  <!-- BaseGlyphCount=3 -->
+  <BaseGlyphPaintRecord index="0">
+    <BaseGlyph value="glyph00010"/>
+    <Paint Format="1"><!-- PaintColrLayers -->
+      <NumLayers value="4"/>
+      <FirstLayerIndex value="0"/>
+    </Paint>
+  </BaseGlyphPaintRecord>
+  <BaseGlyphPaintRecord index="1">
+    <BaseGlyph value="glyph00014"/>
+    <Paint Format="32"><!-- PaintComposite -->
+      <SourcePaint Format="11"><!-- PaintColrGlyph -->
+        <Glyph value="glyph00010"/>
+      </SourcePaint>
+      <CompositeMode value="src_over"/>
+      <BackdropPaint Format="13"><!-- PaintVarTransform -->
+        <Paint Format="11"><!-- PaintColrGlyph -->
+          <Glyph value="glyph00010"/>
+        </Paint>
+        <Transform>
+          <xx value="1.0"/>
+          <yx value="0.0"/>
+          <xy value="0.0"/>
+          <yy value="1.0"/>
+          <dx value="300.0"/>
+          <dy value="0.0"/>
+          <VarIndexBase value="0"/>
+        </Transform>
+      </BackdropPaint>
+    </Paint>
+  </BaseGlyphPaintRecord>
+  <BaseGlyphPaintRecord index="2">
+    <BaseGlyph value="glyph00015"/>
+    <Paint Format="10"><!-- PaintGlyph -->
+      <Paint Format="8"><!-- PaintSweepGradient -->
+        <ColorLine>
+          <Extend value="pad"/>
+          <!-- StopCount=2 -->
+          <ColorStop index="0">
+            <StopOffset value="0.0"/>
+            <PaletteIndex value="3"/>
+            <Alpha value="1.0"/>
+          </ColorStop>
+          <ColorStop index="1">
+            <StopOffset value="1.0"/>
+            <PaletteIndex value="5"/>
+            <Alpha value="1.0"/>
+          </ColorStop>
+        </ColorLine>
+        <centerX value="259"/>
+        <centerY value="300"/>
+        <startAngle value="225.0"/>
+        <endAngle value="315.0"/>
+      </Paint>
+      <Glyph value="glyph00011"/>
+    </Paint>
+  </BaseGlyphPaintRecord>
+</BaseGlyphList>
+<LayerList>
+  <!-- LayerCount=5 -->
+  <Paint index="0" Format="10"><!-- PaintGlyph -->
+    <Paint Format="3"><!-- PaintVarSolid -->
+      <PaletteIndex value="2"/>
+      <Alpha value="0.5"/>
+      <VarIndexBase value="6"/>
+    </Paint>
+    <Glyph value="glyph00011"/>
+  </Paint>
+  <Paint index="1" Format="10"><!-- PaintGlyph -->
+    <Paint Format="4"><!-- PaintLinearGradient -->
+      <ColorLine>
+        <Extend value="repeat"/>
+        <!-- StopCount=3 -->
+        <ColorStop index="0">
+          <StopOffset value="0.0"/>
+          <PaletteIndex value="3"/>
+          <Alpha value="1.0"/>
+        </ColorStop>
+        <ColorStop index="1">
+          <StopOffset value="0.5"/>
+          <PaletteIndex value="4"/>
+          <Alpha value="1.0"/>
+        </ColorStop>
+        <ColorStop index="2">
+          <StopOffset value="1.0"/>
+          <PaletteIndex value="5"/>
+          <Alpha value="1.0"/>
+        </ColorStop>
+      </ColorLine>
+      <x0 value="1"/>
+      <y0 value="2"/>
+      <x1 value="-3"/>
+      <y1 value="-4"/>
+      <x2 value="5"/>
+      <y2 value="6"/>
+    </Paint>
+    <Glyph value="glyph00012"/>
+  </Paint>
+  <Paint index="2" Format="10"><!-- PaintGlyph -->
+    <Paint Format="12"><!-- PaintTransform -->
+      <Paint Format="7"><!-- PaintVarRadialGradient -->
+        <ColorLine>
+          <Extend value="pad"/>
+          <!-- StopCount=2 -->
+          <ColorStop index="0">
+            <StopOffset value="0.0"/>
+            <PaletteIndex value="6"/>
+            <Alpha value="1.0"/>
+            <VarIndexBase/>
+          </ColorStop>
+          <ColorStop index="1">
+            <StopOffset value="1.0"/>
+            <PaletteIndex value="7"/>
+            <Alpha value="0.4"/>
+            <VarIndexBase value="7"/>
+          </ColorStop>
+        </ColorLine>
+        <x0 value="7"/>
+        <y0 value="8"/>
+        <r0 value="9"/>
+        <x1 value="10"/>
+        <y1 value="11"/>
+        <r1 value="12"/>
+        <VarIndexBase/>
+      </Paint>
+      <Transform>
+        <xx value="-13.0"/>
+        <yx value="14.0"/>
+        <xy value="15.0"/>
+        <yy value="-17.0"/>
+        <dx value="18.0"/>
+        <dy value="19.0"/>
+      </Transform>
+    </Paint>
+    <Glyph value="glyph00013"/>
+  </Paint>
+  <Paint index="3" Format="14"><!-- PaintTranslate -->
+    <Paint Format="26"><!-- PaintRotateAroundCenter -->
+      <Paint Format="28"><!-- PaintSkew -->
+        <Paint Format="10"><!-- PaintGlyph -->
+          <Paint Format="2"><!-- PaintSolid -->
+            <PaletteIndex value="2"/>
+            <Alpha value="0.5"/>
+          </Paint>
+          <Glyph value="glyph00011"/>
+        </Paint>
+        <xSkewAngle value="-11.0"/>
+        <ySkewAngle value="5.0"/>
+      </Paint>
+      <angle value="45.0"/>
+      <centerX value="255"/>
+      <centerY value="256"/>
+    </Paint>
+    <dx value="257"/>
+    <dy value="258"/>
+  </Paint>
+  <Paint index="4" Format="10"><!-- PaintGlyph -->
+    <Paint Format="2"><!-- PaintSolid -->
+      <PaletteIndex value="2"/>
+      <Alpha value="0.5"/>
+    </Paint>
+    <Glyph value="glyph00011"/>
+  </Paint>
+</LayerList>
+<ClipList Format="1">
+  <Clip>
+    <Glyph value="glyph00010"/>
+    <ClipBox Format="2">
+      <xMin value="0"/>
+      <yMin value="0"/>
+      <xMax value="500"/>
+      <yMax value="500"/>
+      <VarIndexBase value="9"/>
+    </ClipBox>
+  </Clip>
+  <Clip>
+    <Glyph value="glyph00014"/>
+    <Glyph value="glyph00015"/>
+    <ClipBox Format="1">
+      <xMin value="0"/>
+      <yMin value="0"/>
+      <xMax value="1000"/>
+      <yMax value="1000"/>
+    </ClipBox>
+  </Clip>
+</ClipList>

@@ -1,0 +1,68 @@
+=== 
+--- return
+None
+=== --json
+{}
+--- return
+None
+=== --show-all
+Glyph .notdef was not compatible:
+  Masters: TestFamily2-Master0, TestFamily2-Master1:
+    Showing TestFamily2-Master0 and TestFamily2-Master1
+Glyph A was not compatible:
+  Masters: TestFamily2-Master0, TestFamily2-Master1:
+    Showing TestFamily2-Master0 and TestFamily2-Master1
+Glyph A.sc was not compatible:
+  Masters: TestFamily2-Master0, TestFamily2-Master1:
+    Showing TestFamily2-Master0 and TestFamily2-Master1
+Glyph a was not compatible:
+  Masters: TestFamily2-Master0, TestFamily2-Master1:
+    Showing TestFamily2-Master0 and TestFamily2-Master1
+Glyph a.alt was not compatible:
+  Masters: TestFamily2-Master0, TestFamily2-Master1:
+    Showing TestFamily2-Master0 and TestFamily2-Master1
+Glyph ampersand was not compatible:
+  Masters: TestFamily2-Master0, TestFamily2-Master1:
+    Showing TestFamily2-Master0 and TestFamily2-Master1
+Glyph atilde was not compatible:
+  Masters: TestFamily2-Master0, TestFamily2-Master1:
+    Showing TestFamily2-Master0 and TestFamily2-Master1
+Glyph circledotted was not compatible:
+  Masters: TestFamily2-Master0, TestFamily2-Master1:
+    Showing TestFamily2-Master0 and TestFamily2-Master1
+Glyph d was not compatible:
+  Masters: TestFamily2-Master0, TestFamily2-Master1:
+    Showing TestFamily2-Master0 and TestFamily2-Master1
+Glyph dieresisbelowcmb was not compatible:
+  Masters: TestFamily2-Master0, TestFamily2-Master1:
+    Showing TestFamily2-Master0 and TestFamily2-Master1
+Glyph dieresiscmb was not compatible:
+  Masters: TestFamily2-Master0, TestFamily2-Master1:
+    Showing TestFamily2-Master0 and TestFamily2-Master1
+Glyph f was not compatible:
+  Masters: TestFamily2-Master0, TestFamily2-Master1:
+    Showing TestFamily2-Master0 and TestFamily2-Master1
+Glyph f_t was not compatible:
+  Masters: TestFamily2-Master0, TestFamily2-Master1:
+    Showing TestFamily2-Master0 and TestFamily2-Master1
+Glyph n was not compatible:
+  Masters: TestFamily2-Master0, TestFamily2-Master1:
+    Showing TestFamily2-Master0 and TestFamily2-Master1
+Glyph t was not compatible:
+  Masters: TestFamily2-Master0, TestFamily2-Master1:
+    Showing TestFamily2-Master0 and TestFamily2-Master1
+Glyph tildebelowcmb was not compatible:
+  Masters: TestFamily2-Master0, TestFamily2-Master1:
+    Showing TestFamily2-Master0 and TestFamily2-Master1
+Glyph tildecmb was not compatible:
+  Masters: TestFamily2-Master0, TestFamily2-Master1:
+    Showing TestFamily2-Master0 and TestFamily2-Master1
+--- return
+{".notdef": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "A": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "A.sc": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "a": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "a.alt": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "ampersand": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "atilde": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "circledotted": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "d": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "dieresisbelowcmb": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "dieresiscmb": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "f": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "f_t": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "n": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "t": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "tildebelowcmb": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "tildecmb": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}]}
+=== --show-all	--json
+{".notdef": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "A": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "A.sc": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "a": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "a.alt": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "ampersand": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "atilde": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "circledotted": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "d": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "dieresisbelowcmb": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "dieresiscmb": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "f": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "f_t": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "n": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "t": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "tildebelowcmb": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "tildecmb": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}]}
+--- return
+{".notdef": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "A": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "A.sc": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "a": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "a.alt": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "ampersand": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "atilde": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "circledotted": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "d": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "dieresisbelowcmb": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "dieresiscmb": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "f": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "f_t": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "n": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "t": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "tildebelowcmb": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}], "tildecmb": [{"type": "nothing", "master_1": "TestFamily2-Master0", "master_2": "TestFamily2-Master1", "master_1_idx": 0, "master_2_idx": 1}]}
+=== --ignore-missing
+--- return
+None

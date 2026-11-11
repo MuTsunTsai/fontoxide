@@ -12,14 +12,20 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
+fontoxide-colorlib.workspace = true
+fontoxide-designspacelib.workspace = true
 fontoxide-misc.workspace = true
 fontoxide-otllib.workspace = true
+fontoxide-pens.workspace = true
 fontoxide-subset.workspace = true
 fontoxide-ttlib.workspace = true
+fontoxide-ufolib.workspace = true
 indexmap.workspace = true
 log.workspace = true
+thiserror.workspace = true
 
 [dev-dependencies]
+fontoxide-fealib.workspace = true
 fontoxide-pens.workspace = true
 
 [lints]

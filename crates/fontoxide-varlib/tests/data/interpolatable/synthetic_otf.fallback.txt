@@ -1,0 +1,248 @@
+=== 
+--- error
+Install Python module 'munkres' or 'scipy >= 0.17.0'
+=== --json
+--- error
+Install Python module 'munkres' or 'scipy >= 0.17.0'
+=== --quiet	--tolerance	0.99	--kinkiness	0.2
+--- error
+Install Python module 'munkres' or 'scipy >= 0.17.0'
+=== --show-all	--glyphs	plain.0 plain.2 order.0 order.2 start.0 start.1 start.2 start_one.0 start_one.1 start_one.2 reverse.1 rotate90.0 rotate90.1 rotate90.2 nodes_type.0 nodes_type.1 nodes_count.0 nodes_count.2 paths.1 missing.0 missing.1 component.0 component.2 component_order.0 component_order.1 component_order.2 mixed.0 mixed.1 composite.0 composite.1 composite.2
+Glyph plain.0 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Node count differs in path 0: 11 in SyntheticOTF-Master1, 10 in SyntheticOTF-Master2
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph plain.2 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph order.0 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Node 2 incompatible in path 0: curveTo in SyntheticOTF-Master0, lineTo in SyntheticOTF-Master1
+    Node count differs in path 1: 5 in SyntheticOTF-Master0, 6 in SyntheticOTF-Master1
+    Node count differs in path 2: 6 in SyntheticOTF-Master0, 5 in SyntheticOTF-Master1
+    Contour order differs: [0, 1, 2] in SyntheticOTF-Master0, [2, 0, 1] in SyntheticOTF-Master1
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Node 2 incompatible in path 0: lineTo in SyntheticOTF-Master1, curveTo in SyntheticOTF-Master2
+    Node count differs in path 1: 6 in SyntheticOTF-Master1, 5 in SyntheticOTF-Master2
+    Node count differs in path 2: 5 in SyntheticOTF-Master1, 6 in SyntheticOTF-Master2
+    Contour order differs: [0, 1, 2] in SyntheticOTF-Master1, [1, 2, 0] in SyntheticOTF-Master2
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph order.2 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Node count differs in path 0: 9 in SyntheticOTF-Master1, 6 in SyntheticOTF-Master2
+    Node count differs in path 1: 6 in SyntheticOTF-Master1, 9 in SyntheticOTF-Master2
+    Node count differs in path 2: 11 in SyntheticOTF-Master1, 7 in SyntheticOTF-Master2
+    Node count differs in path 3: 7 in SyntheticOTF-Master1, 11 in SyntheticOTF-Master2
+    Contour order differs: [0, 1, 2, 3] in SyntheticOTF-Master1, [1, 0, 3, 2] in SyntheticOTF-Master2
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph start.0 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Node 1 incompatible in path 2: curveTo in SyntheticOTF-Master1, lineTo in SyntheticOTF-Master2
+    Node 2 incompatible in path 2: lineTo in SyntheticOTF-Master1, curveTo in SyntheticOTF-Master2
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph start.1 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Node 1 incompatible in path 2: curveTo in SyntheticOTF-Master1, lineTo in SyntheticOTF-Master2
+    Node 3 incompatible in path 2: lineTo in SyntheticOTF-Master1, curveTo in SyntheticOTF-Master2
+    Contour 2 start point differs: 0 in SyntheticOTF-Master1, 1 in SyntheticOTF-Master2; reversed: True
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph start.2 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Node 1 incompatible in path 1: curveTo in SyntheticOTF-Master0, lineTo in SyntheticOTF-Master1
+    Node 2 incompatible in path 1: lineTo in SyntheticOTF-Master0, curveTo in SyntheticOTF-Master1
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Node 1 incompatible in path 1: lineTo in SyntheticOTF-Master1, curveTo in SyntheticOTF-Master2
+    Node 2 incompatible in path 1: curveTo in SyntheticOTF-Master1, lineTo in SyntheticOTF-Master2
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph start_one.0 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Node 1 incompatible in path 0: curveTo in SyntheticOTF-Master0, lineTo in SyntheticOTF-Master1
+    Node 4 incompatible in path 0: lineTo in SyntheticOTF-Master0, curveTo in SyntheticOTF-Master1
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Node 1 incompatible in path 0: lineTo in SyntheticOTF-Master1, curveTo in SyntheticOTF-Master2
+    Node 4 incompatible in path 0: curveTo in SyntheticOTF-Master1, lineTo in SyntheticOTF-Master2
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph start_one.1 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Node 3 incompatible in path 0: lineTo in SyntheticOTF-Master0, curveTo in SyntheticOTF-Master1
+    Node 7 incompatible in path 0: curveTo in SyntheticOTF-Master0, lineTo in SyntheticOTF-Master1
+    Contour 0 start point differs: 0 in SyntheticOTF-Master0, 12 in SyntheticOTF-Master1; reversed: True
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Node 3 incompatible in path 0: curveTo in SyntheticOTF-Master1, lineTo in SyntheticOTF-Master2
+    Node 7 incompatible in path 0: lineTo in SyntheticOTF-Master1, curveTo in SyntheticOTF-Master2
+    Contour 0 start point differs: 0 in SyntheticOTF-Master1, 13 in SyntheticOTF-Master2; reversed: True
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph start_one.2 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph reverse.1 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Node 1 incompatible in path 0: curveTo in SyntheticOTF-Master0, lineTo in SyntheticOTF-Master1
+    Node 2 incompatible in path 0: lineTo in SyntheticOTF-Master0, curveTo in SyntheticOTF-Master1
+    Node 3 incompatible in path 0: curveTo in SyntheticOTF-Master0, lineTo in SyntheticOTF-Master1
+    Node 5 incompatible in path 0: lineTo in SyntheticOTF-Master0, curveTo in SyntheticOTF-Master1
+    Node 6 incompatible in path 0: curveTo in SyntheticOTF-Master0, lineTo in SyntheticOTF-Master1
+    Node 7 incompatible in path 0: lineTo in SyntheticOTF-Master0, curveTo in SyntheticOTF-Master1
+    Contour 0 start point differs: 0 in SyntheticOTF-Master0, 10 in SyntheticOTF-Master1; reversed: True
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Node 1 incompatible in path 0: lineTo in SyntheticOTF-Master1, curveTo in SyntheticOTF-Master2
+    Node 2 incompatible in path 0: curveTo in SyntheticOTF-Master1, lineTo in SyntheticOTF-Master2
+    Node 3 incompatible in path 0: lineTo in SyntheticOTF-Master1, curveTo in SyntheticOTF-Master2
+    Node 5 incompatible in path 0: curveTo in SyntheticOTF-Master1, lineTo in SyntheticOTF-Master2
+    Node 6 incompatible in path 0: lineTo in SyntheticOTF-Master1, curveTo in SyntheticOTF-Master2
+    Node 7 incompatible in path 0: curveTo in SyntheticOTF-Master1, lineTo in SyntheticOTF-Master2
+    Contour 0 start point differs: 0 in SyntheticOTF-Master1, 3 in SyntheticOTF-Master2; reversed: True
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph rotate90.0 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Node count differs in path 1: 9 in SyntheticOTF-Master0, 10 in SyntheticOTF-Master1
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Node count differs in path 1: 10 in SyntheticOTF-Master1, 9 in SyntheticOTF-Master2
+    Contour 2 interpolation is underweight: SyntheticOTF-Master1, SyntheticOTF-Master2
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph rotate90.1 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Contour 0 interpolation is underweight: SyntheticOTF-Master0, SyntheticOTF-Master1
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Contour 0 interpolation is underweight: SyntheticOTF-Master1, SyntheticOTF-Master2
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph rotate90.2 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Contour 1 interpolation is underweight: SyntheticOTF-Master0, SyntheticOTF-Master1
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Contour 1 interpolation is underweight: SyntheticOTF-Master1, SyntheticOTF-Master2
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph nodes_type.0 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Node 9 incompatible in path 2: curveTo in SyntheticOTF-Master0, lineTo in SyntheticOTF-Master1
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Node 9 incompatible in path 2: lineTo in SyntheticOTF-Master1, curveTo in SyntheticOTF-Master2
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph nodes_type.1 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Node 3 incompatible in path 0: curveTo in SyntheticOTF-Master0, lineTo in SyntheticOTF-Master1
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Node 3 incompatible in path 0: lineTo in SyntheticOTF-Master1, curveTo in SyntheticOTF-Master2
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph nodes_count.0 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Node count differs in path 1: 8 in SyntheticOTF-Master0, 7 in SyntheticOTF-Master1
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Node count differs in path 4: 7 in SyntheticOTF-Master1, 6 in SyntheticOTF-Master2
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph nodes_count.2 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Node count differs in path 1: 6 in SyntheticOTF-Master1, 5 in SyntheticOTF-Master2
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph paths.1 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Node 3 incompatible in path 2: lineTo in SyntheticOTF-Master0, curveTo in SyntheticOTF-Master1
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Path count differs: 5 in SyntheticOTF-Master1, 4 in SyntheticOTF-Master2
+Glyph missing.0 was not compatible:
+  Masters: SyntheticOTF-Master1:
+    Glyph was missing in master SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master2:
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master2
+Glyph missing.1 was not compatible:
+  Masters: SyntheticOTF-Master2:
+    Glyph was missing in master SyntheticOTF-Master2
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+Glyph component.0 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph component.2 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph component_order.0 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph component_order.1 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph component_order.2 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph mixed.0 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Node count differs in path 0: 5 in SyntheticOTF-Master1, 8 in SyntheticOTF-Master2
+    Node count differs in path 1: 7 in SyntheticOTF-Master1, 10 in SyntheticOTF-Master2
+    Node count differs in path 2: 8 in SyntheticOTF-Master1, 7 in SyntheticOTF-Master2
+    Node count differs in path 3: 10 in SyntheticOTF-Master1, 5 in SyntheticOTF-Master2
+    Node 2 incompatible in path 4: lineTo in SyntheticOTF-Master1, curveTo in SyntheticOTF-Master2
+    Node 3 incompatible in path 4: curveTo in SyntheticOTF-Master1, lineTo in SyntheticOTF-Master2
+    Node 5 incompatible in path 4: lineTo in SyntheticOTF-Master1, curveTo in SyntheticOTF-Master2
+    Node 8 incompatible in path 4: lineTo in SyntheticOTF-Master1, curveTo in SyntheticOTF-Master2
+    Contour order differs: [0, 1, 2, 3, 4] in SyntheticOTF-Master1, [3, 2, 0, 4, 1] in SyntheticOTF-Master2
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph mixed.1 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Node count differs in path 0: 11 in SyntheticOTF-Master1, 6 in SyntheticOTF-Master2
+    Node count differs in path 1: 6 in SyntheticOTF-Master1, 11 in SyntheticOTF-Master2
+    Contour order differs: [0, 1] in SyntheticOTF-Master1, [1, 0] in SyntheticOTF-Master2
+    Contour 0 start point differs: 0 in SyntheticOTF-Master1, 14 in SyntheticOTF-Master2; reversed: False
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph composite.0 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Showing SyntheticOTF-Master0 and SyntheticOTF-Master1
+  Masters: SyntheticOTF-Master1, SyntheticOTF-Master2:
+    Node count differs in path 0: 11 in SyntheticOTF-Master1, 10 in SyntheticOTF-Master2
+    Node 1 incompatible in path 4: curveTo in SyntheticOTF-Master1, lineTo in SyntheticOTF-Master2
+    Node 2 incompatible in path 4: lineTo in SyntheticOTF-Master1, curveTo in SyntheticOTF-Master2
+    Showing SyntheticOTF-Master1 and SyntheticOTF-Master2
+Glyph composite.1 was not compatible:
+  Masters: SyntheticOTF-Master0, SyntheticOTF-Master1:
+    Node count differs in path 0: 7 in SyntheticOTF-Master0, 8 in SyntheticOTF-Master1
+    Node count differs in path 1: 8 in SyntheticOTF-Master0, 10 in SyntheticOTF-Master1
+    Node count differs in path 2: 9 in SyntheticOTF-Master0, 8 in SyntheticOTF-Master1
+    Node count differs in path 3: 5 in SyntheticOTF-Master0, 7 in SyntheticOTF-Master1
+    Node count differs in path 4: 6 in SyntheticOTF-Master0, 8 in SyntheticOTF-Master1
+    Node count differs in path 5: 5 in SyntheticOTF-Master0, 9 in SyntheticOTF-Master1
+    Node count differs in path 6: 9 in SyntheticOTF-Master0, 5 in SyntheticOTF-Master1
+    Node count differs in path 7: 7 in SyntheticOTF-Master0, 6 in SyntheticOTF-Master1
+    Node count differs in path 8: 8 in SyntheticOTF-Master0, 5 in SyntheticOTF-Master1
+    Node count differs in path 9: 10 in SyntheticOTF-Master0, 9 in SyntheticOTF-Master1
+    Node count differs in path 10: 8 in SyntheticOTF-Master0, 7 in SyntheticOTF-Master1
+--- error
+Install Python module 'munkres' or 'scipy >= 0.17.0'

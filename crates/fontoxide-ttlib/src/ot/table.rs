@@ -19,6 +19,9 @@ pub type Attrs = Vec<(&'static str, String)>;
 #[derive(Debug, Default)]
 pub struct XmlCtx {
 	propagator: HashMap<&'static str, Rc<Cell<Option<u32>>>>,
+	/// The `Coverage` of a `MultipleSubst` in the TTX format of fontTools 3.0 and
+	/// earlier (`old_coverage_`), while the subtable is read.
+	pub(crate) old_coverage: Option<Vec<u32>>,
 }
 
 impl XmlCtx {

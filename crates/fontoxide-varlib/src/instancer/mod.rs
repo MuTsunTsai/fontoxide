@@ -17,7 +17,7 @@ pub(crate) mod metrics;
 mod names;
 pub(crate) mod otl;
 mod solver;
-mod tuple;
+pub(crate) mod tuple;
 mod varc;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -56,7 +56,7 @@ pub use self::limits::renormalize_location;
 #[doc(hidden)]
 pub use self::metrics::{instantiate_hvar, instantiate_mvar, instantiate_vvar};
 #[doc(hidden)]
-pub use self::otl::instantiate_otl;
+pub use self::otl::{instantiate_otl, mutator_merge_gpos};
 #[doc(hidden)]
 pub use self::tuple::change_axis_limit;
 

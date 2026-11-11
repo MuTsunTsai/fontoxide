@@ -1,0 +1,360 @@
+=== 
+--- return
+None
+=== --json
+{}
+--- return
+None
+=== --show-all
+Glyph A was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph Aacute was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph Adieresis was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph B was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=700.0122':
+    Showing 'wdth=1000.0' and 'wght=700.0122'
+  Masters: 'wght=700.0122', 'wght=1000.0':
+    Showing 'wght=700.0122' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph C was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph D was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph E was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=700.0122':
+    Showing 'wdth=1000.0' and 'wght=700.0122'
+  Masters: 'wght=700.0122', 'wght=1000.0':
+    Showing 'wght=700.0122' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph F was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=700.0122':
+    Showing 'wdth=1000.0' and 'wght=700.0122'
+  Masters: 'wght=700.0122', 'wght=1000.0':
+    Showing 'wght=700.0122' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph G was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=700.0122':
+    Showing 'wdth=1000.0' and 'wght=700.0122'
+  Masters: 'wght=700.0122', 'wght=1000.0':
+    Showing 'wght=700.0122' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph H was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph I was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph I.narrow was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph IJ was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph J was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph J.narrow was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph K was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph L was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph M was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph N was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph O was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph P was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph Q was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph R was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph S was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=700.0122':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=700.0122'
+  Masters: 'wdth=1000.0 wght=700.0122', 'wdth=1000.0 wght=1000.0':
+    Showing 'wdth=1000.0 wght=700.0122' and 'wdth=1000.0 wght=1000.0'
+Glyph S.closed was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=569.0918 wght=700.0122':
+    Showing 'wght=1000.0' and 'wdth=569.0918 wght=700.0122'
+  Masters: 'wdth=569.0918 wght=700.0122', 'wdth=1000.0 wght=700.0122':
+    Showing 'wdth=569.0918 wght=700.0122' and 'wdth=1000.0 wght=700.0122'
+  Masters: 'wdth=1000.0 wght=700.0122', 'wdth=1000.0 wght=1000.0':
+    Showing 'wdth=1000.0 wght=700.0122' and 'wdth=1000.0 wght=1000.0'
+Glyph T was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph U was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph V was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph W was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph X was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph Y was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph Z was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph acute was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph arrowdown was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph arrowleft was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph arrowright was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph arrowup was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph colon was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph comma was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph dieresis was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph dot was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph period was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph quotedblbase was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph quotedblleft was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph quotedblright was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph quotesinglbase was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+Glyph semicolon was not compatible:
+  Masters: '', 'wdth=1000.0':
+    Showing '' and 'wdth=1000.0'
+  Masters: 'wdth=1000.0', 'wght=1000.0':
+    Showing 'wdth=1000.0' and 'wght=1000.0'
+  Masters: 'wght=1000.0', 'wdth=1000.0 wght=1000.0':
+    Showing 'wght=1000.0' and 'wdth=1000.0 wght=1000.0'
+--- return
+{"A": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "Aacute": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "Adieresis": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "B": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=700.0122'", "master_1_idx": 1, "master_2_idx": 2}, {"type": "nothing", "master_1": "'wght=700.0122'", "master_2": "'wght=1000.0'", "master_1_idx": 2, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "C": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "D": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "E": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=700.0122'", "master_1_idx": 1, "master_2_idx": 2}, {"type": "nothing", "master_1": "'wght=700.0122'", "master_2": "'wght=1000.0'", "master_1_idx": 2, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "F": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=700.0122'", "master_1_idx": 1, "master_2_idx": 2}, {"type": "nothing", "master_1": "'wght=700.0122'", "master_2": "'wght=1000.0'", "master_1_idx": 2, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "G": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=700.0122'", "master_1_idx": 1, "master_2_idx": 2}, {"type": "nothing", "master_1": "'wght=700.0122'", "master_2": "'wght=1000.0'", "master_1_idx": 2, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "H": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "I": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "I.narrow": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "IJ": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "J": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "J.narrow": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "K": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "L": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "M": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "N": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "O": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "P": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "Q": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "R": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "S": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=700.0122'", "master_1_idx": 3, "master_2_idx": 5}, {"type": "nothing", "master_1": "'wdth=1000.0 wght=700.0122'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 5, "master_2_idx": 6}], "S.closed": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=569.0918 wght=700.0122'", "master_1_idx": 3, "master_2_idx": 4}, {"type": "nothing", "master_1": "'wdth=569.0918 wght=700.0122'", "master_2": "'wdth=1000.0 wght=700.0122'", "master_1_idx": 4, "master_2_idx": 5}, {"type": "nothing", "master_1": "'wdth=1000.0 wght=700.0122'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 5, "master_2_idx": 6}], "T": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "U": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "V": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "W": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "X": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "Y": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "Z": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "acute": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "arrowdown": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "arrowleft": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "arrowright": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "arrowup": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "colon": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "comma": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "dieresis": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "dot": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "period": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "quotedblbase": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "quotedblleft": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "quotedblright": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "quotesinglbase": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "semicolon": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}]}
+=== --show-all	--json
+{"A": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "Aacute": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "Adieresis": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "B": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=700.0122'", "master_1_idx": 1, "master_2_idx": 2}, {"type": "nothing", "master_1": "'wght=700.0122'", "master_2": "'wght=1000.0'", "master_1_idx": 2, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "C": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "D": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "E": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=700.0122'", "master_1_idx": 1, "master_2_idx": 2}, {"type": "nothing", "master_1": "'wght=700.0122'", "master_2": "'wght=1000.0'", "master_1_idx": 2, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "F": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=700.0122'", "master_1_idx": 1, "master_2_idx": 2}, {"type": "nothing", "master_1": "'wght=700.0122'", "master_2": "'wght=1000.0'", "master_1_idx": 2, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "G": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=700.0122'", "master_1_idx": 1, "master_2_idx": 2}, {"type": "nothing", "master_1": "'wght=700.0122'", "master_2": "'wght=1000.0'", "master_1_idx": 2, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "H": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "I": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "I.narrow": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "IJ": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "J": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "J.narrow": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "K": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "L": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "M": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "N": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "O": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "P": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "Q": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "R": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "S": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=700.0122'", "master_1_idx": 3, "master_2_idx": 5}, {"type": "nothing", "master_1": "'wdth=1000.0 wght=700.0122'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 5, "master_2_idx": 6}], "S.closed": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=569.0918 wght=700.0122'", "master_1_idx": 3, "master_2_idx": 4}, {"type": "nothing", "master_1": "'wdth=569.0918 wght=700.0122'", "master_2": "'wdth=1000.0 wght=700.0122'", "master_1_idx": 4, "master_2_idx": 5}, {"type": "nothing", "master_1": "'wdth=1000.0 wght=700.0122'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 5, "master_2_idx": 6}], "T": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "U": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "V": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "W": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "X": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "Y": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "Z": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "acute": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "arrowdown": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "arrowleft": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "arrowright": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "arrowup": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "colon": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "comma": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "dieresis": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "dot": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "period": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "quotedblbase": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "quotedblleft": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "quotedblright": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "quotesinglbase": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "semicolon": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}]}
+--- return
+{"A": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "Aacute": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "Adieresis": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "B": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=700.0122'", "master_1_idx": 1, "master_2_idx": 2}, {"type": "nothing", "master_1": "'wght=700.0122'", "master_2": "'wght=1000.0'", "master_1_idx": 2, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "C": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "D": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "E": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=700.0122'", "master_1_idx": 1, "master_2_idx": 2}, {"type": "nothing", "master_1": "'wght=700.0122'", "master_2": "'wght=1000.0'", "master_1_idx": 2, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "F": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=700.0122'", "master_1_idx": 1, "master_2_idx": 2}, {"type": "nothing", "master_1": "'wght=700.0122'", "master_2": "'wght=1000.0'", "master_1_idx": 2, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "G": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=700.0122'", "master_1_idx": 1, "master_2_idx": 2}, {"type": "nothing", "master_1": "'wght=700.0122'", "master_2": "'wght=1000.0'", "master_1_idx": 2, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "H": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "I": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "I.narrow": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "IJ": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "J": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "J.narrow": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "K": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "L": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "M": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "N": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "O": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "P": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "Q": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "R": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "S": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=700.0122'", "master_1_idx": 3, "master_2_idx": 5}, {"type": "nothing", "master_1": "'wdth=1000.0 wght=700.0122'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 5, "master_2_idx": 6}], "S.closed": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=569.0918 wght=700.0122'", "master_1_idx": 3, "master_2_idx": 4}, {"type": "nothing", "master_1": "'wdth=569.0918 wght=700.0122'", "master_2": "'wdth=1000.0 wght=700.0122'", "master_1_idx": 4, "master_2_idx": 5}, {"type": "nothing", "master_1": "'wdth=1000.0 wght=700.0122'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 5, "master_2_idx": 6}], "T": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "U": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "V": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "W": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "X": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "Y": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "Z": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "acute": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "arrowdown": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "arrowleft": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "arrowright": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "arrowup": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "colon": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "comma": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "dieresis": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "dot": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "period": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "quotedblbase": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "quotedblleft": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "quotedblright": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "quotesinglbase": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}], "semicolon": [{"type": "nothing", "master_1": "''", "master_2": "'wdth=1000.0'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wdth=1000.0'", "master_2": "'wght=1000.0'", "master_1_idx": 1, "master_2_idx": 3}, {"type": "nothing", "master_1": "'wght=1000.0'", "master_2": "'wdth=1000.0 wght=1000.0'", "master_1_idx": 3, "master_2_idx": 6}]}
+=== --ignore-missing
+--- return
+None

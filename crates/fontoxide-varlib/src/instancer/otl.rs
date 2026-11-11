@@ -204,7 +204,7 @@ impl Mutator<'_> {
 }
 
 /// `otBase.ValueRecord(valueFormat, src)`.
-fn new_value_record(format: u16, src: Option<&ValueRecord>) -> ValueRecord {
+pub(crate) fn new_value_record(format: u16, src: Option<&ValueRecord>) -> ValueRecord {
 	let bit = |mask: u16| format & mask != 0;
 	let int = |mask: u16, from: Option<Option<i16>>| bit(mask).then(|| from.flatten().unwrap_or(0));
 	let device = |mask: u16, from: Option<Option<Option<Box<ot::Device>>>>| {
@@ -230,7 +230,7 @@ fn new_value_record(format: u16, src: Option<&ValueRecord>) -> ValueRecord {
 }
 
 /// `getEffectiveFormat`.
-fn effective_format(value: &ValueRecord) -> u16 {
+pub(crate) fn effective_format(value: &ValueRecord) -> u16 {
 	let mut format = 0;
 	let mut int = |mask: u16, v: Option<i16>| {
 		if v.is_some_and(|v| v != 0) {
@@ -513,11 +513,11 @@ fn class_def_merge_classify(
 }
 
 /// A row of `_PairPosFormat2_align_matrices`; `None` for a transparent record.
-type AlignedRow = Vec<Option<ot::Class2Record>>;
+pub(crate) type AlignedRow = Vec<Option<ot::Class2Record>>;
 
 /// `_PairPosFormat2_align_matrices`: sets the class definitions and counts of `out`,
 /// and returns the matrix of each subtable.
-fn align_matrices(
+pub(crate) fn align_matrices(
 	out: &mut ot::PairPosFormat2,
 	list: &[&ot::PairPosFormat2],
 	order: &GlyphOrder,
@@ -1060,6 +1060,26 @@ pub(crate) fn merge_gdef_gpos(font: &mut Font, deltas: &dyn Fn(u64) -> Result<f6
 	if let Some(t) = font.get::<Gdef>()? {
 		merge_table(&mutator, &mut t.table)?;
 	}
+	if let Some(t) = font.get::<Gpos>()? {
+		merge_table(&mutator, &mut t.table)?;
+	}
+	Ok(())
+}
+
+/// `MutatorMerger(font, instancer, deleteVariations).mergeTables(font, [font],
+/// ["GPOS"])`: the values of `GPOS` get the deltas of their variation indices
+/// from `deltas`; the device tables are kept unless `delete_variations`.
+pub fn mutator_merge_gpos(
+	font: &mut Font,
+	deltas: &dyn Fn(u64) -> Result<f64>,
+	delete_variations: bool,
+) -> Result<()> {
+	let order = font.glyph_order()?;
+	let mutator = Mutator {
+		deltas,
+		delete_variations,
+		order: &order,
+	};
 	if let Some(t) = font.get::<Gpos>()? {
 		merge_table(&mutator, &mut t.table)?;
 	}

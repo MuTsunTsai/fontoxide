@@ -348,7 +348,7 @@ impl GlyphComponent {
 	}
 
 	/// `toXML`.
-	fn to_xml(&self, writer: &mut XmlWriter, order: &GlyphOrder) {
+	pub fn to_xml(&self, writer: &mut XmlWriter, order: &GlyphOrder) {
 		let name = order.name(self.glyph).into_owned();
 		let mut attrs: Vec<(&str, String)> = vec![("glyphName", name)];
 		match self.placement {
@@ -384,8 +384,9 @@ impl GlyphComponent {
 		writer.newline();
 	}
 
-	/// `fromXML`.
-	fn from_xml(e: &Element, font: &mut Font) -> Result<Self> {
+	/// `fromXML`: the component of a `<component>` element; its glyph name is
+	/// looked up in the glyph order of `font`.
+	pub fn from_xml(e: &Element, font: &mut Font) -> Result<Self> {
 		let attr = |name: &str| {
 			e.attr(name)
 				.ok_or_else(|| Error::ttx(format!("KeyError: {name:?}")))
@@ -1567,7 +1568,9 @@ impl Glyf {
 	}
 }
 
-fn translate(coords: &mut [(f64, f64)], (x, y): (f64, f64)) {
+/// Moves every point by `(x, y)` (`GlyphCoordinates.translate`, and `+=`/`-=`
+/// with a tuple).
+pub fn translate(coords: &mut [(f64, f64)], (x, y): (f64, f64)) {
 	if x == 0.0 && y == 0.0 {
 		return;
 	}
@@ -1577,7 +1580,20 @@ fn translate(coords: &mut [(f64, f64)], (x, y): (f64, f64)) {
 	}
 }
 
-fn transform(coords: &mut [(f64, f64)], t: [[f64; 2]; 2]) {
+/// Scales every point by `(x, y)` (`GlyphCoordinates.scale`, and `*=`/`/=`
+/// with a tuple or a number).
+pub fn scale(coords: &mut [(f64, f64)], (x, y): (f64, f64)) {
+	if x == 1.0 && y == 1.0 {
+		return;
+	}
+	for p in coords {
+		p.0 *= x;
+		p.1 *= y;
+	}
+}
+
+/// Applies the 2×2 matrix `t` to every point (`GlyphCoordinates.transform`).
+pub fn transform(coords: &mut [(f64, f64)], t: [[f64; 2]; 2]) {
 	for p in coords {
 		let (x, y) = *p;
 		*p = (x * t[0][0] + y * t[1][0], x * t[0][1] + y * t[1][1]);
@@ -1680,6 +1696,22 @@ impl Glyph {
 		if data.is_empty() {
 			return Ok(());
 		}
+		let num_contours = self.trim_data(remove_hinting, extended)?;
+		if remove_hinting {
+			// Keep the parsed fields in step with the compact data, which is what
+			// fontTools expands the glyph from later: without instructions, a
+			// simple glyph has an empty program, the others none.
+			self.program = (num_contours > 0).then(|| Program::from_bytecode(&[]));
+		}
+		Ok(())
+	}
+
+	/// The part of [`Glyph::trim_ext`] that edits the compact data; returns the
+	/// number of contours.
+	fn trim_data(&mut self, remove_hinting: bool, extended: bool) -> Result<i16> {
+		let Some(data) = self.data.as_mut() else {
+			return Ok(0);
+		};
 		let err = || Error::ttlib("IndexError: bytearray index out of range");
 		let at = |data: &[u8], i: usize| data.get(i).map(|&b| usize::from(b)).ok_or_else(err);
 		let num_contours = i16::from_be_bytes([data[0], *data.get(1).ok_or_else(err)?]);
@@ -1691,7 +1723,7 @@ impl Glyph {
 				i += 2 + instruction_len;
 			}
 			data.truncate(i);
-			return Ok(());
+			return Ok(num_contours);
 		}
 		if num_contours >= 0 {
 			i += 2 * num_contours as usize;
@@ -1785,7 +1817,7 @@ impl Glyph {
 			// Remove padding.
 			data.truncate(i);
 		}
-		Ok(())
+		Ok(num_contours)
 	}
 }
 

@@ -112,6 +112,26 @@ pub fn run() -> Result<()> {
 		.status()
 		.context("failed to run rustfmt")?;
 	anyhow::ensure!(status.success(), "rustfmt failed");
+
+	// varLib's merger walks every type of ot.rs, with code generated from it.
+	let script = crate::root().join("tools/reference/varlib_merger_codegen.py");
+	let status = std::process::Command::new("uv")
+		.args(["run", "--quiet", "--project"])
+		.arg(crate::root().join("tools/reference"))
+		.arg("python")
+		.arg(&script)
+		.current_dir(crate::root())
+		.status()
+		.context("failed to run `uv`; is it installed and on PATH?")?;
+	anyhow::ensure!(status.success(), "varlib_merger_codegen.py failed");
+	let walk = crate::root().join("crates/fontoxide-varlib/src/merger/walk_generated.rs");
+	let status = std::process::Command::new("rustfmt")
+		.arg("--edition")
+		.arg("2024")
+		.arg(&walk)
+		.status()
+		.context("failed to run rustfmt")?;
+	anyhow::ensure!(status.success(), "rustfmt failed");
 	Ok(())
 }
 

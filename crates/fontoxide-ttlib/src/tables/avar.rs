@@ -86,6 +86,42 @@ impl Default for Avar {
 	}
 }
 
+impl Avar {
+	/// Applies the segment maps to normalized axis limits
+	/// (`renormalizeAxisLimits`).
+	///
+	/// The values may be (min, default, max) triples, or longer sequences whose
+	/// trailing elements are user-space distances: only the first three are mapped
+	/// and quantized to F2Dot14; the others pass through. The version 2 mappings
+	/// are not applied.
+	pub fn renormalize_axis_limits(
+		&self,
+		axis_limits: &BTreeMap<Tag, Vec<f64>>,
+	) -> Result<BTreeMap<Tag, Vec<f64>>> {
+		if !matches!(self.major_version, 1 | 2) {
+			return Err(Error::ttlib(
+				"NotImplementedError: Unknown avar table version",
+			));
+		}
+		let mut out = BTreeMap::new();
+		for (tag, values) in axis_limits {
+			let mapping = self.segments.get(tag);
+			let n = values.len().min(3);
+			let mut mapped: Vec<f64> = values[..n]
+				.iter()
+				.map(|&v| {
+					let v = mapping.map_or(v, |m| crate::font::piecewise_linear_map(v, m));
+					// Quantize to F2Dot14, to avoid surprise interpolations.
+					fontoxide_misc::fixed_tools::float_to_fixed_to_float(v, 14)
+				})
+				.collect();
+			mapped.extend_from_slice(&values[n..]);
+			out.insert(*tag, mapped);
+		}
+		Ok(out)
+	}
+}
+
 impl TableType for Avar {
 	const TAG: Tag = Tag::new(b"avar");
 

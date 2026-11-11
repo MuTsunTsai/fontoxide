@@ -178,14 +178,6 @@ fn round_trip<T: TableType + fontoxide_ttlib::table::Table>(font: &mut Font) -> 
 	Ok(())
 }
 
-/// The compiled `Debg` tables of the `*-debug.ttx` tests, from fontTools.
-static DEBG: std::sync::LazyLock<BTreeMap<&str, &str>> = std::sync::LazyLock::new(|| {
-	BTreeMap::from([(
-		"lookup",
-		r#"{"com.github.fonttools.feaLib": {"GSUB": {"0": ["__PATH__:4:5", "SomeLookup", ["DFLT", "dflt", "tst2"]], "1": ["__PATH__:18:9", "EmbeddedLookup", ["DFLT", "dflt", "tst4"]]}, "GPOS": {}}}"#,
-	)])
-});
-
 /// `check_feature_file(name)`.
 fn check_feature_file(name: &str) -> TestResult {
 	let mut font = make_tt_font();
@@ -206,14 +198,12 @@ fn check_feature_file(name: &str) -> TestResult {
 	let debugttx = getpath(&format!("{name}-debug.ttx"));
 	if debugttx.exists() {
 		add_open_type_features(&mut font, feapath.as_path(), None, true)?;
-		// LENIENT: fontoxide does not implement the `Debg` table, so the
-		// `LookupList` is dumped without the debugging comments: the debug
-		// build is checked against the plain TTX, and for its `Debg` table.
-		expect_ttx(&mut font, &format!("{name}.ttx"), &[])?;
-		// The `Debg` data is what fontTools compiles.
-		let debg = String::from_utf8(font.table_data(Tag::new(b"Debg"))?)?;
-		let path = feapath.to_string_lossy().replace('\\', "\\\\");
-		assert_eq!(debg.replace(&path, "__PATH__"), DEBG[name]);
+		let path = feapath.to_string_lossy();
+		expect_ttx(
+			&mut font,
+			&format!("{name}-debug.ttx"),
+			&[("__PATH__", &path)],
+		)?;
 	}
 	Ok(())
 }

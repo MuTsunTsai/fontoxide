@@ -120,6 +120,38 @@ impl AatAction {
 	fn flag(&self, i: usize) -> bool {
 		self.flags.get(i).copied().unwrap_or(false)
 	}
+
+	/// Writes the extended (`morx`) entry (`compile`); `index` is what
+	/// [`compile_actions`] returned for the state table.
+	pub fn compile(&self, index: Option<&ActionIndex>) -> Result<Vec<u8>> {
+		compile_action(self, index)
+	}
+
+	/// Reads an extended (`morx`) entry (`decompile`); ligature and insertion
+	/// actions read their action data from `action_reader`.
+	pub fn decompile(
+		kind: ActionKind,
+		r: &mut OtReader<'_>,
+		action_reader: Option<&OtReader<'_>>,
+	) -> Result<Self> {
+		decompile_action(kind, r, action_reader)
+	}
+
+	/// Writes the TTX element (`toXML`).
+	pub fn to_xml(
+		&self,
+		xw: &mut XmlWriter,
+		font: &mut Font,
+		attrs: &fontoxide_misc::xml_writer::Attrs<'_>,
+		name: &str,
+	) -> Result<()> {
+		action_to_xml(self, xw, font, attrs, name)
+	}
+
+	/// Reads an action from the children of its TTX element (`fromXML`).
+	pub fn from_xml(kind: ActionKind, element: &Element, font: &mut Font) -> Result<Self> {
+		action_from_xml(kind, element, font)
+	}
 }
 
 /// A state (`AATState`): the transition taken for each glyph class.
@@ -180,11 +212,14 @@ fn offset_reader<'a>(r: &mut OtReader<'a>, pos: usize) -> Result<OtReader<'a>> {
 
 /// Action data shared by all transitions (`compileActions`): the packed data and
 /// the index of each action sequence in it.
-#[derive(Debug, Default)]
-struct ActionIndex {
-	data: Vec<u8>,
-	ligatures: HashMap<Vec<u8>, usize>,
-	insertions: HashMap<Vec<u32>, usize>,
+#[derive(Debug, Default, Clone, PartialEq)]
+pub struct ActionIndex {
+	/// The packed actions.
+	pub data: Vec<u8>,
+	/// The index of each packed sequence of ligature actions, and of its suffixes.
+	pub ligatures: HashMap<Vec<u8>, usize>,
+	/// The index of each sequence of inserted glyphs, and of its subsequences.
+	pub insertions: HashMap<Vec<u32>, usize>,
 }
 
 fn compile_lig_actions(actions: &[LigAction]) -> Vec<u8> {
@@ -202,7 +237,9 @@ fn compile_lig_actions(actions: &[LigAction]) -> Vec<u8> {
 	out
 }
 
-fn compile_actions(
+/// Packs the actions of all transitions of `states` (`compileActions`); `None`
+/// for the kinds of actions that have no separate action data.
+pub fn compile_actions(
 	kind: ActionKind,
 	font: &mut Font,
 	states: &[AatState],
@@ -455,9 +492,10 @@ fn action_to_xml(
 	t: &AatAction,
 	xw: &mut XmlWriter,
 	font: &mut Font,
-	glyph_class: i64,
+	attrs: &fontoxide_misc::xml_writer::Attrs<'_>,
+	name: &str,
 ) -> Result<()> {
-	xw.begintag("Transition", &[("onGlyphClass", &glyph_class)]);
+	xw.begintag(name, attrs);
 	xw.newline();
 	xw.simpletag("NewState", &[("value", &t.new_state)]);
 	xw.newline();
@@ -519,7 +557,7 @@ fn action_to_xml(
 			}
 		}
 	}
-	xw.endtag("Transition");
+	xw.endtag(name);
 	xw.newline();
 	Ok(())
 }
@@ -1489,7 +1527,7 @@ pub fn xml_morph_state_table(
 		xw.begintag("State", &[("index", &i)]);
 		xw.newline();
 		for (&glyph_class, t) in &state.transitions {
-			action_to_xml(t, xw, font, glyph_class)?;
+			action_to_xml(t, xw, font, &[("onGlyphClass", &glyph_class)], "Transition")?;
 		}
 		xw.endtag("State");
 		xw.newline();
@@ -1716,6 +1754,12 @@ fn read_sub_struct(
 	morph_type: u8,
 	table: &str,
 ) -> Result<MorphSubStruct> {
+	// The morph type is checked before the length, as in fontTools.
+	if !matches!(morph_type, 0 | 1 | 2 | 4 | 5) {
+		return Err(assertion(format!(
+			"unsupported '{table}' lookup type {morph_type}"
+		)));
+	}
 	let header = r.pos() - pos;
 	let data = r.data();
 	let start = r.pos().min(data.len());

@@ -803,3 +803,133 @@ fn split_range_matches_upstream() {
 	assert_eq!(start, vec![0x30]);
 	assert_eq!(end, vec![0x2F, 0x3F]);
 }
+
+#[test]
+fn to_unicode_utf16be() {
+	let subtable = make_subtable(4, 0, 2, 7);
+	assert_eq!(subtable.encoding(), Some("utf_16_be"));
+	assert!(subtable.is_unicode());
+}
+
+#[test]
+fn to_unicode_macroman() {
+	let subtable = make_subtable(4, 1, 0, 7);
+	assert_eq!(subtable.encoding(), Some("mac_roman"));
+	assert!(!subtable.is_unicode());
+}
+
+#[test]
+fn to_unicode_macromanian() {
+	let subtable = make_subtable(4, 1, 0, 37);
+	assert!(subtable.encoding().is_some());
+	assert!(!subtable.is_unicode());
+}
+
+#[test]
+fn extended_mac_encodings() {
+	// Mac Japanese.
+	let subtable = make_subtable(4, 1, 1, 0);
+	assert!(subtable.encoding().is_some());
+	assert!(!subtable.is_unicode());
+}
+
+#[test]
+fn extended_unknown() {
+	let subtable = make_subtable(4, 10, 11, 12);
+	assert_eq!(subtable.encoding(), None);
+	// `getEncoding(default)`.
+	assert_eq!(subtable.encoding().unwrap_or("ascii"), "ascii");
+}
+
+#[test]
+fn font_get_best_cmap() {
+	let mut font = font_with(names(&[".notdef", "A", "u10314"]));
+	font.insert(Box::new(two_subtables()));
+	let best = |font: &mut Font, preferences: &[(u16, u16)]| match font.get_best_cmap(preferences) {
+		Ok(m) => m,
+		Err(e) => panic!("getBestCmap failed: {e}"),
+	};
+	assert_eq!(
+		best(&mut font, &DEFAULT_CMAP_PREFERENCES),
+		Some(map(&[(0x10314, 2)]))
+	);
+	assert_eq!(
+		best(&mut font, &[(3, 1)]),
+		Some(map(&[(0x41, 1), (0x391, 1)]))
+	);
+	assert_eq!(best(&mut font, &[(0, 4)]), None);
+}
+
+#[test]
+fn font_get_best_cmap_applies_dmap_first() {
+	let mut font = font_with(names(&[".notdef", "A", "A.alt", "B", "C"]));
+	let mut cmap4 = make_subtable(4, 3, 1, 0);
+	cmap4.cmap = charmap(&[(0x41, 1), (0x42, 3)]);
+	let mut dmap4 = make_subtable(4, 3, 1, 0);
+	dmap4.cmap = charmap(&[(0x41, 2), (0x43, 4)]);
+	font.insert(Box::new(Cmap {
+		table_version: 0,
+		tables: vec![cmap4],
+	}));
+	font.insert(Box::new(Dmap(Cmap {
+		table_version: 0,
+		tables: vec![dmap4.clone()],
+	})));
+	assert_eq!(
+		font.get_best_cmap(&DEFAULT_CMAP_PREFERENCES).ok().flatten(),
+		Some(map(&[(0x41, 2), (0x42, 3), (0x43, 4)]))
+	);
+
+	let data = font.table_data(Dmap::TAG).unwrap_or_default();
+	let dmap = match Dmap::decompile(&data, &mut font) {
+		Ok(t) => t,
+		Err(e) => panic!("decompile failed: {e}"),
+	};
+	assert_eq!(
+		dmap.0.get_best_cmap(&DEFAULT_CMAP_PREFERENCES),
+		Some(&*dmap4.cmap)
+	);
+}
+
+#[test]
+fn glyph_order_applies_dmap_first() {
+	// The upstream test builds a whole font with FontBuilder; only the tables the
+	// glyph order comes from matter: maxp, a format 3 post, cmap and DMAP.
+	let mut font = font_with(names(&[".notdef", "cmapA", "dmapA", "cmapB", "dmapC"]));
+	font.insert(Box::new(crate::tables::Maxp {
+		table_version: 0x5000,
+		num_glyphs: 5,
+		..Default::default()
+	}));
+	let mut post = crate::tables::Post::default();
+	post.header.format_type = 3.0;
+	font.insert(Box::new(post));
+	let mut cmap4 = make_subtable(4, 3, 1, 0);
+	cmap4.cmap = charmap(&[(0x41, 1), (0x42, 3)]);
+	font.insert(Box::new(Cmap {
+		table_version: 0,
+		tables: vec![cmap4],
+	}));
+	let mut dmap4 = make_subtable(4, 3, 1, 0);
+	dmap4.cmap = charmap(&[(0x41, 2), (0x43, 4)]);
+	font.insert(Box::new(Dmap(Cmap {
+		table_version: 0,
+		tables: vec![dmap4],
+	})));
+	let data = match font.write(&crate::WriteOptions::default()) {
+		Ok(d) => d,
+		Err(e) => panic!("write failed: {e}"),
+	};
+	let mut font = match Font::read(data, ReadOptions::default()) {
+		Ok(f) => f,
+		Err(e) => panic!("read failed: {e}"),
+	};
+	let order = match font.glyph_order() {
+		Ok(o) => o,
+		Err(e) => panic!("getGlyphOrder failed: {e}"),
+	};
+	assert_eq!(
+		order.names().to_vec(),
+		names(&[".notdef", "glyph00001", "A", "B", "C"])
+	);
+}

@@ -7,11 +7,13 @@ use fontoxide_misc::fixed_tools::{
 	fixed_to_float, float_to_fixed, float_to_fixed_to_float, float_to_fixed_to_str,
 	str_to_fixed_to_float,
 };
+use fontoxide_misc::round_tools::ot_round;
 use fontoxide_misc::text_tools::{Literal, safe_eval};
 use fontoxide_misc::xml_reader::Element;
 use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::tables::glyf::Number;
+use crate::var::iup_delta;
 use crate::{Error, Result};
 
 const DELTAS_ARE_ZERO: u8 = 0x80;
@@ -247,7 +249,7 @@ pub struct TupleVariation {
 }
 
 /// The default start and end of a region with a peak (`inferRegion_`).
-fn default_region(peak: f64) -> (f64, f64) {
+pub fn infer_region(peak: f64) -> (f64, f64) {
 	(
 		if peak < 0.0 { peak } else { 0.0 },
 		if peak > 0.0 { peak } else { 0.0 },
@@ -305,11 +307,11 @@ impl TupleVariation {
 
 	/// The start and end of each axis, if any differ from the default
 	/// (`compileIntermediateCoord`).
-	fn compile_intermediate_coord(&self, axis_tags: &[String]) -> Result<Option<Vec<u8>>> {
+	pub fn compile_intermediate_coord(&self, axis_tags: &[String]) -> Result<Option<Vec<u8>>> {
 		let region = |axis: &String| self.axes.get(axis).copied().unwrap_or((0.0, 0.0, 0.0));
 		let needed = axis_tags.iter().any(|axis| {
 			let (min, peak, max) = region(axis);
-			let (dmin, dmax) = default_region(peak);
+			let (dmin, dmax) = infer_region(peak);
 			min != dmin || max != dmax
 		});
 		if !needed {
@@ -327,7 +329,7 @@ impl TupleVariation {
 	}
 
 	/// The packed deltas: all x (or values), then all y (`compileDeltas`).
-	fn compile_deltas(&self, optimize_size: bool) -> Result<Vec<u8>> {
+	pub fn compile_deltas(&self, optimize_size: bool) -> Result<Vec<u8>> {
 		// A float delta fails in `array.array` unless it is a zero, which is
 		// written as a run of zeros.
 		let int = |n: Number| -> Result<i64> {
@@ -397,6 +399,111 @@ impl TupleVariation {
 		Ok((header, aux))
 	}
 
+	/// 2 for (x, y) deltas (`gvar`), 1 for single values (`cvar`), or 0 if there
+	/// are none (`getCoordWidth`).
+	pub fn coord_width(&self) -> u8 {
+		match self.coordinates.iter().flatten().next() {
+			Some(Delta::Point(..)) => 2,
+			Some(Delta::Value(_)) => 1,
+			None => 0,
+		}
+	}
+
+	/// Multiplies the deltas by `scalar` (`scaleDeltas`); they become floats
+	/// unless `scalar` is 1.
+	pub fn scale_deltas(&mut self, scalar: f64) {
+		if scalar == 1.0 {
+			return;
+		}
+		let scale = |n: Number| Number::Float(n.value() * scalar);
+		for delta in self.coordinates.iter_mut().flatten() {
+			*delta = match *delta {
+				Delta::Point(x, y) => Delta::Point(scale(x), scale(y)),
+				Delta::Value(v) => Delta::Value(scale(v)),
+			};
+		}
+	}
+
+	/// Rounds the deltas to integers with `otRound` (`roundDeltas`).
+	pub fn round_deltas(&mut self) {
+		let round = |n: Number| Number::Int(ot_round(n.value()));
+		for delta in self.coordinates.iter_mut().flatten() {
+			*delta = match *delta {
+				Delta::Point(x, y) => Delta::Point(round(x), round(y)),
+				Delta::Value(v) => Delta::Value(round(v)),
+			};
+		}
+	}
+
+	/// Fills in the inferred deltas of a `gvar` variation from the glyph's
+	/// coordinates (with the four phantom points) and contour ends
+	/// (`calcInferredDeltas`).
+	pub fn calc_inferred_deltas(&mut self, coords: &[(f64, f64)], ends: &[usize]) -> Result<()> {
+		if self.coord_width() == 1 {
+			return Err(Error::ttlib(
+				"TypeError: Only 'gvar' TupleVariation can have inferred deltas",
+			));
+		}
+		if self.coordinates.iter().all(Option::is_some) {
+			return Ok(());
+		}
+		if self.coordinates.len() != coords.len() {
+			return Err(Error::value(format!(
+				"Expected len(origCoords) == {}; found {}",
+				self.coordinates.len(),
+				coords.len()
+			)));
+		}
+		let deltas: Vec<Option<(f64, f64)>> = self
+			.coordinates
+			.iter()
+			.map(|d| match d {
+				Some(Delta::Point(x, y)) => Some((x.value(), y.value())),
+				_ => None,
+			})
+			.collect();
+		self.coordinates = iup_delta(&deltas, coords, ends)?
+			.into_iter()
+			.map(|(x, y)| Some(Delta::Point(Number::Float(x), Number::Float(y))))
+			.collect();
+		Ok(())
+	}
+
+	/// Adds the deltas of `other` (`__iadd__`). Missing `gvar` deltas must be
+	/// inferred first; missing `cvar` deltas count as zero.
+	pub fn add_deltas(&mut self, other: &TupleVariation) -> Result<()> {
+		if self.coordinates.len() != other.coordinates.len() {
+			return Err(Error::value(
+				"cannot sum TupleVariation deltas with different lengths",
+			));
+		}
+		let add = |x: Number, y: Number| match (x, y) {
+			(Number::Int(x), Number::Int(y)) => Number::Int(x + y),
+			_ => Number::Float(x.value() + y.value()),
+		};
+		if self.coord_width() == 2 {
+			for (d1, d2) in self.coordinates.iter_mut().zip(&other.coordinates) {
+				match (*d1, d2) {
+					(Some(Delta::Point(x1, y1)), Some(Delta::Point(x2, y2))) => {
+						*d1 = Some(Delta::Point(add(x1, *x2), add(y1, *y2)));
+					}
+					_ => return Err(Error::value("cannot sum gvar deltas with inferred points")),
+				}
+			}
+		} else {
+			for (d1, d2) in self.coordinates.iter_mut().zip(&other.coordinates) {
+				match (*d1, d2) {
+					(Some(Delta::Value(x)), Some(Delta::Value(y))) => {
+						*d1 = Some(Delta::Value(add(x, *y)));
+					}
+					(None, Some(d)) => *d1 = Some(*d),
+					_ => {}
+				}
+			}
+		}
+		Ok(())
+	}
+
 	/// `toXML`.
 	pub fn to_xml(&self, writer: &mut XmlWriter, axis_tags: &[String]) {
 		writer.begintag("tuple", &[]);
@@ -405,7 +512,7 @@ impl TupleVariation {
 			let Some(&(min, peak, max)) = self.axes.get(axis) else {
 				continue;
 			};
-			let (dmin, dmax) = default_region(peak);
+			let (dmin, dmax) = infer_region(peak);
 			let s = |v: f64| float_to_fixed_to_str(v, 14);
 			if min == dmin && max == dmax {
 				writer.simpletag("coord", &[("axis", axis), ("value", &s(peak))]);
@@ -471,7 +578,7 @@ impl TupleVariation {
 		match e.name.as_str() {
 			"coord" => {
 				let peak = fixed(attr("value")?)?;
-				let (dmin, dmax) = default_region(peak);
+				let (dmin, dmax) = infer_region(peak);
 				let min = match e.attr("min") {
 					Some(s) => fixed(s)?,
 					None => float_to_fixed_to_float(dmin, 14),
@@ -517,8 +624,13 @@ impl TupleVariation {
 	}
 }
 
-/// Reads the peak of each axis (`decompileCoord_`).
-fn decompile_coord(axis_tags: &[String], data: &[u8], offset: usize) -> Result<(Vec<f64>, usize)> {
+/// Reads the peak of each axis (`decompileCoord_`), in the order of `axis_tags`.
+/// Returns the peaks and the offset after them.
+pub fn decompile_coord(
+	axis_tags: &[String],
+	data: &[u8],
+	offset: usize,
+) -> Result<(Vec<f64>, usize)> {
 	let mut pos = offset;
 	let mut coord = Vec::with_capacity(axis_tags.len());
 	for _ in axis_tags {
@@ -791,6 +903,18 @@ pub fn compile_tuple_variation_store(
 	Ok((count, tuples, data))
 }
 
+/// The size of a tuple variation header with `flags` (`getTupleSize_`).
+pub fn tuple_size(flags: u16, axis_count: usize) -> usize {
+	let mut size = 4;
+	if flags & EMBEDDED_PEAK_TUPLE != 0 {
+		size += axis_count * 2;
+	}
+	if flags & INTERMEDIATE_REGION != 0 {
+		size += axis_count * 4;
+	}
+	size
+}
+
 /// Reads tuple variations (`decompileTupleVariationStore`). `shared_tuples` is
 /// `None` for `cvar`.
 #[allow(clippy::too_many_arguments)]
@@ -819,13 +943,7 @@ pub fn decompile_tuple_variation_store(
 			.ok_or_else(|| Error::Struct("unpack requires a buffer of 4 bytes".into()))?;
 		let size = u16::from_be_bytes([header[0], header[1]]) as usize;
 		let flags = u16::from_be_bytes([header[2], header[3]]);
-		let mut tuple_size = 4;
-		if flags & EMBEDDED_PEAK_TUPLE != 0 {
-			tuple_size += num_axes * 2;
-		}
-		if flags & INTERMEDIATE_REGION != 0 {
-			tuple_size += num_axes * 4;
-		}
+		let tuple_size = tuple_size(flags, num_axes);
 		let slice = |from: usize, len: usize| {
 			let from = from.min(data.len());
 			&data[from..(from + len).min(data.len())]
@@ -879,7 +997,7 @@ fn decompile_tuple_variation(
 		let (e, _) = decompile_coord(axis_tags, data, next)?;
 		(s, e)
 	} else {
-		peak.iter().map(|&p| default_region(p)).unzip()
+		peak.iter().map(|&p| infer_region(p)).unzip()
 	};
 	let mut axes = BTreeMap::new();
 	for (i, axis) in axis_tags.iter().enumerate() {

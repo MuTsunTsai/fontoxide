@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont sfntVersion="OTTO" ttLibVersion="4.68">
+
+  <CFF>
+    <major value="1"/>
+    <minor value="0"/>
+    <CFFFont name="Test-Regular">
+      <isFixedPitch value="0"/>
+      <ItalicAngle value="0"/>
+      <UnderlinePosition value="-200"/>
+      <UnderlineThickness value="100"/>
+      <PaintType value="0"/>
+      <CharstringType value="2"/>
+      <FontMatrix value="0.0005 0.0 0.0 0.0005 0.0 0.0"/>
+      <FontBBox value="200 0 1000 1400"/>
+      <StrokeWidth value="0"/>
+      <!-- charset is dumped separately as the 'GlyphOrder' element -->
+      <Encoding name="StandardEncoding"/>
+      <Private>
+        <BlueScale value="0.039625"/>
+        <BlueShift value="7"/>
+        <BlueFuzz value="1"/>
+        <ForceBold value="0"/>
+        <LanguageGroup value="0"/>
+        <ExpansionFactor value="0.06"/>
+        <initialRandomSeed value="0"/>
+        <defaultWidthX value="0"/>
+        <nominalWidthX value="0"/>
+      </Private>
+      <CharStrings>
+        <CharString name=".notdef">
+          1200 200 hmoveto
+          800 hlineto
+          -400 1400 rlineto
+          endchar
+        </CharString>
+        <CharString name="A">
+          1200 200 hmoveto
+          800 hlineto
+          -400 1400 rlineto
+          endchar
+        </CharString>
+      </CharStrings>
+    </CFFFont>
+
+    <GlobalSubrs>
+      <!-- The 'index' attribute is only for humans; it is ignored when parsed. -->
+    </GlobalSubrs>
+  </CFF>
+
+</ttFont>

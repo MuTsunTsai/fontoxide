@@ -224,8 +224,9 @@ fn lookup_at(lookups: &mut [Option<Box<Lookup>>], index: usize) -> Result<&mut L
 
 /// `fixLookupOverFlows`: promotes lookups to Extension lookups, from the one
 /// that overflowed (or the one before, when the offset to a lookup overflowed)
-/// to the end.
-fn fix_lookup_overflows(
+/// to the end. `lookups` are those of the `tag` table; returns whether any lookup
+/// was promoted.
+pub fn fix_lookup_overflows(
 	lookups: &mut [Option<Box<Lookup>>],
 	tag: Tag,
 	record: &OverflowErrorRecord,
@@ -405,6 +406,17 @@ fn split(
 	}
 }
 
+/// `splitMultipleSubst`: moves the mappings from a point on, in glyph name
+/// order, to `new`. Returns whether the subtable was split.
+pub fn split_multiple_subst(
+	old: &mut super::gsub::MultipleSubst,
+	new: &mut super::gsub::MultipleSubst,
+	record: &OverflowErrorRecord,
+	font: &mut Font,
+) -> Result<bool> {
+	split_mapping(&mut old.mapping, &mut new.mapping, record, "Sequence", font)
+}
+
 /// `splitMultipleSubst` / `splitAlternateSubst` / `splitLigatureSubst`: moves the
 /// items from a point on, in glyph name order, to the new subtable.
 fn split_mapping<V: Clone>(
@@ -455,7 +467,8 @@ fn coverage(glyphs: Vec<u32>) -> Option<Box<Coverage>> {
 }
 
 /// `splitSinglePos`: only format 2 has a value per glyph worth splitting.
-fn split_single_pos(old: &mut SinglePos, new: &mut SinglePos) -> Result<bool> {
+/// Returns whether the subtable was split.
+pub fn split_single_pos(old: &mut SinglePos, new: &mut SinglePos) -> Result<bool> {
 	let SinglePos::Format2(o) = old else {
 		return Ok(false);
 	};
@@ -562,7 +575,8 @@ fn split_pair_pos(old: &mut PairPos, new: &mut PairPos) -> Result<bool> {
 }
 
 /// `splitMarkBasePos`: half of the mark classes go to the new subtable.
-fn split_mark_base_pos(old: &mut MarkBasePos, new: &mut MarkBasePos) -> Result<bool> {
+/// Returns whether the subtable was split.
+pub fn split_mark_base_pos(old: &mut MarkBasePos, new: &mut MarkBasePos) -> Result<bool> {
 	macro_rules! split_format {
 		($o:expr, $variant:ident, $fmt:ident, $marks:ident, $bases:ident, $base_record:ident) => {{
 			let o = $o;

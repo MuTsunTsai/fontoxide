@@ -240,12 +240,15 @@ impl TableType for Ltsh {
 }
 
 impl Table for Ltsh {
-	/// The values are by position; fontTools does not subset `LTSH` either.
+	/// The values follow their glyphs (as when reordering glyphs); `f` fails for
+	/// glyphs that are dropped, which fontTools does not subset either.
 	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		let _ = f;
-		Err(Error::ttlib(
-			"remapping the glyphs of 'LTSH' is not supported",
-		))
+		let mut y_pels = BTreeMap::new();
+		for (gid, v) in std::mem::take(&mut self.y_pels) {
+			y_pels.insert(f(gid)?, v);
+		}
+		self.y_pels = y_pels;
+		Ok(())
 	}
 
 	fn tag(&self) -> Tag {

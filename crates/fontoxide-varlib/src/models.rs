@@ -604,6 +604,89 @@ impl VariationModel {
 		Ok((model, items.iter().flatten().copied().collect()))
 	}
 
+	/// `getSubModel` for the masters in `present`: the model itself if all are.
+	pub fn sub_model(&self, present: &[bool]) -> Result<VariationModel> {
+		if present.len() != self.orig_locations.len() {
+			return Err(Error::Assertion("len(truth) == len(lst)".into()));
+		}
+		if present.iter().all(|p| *p) {
+			return Ok(self.clone());
+		}
+		let locations: Vec<DictLocation> = self
+			.orig_locations
+			.iter()
+			.zip(present)
+			.filter(|(_, p)| **p)
+			.map(|(l, _)| l.clone())
+			.collect();
+		VariationModel::new(
+			&locations,
+			Some(&self.axis_order),
+			self.extrapolate,
+			Some(&self.axis_ranges),
+		)
+	}
+
+	/// `getDeltas` of vectors, such as the coordinates of a glyph: each component
+	/// as [`VariationModel::get_deltas_rounded`] computes it.
+	pub fn get_deltas_vec(
+		&self,
+		master_values: &[Vec<f64>],
+		round: impl Fn(f64) -> f64,
+	) -> Result<Vec<Vec<f64>>> {
+		if master_values.len() != self.delta_weights.len() {
+			return Err(Error::Assertion(format!(
+				"({}, {})",
+				master_values.len(),
+				self.delta_weights.len()
+			)));
+		}
+		let mut out: Vec<Vec<f64>> = Vec::with_capacity(master_values.len());
+		for (i, weights) in self.delta_weights.iter().enumerate() {
+			let mut delta = master_values[self.reverse_mapping[i]].clone();
+			for &(j, weight) in weights {
+				let other = &out[j];
+				if other.len() != delta.len() {
+					return Err(Error::value("operands must have the same length"));
+				}
+				for (d, o) in delta.iter_mut().zip(other) {
+					if weight == 1.0 {
+						*d -= o;
+					} else {
+						*d -= o * weight;
+					}
+				}
+			}
+			out.push(delta.into_iter().map(&round).collect());
+		}
+		Ok(out)
+	}
+
+	/// `reorderMasters`: the masters in a new order, and the model updated for it,
+	/// without recomputing supports.
+	pub fn reorder_masters<T: Clone>(&mut self, master_list: &[T], mapping: &[usize]) -> Vec<T> {
+		let new_list = mapping.iter().map(|&i| master_list[i].clone()).collect();
+		self.orig_locations = mapping
+			.iter()
+			.map(|&i| self.orig_locations[i].clone())
+			.collect();
+		let locations: Vec<DictLocation> = self
+			.orig_locations
+			.iter()
+			.map(|l| l.iter().filter(|e| e.1 != 0.0).cloned().collect())
+			.collect();
+		self.mapping = locations
+			.iter()
+			.map(|l| location_position(&self.locations, l).unwrap_or(0))
+			.collect();
+		self.reverse_mapping = self
+			.locations
+			.iter()
+			.map(|l| location_position(&locations, l).unwrap_or(0))
+			.collect();
+		new_list
+	}
+
 	/// `getDeltasAndSupports`.
 	pub fn get_deltas_and_supports(
 		&self,

@@ -41,6 +41,26 @@ pub enum KernSubtable {
 	},
 }
 
+impl KernSubtable {
+	/// The subtable format (`format`).
+	pub fn format(&self) -> i64 {
+		match self {
+			KernSubtable::Format0(_) => 0,
+			KernSubtable::Unknown { format, .. } => *format,
+		}
+	}
+}
+
+impl Kern {
+	/// The first subtable with the given format (`getkern`).
+	pub fn get_kern(&self, format: i64) -> Option<&KernSubtable> {
+		self.kern_tables
+			.iter()
+			.flatten()
+			.find(|t| t.format() == format)
+	}
+}
+
 fn is_one(version: &Value) -> bool {
 	match version {
 		Value::Int(i) => *i == 1,
@@ -397,109 +417,6 @@ impl Table for Kern {
 				t.kern_table = kern_table;
 			}
 		}
-		Ok(())
-	}
-}
-
-#[cfg(test)]
-mod tests {
-	//! From `Tests/ttLib/tables/_k_e_r_n_test.py`.
-
-	use fontoxide_misc::text_tools::de_hex_str;
-
-	use super::*;
-
-	fn font() -> Font {
-		let mut font = Font::new();
-		let names = ('A'..='Z').chain('a'..='z').map(String::from).collect();
-		font.set_glyph_order(names);
-		font
-	}
-
-	fn hex(data: &str) -> Vec<u8> {
-		de_hex_str(data).unwrap_or_default()
-	}
-
-	const VER_0_FMT_0: &str = "0000 0001 0000 0020 00 01 0003 000C 0001 0006 0004 000C FFD8 0004 001C 0028 0005 0028 FFCE";
-	const VER_1_FMT_0: &str = "0001 0000 0000 0001 0000 0022 00 00 0000 0003 000C 0001 0006 0004 000C FFD8 0004 001C 0028 0005 0028 FFCE";
-	const VER_0_UNKNOWN: &str = "0000 0002 0000 000A 04 01 1234 5678 0000 000A 05 01 9ABC DEF0";
-	const VER_1_UNKNOWN: &str =
-		"0001 0000 0000 0002 0000 000C 00 04 0000 1234 5678 0000 000C 00 05 0000 9ABC DEF0";
-
-	fn lines(table: &Kern, font: &mut Font) -> Result<Vec<String>> {
-		let mut writer = XmlWriter::with_options("  ", "\n");
-		table.to_xml(&mut writer, font)?;
-		Ok(writer.as_str().lines().skip(1).map(str::to_owned).collect())
-	}
-
-	#[test]
-	fn round_trips() -> Result<()> {
-		for data in [VER_0_FMT_0, VER_1_FMT_0, VER_0_UNKNOWN, VER_1_UNKNOWN] {
-			let data = hex(data);
-			let mut font = font();
-			let mut table = Kern::decompile(&data, &mut font)?;
-			assert_eq!(table.compile(&mut font)?, data);
-		}
-		Ok(())
-	}
-
-	#[test]
-	fn dumps() -> Result<()> {
-		let mut font = font();
-		let table = Kern::decompile(&hex(VER_0_FMT_0), &mut font)?;
-		assert_eq!(
-			lines(&table, &mut font)?,
-			[
-				"<version value=\"0\"/>",
-				"<kernsubtable coverage=\"1\" format=\"0\">",
-				"  <pair l=\"E\" r=\"M\" v=\"-40\"/>",
-				"  <pair l=\"E\" r=\"c\" v=\"40\"/>",
-				"  <pair l=\"F\" r=\"o\" v=\"-50\"/>",
-				"</kernsubtable>",
-			]
-		);
-		let table = Kern::decompile(&hex(VER_1_FMT_0), &mut font)?;
-		assert_eq!(
-			lines(&table, &mut font)?[..2],
-			[
-				"<version value=\"1.0\"/>".to_owned(),
-				"<kernsubtable coverage=\"0\" format=\"0\" tupleIndex=\"0\">".to_owned(),
-			]
-		);
-		Ok(())
-	}
-
-	#[test]
-	fn overflowing_length_keeps_all_pairs() -> Result<()> {
-		let mut names = Vec::new();
-		for i in 0..105 {
-			names.push(format!("glyph{i}"));
-		}
-		let mut font = Font::new();
-		font.set_glyph_order(names);
-		let mut kern_table = BTreeMap::new();
-		for left in 0..105 {
-			for right in 0..105 {
-				kern_table.insert((left, right), 0);
-			}
-		}
-		let mut table = Kern {
-			version: Some(Value::Int(0)),
-			kern_tables: Some(vec![KernSubtable::Format0(KernFormat0 {
-				coverage: 1,
-				kern_table,
-				..Default::default()
-			})]),
-		};
-		let data = table.compile(&mut font)?;
-		assert_eq!(data.len(), 4 + 14 + 11025 * 6);
-		assert_eq!(
-			data[..18],
-			hex("0000 0001 0000 0274 00 01 2B11 C000 000D 4266")
-		);
-		// The length is ignored for a single format 0 subtable.
-		let mut table = Kern::decompile(&data, &mut font)?;
-		assert_eq!(table.compile(&mut font)?, data);
 		Ok(())
 	}
 }

@@ -1,0 +1,34 @@
+=== 
+--- return
+None
+=== --json
+{}
+--- return
+None
+=== --show-all
+Glyph a was not compatible:
+  Masters: '', 'wght=625.0':
+    Showing '' and 'wght=625.0'
+Glyph dotabovecomb was not compatible:
+  Masters: '', 'wght=625.0':
+    Showing '' and 'wght=625.0'
+Glyph e was not compatible:
+  Masters: '', 'wght=450.00305':
+    Showing '' and 'wght=450.00305'
+  Masters: 'wght=450.00305', 'wght=625.0':
+    Showing 'wght=450.00305' and 'wght=625.0'
+Glyph edotabove was not compatible:
+  Masters: '', 'wght=625.0':
+    Showing '' and 'wght=625.0'
+Glyph s was not compatible:
+  Masters: '', 'wght=625.0':
+    Showing '' and 'wght=625.0'
+--- return
+{"a": [{"type": "nothing", "master_1": "''", "master_2": "'wght=625.0'", "master_1_idx": 0, "master_2_idx": 2}], "dotabovecomb": [{"type": "nothing", "master_1": "''", "master_2": "'wght=625.0'", "master_1_idx": 0, "master_2_idx": 2}], "e": [{"type": "nothing", "master_1": "''", "master_2": "'wght=450.00305'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wght=450.00305'", "master_2": "'wght=625.0'", "master_1_idx": 1, "master_2_idx": 2}], "edotabove": [{"type": "nothing", "master_1": "''", "master_2": "'wght=625.0'", "master_1_idx": 0, "master_2_idx": 2}], "s": [{"type": "nothing", "master_1": "''", "master_2": "'wght=625.0'", "master_1_idx": 0, "master_2_idx": 2}]}
+=== --show-all	--json
+{"a": [{"type": "nothing", "master_1": "''", "master_2": "'wght=625.0'", "master_1_idx": 0, "master_2_idx": 2}], "dotabovecomb": [{"type": "nothing", "master_1": "''", "master_2": "'wght=625.0'", "master_1_idx": 0, "master_2_idx": 2}], "e": [{"type": "nothing", "master_1": "''", "master_2": "'wght=450.00305'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wght=450.00305'", "master_2": "'wght=625.0'", "master_1_idx": 1, "master_2_idx": 2}], "edotabove": [{"type": "nothing", "master_1": "''", "master_2": "'wght=625.0'", "master_1_idx": 0, "master_2_idx": 2}], "s": [{"type": "nothing", "master_1": "''", "master_2": "'wght=625.0'", "master_1_idx": 0, "master_2_idx": 2}]}
+--- return
+{"a": [{"type": "nothing", "master_1": "''", "master_2": "'wght=625.0'", "master_1_idx": 0, "master_2_idx": 2}], "dotabovecomb": [{"type": "nothing", "master_1": "''", "master_2": "'wght=625.0'", "master_1_idx": 0, "master_2_idx": 2}], "e": [{"type": "nothing", "master_1": "''", "master_2": "'wght=450.00305'", "master_1_idx": 0, "master_2_idx": 1}, {"type": "nothing", "master_1": "'wght=450.00305'", "master_2": "'wght=625.0'", "master_1_idx": 1, "master_2_idx": 2}], "edotabove": [{"type": "nothing", "master_1": "''", "master_2": "'wght=625.0'", "master_1_idx": 0, "master_2_idx": 2}], "s": [{"type": "nothing", "master_1": "''", "master_2": "'wght=625.0'", "master_1_idx": 0, "master_2_idx": 2}]}
+=== --ignore-missing
+--- return
+None

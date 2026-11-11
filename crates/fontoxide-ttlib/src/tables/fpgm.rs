@@ -18,6 +18,13 @@ macro_rules! program_table {
 			pub program: Option<Program>,
 		}
 
+		impl $name {
+			/// Whether the table has no program or an empty one (`not __bool__`).
+			pub fn is_empty(&self) -> bool {
+				self.program.as_ref().is_none_or(Program::is_empty)
+			}
+		}
+
 		impl TableType for $name {
 			const TAG: Tag = Tag::new($tag);
 

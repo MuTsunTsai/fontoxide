@@ -143,6 +143,28 @@ fn optimize_dp(
 	dp
 }
 
+/// `_iup_contour_bound_forced_set`, for tests.
+#[doc(hidden)]
+pub fn iup_contour_bound_forced_set(
+	deltas: &[Point],
+	coords: &[Point],
+	tolerance: f64,
+) -> BTreeSet<usize> {
+	bound_forced_set(deltas, coords, tolerance)
+}
+
+/// `_iup_contour_optimize_dp`, for tests: the chain and costs by index from -1.
+#[doc(hidden)]
+pub fn iup_contour_optimize_dp(
+	deltas: &[Point],
+	coords: &[Point],
+	forced: &BTreeSet<usize>,
+	tolerance: f64,
+) -> (Vec<i64>, Vec<i64>) {
+	let dp = optimize_dp(deltas, coords, forced, tolerance, None);
+	(dp.chain, dp.costs)
+}
+
 /// `_rot_list`: item 0 goes to position `k`.
 fn rot_list(l: &[Point], k: usize) -> Vec<Point> {
 	let n = l.len();

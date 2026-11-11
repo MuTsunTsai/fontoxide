@@ -1,0 +1,18 @@
+=== 
+Glyph a was not compatible:
+  Masters: SparseMasters-Medium:
+    Glyph was missing in master SparseMasters-Medium
+Glyph dotabovecomb was not compatible:
+  Masters: SparseMasters-Medium:
+    Glyph was missing in master SparseMasters-Medium
+Glyph edotabove was not compatible:
+  Masters: SparseMasters-Medium:
+    Glyph was missing in master SparseMasters-Medium
+Glyph s was not compatible:
+  Masters: SparseMasters-Medium:
+    Glyph was missing in master SparseMasters-Medium
+--- return
+{"a": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 0}], "dotabovecomb": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 0}], "edotabove": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 0}], "s": [{"type": "missing", "master": "SparseMasters-Medium", "master_idx": 0}]}
+=== --ignore-missing
+--- return
+None

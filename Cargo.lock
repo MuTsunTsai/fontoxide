@@ -249,6 +249,7 @@ dependencies = [
  "fontoxide-cu2qu",
  "fontoxide-designspacelib",
  "fontoxide-fealib",
+ "fontoxide-merge",
  "fontoxide-misc",
  "fontoxide-otllib",
  "fontoxide-pens",
@@ -256,6 +257,7 @@ dependencies = [
  "fontoxide-repack",
  "fontoxide-subset",
  "fontoxide-ttlib",
+ "fontoxide-ufolib",
  "fontoxide-unicodedata",
  "fontoxide-varlib",
  "indexmap",
@@ -308,6 +310,18 @@ dependencies = [
  "fontoxide-otllib",
  "fontoxide-ttlib",
  "fontoxide-varlib",
+ "indexmap",
+ "log",
+ "thiserror",
+]
+
+[[package]]
+name = "fontoxide-merge"
+version = "0.0.0"
+dependencies = [
+ "fontoxide",
+ "fontoxide-misc",
+ "fontoxide-ttlib",
  "indexmap",
  "log",
  "thiserror",
@@ -396,6 +410,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "fontoxide-ufolib"
+version = "0.0.0"
+dependencies = [
+ "flate2",
+ "fontoxide-misc",
+ "fontoxide-pens",
+ "indexmap",
+ "log",
+ "thiserror",
+]
+
+[[package]]
 name = "fontoxide-unicodedata"
 version = "0.0.0"
 
@@ -403,13 +429,18 @@ version = "0.0.0"
 name = "fontoxide-varlib"
 version = "0.0.0"
 dependencies = [
+ "fontoxide-colorlib",
+ "fontoxide-designspacelib",
+ "fontoxide-fealib",
  "fontoxide-misc",
  "fontoxide-otllib",
  "fontoxide-pens",
  "fontoxide-subset",
  "fontoxide-ttlib",
+ "fontoxide-ufolib",
  "indexmap",
  "log",
+ "thiserror",
 ]
 
 [[package]]

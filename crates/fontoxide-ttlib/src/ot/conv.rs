@@ -134,15 +134,15 @@ pub fn read_char64(r: &mut OtReader<'_>) -> String {
 	let data = r.read_data(64);
 	let end = data.iter().position(|&b| b == 0).unwrap_or(data.len());
 	let data = &data[..end];
-	if !data.is_ascii() {
-		log::warn!(
-			"replaced non-ASCII characters in \"{}\"",
-			String::from_utf8_lossy(data)
-		);
-	}
-	data.iter()
+	// `tostr(data, "ascii", errors="replace")`: each non-ASCII byte becomes U+FFFD.
+	let s: String = data
+		.iter()
 		.map(|&b| if b.is_ascii() { b as char } else { '\u{FFFD}' })
-		.collect()
+		.collect();
+	if !data.is_ascii() {
+		log::warn!("replaced non-ASCII characters in \"{s}\"");
+	}
+	s
 }
 
 /// `Char64.write`.
@@ -451,12 +451,19 @@ pub fn set_feature_tags(
 	Ok(())
 }
 
-/// `FeatureVariations.write`.
+/// `FeatureVariations.write`: the tags of `FeatureList2` from version 1.2 on,
+/// if there is one, else of `FeatureList`.
 pub fn set_writer_feature_tags(
 	w: &mut OtWriter<'_>,
 	feature_list: Option<&crate::generated::ot::FeatureList>,
-	_version: u32,
+	feature_list2: Option<&crate::generated::ot::FeatureList>,
+	version: u32,
 ) {
+	let feature_list = if version >= 0x0001_0002 {
+		feature_list2.or(feature_list)
+	} else {
+		feature_list
+	};
 	let tags: Vec<Tag> = feature_list
 		.map(|l| l.feature_record.iter().map(|f| f.feature_tag).collect())
 		.unwrap_or_default();

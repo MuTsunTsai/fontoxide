@@ -160,6 +160,11 @@ impl<'a> OtReader<'a> {
 		self.state.get(name)
 	}
 
+	/// Whether no value is propagated (`not reader.localState`).
+	pub fn state_is_empty(&self) -> bool {
+		self.state.is_empty()
+	}
+
 	/// Whether a value is propagated (`name in reader`).
 	pub fn contains(&self, name: &str) -> bool {
 		self.state.contains(name)

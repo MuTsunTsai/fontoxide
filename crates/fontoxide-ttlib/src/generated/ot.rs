@@ -21315,7 +21315,12 @@ impl OtTable for GPOS {
 		write_offset(w, font, self.lookup_list.as_deref(), 2, "LookupList", None)?;
 		if (t.version as i64) >= 0x00010001 {
 			if self.feature_variations.is_some() {
-				set_writer_feature_tags(w, self.feature_list.as_deref(), self.version);
+				set_writer_feature_tags(
+					w,
+					self.feature_list.as_deref(),
+					self.feature_list2.as_deref(),
+					self.version,
+				);
 			}
 			write_offset(
 				w,
@@ -21655,7 +21660,12 @@ impl OtTable for GSUB {
 		write_offset(w, font, self.lookup_list.as_deref(), 2, "LookupList", None)?;
 		if (t.version as i64) >= 0x00010001 {
 			if self.feature_variations.is_some() {
-				set_writer_feature_tags(w, self.feature_list.as_deref(), self.version);
+				set_writer_feature_tags(
+					w,
+					self.feature_list.as_deref(),
+					self.feature_list2.as_deref(),
+					self.version,
+				);
 			}
 			write_offset(
 				w,
@@ -27575,10 +27585,12 @@ impl OtTable for LookupList {
 		let _ = (&mut *xw, &mut *font);
 		let t = self;
 		let _ = t;
+		let debug = lookup_list_debug_data(self, font)?;
 		xml_computed(xw, "LookupCount", self.lookup_count);
 		for (i, item) in self.lookup.iter().enumerate() {
 			let attrs: Attrs = vec![("index", i.to_string())];
 			let _ = &attrs;
+			write_lookup_debug_comment(xw, debug.as_ref(), i)?;
 			xml_struct(xw, font, item.as_deref(), Some("Lookup"), &attrs)?;
 		}
 		Ok(())
@@ -50732,6 +50744,7 @@ impl FeatureParamsAny {
 	pub fn read_offset(r: &mut OtReader<'_>, font: &mut Font) -> Result<Option<Box<Self>>> {
 		let tag = match r.get("FeatureTag") {
 			Some(StateValue::Tag(t)) => *t,
+			None if r.state_is_empty() => None,
 			_ => return Err(Error::ttlib("KeyError: 'FeatureTag'")),
 		};
 		let offset = r.read_u16()? as usize;

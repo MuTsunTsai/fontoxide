@@ -23,7 +23,8 @@ use fontoxide_otllib::builder::{
 use fontoxide_ttlib::Font;
 use fontoxide_ttlib::ot::conv::ValueRecord as OtValueRecord;
 use fontoxide_ttlib::ot::types as ot;
-use fontoxide_ttlib::tables::{Avar, Fvar};
+use fontoxide_ttlib::tables::json::JsonValue;
+use fontoxide_ttlib::tables::{Avar, Debg, Fvar};
 use fontoxide_varlib::builder::build_var_dev_table;
 use fontoxide_varlib::feature_vars::AxisBox;
 use fontoxide_varlib::models::{normalize_value, piecewise_linear_map};
@@ -510,7 +511,7 @@ impl<'a> Builder<'a> {
 		}
 		let env = std::env::var_os(LOOKUP_DEBUG_ENV_VAR).is_some_and(|v| !v.is_empty());
 		if debug || env {
-			self.build_debg();
+			self.build_debg()?;
 		}
 		Ok(())
 	}
@@ -2539,73 +2540,43 @@ impl<'a> Builder<'a> {
 	}
 
 	/// Adds the lookup debugging information to the `Debg` table (`buildDebg`).
-	// LENIENT(L34): fontoxide does not implement the `Debg` table; it is added as raw
-	// data, which is the JSON that fontTools compiles. An existing `Debg` table
-	// is replaced rather than merged.
-	fn build_debg(&mut self) {
-		let mut json = String::from("{");
-		json += &json_string(crate::lookup_debug_info::LOOKUP_DEBUG_INFO_KEY);
-		json += ": {";
-		let tables: Vec<String> = self
+	fn build_debg(&mut self) -> Result<()> {
+		let tables = self
 			.lookup_locations
 			.iter()
 			.map(|(tag, infos)| {
-				let items: Vec<String> = infos
+				let infos = infos
 					.iter()
 					.map(|(index, info)| {
-						let feature = match &info.feature {
-							Some(f) => {
-								let items: Vec<String> = f.iter().map(|s| json_string(s)).collect();
-								format!("[{}]", items.join(", "))
-							}
-							None => "null".to_owned(),
-						};
-						format!(
-							"{}: [{}, {}, {feature}]",
-							json_string(index),
-							json_string(&info.location),
-							info.name
-								.as_deref()
-								.map_or_else(|| "null".to_owned(), json_string),
-						)
+						let feature = info.feature.as_ref().map_or(JsonValue::Null, |f| {
+							JsonValue::Array(f.iter().map(|s| JsonValue::str(s)).collect())
+						});
+						let name = info.name.as_deref().map_or(JsonValue::Null, JsonValue::str);
+						let info =
+							JsonValue::Array(vec![JsonValue::str(&info.location), name, feature]);
+						(index.clone(), info)
 					})
 					.collect();
-				format!("{}: {{{}}}", json_string(tag), items.join(", "))
+				(tag.clone(), JsonValue::Object(infos))
 			})
 			.collect();
-		json += &tables.join(", ");
-		json += "}}";
-		self.font
-			.insert(Box::new(fontoxide_ttlib::table::DefaultTable::new(
-				Tag::new(b"Debg"),
-				json.into_bytes(),
-			)));
-	}
-}
-
-/// `json.dumps(s)` of a string (with `ensure_ascii`).
-fn json_string(s: &str) -> String {
-	let mut out = String::from("\"");
-	for c in s.chars() {
-		match c {
-			'"' => out += "\\\"",
-			'\\' => out += "\\\\",
-			'\n' => out += "\\n",
-			'\r' => out += "\\r",
-			'\t' => out += "\\t",
-			'\u{8}' => out += "\\b",
-			'\u{c}' => out += "\\f",
-			c if (c as u32) < 0x20 || (c as u32) > 0x7E => {
-				let mut buf = [0u16; 2];
-				for unit in c.encode_utf16(&mut buf) {
-					out += &format!("\\u{unit:04x}");
-				}
-			}
-			c => out.push(c),
+		let key = crate::lookup_debug_info::LOOKUP_DEBUG_INFO_KEY;
+		if self.font.get::<Debg>()?.is_none() {
+			self.font.insert(Box::new(Debg::default()));
 		}
+		let Some(debg) = self.font.get::<Debg>()? else {
+			return Ok(());
+		};
+		// `self.font["Debg"].data[LOOKUP_DEBUG_INFO_KEY] = self.lookup_locations`
+		if let JsonValue::Object(items) = &mut debg.data {
+			let value = JsonValue::Object(tables);
+			match items.iter_mut().find(|(k, _)| k == key) {
+				Some((_, v)) => *v = value,
+				None => items.push((key.to_owned(), value)),
+			}
+		}
+		Ok(())
 	}
-	out.push('"');
-	out
 }
 
 /// `dict(deviceTable)`: the last delta of a size wins.

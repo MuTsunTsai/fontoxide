@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="start_one.0" format="2">
+  <advance width="500"/>
+  <outline>
+    <contour>
+      <point x="164" y="216" type="curve"/>
+      <point x="160" y="218"/>
+      <point x="156" y="220"/>
+      <point x="153" y="221" type="curve" smooth="yes"/>
+      <point x="132" y="228"/>
+      <point x="110" y="220"/>
+      <point x="95" y="201" type="curve" smooth="yes"/>
+      <point x="77" y="178"/>
+      <point x="74" y="143"/>
+      <point x="88" y="116" type="curve"/>
+      <point x="100" y="99" type="line"/>
+      <point x="156" y="85" type="line"/>
+      <point x="167" y="90"/>
+      <point x="178" y="99"/>
+      <point x="185" y="110" type="curve" smooth="yes"/>
+      <point x="207" y="146"/>
+      <point x="197" y="197"/>
+    </contour>
+  </outline>
+</glyph>

@@ -1,0 +1,38 @@
+=== 
+--- return
+None
+=== --json
+{}
+--- return
+None
+=== --show-all
+Glyph N was not compatible:
+  Masters: TestFamily4-Italic15, TestFamily4-Regular:
+    Showing TestFamily4-Italic15 and TestFamily4-Regular
+Glyph O was not compatible:
+  Masters: TestFamily4-Italic15, TestFamily4-Regular:
+    Showing TestFamily4-Italic15 and TestFamily4-Regular
+Glyph Odieresis was not compatible:
+  Masters: TestFamily4-Italic15, TestFamily4-Regular:
+    Showing TestFamily4-Italic15 and TestFamily4-Regular
+Glyph dieresiscomb was not compatible:
+  Masters: TestFamily4-Italic15, TestFamily4-Regular:
+    Showing TestFamily4-Italic15 and TestFamily4-Regular
+Glyph n was not compatible:
+  Masters: TestFamily4-Italic15, TestFamily4-Regular:
+    Showing TestFamily4-Italic15 and TestFamily4-Regular
+Glyph o was not compatible:
+  Masters: TestFamily4-Italic15, TestFamily4-Regular:
+    Showing TestFamily4-Italic15 and TestFamily4-Regular
+Glyph odieresis was not compatible:
+  Masters: TestFamily4-Italic15, TestFamily4-Regular:
+    Showing TestFamily4-Italic15 and TestFamily4-Regular
+--- return
+{"N": [{"type": "nothing", "master_1": "TestFamily4-Italic15", "master_2": "TestFamily4-Regular", "master_1_idx": 0, "master_2_idx": 1}], "O": [{"type": "nothing", "master_1": "TestFamily4-Italic15", "master_2": "TestFamily4-Regular", "master_1_idx": 0, "master_2_idx": 1}], "Odieresis": [{"type": "nothing", "master_1": "TestFamily4-Italic15", "master_2": "TestFamily4-Regular", "master_1_idx": 0, "master_2_idx": 1}], "dieresiscomb": [{"type": "nothing", "master_1": "TestFamily4-Italic15", "master_2": "TestFamily4-Regular", "master_1_idx": 0, "master_2_idx": 1}], "n": [{"type": "nothing", "master_1": "TestFamily4-Italic15", "master_2": "TestFamily4-Regular", "master_1_idx": 0, "master_2_idx": 1}], "o": [{"type": "nothing", "master_1": "TestFamily4-Italic15", "master_2": "TestFamily4-Regular", "master_1_idx": 0, "master_2_idx": 1}], "odieresis": [{"type": "nothing", "master_1": "TestFamily4-Italic15", "master_2": "TestFamily4-Regular", "master_1_idx": 0, "master_2_idx": 1}]}
+=== --show-all	--json
+{"N": [{"type": "nothing", "master_1": "TestFamily4-Italic15", "master_2": "TestFamily4-Regular", "master_1_idx": 0, "master_2_idx": 1}], "O": [{"type": "nothing", "master_1": "TestFamily4-Italic15", "master_2": "TestFamily4-Regular", "master_1_idx": 0, "master_2_idx": 1}], "Odieresis": [{"type": "nothing", "master_1": "TestFamily4-Italic15", "master_2": "TestFamily4-Regular", "master_1_idx": 0, "master_2_idx": 1}], "dieresiscomb": [{"type": "nothing", "master_1": "TestFamily4-Italic15", "master_2": "TestFamily4-Regular", "master_1_idx": 0, "master_2_idx": 1}], "n": [{"type": "nothing", "master_1": "TestFamily4-Italic15", "master_2": "TestFamily4-Regular", "master_1_idx": 0, "master_2_idx": 1}], "o": [{"type": "nothing", "master_1": "TestFamily4-Italic15", "master_2": "TestFamily4-Regular", "master_1_idx": 0, "master_2_idx": 1}], "odieresis": [{"type": "nothing", "master_1": "TestFamily4-Italic15", "master_2": "TestFamily4-Regular", "master_1_idx": 0, "master_2_idx": 1}]}
+--- return
+{"N": [{"type": "nothing", "master_1": "TestFamily4-Italic15", "master_2": "TestFamily4-Regular", "master_1_idx": 0, "master_2_idx": 1}], "O": [{"type": "nothing", "master_1": "TestFamily4-Italic15", "master_2": "TestFamily4-Regular", "master_1_idx": 0, "master_2_idx": 1}], "Odieresis": [{"type": "nothing", "master_1": "TestFamily4-Italic15", "master_2": "TestFamily4-Regular", "master_1_idx": 0, "master_2_idx": 1}], "dieresiscomb": [{"type": "nothing", "master_1": "TestFamily4-Italic15", "master_2": "TestFamily4-Regular", "master_1_idx": 0, "master_2_idx": 1}], "n": [{"type": "nothing", "master_1": "TestFamily4-Italic15", "master_2": "TestFamily4-Regular", "master_1_idx": 0, "master_2_idx": 1}], "o": [{"type": "nothing", "master_1": "TestFamily4-Italic15", "master_2": "TestFamily4-Regular", "master_1_idx": 0, "master_2_idx": 1}], "odieresis": [{"type": "nothing", "master_1": "TestFamily4-Italic15", "master_2": "TestFamily4-Regular", "master_1_idx": 0, "master_2_idx": 1}]}
+=== --ignore-missing
+--- return
+None

@@ -494,6 +494,36 @@ fn cvt_count(font: &mut Font) -> Result<usize> {
 	Ok(font.require::<Cvt>()?.values.len())
 }
 
+impl Cvar {
+	/// Compiles the table, with the point numbers shared between the variations
+	/// if `use_shared_points` (`compile(ttFont, useSharedPoints)`).
+	pub fn compile_with(&self, font: &mut Font, use_shared_points: bool) -> Result<Vec<u8>> {
+		let variations: Vec<TupleVariation> = self
+			.variations
+			.iter()
+			.filter(|v| v.has_impact())
+			.cloned()
+			.collect();
+		cvt_count(font)?;
+		let axis_tags = fvar_axis_tags(font)?;
+		let (count, tuples, data) = compile_tuple_variation_store(
+			&variations,
+			&axis_tags,
+			&HashMap::new(),
+			use_shared_points,
+			true,
+		)?;
+		let mut out = Vec::new();
+		out.extend_from_slice(&ushort(self.major_version, "majorVersion")?);
+		out.extend_from_slice(&ushort(self.minor_version, "minorVersion")?);
+		out.extend_from_slice(&ushort(count as i64, "tupleVariationCount")?);
+		out.extend_from_slice(&ushort(8 + tuples.len() as i64, "offsetToData")?);
+		out.extend(tuples);
+		out.extend(data);
+		Ok(out)
+	}
+}
+
 impl TableType for Cvar {
 	const TAG: Tag = Tag::new(b"cvar");
 
@@ -529,24 +559,7 @@ impl Table for Cvar {
 	}
 
 	fn compile(&mut self, font: &mut Font) -> Result<Vec<u8>> {
-		let variations: Vec<TupleVariation> = self
-			.variations
-			.iter()
-			.filter(|v| v.has_impact())
-			.cloned()
-			.collect();
-		cvt_count(font)?;
-		let axis_tags = fvar_axis_tags(font)?;
-		let (count, tuples, data) =
-			compile_tuple_variation_store(&variations, &axis_tags, &HashMap::new(), false, true)?;
-		let mut out = Vec::new();
-		out.extend_from_slice(&ushort(self.major_version, "majorVersion")?);
-		out.extend_from_slice(&ushort(self.minor_version, "minorVersion")?);
-		out.extend_from_slice(&ushort(count as i64, "tupleVariationCount")?);
-		out.extend_from_slice(&ushort(8 + tuples.len() as i64, "offsetToData")?);
-		out.extend(tuples);
-		out.extend(data);
-		Ok(out)
+		self.compile_with(font, false)
 	}
 
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {

@@ -3,91 +3,21 @@
 
 use std::collections::HashMap;
 
-use fontoxide_misc::round_tools::ot_round;
-use fontoxide_ttlib::tables::glyf::Number;
 use fontoxide_ttlib::tables::tuple_variation::{Delta, TupleVariation, compile_points};
-use fontoxide_ttlib::var::iup_delta;
 use fontoxide_ttlib::{Error, Result};
 
 use super::limits::{NormalizedAxisTriple, NormalizedLimits};
 use super::solver::rebase_tent;
 use crate::iup::iup_delta_optimize;
 
-fn scale(n: Number, scalar: f64) -> Number {
-	Number::Float(n.value() * scalar)
-}
-
-fn round(n: Number) -> Number {
-	Number::Int(ot_round(n.value()))
-}
-
-/// `getCoordWidth`: 2 for (x, y) deltas, 1 for single values, or 0 if there are
-/// none.
-fn coord_width(var: &TupleVariation) -> u8 {
-	match var.coordinates.iter().flatten().next() {
-		Some(Delta::Point(..)) => 2,
-		Some(Delta::Value(_)) => 1,
-		None => 0,
-	}
-}
-
 /// `scaleDeltas`.
 pub(crate) fn scale_deltas(var: &mut TupleVariation, scalar: f64) {
-	if scalar == 1.0 {
-		return;
-	}
-	for delta in var.coordinates.iter_mut().flatten() {
-		*delta = match *delta {
-			Delta::Point(x, y) => Delta::Point(scale(x, scalar), scale(y, scalar)),
-			Delta::Value(v) => Delta::Value(scale(v, scalar)),
-		};
-	}
+	var.scale_deltas(scalar);
 }
 
 /// `roundDeltas`.
 pub(crate) fn round_deltas(var: &mut TupleVariation) {
-	for delta in var.coordinates.iter_mut().flatten() {
-		*delta = match *delta {
-			Delta::Point(x, y) => Delta::Point(round(x), round(y)),
-			Delta::Value(v) => Delta::Value(round(v)),
-		};
-	}
-}
-
-/// `calcInferredDeltas`.
-fn calc_inferred_deltas(
-	var: &mut TupleVariation,
-	coords: &[(f64, f64)],
-	ends: &[usize],
-) -> Result<()> {
-	if coord_width(var) == 1 {
-		return Err(Error::ttlib(
-			"TypeError: Only 'gvar' TupleVariation can have inferred deltas",
-		));
-	}
-	if var.coordinates.iter().all(Option::is_some) {
-		return Ok(());
-	}
-	if var.coordinates.len() != coords.len() {
-		return Err(Error::value(format!(
-			"Expected len(origCoords) == {}; found {}",
-			var.coordinates.len(),
-			coords.len()
-		)));
-	}
-	let deltas: Vec<Option<(f64, f64)>> = var
-		.coordinates
-		.iter()
-		.map(|d| match d {
-			Some(Delta::Point(x, y)) => Some((x.value(), y.value())),
-			_ => None,
-		})
-		.collect();
-	var.coordinates = iup_delta(&deltas, coords, ends)?
-		.into_iter()
-		.map(|(x, y)| Some(Delta::Point(Number::Float(x), Number::Float(y))))
-		.collect();
-	Ok(())
+	var.round_deltas();
 }
 
 /// The size of a compiled variation, in a store of its own (`compile`).
@@ -106,7 +36,16 @@ pub(crate) fn optimize(
 	coords: &[(f64, f64)],
 	ends: &[usize],
 ) -> Result<()> {
-	const TOLERANCE: f64 = 0.5;
+	optimize_with_tolerance(var, coords, ends, 0.5)
+}
+
+/// `optimize(origCoords, endPts, tolerance)`.
+pub(crate) fn optimize_with_tolerance(
+	var: &mut TupleVariation,
+	coords: &[(f64, f64)],
+	ends: &[usize],
+	tolerance: f64,
+) -> Result<()> {
 	let mut deltas = Vec::with_capacity(var.coordinates.len());
 	for delta in &var.coordinates {
 		match delta {
@@ -118,7 +57,7 @@ pub(crate) fn optimize(
 			}
 		}
 	}
-	let keep = iup_delta_optimize(&deltas, coords, ends, TOLERANCE)?;
+	let keep = iup_delta_optimize(&deltas, coords, ends, tolerance)?;
 	if keep.iter().all(|k| *k) {
 		return Ok(());
 	}
@@ -135,41 +74,6 @@ pub(crate) fn optimize(
 	let axis_tags: Vec<String> = var.axes.keys().cloned().collect();
 	if compiled_size(&optimized, &axis_tags)? < compiled_size(var, &axis_tags)? {
 		var.coordinates = optimized.coordinates;
-	}
-	Ok(())
-}
-
-/// `TupleVariation.__iadd__`.
-fn add_deltas(a: &mut TupleVariation, b: &TupleVariation) -> Result<()> {
-	if a.coordinates.len() != b.coordinates.len() {
-		return Err(Error::value(
-			"cannot sum TupleVariation deltas with different lengths",
-		));
-	}
-	let add = |x: Number, y: Number| match (x, y) {
-		(Number::Int(x), Number::Int(y)) => Number::Int(x + y),
-		_ => Number::Float(x.value() + y.value()),
-	};
-	if coord_width(a) == 2 {
-		for (d1, d2) in a.coordinates.iter_mut().zip(&b.coordinates) {
-			match (*d1, d2) {
-				(Some(Delta::Point(x1, y1)), Some(Delta::Point(x2, y2))) => {
-					*d1 = Some(Delta::Point(add(x1, *x2), add(y1, *y2)));
-				}
-				_ => return Err(Error::value("cannot sum gvar deltas with inferred points")),
-			}
-		}
-	} else {
-		// `None` in `cvar` means no adjustment.
-		for (d1, d2) in a.coordinates.iter_mut().zip(&b.coordinates) {
-			match (*d1, d2) {
-				(Some(Delta::Value(x)), Some(Delta::Value(y))) => {
-					*d1 = Some(Delta::Value(add(x, *y)));
-				}
-				(None, Some(d)) => *d1 = Some(*d),
-				_ => {}
-			}
-		}
 	}
 	Ok(())
 }
@@ -250,11 +154,11 @@ pub(crate) fn instantiate_tuple_variation_store(
 	for mut var in current {
 		// Inferred deltas are only computed for gvar.
 		if let Some((coords, ends)) = outline {
-			calc_inferred_deltas(&mut var, coords, ends)?;
+			var.calc_inferred_deltas(coords, ends)?;
 		}
 		let key = region_key(&var);
 		match index.get(&key) {
-			Some(&i) => add_deltas(&mut merged[i], &var)?,
+			Some(&i) => merged[i].add_deltas(&var)?,
 			None => {
 				index.insert(key, merged.len());
 				merged.push(var);

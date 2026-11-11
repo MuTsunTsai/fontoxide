@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 use fontoxide_misc::array_tools::{Point, calc_bounds};
 use fontoxide_misc::round_tools::ot_round;
-use fontoxide_pens::{Pen, TransformPen};
+use fontoxide_pens::{Pen, PointPen, SegmentToPointPen, TransformPen, TransformPointPen};
 
 use crate::cff::charstring::Blender;
 use crate::cff::font::{CffFontSet, DeferComponents, run_char_string};
@@ -20,7 +20,7 @@ use crate::ot::varc::{NO_VARIATION_INDEX, VarComponent, flags};
 use crate::table::TableType;
 use crate::tables::glyf::{ComponentPlacement, Glyph, Number};
 use crate::tables::metrics::{Hmtx, Metric, Vmtx};
-use crate::tables::otl::Varc;
+use crate::tables::otl::{Hvar, Varc, Vvar};
 use crate::tables::tuple_variation::Delta;
 use crate::tables::{Cff, Cff2, Fvar, Glyf, Gvar};
 use crate::var::{Location, MultiVarStoreInstancer, VarStoreInstancer, iup_delta, support_scalar};
@@ -53,12 +53,45 @@ struct State {
 	glyf_depth: usize,
 }
 
+/// The pen a glyph is drawn onto: `draw` or `drawPoints`.
+enum DrawPen<'p> {
+	Segment(&'p mut dyn Pen),
+	Point(&'p mut dyn PointPen),
+}
+
+/// Whether a pen error is an `AttributeError`, which fontTools catches around
+/// `addVarComponent` to decompose the component instead.
+fn is_attribute_error(e: &fontoxide_pens::Error) -> bool {
+	matches!(e, fontoxide_pens::Error::Usage(m) if m.starts_with("AttributeError"))
+}
+
+/// The metrics of a glyph in a [`GlyphSet`] (the `width`, `lsb`, `height` and
+/// `tsb` attributes of `_TTGlyph`).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct GlyphMetrics {
+	/// The advance width: from `hmtx`, plus the `HVAR` delta at the location.
+	/// Without `HVAR`, a `glyf` glyph at a location gets the width of its
+	/// `gvar` phantom points.
+	pub width: f64,
+	/// The left side bearing.
+	pub lsb: f64,
+	/// The advance height, if the font has `vmtx`: from `vmtx`, plus the `VVAR`
+	/// delta at the location.
+	pub height: Option<f64>,
+	/// The top side bearing, if the font has `vmtx`.
+	pub tsb: Option<f64>,
+}
+
 /// The glyphs of a font, drawable by name (`_TTGlyphSet` and its subclasses).
 pub struct GlyphSet<'f> {
 	order: Arc<GlyphOrder>,
 	axes: Vec<String>,
 	h_metrics: &'f BTreeMap<u32, Metric>,
 	v_metrics: Option<&'f BTreeMap<u32, Metric>>,
+	/// `HVAR` and `VVAR`, which only apply at a location (`hvarTable`,
+	/// `vvarTable`).
+	hvar: Option<&'f ot::HVAR>,
+	vvar: Option<&'f ot::VVAR>,
 	outlines: Outlines<'f>,
 	varc: Option<&'f ot::VARC>,
 	/// The coverage index of each glyph of `VARC`.
@@ -87,6 +120,37 @@ impl<'f> GlyphSet<'f> {
 	/// (`TTFont.getGlyphSet()`): the CFF outlines if there are any, else those
 	/// of `glyf`, and the variable composites of `VARC`.
 	pub fn new(font: &'f mut Font) -> Result<Self> {
+		Self::build(font, Location::new())
+	}
+
+	/// The glyph set of a font at a location in user coordinates
+	/// (`TTFont.getGlyphSet(location=location)`), normalized with
+	/// [`Font::normalize_location`]. The location is ignored if it is empty or the
+	/// font has no `fvar`.
+	pub fn with_user_location(
+		font: &'f mut Font,
+		location: &BTreeMap<String, f64>,
+	) -> Result<Self> {
+		if location.is_empty() || !font.contains(FVAR) {
+			return Self::new(font);
+		}
+		let location = font.normalize_location(location)?;
+		Self::build(font, location)
+	}
+
+	/// The glyph set of a font at a normalized location
+	/// (`TTFont.getGlyphSet(location=location, normalized=True)`). The location
+	/// is ignored if the font has no `fvar`.
+	pub fn with_location(font: &'f mut Font, location: Location) -> Result<Self> {
+		let location = if font.contains(FVAR) {
+			location
+		} else {
+			Location::new()
+		};
+		Self::build(font, location)
+	}
+
+	fn build(font: &'f mut Font, location: Location) -> Result<Self> {
 		let order = font.glyph_order()?;
 		let cff = if font.contains(Cff2::TAG) {
 			Some(font.require::<Cff2>()?.cff.clone())
@@ -109,6 +173,10 @@ impl<'f> GlyphSet<'f> {
 			VARC,
 		] {
 			font.load(tag)?;
+		}
+		if !location.is_empty() {
+			font.load(Hvar::TAG)?;
+			font.load(Vvar::TAG)?;
 		}
 		let gvar_axis_count = match font.get::<Gvar>()? {
 			Some(gvar) => gvar.axis_count,
@@ -165,27 +233,171 @@ impl<'f> GlyphSet<'f> {
 				varc_index.entry(gid).or_insert(i);
 			}
 		}
+		let (hvar, vvar) = if location.is_empty() {
+			(None, None)
+		} else {
+			(
+				font.loaded::<Hvar>().map(|t| &t.table),
+				font.loaded::<Vvar>().map(|t| &t.table),
+			)
+		};
 		Ok(GlyphSet {
 			order,
 			axes,
 			h_metrics,
 			v_metrics,
+			hvar,
+			vvar,
 			outlines,
 			varc,
 			varc_index,
-			state: RefCell::new(State::default()),
-			original_location: Location::new(),
+			state: RefCell::new(State {
+				location: location.clone(),
+				glyf_depth: 0,
+			}),
+			original_location: location,
 			nesting: Cell::new(0),
 		})
 	}
 
-	/// The glyph set of a font at a normalized location
-	/// (`TTFont.getGlyphSet(location=location, normalized=True)`).
-	pub fn with_location(font: &'f mut Font, location: Location) -> Result<Self> {
-		let mut glyph_set = Self::new(font)?;
-		glyph_set.state.borrow_mut().location = location.clone();
-		glyph_set.original_location = location;
-		Ok(glyph_set)
+	/// The names of the glyphs, in glyph order (`keys()`).
+	pub fn keys(&self) -> &[String] {
+		self.order.names()
+	}
+
+	/// The number of glyphs (`len(glyphSet)`).
+	pub fn len(&self) -> usize {
+		self.order.len()
+	}
+
+	/// Whether the glyph set is empty.
+	pub fn is_empty(&self) -> bool {
+		self.order.is_empty()
+	}
+
+	/// Whether there is a glyph of that name (`glyphName in glyphSet`).
+	pub fn contains(&self, glyph_name: &str) -> bool {
+		self.order.reverse_map().contains_key(glyph_name)
+	}
+
+	/// The current normalized location (`location`): that of the glyph set,
+	/// unless changed by [`GlyphSet::push_location`].
+	pub fn location(&self) -> Location {
+		self.state.borrow().location.clone()
+	}
+
+	/// The variation axes (`axes`): the tags of `fvar`, or, without it, the
+	/// indices of the axes of `gvar` or `CFF2`, as strings.
+	pub fn axes(&self) -> &[String] {
+		&self.axes
+	}
+
+	/// Runs `f` at the current location updated with `location`, or with the
+	/// location of the glyph set updated with it if `reset` is set
+	/// (`pushLocation`), and restores the current location afterwards.
+	pub fn push_location<R>(&self, location: &Location, reset: bool, f: impl FnOnce() -> R) -> R {
+		let saved = {
+			let mut state = self.state.borrow_mut();
+			let mut new = if reset {
+				self.original_location.clone()
+			} else {
+				state.location.clone()
+			};
+			new.extend(location.iter().map(|(k, v)| (k.clone(), *v)));
+			std::mem::replace(&mut state.location, new)
+		};
+		let result = f();
+		self.state.borrow_mut().location = saved;
+		result
+	}
+
+	/// The metrics of a glyph (`glyphSet[glyphName].width` and so on), at the
+	/// current location.
+	///
+	/// When the width of a `glyf` glyph comes from its phantom points (at a
+	/// location, without `HVAR`), the other metrics are also those of the
+	/// glyph instance, as fontTools has them after reading `width`. Otherwise
+	/// the side bearings are those of `hmtx` and `vmtx`, as fontTools has them
+	/// before the glyph is drawn.
+	pub fn metrics(&self, glyph_name: &str) -> Result<GlyphMetrics> {
+		let gid = self.lookup(glyph_name)?;
+		let (width, lsb) = self.metric(gid)?;
+		let mut metrics = GlyphMetrics {
+			width: f64::from(width),
+			lsb: f64::from(lsb),
+			height: None,
+			tsb: None,
+		};
+		if let Some(v) = self.v_metrics {
+			let (height, tsb) = v.get(&gid).copied().ok_or_else(|| self.key_error(gid))?;
+			metrics.height = Some(f64::from(height));
+			metrics.tsb = Some(f64::from(tsb));
+		}
+		let location_set = !self.state.borrow().location.is_empty();
+		if location_set
+			&& let Some(hvar) = self.hvar
+			&& let Some(var_idx) = self.advance_var_index(hvar.adv_width_map.as_deref(), gid)?
+		{
+			let instancer = VarStoreInstancer::new(
+				hvar.var_store.as_deref(),
+				&self.axes,
+				self.original_location.clone(),
+			);
+			metrics.width += instancer.get(var_idx)?;
+		}
+		if let (Some(height), Some(vvar)) = (&mut metrics.height, self.vvar)
+			&& let Some(var_idx) = self.advance_var_index(vvar.adv_height_map.as_deref(), gid)?
+		{
+			let instancer = VarStoreInstancer::new(
+				vvar.var_store.as_deref(),
+				&self.axes,
+				self.original_location.clone(),
+			);
+			*height += instancer.get(var_idx)?;
+		}
+		// `_TTGlyphGlyf.width`, without `HVAR`: from the phantom points, if the
+		// glyph varies.
+		if location_set
+			&& self.hvar.is_none()
+			&& !self.varc_index.contains_key(&gid)
+			&& let Outlines::Glyf {
+				glyf,
+				gvar: Some(gvar),
+			} = &self.outlines
+			&& gvar.get(gid).is_some()
+		{
+			let instance = self.glyf_instance(glyf, gvar, gid)?;
+			metrics.width = instance.width as f64;
+			metrics.lsb = instance.lsb as f64;
+			metrics.tsb = Some(instance.tsb as f64);
+			if self.vvar.is_none() {
+				metrics.height = Some(instance.height as f64);
+			}
+		}
+		Ok(metrics)
+	}
+
+	/// The variation index of the advance of a glyph in `HVAR` or `VVAR`: from
+	/// the map if there is one, else the glyph ID, which only addresses the
+	/// first item variation data (an implicit mapping).
+	fn advance_var_index(
+		&self,
+		map: Option<&crate::ot::varmap::VarIdxMap>,
+		gid: u32,
+	) -> Result<Option<u64>> {
+		match map {
+			Some(map) => map
+				.mapping
+				.get(&gid)
+				.copied()
+				.map(Some)
+				.ok_or_else(|| self.key_error(gid)),
+			None => Ok((gid <= 0xFFFF).then_some(u64::from(gid))),
+		}
+	}
+
+	fn key_error(&self, gid: u32) -> Error {
+		Error::ttlib(format!("KeyError: {:?}", self.order.name(gid)))
 	}
 
 	/// The `glyf` table that this draws from, if it does.
@@ -217,7 +429,13 @@ impl<'f> GlyphSet<'f> {
 	/// Draws a glyph onto `pen` (`glyphSet[name].draw(pen)`).
 	pub fn draw(&self, glyph_name: &str, pen: &mut dyn Pen) -> Result<()> {
 		let gid = self.lookup(glyph_name)?;
-		self.draw_gid(gid, pen, false)
+		self.draw_gid(gid, DrawPen::Segment(pen), false)
+	}
+
+	/// Draws a glyph onto a point pen (`glyphSet[name].drawPoints(pen)`).
+	pub fn draw_points(&self, glyph_name: &str, pen: &mut dyn PointPen) -> Result<()> {
+		let gid = self.lookup(glyph_name)?;
+		self.draw_gid(gid, DrawPen::Point(pen), false)
 	}
 
 	/// The glyph ID of a glyph that can be drawn; a `KeyError` if it has no
@@ -243,7 +461,7 @@ impl<'f> GlyphSet<'f> {
 
 	/// Draws a glyph; with `base`, its outline even if it is a variable
 	/// composite.
-	fn draw_gid(&self, gid: u32, pen: &mut dyn Pen, base: bool) -> Result<()> {
+	fn draw_gid(&self, gid: u32, pen: DrawPen<'_>, base: bool) -> Result<()> {
 		let nesting = self.nesting.get();
 		if nesting >= MAX_NESTING {
 			// LENIENT(L18): fontTools runs into Python's recursion limit.
@@ -254,10 +472,24 @@ impl<'f> GlyphSet<'f> {
 		self.nesting.set(nesting + 1);
 		let result = match (base, self.varc_index.get(&gid)) {
 			(false, Some(&index)) => self.draw_varc(gid, index, pen),
-			_ => match &self.outlines {
-				Outlines::Glyf { glyf, gvar } => self.draw_glyf(glyf, *gvar, gid, pen),
-				Outlines::Cff { cff, var_store } => {
+			_ => match (&self.outlines, pen) {
+				(Outlines::Glyf { glyf, gvar }, DrawPen::Segment(pen)) => {
+					self.with_glyf_glyph(glyf, *gvar, gid, &mut |glyph, order, offset| {
+						glyph.draw(order, pen, offset)
+					})
+				}
+				(Outlines::Glyf { glyf, gvar }, DrawPen::Point(pen)) => {
+					self.with_glyf_glyph(glyf, *gvar, gid, &mut |glyph, order, offset| {
+						glyph.draw_points(order, pen, offset)
+					})
+				}
+				(Outlines::Cff { cff, var_store }, DrawPen::Segment(pen)) => {
 					self.draw_cff(cff, var_store.as_deref(), gid, pen)
+				}
+				// `_TTGlyph.drawPoints`.
+				(Outlines::Cff { cff, var_store }, DrawPen::Point(pen)) => {
+					let mut seg = SegmentToPointPen::new(pen, true);
+					self.draw_cff(cff, var_store.as_deref(), gid, &mut seg)
 				}
 			},
 		};
@@ -266,18 +498,6 @@ impl<'f> GlyphSet<'f> {
 	}
 
 	// --- glyf (`_TTGlyphGlyf`)
-
-	fn draw_glyf(
-		&self,
-		glyf: &Glyf,
-		gvar: Option<&Gvar>,
-		gid: u32,
-		pen: &mut dyn Pen,
-	) -> Result<()> {
-		self.with_glyf_glyph(glyf, gvar, gid, &mut |glyph, order, offset| {
-			glyph.draw(order, pen, offset)
-		})
-	}
 
 	/// The glyph to draw and its offset (`_getGlyphAndOffset`), passed to
 	/// `draw`, with the nesting depth kept as `pushDepth` does.
@@ -293,9 +513,9 @@ impl<'f> GlyphSet<'f> {
 		let instance;
 		let glyph = match gvar {
 			Some(gvar) if location_set => {
-				let (g, new_lsb) = self.glyf_instance(glyf, gvar, gid)?;
-				instance = g;
-				lsb = new_lsb;
+				let i = self.glyf_instance(glyf, gvar, gid)?;
+				lsb = i.lsb;
+				instance = i.glyph;
 				&instance
 			}
 			_ => glyf
@@ -372,9 +592,9 @@ impl<'f> GlyphSet<'f> {
 		Ok((coords, ends))
 	}
 
-	/// The glyph at the current location, and its left side bearing
+	/// The glyph at the current location, and its metrics
 	/// (`_getGlyphInstance`).
-	fn glyf_instance(&self, glyf: &Glyf, gvar: &Gvar, gid: u32) -> Result<(Glyph, i64)> {
+	fn glyf_instance(&self, glyf: &Glyf, gvar: &Gvar, gid: u32) -> Result<Instance> {
 		let name = || self.order.name(gid);
 		let variations = gvar
 			.get(gid)
@@ -493,7 +713,7 @@ impl<'f> GlyphSet<'f> {
 
 	// --- VARC (`_TTGlyphVARC`)
 
-	fn draw_varc(&self, gid: u32, index: usize, pen: &mut dyn Pen) -> Result<()> {
+	fn draw_varc(&self, gid: u32, index: usize, mut pen: DrawPen<'_>) -> Result<()> {
 		let varc = self.varc.ok_or_else(|| Error::ttlib("no VARC"))?;
 		let none = |what: &str| {
 			Error::ttlib(format!(
@@ -528,7 +748,9 @@ impl<'f> GlyphSet<'f> {
 					continue;
 				}
 			}
-			let mut comp_location = Location::new();
+			// The location of the component, in the order of its axes
+			// (`rawLocation`, a `dict`).
+			let mut raw_location: fontoxide_pens::Location = Vec::new();
 			if let Some(ai) = comp.axis_indices_index {
 				let indices = varc
 					.axis_indices_list
@@ -559,7 +781,10 @@ impl<'f> GlyphSet<'f> {
 						.ok()
 						.and_then(|i| self.axes.get(i))
 						.ok_or_else(index_error)?;
-					comp_location.insert(tag.clone(), v);
+					match raw_location.iter_mut().find(|(t, _)| t == tag) {
+						Some(entry) => entry.1 = v,
+						None => raw_location.push((tag.clone(), v)),
+					}
 				}
 			}
 			let transformed;
@@ -573,31 +798,47 @@ impl<'f> GlyphSet<'f> {
 				comp
 			};
 			let reset = comp.flags & flags::RESET_UNSPECIFIED_AXES != 0;
-			// `pushLocation`.
-			let saved = {
-				let mut state = self.state.borrow_mut();
-				let mut new = if reset {
-					self.original_location.clone()
-				} else {
-					state.location.clone()
-				};
-				new.extend(comp_location);
-				std::mem::replace(&mut state.location, new)
-			};
-			// Pens cannot take variable components (`addVarComponent`), so they
-			// are always decomposed.
-			let t = comp.transform.to_transform();
-			let mut tpen = TransformPen::new(pen, t);
-			let result = self.draw_component(comp.glyph, gid, &mut tpen);
-			self.state.borrow_mut().location = saved;
-			result?;
+			let comp_location: Location = raw_location.iter().cloned().collect();
+			self.push_location(&comp_location, reset, || {
+				// The component is passed on to pens that take variable
+				// components, and decomposed for the others.
+				if comp.glyph != gid {
+					let name = self.order.name(comp.glyph);
+					let added = match &mut pen {
+						DrawPen::Segment(pen) => {
+							pen.add_var_component(&name, comp.transform, &raw_location, reset)
+						}
+						// The flag cannot be passed: the point pens of
+						// `fontoxide_pens` take no `resetUnspecifiedAxes` argument.
+						DrawPen::Point(pen) => {
+							pen.add_var_component(&name, comp.transform, &raw_location, None)
+						}
+					};
+					match added {
+						Ok(()) => return Ok(()),
+						Err(e) if is_attribute_error(&e) => {}
+						Err(e) => return Err(e.into()),
+					}
+				}
+				let t = comp.transform.to_transform();
+				match &mut pen {
+					DrawPen::Segment(pen) => {
+						let mut tpen = TransformPen::new(&mut **pen, t);
+						self.draw_component(comp.glyph, gid, DrawPen::Segment(&mut tpen))
+					}
+					DrawPen::Point(pen) => {
+						let mut tpen = TransformPointPen::new(&mut **pen, t);
+						self.draw_component(comp.glyph, gid, DrawPen::Point(&mut tpen))
+					}
+				}
+			})?;
 		}
 		Ok(())
 	}
 
 	/// Draws a component of a variable composite glyph: from the base outlines
 	/// if it is the glyph itself.
-	fn draw_component(&self, comp_gid: u32, gid: u32, pen: &mut dyn Pen) -> Result<()> {
+	fn draw_component(&self, comp_gid: u32, gid: u32, pen: DrawPen<'_>) -> Result<()> {
 		let name = self.order.name(comp_gid);
 		self.lookup(&name)?;
 		self.draw_gid(comp_gid, pen, comp_gid == gid)
@@ -662,50 +903,102 @@ impl fontoxide_pens::GlyphSet for GlyphSet<'_> {
 		let Ok(gid) = self.lookup(glyph_name) else {
 			return Ok(false);
 		};
-		self.draw_gid(gid, pen, false)
+		self.draw_gid(gid, DrawPen::Segment(pen), false)
 			.map_err(Error::into_pen_error)?;
 		Ok(true)
 	}
 
 	/// `drawPoints`: `glyf` glyphs draw their points as they are
-	/// (`_TTGlyphGlyf`); the others are drawn through a `SegmentToPointPen`
+	/// (`_TTGlyphGlyf`), variable composites their components
+	/// (`_TTGlyphVARC`); CFF glyphs are drawn through a `SegmentToPointPen`
 	/// (`_TTGlyph`).
 	fn draw_glyph_points(
 		&self,
 		glyph_name: &str,
-		pen: &mut dyn fontoxide_pens::PointPen,
+		pen: &mut dyn PointPen,
 	) -> fontoxide_pens::Result<bool> {
 		let Ok(gid) = self.lookup(glyph_name) else {
 			return Ok(false);
 		};
-		match &self.outlines {
-			Outlines::Glyf { glyf, gvar } if !self.varc_index.contains_key(&gid) => {
-				self.with_glyf_glyph(glyf, *gvar, gid, &mut |glyph, order, offset| {
-					glyph.draw_points(order, pen, offset)
-				})
-				.map_err(Error::into_pen_error)?;
-			}
-			_ => {
-				let mut seg = fontoxide_pens::SegmentToPointPen::new(pen, true);
-				self.draw_gid(gid, &mut seg, false)
-					.map_err(Error::into_pen_error)?;
-			}
-		}
+		self.draw_gid(gid, DrawPen::Point(pen), false)
+			.map_err(Error::into_pen_error)?;
 		Ok(true)
+	}
+
+	fn contains(&self, glyph_name: &str) -> bool {
+		self.lookup(glyph_name).is_ok()
 	}
 }
 
+/// A glyph set that interpolates between two others (`LerpGlyphSet`): 0 is the
+/// first, 1 the second; other factors extrapolate. Glyphs are drawn decomposed.
+pub struct LerpGlyphSet<'a> {
+	/// The first glyph set (`glyphset1`).
+	pub glyph_set1: &'a dyn fontoxide_pens::GlyphSet,
+	/// The second glyph set (`glyphset2`).
+	pub glyph_set2: &'a dyn fontoxide_pens::GlyphSet,
+	/// The interpolation factor (`factor`; 0.5 in fontTools).
+	pub factor: f64,
+}
+
+impl std::fmt::Debug for LerpGlyphSet<'_> {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("LerpGlyphSet")
+			.field("factor", &self.factor)
+			.finish_non_exhaustive()
+	}
+}
+
+impl fontoxide_pens::GlyphSet for LerpGlyphSet<'_> {
+	/// `LerpGlyph.draw`.
+	fn draw_glyph(&self, glyph_name: &str, pen: &mut dyn Pen) -> fontoxide_pens::Result<bool> {
+		if !self.contains(glyph_name) {
+			return Ok(false);
+		}
+		let mut recording1 =
+			fontoxide_pens::recording_pen::DecomposingRecordingPen::new(self.glyph_set1);
+		self.glyph_set1.draw_glyph(glyph_name, &mut recording1)?;
+		let mut recording2 =
+			fontoxide_pens::recording_pen::DecomposingRecordingPen::new(self.glyph_set2);
+		self.glyph_set2.draw_glyph(glyph_name, &mut recording2)?;
+		let lerped = fontoxide_pens::recording_pen::lerp_recordings(
+			recording1.value(),
+			recording2.value(),
+			self.factor,
+		)?;
+		fontoxide_pens::recording_pen::replay_recording(&lerped, pen)?;
+		Ok(true)
+	}
+
+	fn contains(&self, glyph_name: &str) -> bool {
+		self.glyph_set1.contains(glyph_name) && self.glyph_set2.contains(glyph_name)
+	}
+}
+
+/// A `glyf` glyph at a location and its metrics, from the phantom points.
+struct Instance {
+	glyph: Glyph,
+	width: i64,
+	lsb: i64,
+	height: i64,
+	tsb: i64,
+}
+
 /// A copy of `glyph` with new coordinates, including the phantom points, and its
-/// left side bearing (`_setCoordinates`).
+/// metrics (`_setCoordinates`).
 ///
-/// Only the bounds of simple glyphs are recalculated: those of composite glyphs
-/// only matter for their side bearing, which drawing does not use.
-fn set_coordinates(glyph: &Glyph, mut coords: Vec<(f64, f64)>) -> Result<(Glyph, i64)> {
+/// Only the bounds of simple and empty glyphs are recalculated: those of
+/// composite glyphs only matter for their side bearings, which drawing does
+/// not use.
+fn set_coordinates(glyph: &Glyph, mut coords: Vec<(f64, f64)>) -> Result<Instance> {
 	let n = coords.len();
 	if n < 4 {
 		return Err(Error::Assertion("len(coord) >= 4".into()));
 	}
 	let left = coords[n - 4].0;
+	let right = coords[n - 3].0;
+	let top = coords[n - 2].1;
+	let bottom = coords[n - 1].1;
 	coords.truncate(n - 4);
 	let mut glyph = glyph.clone();
 	if glyph.is_composite() {
@@ -726,7 +1019,11 @@ fn set_coordinates(glyph: &Glyph, mut coords: Vec<(f64, f64)>) -> Result<(Glyph,
 		if !coords.is_empty() {
 			return Err(Error::Assertion("len(coord) == 0".into()));
 		}
+		// The bounds of no points.
 		glyph.x_min = 0;
+		glyph.y_min = 0;
+		glyph.x_max = 0;
+		glyph.y_max = 0;
 	} else {
 		if coords.len() != glyph.coordinates.len() {
 			return Err(Error::Assertion(
@@ -740,6 +1037,11 @@ fn set_coordinates(glyph: &Glyph, mut coords: Vec<(f64, f64)>) -> Result<(Glyph,
 		glyph.y_max = ot_round(b[3]);
 		glyph.coordinates = coords;
 	}
-	let lsb = ot_round(glyph.x_min as f64 - left);
-	Ok((glyph, lsb))
+	Ok(Instance {
+		width: ot_round(right - left),
+		lsb: ot_round(glyph.x_min as f64 - left),
+		height: ot_round(top - bottom),
+		tsb: ot_round(top - glyph.y_max as f64),
+		glyph,
+	})
 }

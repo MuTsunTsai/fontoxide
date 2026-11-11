@@ -1,0 +1,425 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont sfntVersion="\x00\x01\x00\x00" ttLibVersion="4.68">
+
+  <GDEF>
+    <Version value="0x00010000"/>
+    <GlyphClassDef>
+      <ClassDef glyph="a" class="1"/>
+      <ClassDef glyph="a_b" class="2"/>
+      <ClassDef glyph="acute" class="3"/>
+      <ClassDef glyph="b" class="1"/>
+      <ClassDef glyph="grave" class="3"/>
+    </GlyphClassDef>
+    <LigCaretList>
+      <Coverage>
+        <Glyph value="a_b"/>
+        <Glyph value="d"/>
+      </Coverage>
+      <!-- LigGlyphCount=2 -->
+      <LigGlyph index="0">
+        <!-- CaretCount=1 -->
+        <CaretValue index="0" Format="1">
+          <Coordinate value="100"/>
+        </CaretValue>
+      </LigGlyph>
+      <LigGlyph index="1">
+        <!-- CaretCount=1 -->
+        <CaretValue index="0" Format="1">
+          <Coordinate value="200"/>
+        </CaretValue>
+      </LigGlyph>
+    </LigCaretList>
+  </GDEF>
+
+  <GSUB>
+    <Version value="0x00010000"/>
+    <ScriptList>
+      <!-- ScriptCount=1 -->
+      <ScriptRecord index="0">
+        <ScriptTag value="DFLT"/>
+        <Script>
+          <DefaultLangSys>
+            <ReqFeatureIndex value="65535"/>
+            <!-- FeatureCount=2 -->
+            <FeatureIndex index="0" value="0"/>
+            <FeatureIndex index="1" value="1"/>
+          </DefaultLangSys>
+          <!-- LangSysCount=0 -->
+        </Script>
+      </ScriptRecord>
+    </ScriptList>
+    <FeatureList>
+      <!-- FeatureCount=2 -->
+      <FeatureRecord index="0">
+        <FeatureTag value="liga"/>
+        <Feature>
+          <!-- LookupCount=1 -->
+          <LookupListIndex index="0" value="0"/>
+        </Feature>
+      </FeatureRecord>
+      <FeatureRecord index="1">
+        <FeatureTag value="rclt"/>
+        <Feature>
+          <!-- LookupCount=1 -->
+          <LookupListIndex index="0" value="1"/>
+        </Feature>
+      </FeatureRecord>
+    </FeatureList>
+    <LookupList>
+      <!-- LookupCount=2 -->
+      <Lookup index="0">
+        <LookupType value="4"/>
+        <LookupFlag value="0"/>
+        <!-- SubTableCount=1 -->
+        <LigatureSubst index="0">
+          <LigatureSet glyph="a">
+            <Ligature components="b" glyph="a_b"/>
+          </LigatureSet>
+        </LigatureSubst>
+      </Lookup>
+      <Lookup index="1">
+        <LookupType value="8"/>
+        <LookupFlag value="0"/>
+        <!-- SubTableCount=1 -->
+        <ReverseChainSingleSubst index="0" Format="1">
+          <Coverage>
+            <Glyph value="b"/>
+            <Glyph value="a"/>
+          </Coverage>
+          <!-- BacktrackGlyphCount=1 -->
+          <BacktrackCoverage index="0">
+            <Glyph value="c"/>
+          </BacktrackCoverage>
+          <!-- LookAheadGlyphCount=1 -->
+          <LookAheadCoverage index="0">
+            <Glyph value="d"/>
+          </LookAheadCoverage>
+          <!-- GlyphCount=2 -->
+          <Substitute index="0" value="a"/>
+          <Substitute index="1" value="b"/>
+        </ReverseChainSingleSubst>
+      </Lookup>
+    </LookupList>
+  </GSUB>
+
+  <GPOS>
+    <Version value="0x00010000"/>
+    <ScriptList>
+      <!-- ScriptCount=1 -->
+      <ScriptRecord index="0">
+        <ScriptTag value="DFLT"/>
+        <Script>
+          <DefaultLangSys>
+            <ReqFeatureIndex value="65535"/>
+            <!-- FeatureCount=4 -->
+            <FeatureIndex index="0" value="0"/>
+            <FeatureIndex index="1" value="1"/>
+            <FeatureIndex index="2" value="2"/>
+            <FeatureIndex index="3" value="3"/>
+          </DefaultLangSys>
+          <!-- LangSysCount=0 -->
+        </Script>
+      </ScriptRecord>
+    </ScriptList>
+    <FeatureList>
+      <!-- FeatureCount=4 -->
+      <FeatureRecord index="0">
+        <FeatureTag value="curs"/>
+        <Feature>
+          <!-- LookupCount=1 -->
+          <LookupListIndex index="0" value="2"/>
+        </Feature>
+      </FeatureRecord>
+      <FeatureRecord index="1">
+        <FeatureTag value="kern"/>
+        <Feature>
+          <!-- LookupCount=2 -->
+          <LookupListIndex index="0" value="0"/>
+          <LookupListIndex index="1" value="1"/>
+        </Feature>
+      </FeatureRecord>
+      <FeatureRecord index="2">
+        <FeatureTag value="mark"/>
+        <Feature>
+          <!-- LookupCount=2 -->
+          <LookupListIndex index="0" value="3"/>
+          <LookupListIndex index="1" value="4"/>
+        </Feature>
+      </FeatureRecord>
+      <FeatureRecord index="3">
+        <FeatureTag value="mkmk"/>
+        <Feature>
+          <!-- LookupCount=1 -->
+          <LookupListIndex index="0" value="5"/>
+        </Feature>
+      </FeatureRecord>
+    </FeatureList>
+    <LookupList>
+      <!-- LookupCount=6 -->
+      <Lookup index="0">
+        <LookupType value="1"/>
+        <LookupFlag value="0"/>
+        <!-- SubTableCount=1 -->
+        <SinglePos index="0" Format="2">
+          <Coverage>
+            <Glyph value="b"/>
+            <Glyph value="a"/>
+          </Coverage>
+          <ValueFormat value="4"/>
+          <!-- ValueCount=2 -->
+          <Value index="0" XAdvance="-60"/>
+          <Value index="1" XAdvance="-50"/>
+        </SinglePos>
+      </Lookup>
+      <Lookup index="1">
+        <LookupType value="2"/>
+        <LookupFlag value="0"/>
+        <!-- SubTableCount=2 -->
+        <PairPos index="0" Format="2">
+          <Coverage>
+            <Glyph value="b"/>
+            <Glyph value="a"/>
+          </Coverage>
+          <ValueFormat1 value="4"/>
+          <ValueFormat2 value="0"/>
+          <ClassDef1>
+            <ClassDef glyph="b" class="1"/>
+          </ClassDef1>
+          <ClassDef2>
+            <ClassDef glyph="a" class="1"/>
+            <ClassDef glyph="b" class="2"/>
+            <ClassDef glyph="c" class="2"/>
+            <ClassDef glyph="d" class="1"/>
+          </ClassDef2>
+          <!-- Class1Count=2 -->
+          <!-- Class2Count=3 -->
+          <Class1Record index="0">
+            <Class2Record index="0">
+              <Value1 XAdvance="0"/>
+            </Class2Record>
+            <Class2Record index="1">
+              <Value1 XAdvance="0"/>
+            </Class2Record>
+            <Class2Record index="2">
+              <Value1 XAdvance="-30"/>
+            </Class2Record>
+          </Class1Record>
+          <Class1Record index="1">
+            <Class2Record index="0">
+              <Value1 XAdvance="0"/>
+            </Class2Record>
+            <Class2Record index="1">
+              <Value1 XAdvance="-40"/>
+            </Class2Record>
+            <Class2Record index="2">
+              <Value1 XAdvance="0"/>
+            </Class2Record>
+          </Class1Record>
+        </PairPos>
+        <PairPos index="1" Format="2">
+          <Coverage>
+            <Glyph value="c"/>
+            <Glyph value="a"/>
+          </Coverage>
+          <ValueFormat1 value="4"/>
+          <ValueFormat2 value="0"/>
+          <ClassDef1>
+          </ClassDef1>
+          <ClassDef2>
+            <ClassDef glyph="b" class="1"/>
+            <ClassDef glyph="d" class="1"/>
+          </ClassDef2>
+          <!-- Class1Count=1 -->
+          <!-- Class2Count=2 -->
+          <Class1Record index="0">
+            <Class2Record index="0">
+              <Value1 XAdvance="0"/>
+            </Class2Record>
+            <Class2Record index="1">
+              <Value1 XAdvance="-15"/>
+            </Class2Record>
+          </Class1Record>
+        </PairPos>
+      </Lookup>
+      <Lookup index="2">
+        <LookupType value="3"/>
+        <LookupFlag value="0"/>
+        <!-- SubTableCount=1 -->
+        <CursivePos index="0" Format="1">
+          <Coverage>
+            <Glyph value="b"/>
+            <Glyph value="a"/>
+          </Coverage>
+          <!-- EntryExitCount=2 -->
+          <EntryExitRecord index="0">
+            <EntryAnchor Format="1">
+              <XCoordinate value="0"/>
+              <YCoordinate value="10"/>
+            </EntryAnchor>
+            <ExitAnchor Format="1">
+              <XCoordinate value="400"/>
+              <YCoordinate value="10"/>
+            </ExitAnchor>
+          </EntryExitRecord>
+          <EntryExitRecord index="1">
+            <EntryAnchor Format="1">
+              <XCoordinate value="0"/>
+              <YCoordinate value="0"/>
+            </EntryAnchor>
+            <ExitAnchor Format="1">
+              <XCoordinate value="300"/>
+              <YCoordinate value="0"/>
+            </ExitAnchor>
+          </EntryExitRecord>
+        </CursivePos>
+      </Lookup>
+      <Lookup index="3">
+        <LookupType value="4"/>
+        <LookupFlag value="0"/>
+        <!-- SubTableCount=1 -->
+        <MarkBasePos index="0" Format="1">
+          <MarkCoverage>
+            <Glyph value="grave"/>
+            <Glyph value="acute"/>
+          </MarkCoverage>
+          <BaseCoverage>
+            <Glyph value="b"/>
+            <Glyph value="a"/>
+          </BaseCoverage>
+          <!-- ClassCount=1 -->
+          <MarkArray>
+            <!-- MarkCount=2 -->
+            <MarkRecord index="0">
+              <Class value="0"/>
+              <MarkAnchor Format="1">
+                <XCoordinate value="50"/>
+                <YCoordinate value="0"/>
+              </MarkAnchor>
+            </MarkRecord>
+            <MarkRecord index="1">
+              <Class value="0"/>
+              <MarkAnchor Format="1">
+                <XCoordinate value="0"/>
+                <YCoordinate value="0"/>
+              </MarkAnchor>
+            </MarkRecord>
+          </MarkArray>
+          <BaseArray>
+            <!-- BaseCount=2 -->
+            <BaseRecord index="0">
+              <BaseAnchor index="0" Format="1">
+                <XCoordinate value="200"/>
+                <YCoordinate value="400"/>
+              </BaseAnchor>
+            </BaseRecord>
+            <BaseRecord index="1">
+              <BaseAnchor index="0" Format="1">
+                <XCoordinate value="100"/>
+                <YCoordinate value="300"/>
+              </BaseAnchor>
+            </BaseRecord>
+          </BaseArray>
+        </MarkBasePos>
+      </Lookup>
+      <Lookup index="4">
+        <LookupType value="5"/>
+        <LookupFlag value="0"/>
+        <!-- SubTableCount=1 -->
+        <MarkLigPos index="0" Format="1">
+          <MarkCoverage>
+            <Glyph value="grave"/>
+            <Glyph value="acute"/>
+          </MarkCoverage>
+          <LigatureCoverage>
+            <Glyph value="a_b"/>
+          </LigatureCoverage>
+          <!-- ClassCount=1 -->
+          <MarkArray>
+            <!-- MarkCount=2 -->
+            <MarkRecord index="0">
+              <Class value="0"/>
+              <MarkAnchor Format="1">
+                <XCoordinate value="50"/>
+                <YCoordinate value="0"/>
+              </MarkAnchor>
+            </MarkRecord>
+            <MarkRecord index="1">
+              <Class value="0"/>
+              <MarkAnchor Format="1">
+                <XCoordinate value="0"/>
+                <YCoordinate value="0"/>
+              </MarkAnchor>
+            </MarkRecord>
+          </MarkArray>
+          <LigatureArray>
+            <!-- LigatureCount=1 -->
+            <LigatureAttach index="0">
+              <!-- ComponentCount=2 -->
+              <ComponentRecord index="0">
+                <LigatureAnchor index="0" Format="1">
+                  <XCoordinate value="100"/>
+                  <YCoordinate value="300"/>
+                </LigatureAnchor>
+              </ComponentRecord>
+              <ComponentRecord index="1">
+                <LigatureAnchor index="0" Format="1">
+                  <XCoordinate value="200"/>
+                  <YCoordinate value="300"/>
+                </LigatureAnchor>
+              </ComponentRecord>
+            </LigatureAttach>
+          </LigatureArray>
+        </MarkLigPos>
+      </Lookup>
+      <Lookup index="5">
+        <LookupType value="6"/>
+        <LookupFlag value="0"/>
+        <!-- SubTableCount=1 -->
+        <MarkMarkPos index="0" Format="1">
+          <Mark1Coverage>
+            <Glyph value="grave"/>
+            <Glyph value="acute"/>
+          </Mark1Coverage>
+          <Mark2Coverage>
+            <Glyph value="grave"/>
+            <Glyph value="acute"/>
+          </Mark2Coverage>
+          <!-- ClassCount=1 -->
+          <Mark1Array>
+            <!-- MarkCount=2 -->
+            <MarkRecord index="0">
+              <Class value="0"/>
+              <MarkAnchor Format="1">
+                <XCoordinate value="50"/>
+                <YCoordinate value="0"/>
+              </MarkAnchor>
+            </MarkRecord>
+            <MarkRecord index="1">
+              <Class value="0"/>
+              <MarkAnchor Format="1">
+                <XCoordinate value="0"/>
+                <YCoordinate value="0"/>
+              </MarkAnchor>
+            </MarkRecord>
+          </Mark1Array>
+          <Mark2Array>
+            <!-- Mark2Count=2 -->
+            <Mark2Record index="0">
+              <Mark2Anchor index="0" Format="1">
+                <XCoordinate value="200"/>
+                <YCoordinate value="400"/>
+              </Mark2Anchor>
+            </Mark2Record>
+            <Mark2Record index="1">
+              <Mark2Anchor index="0" Format="1">
+                <XCoordinate value="100"/>
+                <YCoordinate value="300"/>
+              </Mark2Anchor>
+            </Mark2Record>
+          </Mark2Array>
+        </MarkMarkPos>
+      </Lookup>
+    </LookupList>
+  </GPOS>
+
+</ttFont>

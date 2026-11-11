@@ -25,7 +25,7 @@ pub type Metric = (u16, i16);
 macro_rules! metrics_table {
 	(
 		$(#[$meta:meta])*
-		$ty:ident, $tag:literal, $upper:literal, $header:ty, $header_field:ident, $advance:literal, $side_bearing:literal
+		$ty:ident, $tag:literal, $upper:literal, $header:ty, $header_field:ident, $number_name:literal, $advance:literal, $side_bearing:literal
 	) => {
 		$(#[$meta])*
 		#[derive(Debug, Clone, PartialEq, Default)]
@@ -75,7 +75,7 @@ macro_rules! metrics_table {
 					log::warn!(
 						"The {}.{} exceeds the maxp.numGlyphs",
 						Font::locked_tag::<$header>(extended),
-						stringify!($header_field)
+						$number_name
 					);
 					number_of_metrics = num_glyphs;
 				}
@@ -94,8 +94,10 @@ macro_rules! metrics_table {
 					let advance = r.u16()?;
 					let side_bearing = r.i16()?;
 					if advance > 32767 {
+						let order = font.glyph_order()?;
 						log::warn!(
-							"Glyph {gid} has a huge advance {} ({advance}); is it intentional or an (invalid) negative value?",
+							"Glyph {} has a huge advance {} ({advance}); is it intentional or an (invalid) negative value?",
+							fontoxide_misc::py::str_repr(&order.name(gid as u32)),
 							$advance
 						);
 					}
@@ -236,14 +238,14 @@ metrics_table!(
 	/// Horizontal Metrics table (`table__h_m_t_x`).
 	///
 	/// See <https://learn.microsoft.com/en-us/typography/opentype/spec/hmtx>.
-	Hmtx, b"hmtx", b"HMTX", Hhea, number_of_h_metrics, "width", "lsb"
+	Hmtx, b"hmtx", b"HMTX", Hhea, number_of_h_metrics, "numberOfHMetrics", "width", "lsb"
 );
 
 metrics_table!(
 	/// Vertical Metrics table (`table__v_m_t_x`).
 	///
 	/// See <https://learn.microsoft.com/en-us/typography/opentype/spec/vmtx>.
-	Vmtx, b"vmtx", b"VMTX", Vhea, number_of_v_metrics, "height", "tsb"
+	Vmtx, b"vmtx", b"VMTX", Vhea, number_of_v_metrics, "numberOfVMetrics", "height", "tsb"
 );
 
 /// Results of `hhea.recalc` / `vhea.recalc`.

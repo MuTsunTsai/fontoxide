@@ -130,6 +130,11 @@ impl XmlWriter {
 		&self.indent_white
 	}
 
+	/// The current indentation level (`indentlevel`).
+	pub fn indent_level(&self) -> usize {
+		self.indent_level
+	}
+
 	/// The line ending in use.
 	pub fn newline_str(&self) -> &str {
 		&self.newline_str

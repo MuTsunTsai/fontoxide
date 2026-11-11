@@ -656,8 +656,73 @@ pub fn fromtree(tree: &xml_reader::Element) -> Result<Value> {
 
 /// `loads`: reads a plist document.
 pub fn loads(text: &str) -> Result<Value> {
-	let root = xml_reader::parse(text).map_err(|e| PlistError::Xml(e.0))?;
+	let root = xml_reader::parse(text.strip_prefix('\u{feff}').unwrap_or(text))
+		.map_err(|e| PlistError::Xml(e.0))?;
 	fromtree(&root)
+}
+
+/// `loads` of bytes: the document is decoded as an XML parser does it (see
+/// [`decode_xml`]).
+pub fn loads_bytes(data: &[u8]) -> Result<Value> {
+	loads(&decode_xml(data)?)
+}
+
+fn decode_utf16(data: &[u8], big_endian: bool) -> Result<String> {
+	let (pairs, rest) = data.as_chunks::<2>();
+	if !rest.is_empty() {
+		return Err(PlistError::Xml("truncated UTF-16 data".into()));
+	}
+	let units = pairs.iter().map(|&c| {
+		if big_endian {
+			u16::from_be_bytes(c)
+		} else {
+			u16::from_le_bytes(c)
+		}
+	});
+	char::decode_utf16(units)
+		.collect::<std::result::Result<String, _>>()
+		.map_err(|e| PlistError::Xml(e.to_string()))
+}
+
+/// The `encoding` of an XML declaration at the start of ASCII-compatible
+/// data.
+fn declared_encoding(data: &[u8]) -> Option<String> {
+	let head = data.get(..data.len().min(200))?;
+	if !head.starts_with(b"<?xml") {
+		return None;
+	}
+	let end = head.windows(2).position(|w| w == b"?>")?;
+	let decl = std::str::from_utf8(&head[..end]).ok()?;
+	let rest = &decl[decl.find("encoding")? + "encoding".len()..];
+	let rest = rest.trim_start().strip_prefix('=')?.trim_start();
+	let quote = rest.chars().next()?;
+	let value = rest.get(1..)?;
+	Some(value[..value.find(quote)?].to_ascii_lowercase())
+}
+
+/// Decodes an XML document the way an XML parser does: a UTF-8 or UTF-16
+/// byte order mark, otherwise the encoding of the XML declaration (UTF-8,
+/// UTF-16, ASCII or Latin-1), and UTF-8 by default.
+pub fn decode_xml(data: &[u8]) -> Result<String> {
+	if let Some(rest) = data.strip_prefix(b"\xef\xbb\xbf") {
+		return String::from_utf8(rest.to_vec()).map_err(|e| PlistError::Xml(e.to_string()));
+	}
+	if let Some(rest) = data.strip_prefix(b"\xff\xfe") {
+		return decode_utf16(rest, false);
+	}
+	if let Some(rest) = data.strip_prefix(b"\xfe\xff") {
+		return decode_utf16(rest, true);
+	}
+	if data.starts_with(b"<\0?\0") {
+		return decode_utf16(data, false);
+	}
+	if data.starts_with(b"\0<\0?") {
+		return decode_utf16(data, true);
+	}
+	match declared_encoding(data).as_deref() {
+		Some("latin-1" | "latin1" | "iso-8859-1" | "iso8859-1") => Ok(py::latin1_decode(data)),
+		_ => String::from_utf8(data.to_vec()).map_err(|e| PlistError::Xml(e.to_string())),
+	}
 }
 
 /// `dumps`: writes a plist document.
