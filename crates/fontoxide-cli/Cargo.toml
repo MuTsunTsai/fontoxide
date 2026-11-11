@@ -12,6 +12,12 @@ keywords.workspace = true
 categories.workspace = true
 
 [features]
+default = ["woff", "graphite", "pathops", "repacker"]
+# fontTools' extras; see the features of `fontoxide-ttlib`.
+woff = ["fontoxide-ttlib/woff"]
+graphite = ["fontoxide-ttlib/graphite"]
+pathops = ["fontoxide-ttlib/pathops"]
+repacker = ["fontoxide-ttlib/repacker"]
 # Also installs fontTools' console scripts `fonttools`, `ttx`, `pyftsubset` and
 # `pyftmerge`, with fontTools' usage and help texts.
 fonttools-names = []

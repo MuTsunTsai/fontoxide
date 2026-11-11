@@ -35,6 +35,11 @@
 //! `setattr`; here font info is a [`Dict`] of attribute names to values, and
 //! glyphs implement [`GlyphObject`] (for example [`Glyph`]). Values are plist
 //! [`Value`]s, which keep the Python types that validation looks at.
+//!
+//! Zipped UFOs are read into memory when they are opened. Unlike Python's
+//! `zipfile`, an archive whose members inflate to more than 1 GiB in all is
+//! rejected ([`MAX_ZIP_UNCOMPRESSED_SIZE`]), as is a member whose size is
+//! beyond what DEFLATE can compress to its compressed size.
 
 #![forbid(unsafe_code)]
 
@@ -70,6 +75,7 @@ pub use ufo::{
 	make_ufo_path,
 };
 pub use utils::{FormatVersionInput, GlifFormatVersion, Number, UfoFormatVersion, value_repr};
+pub use zip::MAX_UNCOMPRESSED_SIZE as MAX_ZIP_UNCOMPRESSED_SIZE;
 
 /// Groups: group names to glyph names (`groups.plist`).
 pub type Groups = IndexMap<String, Vec<String>>;

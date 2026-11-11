@@ -5,27 +5,49 @@
 //! which is pure Rust. The results are geometrically equivalent, not identical: the
 //! contours can start at other points or come in another order, as they also do between
 //! versions of Skia.
+//!
+//! Without the `pathops` feature (fontTools without skia-pathops),
+//! [`remove_overlaps`] fails with [`Error::Import`], as importing
+//! `fontTools.ttLib.removeOverlaps` does.
 
+#[cfg(feature = "pathops")]
 use fontoxide_misc::transform::Transform;
+#[cfg(feature = "pathops")]
 use fontoxide_pens::base_pen::{decompose_quadratic_segment, decompose_super_bezier_segment};
+#[cfg(feature = "pathops")]
 use fontoxide_pens::transform_pen::TransformPen;
+#[cfg(feature = "pathops")]
 use fontoxide_pens::{Pen, Point};
+#[cfg(feature = "pathops")]
 use kurbo::{BezPath, PathEl, Shape};
+#[cfg(feature = "pathops")]
 use linesweeper::topology::Contours;
+#[cfg(feature = "pathops")]
 use linesweeper::{BinaryOp, FillRule, binary_op};
 
+#[cfg(feature = "pathops")]
+use crate::Tag;
+#[cfg(feature = "pathops")]
 use crate::cff::charstring::{T2CharString, Token};
+#[cfg(feature = "pathops")]
 use crate::cff::font::CffFontSet;
+#[cfg(feature = "pathops")]
 use crate::cff::specializer::{
 	Arg, Command, SpecializeOptions, commands_to_program, specialize_commands,
 };
+#[cfg(feature = "pathops")]
 use crate::glyph_set::GlyphSet;
+#[cfg(feature = "pathops")]
 use crate::table::TableType;
+#[cfg(feature = "pathops")]
 use crate::tables::glyf::Glyph;
+#[cfg(feature = "pathops")]
 use crate::tables::{Cff, Cff2, Glyf, Hmtx};
-use crate::{Error, Font, Result, Tag};
+use crate::{Error, Font, Result};
 
+#[cfg(feature = "pathops")]
 const CFF: Tag = Tag::new(b"CFF ");
+#[cfg(feature = "pathops")]
 const CFF2: Tag = Tag::new(b"CFF2");
 
 /// The options of [`remove_overlaps`].
@@ -54,11 +76,13 @@ impl Default for RemoveOverlapsOptions {
 	}
 }
 
+#[cfg(feature = "pathops")]
 fn pen_error(e: fontoxide_pens::Error) -> Error {
 	Error::from(e)
 }
 
 /// A pen collecting a path, with the components decomposed (`pathops.Path.getPen`).
+#[cfg(feature = "pathops")]
 struct PathPen<'a, 'f> {
 	path: BezPath,
 	glyph_set: &'a GlyphSet<'f>,
@@ -66,6 +90,7 @@ struct PathPen<'a, 'f> {
 	open: bool,
 }
 
+#[cfg(feature = "pathops")]
 impl<'a, 'f> PathPen<'a, 'f> {
 	fn new(glyph_set: &'a GlyphSet<'f>) -> Self {
 		PathPen {
@@ -84,6 +109,7 @@ impl<'a, 'f> PathPen<'a, 'f> {
 	}
 }
 
+#[cfg(feature = "pathops")]
 impl Pen for PathPen<'_, '_> {
 	fn move_to(&mut self, pt: Point) -> fontoxide_pens::Result<()> {
 		if self.open {
@@ -166,12 +192,14 @@ impl Pen for PathPen<'_, '_> {
 }
 
 /// `skPathFromGlyph`.
+#[cfg(feature = "pathops")]
 fn path_from_glyph(name: &str, glyph_set: &GlyphSet<'_>) -> Result<BezPath> {
 	let mut pen = PathPen::new(glyph_set);
 	glyph_set.draw(name, &mut pen)?;
 	Ok(pen.finish())
 }
 
+#[cfg(feature = "pathops")]
 fn boolean_error(name: &str) -> Error {
 	Error::ttlib(format!(
 		"RemoveOverlapsError: Failed to remove overlaps from glyph {name:?}"
@@ -180,6 +208,7 @@ fn boolean_error(name: &str) -> Error {
 
 /// `pathops.simplify(path, clockwise=path.clockwise)`: the contours of the union, with the
 /// direction of the outer ones as that of the whole path, and alternating when nested.
+#[cfg(feature = "pathops")]
 fn simplify(path: &BezPath, name: &str) -> Result<Vec<BezPath>> {
 	let contours: Contours = binary_op(path, &BezPath::new(), FillRule::NonZero, BinaryOp::Union)
 		.map_err(|_| boolean_error(name))?;
@@ -208,6 +237,7 @@ fn simplify(path: &BezPath, name: &str) -> Result<Vec<BezPath>> {
 
 /// The segments of a contour, as lists of points relative to the start of each, with the
 /// numbers that compare equal when they are the same point up to rounding errors.
+#[cfg(feature = "pathops")]
 fn contour_segments(path: &BezPath) -> Vec<Vec<(i64, i64)>> {
 	let quantize = |p: kurbo::Point| ((p.x * 1000.0).round() as i64, (p.y * 1000.0).round() as i64);
 	let mut segments = Vec::new();
@@ -250,6 +280,7 @@ fn contour_segments(path: &BezPath) -> Vec<Vec<(i64, i64)>> {
 }
 
 /// A form of a contour that doesn't depend on its start and its direction.
+#[cfg(feature = "pathops")]
 fn canonical_contour(path: &BezPath) -> Vec<Vec<(i64, i64)>> {
 	let forward = contour_segments(path);
 	let backward: Vec<Vec<(i64, i64)>> = forward
@@ -273,6 +304,7 @@ fn canonical_contour(path: &BezPath) -> Vec<Vec<(i64, i64)>> {
 }
 
 /// The separate contours of a path.
+#[cfg(feature = "pathops")]
 fn split_contours(path: &BezPath) -> Vec<BezPath> {
 	let mut out: Vec<BezPath> = Vec::new();
 	for el in path.elements() {
@@ -288,6 +320,7 @@ fn split_contours(path: &BezPath) -> Vec<BezPath> {
 
 /// `_same_path`: whether the contours are the same, ignoring their order. Unlike with
 /// Skia's output, their start and direction are ignored, since those aren't kept.
+#[cfg(feature = "pathops")]
 fn same_path(path: &BezPath, simplified: &[BezPath]) -> bool {
 	let contours = split_contours(path);
 	if contours.len() != simplified.len() {
@@ -301,6 +334,7 @@ fn same_path(path: &BezPath, simplified: &[BezPath]) -> bool {
 }
 
 /// `ttfGlyphFromSkPath`, with the coordinates rounded (`TTGlyphPen`).
+#[cfg(feature = "pathops")]
 fn glyph_from_contours(contours: &[BezPath]) -> Glyph {
 	let round = |p: kurbo::Point| {
 		(
@@ -384,6 +418,7 @@ fn glyph_from_contours(contours: &[BezPath]) -> Glyph {
 }
 
 /// `componentsOverlap`, with the base glyphs drawn from the current state of the font.
+#[cfg(feature = "pathops")]
 fn components_overlap(glyph: &Glyph, glyph_set: &GlyphSet<'_>, name: &str) -> Result<bool> {
 	if glyph.components.len() < 2 {
 		return Ok(false); // single component, no overlaps
@@ -414,6 +449,7 @@ fn components_overlap(glyph: &Glyph, glyph_set: &GlyphSet<'_>, name: &str) -> Re
 }
 
 /// `_remove_glyf_overlaps`.
+#[cfg(feature = "pathops")]
 fn remove_glyf_overlaps(
 	font: &mut Font,
 	names: &[String],
@@ -509,6 +545,7 @@ fn remove_glyf_overlaps(
 }
 
 /// The `glyf` table of a glyph set, which draws from it.
+#[cfg(feature = "pathops")]
 fn font_glyf<'a>(glyph_set: &GlyphSet<'a>) -> Result<&'a Glyf> {
 	glyph_set
 		.glyf_table()
@@ -516,6 +553,7 @@ fn font_glyf<'a>(glyph_set: &GlyphSet<'a>) -> Result<&'a Glyf> {
 }
 
 /// The program of `T2CharStringPen.getCharString`.
+#[cfg(feature = "pathops")]
 fn char_string_from_contours(contours: &[BezPath], width: Option<f64>) -> Result<Vec<Token>> {
 	let round = |p: kurbo::Point| {
 		(
@@ -583,6 +621,7 @@ fn char_string_from_contours(contours: &[BezPath], width: Option<f64>) -> Result
 }
 
 /// `_remove_cff_overlaps`.
+#[cfg(feature = "pathops")]
 fn remove_cff_overlaps(
 	font: &mut Font,
 	names: &[String],
@@ -668,33 +707,41 @@ fn remove_cff_overlaps(
 /// Currently this only works for fonts with `glyf`, `CFF ` or `CFF2` tables. Note that
 /// removing overlaps invalidates the hinting.
 pub fn remove_overlaps(font: &mut Font, options: &RemoveOverlapsOptions) -> Result<()> {
-	let has_glyf = font.has::<Glyf>();
-	let has_cff = font.contains(CFF) || font.contains(CFF2);
-	if !has_glyf && !has_cff {
-		return Err(Error::ttlib(
-			"NotImplementedError: No outline data found in the font: missing 'glyf', 'GLYF', 'CFF ', or 'CFF2' table",
-		));
+	#[cfg(not(feature = "pathops"))]
+	{
+		let _ = (font, options);
+		Err(Error::Import("No module named 'pathops'".into()))
 	}
-	let names = match &options.glyph_names {
-		Some(names) => names.clone(),
-		None => font.glyph_order()?.names().to_vec(),
-	};
-	if has_glyf && !has_cff {
-		remove_glyf_overlaps(font, &names, options)?;
-	} else if has_glyf {
-		// The glyph set only draws the CFF outlines of a font with both.
-		return Err(Error::ttlib(
-			"NotImplementedError: removing overlaps of a font with both glyf and CFF",
-		));
+	#[cfg(feature = "pathops")]
+	{
+		let has_glyf = font.has::<Glyf>();
+		let has_cff = font.contains(CFF) || font.contains(CFF2);
+		if !has_glyf && !has_cff {
+			return Err(Error::ttlib(
+				"NotImplementedError: No outline data found in the font: missing 'glyf', 'GLYF', 'CFF ', or 'CFF2' table",
+			));
+		}
+		let names = match &options.glyph_names {
+			Some(names) => names.clone(),
+			None => font.glyph_order()?.names().to_vec(),
+		};
+		if has_glyf && !has_cff {
+			remove_glyf_overlaps(font, &names, options)?;
+		} else if has_glyf {
+			// The glyph set only draws the CFF outlines of a font with both.
+			return Err(Error::ttlib(
+				"NotImplementedError: removing overlaps of a font with both glyf and CFF",
+			));
+		}
+		if has_cff {
+			remove_cff_overlaps(font, &names, options)?;
+		}
+		let _ = pen_error;
+		Ok(())
 	}
-	if has_cff {
-		remove_cff_overlaps(font, &names, options)?;
-	}
-	let _ = pen_error;
-	Ok(())
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "pathops"))]
 mod tests {
 	use super::*;
 

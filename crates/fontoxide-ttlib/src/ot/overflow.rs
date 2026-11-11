@@ -37,6 +37,10 @@ enum RepackerState {
 	FtFallback,
 }
 
+/// Whether the HarfBuzz repacker is available (`have_uharfbuzz`): the
+/// `repacker` feature.
+const HAVE_UHARFBUZZ: bool = cfg!(feature = "repacker");
+
 /// The version of a `GSUB` or `GPOS` table (`Version`); 0 for other tables.
 fn layout_version<T: Any>(table: &T) -> u32 {
 	let table = table as &dyn Any;
@@ -52,6 +56,10 @@ fn layout_version<T: Any>(table: &T) -> u32 {
 /// Compiles an otData table, resolving overflows in `GSUB` and `GPOS` lookups
 /// (`BaseTTXConverter.compile`). `GSUB` and `GPOS` are packed with the
 /// HarfBuzz repacker as [`Font::use_harfbuzz_repacker`] says.
+///
+/// Without the `repacker` feature (fontTools without uharfbuzz), they are packed
+/// with fontTools' serializer, or, if [`Font::use_harfbuzz_repacker`] is
+/// `Some(true)`, fail with [`Error::Import`].
 pub fn compile_table<T: OtTable + Any>(
 	table: &mut T,
 	tag: Tag,
@@ -60,6 +68,12 @@ pub fn compile_table<T: OtTable + Any>(
 	let is_layout = tag == GSUB || tag == GPOS;
 	let mut use_hb_repack = font.use_harfbuzz_repacker;
 	if is_layout && use_hb_repack.is_none() && layout_version(table) >= 0x0001_0002 {
+		use_hb_repack = Some(false);
+	}
+	if is_layout && !HAVE_UHARFBUZZ {
+		if use_hb_repack == Some(true) {
+			return Err(Error::Import("No module named 'uharfbuzz'".into()));
+		}
 		use_hb_repack = Some(false);
 	}
 	let mut state = if use_hb_repack != Some(false) && is_layout {

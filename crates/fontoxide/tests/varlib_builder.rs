@@ -2,6 +2,8 @@
 //! FontBuilder and TTGlyphPen. The others are in
 //! `crates/fontoxide-varlib/tests/builder.rs`.
 
+#![cfg(all(feature = "designspacelib", feature = "varlib", feature = "repacker"))]
+
 use fontoxide::designspacelib::{
 	AxisDescriptor, DesignSpaceDocument, LocationValue, Number, SourceDescriptor,
 };

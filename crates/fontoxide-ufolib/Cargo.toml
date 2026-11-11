@@ -12,14 +12,13 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-# Not used directly: selects the pure-Rust deflate backend of `zip`.
 flate2.workspace = true
 fontoxide-misc.workspace = true
 fontoxide-pens.workspace = true
 indexmap.workspace = true
 log.workspace = true
 thiserror.workspace = true
-zip.workspace = true
+rawzip.workspace = true
 
 [lints]
 workspace = true

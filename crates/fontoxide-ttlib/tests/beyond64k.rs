@@ -30,9 +30,9 @@ use fontoxide_ttlib::tables::{
 	Base, Cmap, CmapSubtable, Dmap, Gdef, Glyf, Gpos, Gsub, Head, Hhea, Hmtx, Loca, Maxp, Post,
 	Vhea, Vmtx, Vorg,
 };
-use fontoxide_ttlib::{
-	Error, Flavor, FlavorData, Font, GlyphSet, ReadOptions, TableType, Tag, WriteOptions,
-};
+use fontoxide_ttlib::{Error, Font, GlyphSet, ReadOptions, TableType, Tag, WriteOptions};
+#[cfg(feature = "woff")]
+use fontoxide_ttlib::{Flavor, FlavorData};
 
 type TestResult<T = ()> = Result<T, Box<dyn std::error::Error>>;
 
@@ -1753,6 +1753,7 @@ fn test_layout_header_round_trip() -> TestResult {
 
 /// `WOFF2RoundtripTest.test_roundtrip_beyond64k_companion_tables`.
 #[test]
+#[cfg(feature = "woff")]
 fn test_roundtrip_beyond64k_companion_tables() -> TestResult {
 	// The `ttFont` fixture of the test.
 	let options = ReadOptions {

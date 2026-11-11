@@ -769,6 +769,9 @@ impl FontBuilder {
 
 	/// Adds an `avar` table for the axis mappings of designspace axes
 	/// (`setupAvar` without `mappings`). `fvar` must be set up first.
+	///
+	/// Needs the `varlib` feature.
+	#[cfg(feature = "varlib")]
 	pub fn setup_avar(&mut self, axes: &[fontoxide_varlib::avar_builder::AvarAxis]) -> Result<()> {
 		if !self.font.contains(Tag::new(b"fvar")) {
 			return Err(Error::value(
@@ -784,6 +787,9 @@ impl FontBuilder {
 	/// [`fontoxide_varlib::build::add_avar`]. `fvar` must be set up first. Errors
 	/// of varLib that aren't ones of fontoxide-ttlib are passed on as
 	/// [`Error::TtLib`] with their message.
+	///
+	/// Needs the `varlib`, `designspacelib` features.
+	#[cfg(all(feature = "varlib", feature = "designspacelib"))]
 	pub fn setup_avar_with_mappings(
 		&mut self,
 		axes: &[fontoxide_designspacelib::AxisDescriptor],
@@ -1026,6 +1032,9 @@ impl FontBuilder {
 	/// `filename` is used in error messages and to find included files.
 	/// `tables` restricts the layout tables built. `debug` adds source
 	/// debugging information to the font in the `Debg` table.
+	///
+	/// Needs the `fealib` feature.
+	#[cfg(feature = "fealib")]
 	pub fn add_open_type_features(
 		&mut self,
 		features: &str,
@@ -1045,6 +1054,9 @@ impl FontBuilder {
 	/// Adds conditional substitutions to a variable font (`addFeatureVariations`);
 	/// see [`fontoxide_varlib::feature_vars::add_feature_variations`]. `fvar`
 	/// must be set up first.
+	///
+	/// Needs the `varlib` feature.
+	#[cfg(feature = "varlib")]
 	pub fn add_feature_variations(
 		&mut self,
 		conditional_substitutions: &[(
@@ -1067,6 +1079,9 @@ impl FontBuilder {
 
 	/// Builds a new `COLR` table from color layers by base glyph name
 	/// (`setupCOLR`); see [`fontoxide_colorlib::build_colr`].
+	///
+	/// Needs the `colorlib` feature.
+	#[cfg(feature = "colorlib")]
 	pub fn setup_colr(
 		&mut self,
 		color_layers: indexmap::IndexMap<String, fontoxide_colorlib::Value>,
@@ -1086,6 +1101,9 @@ impl FontBuilder {
 	/// colors in the range 0 to 1 (`setupCPAL`); see
 	/// [`fontoxide_colorlib::build_cpal`]. Labels are added to the `name`
 	/// table.
+	///
+	/// Needs the `colorlib` feature.
+	#[cfg(feature = "colorlib")]
 	pub fn setup_cpal(
 		&mut self,
 		palettes: &[Vec<[f64; 4]>],
@@ -1108,6 +1126,9 @@ impl FontBuilder {
 	/// Builds a `STAT` table (`setupStat`); see
 	/// [`fontoxide_otllib::builder::build_stat_table`]. Macintosh names are added
 	/// if the `name` table has any.
+	///
+	/// Needs the `otllib` feature.
+	#[cfg(feature = "otllib")]
 	pub fn setup_stat(
 		&mut self,
 		axes: &[fontoxide_otllib::builder::StatAxis],

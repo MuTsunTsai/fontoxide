@@ -19,6 +19,25 @@ re-exports all of them. Names follow Rust conventions (`TTFont` → `Font`,
 `instantiateVariableFont` → `instantiate_variable_font`), and the rustdoc of each item
 names its fontTools counterpart.
 
+### Features
+
+By default, the `fontoxide` crate has everything, like `pip install fonttools[all]`.
+With `default-features = false`, it has only `ttlib`, `misc`, `pens` and
+`unicodedata`; each other subpackage is a feature of the same name (`subset`,
+`varlib`, `fealib`, …). fontTools' optional dependencies are features named after
+its extras:
+
+| Feature | fontTools extra | Without it |
+|---|---|---|
+| `woff` | `woff` (brotli, zopfli) | WOFF 2.0, and WOFF 1.0 with `--with-zopfli`, fail with an `ImportError` |
+| `graphite` | `graphite` (lz4) | compressed `Silf` and `Glat` tables are kept compressed, with a warning |
+| `pathops` | `pathops` (skia-pathops) | removing overlaps fails with an `ImportError` |
+| `repacker` | `repacker` (uharfbuzz) | `GSUB` and `GPOS` are packed with fontTools' own serializer |
+
+Without an extra, fontoxide behaves as fontTools does without that Python package.
+The individual crates don't turn the extras on; enable them with the features of
+`fontoxide-ttlib`.
+
 ## Compatibility with fontTools
 
 Compatibility is checked in three ways:

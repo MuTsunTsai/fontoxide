@@ -28,6 +28,32 @@ jobs:
       - name: Build for wasm32
         run: cargo build --package fontoxide --target wasm32-unknown-unknown
 
+  features:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      # Each feature of the umbrella crate (a subpackage or one of fontTools'
+      # extras) builds on its own, natively and for wasm32.
+      - name: Features one at a time
+        run: |
+          features=$(cargo metadata --no-deps --format-version 1 |
+            jq -r '.packages[] | select(.name == "fontoxide") | .features | keys[] | select(. != "default")')
+          for target in x86_64-unknown-linux-gnu wasm32-unknown-unknown; do
+            cargo check -p fontoxide-ttlib --no-default-features --target $target
+            cargo check -p fontoxide --no-default-features --target $target
+            for feature in $features; do
+              cargo check -p fontoxide --no-default-features --features $feature --target $target
+            done
+          done
+      # Without the extras, fontoxide fails as fontTools does without the packages.
+      - run: cargo test -p fontoxide-ttlib --no-default-features
+
   coverage:
     runs-on: ubuntu-latest
     steps:

@@ -2,6 +2,8 @@
 //! FontBuilder and TTGlyphPen. The others are in
 //! `crates/fontoxide-varlib/tests/reversed_axis.rs`.
 
+#![cfg(all(feature = "designspacelib", feature = "varlib", feature = "repacker"))]
+
 use std::collections::BTreeMap;
 
 use fontoxide::designspacelib::{

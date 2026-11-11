@@ -12,26 +12,70 @@ homepage.workspace = true
 keywords.workspace = true
 categories.workspace = true
 
+[features]
+# Everything, as `pip install fonttools[all]`.
+default = [
+	"colorlib",
+	"cu2qu",
+	"designspacelib",
+	"fealib",
+	"merge",
+	"mtilib",
+	"otllib",
+	"qu2cu",
+	"subset",
+	"svglib",
+	"t1lib",
+	"ufolib",
+	"varlib",
+	"voltlib",
+	"woff",
+	"graphite",
+	"pathops",
+	"repacker",
+]
+# One feature for each subpackage of fontTools; `ttlib`, `misc`, `pens` and
+# `unicodedata` are always there, as `fontoxide-ttlib` needs them.
+colorlib = ["dep:fontoxide-colorlib"]
+cu2qu = ["dep:fontoxide-cu2qu"]
+designspacelib = ["dep:fontoxide-designspacelib"]
+fealib = ["dep:fontoxide-fealib"]
+merge = ["dep:fontoxide-merge"]
+mtilib = ["dep:fontoxide-mtilib"]
+otllib = ["dep:fontoxide-otllib"]
+qu2cu = ["dep:fontoxide-qu2cu"]
+subset = ["dep:fontoxide-subset"]
+svglib = ["dep:fontoxide-svglib"]
+t1lib = ["dep:fontoxide-t1lib"]
+ufolib = ["dep:fontoxide-ufolib"]
+varlib = ["dep:fontoxide-varlib"]
+voltlib = ["dep:fontoxide-voltlib"]
+# fontTools' extras; see the features of `fontoxide-ttlib`.
+woff = ["fontoxide-ttlib/woff"]
+graphite = ["fontoxide-ttlib/graphite"]
+pathops = ["fontoxide-ttlib/pathops"]
+repacker = ["fontoxide-ttlib/repacker", "dep:fontoxide-repack"]
+
 [dependencies]
-fontoxide-colorlib.workspace = true
-fontoxide-cu2qu.workspace = true
-fontoxide-designspacelib.workspace = true
-fontoxide-fealib.workspace = true
-fontoxide-merge.workspace = true
+fontoxide-colorlib = { workspace = true, optional = true }
+fontoxide-cu2qu = { workspace = true, optional = true }
+fontoxide-designspacelib = { workspace = true, optional = true }
+fontoxide-fealib = { workspace = true, optional = true }
+fontoxide-merge = { workspace = true, optional = true }
 fontoxide-misc.workspace = true
-fontoxide-mtilib.workspace = true
-fontoxide-otllib.workspace = true
+fontoxide-mtilib = { workspace = true, optional = true }
+fontoxide-otllib = { workspace = true, optional = true }
 fontoxide-pens.workspace = true
-fontoxide-qu2cu.workspace = true
-fontoxide-repack.workspace = true
-fontoxide-subset.workspace = true
-fontoxide-svglib.workspace = true
-fontoxide-t1lib.workspace = true
+fontoxide-qu2cu = { workspace = true, optional = true }
+fontoxide-repack = { workspace = true, optional = true }
+fontoxide-subset = { workspace = true, optional = true }
+fontoxide-svglib = { workspace = true, optional = true }
+fontoxide-t1lib = { workspace = true, optional = true }
 fontoxide-ttlib.workspace = true
-fontoxide-ufolib.workspace = true
+fontoxide-ufolib = { workspace = true, optional = true }
 fontoxide-unicodedata.workspace = true
-fontoxide-varlib.workspace = true
-fontoxide-voltlib.workspace = true
+fontoxide-varlib = { workspace = true, optional = true }
+fontoxide-voltlib = { workspace = true, optional = true }
 indexmap.workspace = true
 
 [lints]

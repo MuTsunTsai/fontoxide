@@ -1,5 +1,7 @@
 //! The tests of `Tests/otlLib/optimize_test.py` that need `FontBuilder`.
 
+#![cfg(all(feature = "fealib", feature = "otllib", feature = "repacker"))]
+
 use fontoxide::font_builder::FontBuilder;
 use fontoxide::misc::Tag;
 use fontoxide::otllib::optimize;

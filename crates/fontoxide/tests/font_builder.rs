@@ -1,5 +1,13 @@
 //! `Tests/fontBuilder/fontBuilder_test.py`.
 
+#![cfg(all(
+	feature = "designspacelib",
+	feature = "fealib",
+	feature = "otllib",
+	feature = "varlib",
+	feature = "repacker"
+))]
+
 use std::collections::BTreeMap;
 
 use fontoxide::font_builder::{FontBuilder, FvarAxis, FvarInstance, NameKey, NameValue, Value};

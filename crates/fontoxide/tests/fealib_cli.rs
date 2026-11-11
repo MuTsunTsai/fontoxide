@@ -2,6 +2,8 @@
 //! not test; these check that it builds features into a font and reports
 //! feature file errors with the exit code.
 
+#![cfg(all(feature = "fealib", feature = "repacker"))]
+
 use fontoxide::fealib::cli;
 use fontoxide::font_builder::FontBuilder;
 use fontoxide::misc::Tag;

@@ -3,13 +3,12 @@
 //! `WriteZipFS` is internal to ufoLib in fontoxide, so the tests write zipped
 //! UFOs with [`UfoWriter`], which writes the archive when it is closed.
 
-use std::io::{Cursor, Read, Write};
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use fontoxide_ufolib::{UfoFileStructure, UfoWriter, UfoWriterOptions};
-use zip::write::SimpleFileOptions;
-use zip::{ZipArchive, ZipWriter};
+use rawzip::{CompressionMethod, ZipArchive, ZipArchiveWriter};
 
 fn tmp_path(name: &str) -> PathBuf {
 	static COUNTER: AtomicUsize = AtomicUsize::new(0);
@@ -36,10 +35,19 @@ fn zip_writer(path: &Path) -> UfoWriter {
 /// The content of an archive member.
 fn read_member(path: &Path, name: &str) -> Vec<u8> {
 	let data = std::fs::read(path).expect("read archive");
-	let mut archive = ZipArchive::new(Cursor::new(data)).expect("zip");
-	let mut file = archive.by_name(name).expect("member");
+	let archive = ZipArchive::from_slice(&data).expect("zip");
+	let entry = archive
+		.entries()
+		.map(|e| e.expect("entry"))
+		.find(|e| e.file_path().as_bytes() == name.as_bytes())
+		.expect("member");
+	assert_eq!(entry.compression_method(), CompressionMethod::DEFLATE);
+	let member = archive.get_entry(entry.wayfinder()).expect("member");
 	let mut out = Vec::new();
-	file.read_to_end(&mut out).expect("read member");
+	member
+		.verifying_reader(flate2::bufread::DeflateDecoder::new(member.data()))
+		.read_to_end(&mut out)
+		.expect("read member");
 	out
 }
 
@@ -96,11 +104,13 @@ fn test_writezipfs_preserves_sibling_archive() {
 		let tmp = tmp_path("sibling");
 		let path = tmp.join(format!("archive{suffix}"));
 		let sibling = tmp.join("archive.zip");
-		let mut zip = ZipWriter::new(Cursor::new(Vec::new()));
-		zip.start_file("original.txt", SimpleFileOptions::default())
-			.expect("zip entry");
-		zip.write_all(b"keep this archive").expect("zip data");
-		let original = zip.finish().expect("zip").into_inner();
+		let mut zip = ZipArchiveWriter::new(Vec::new());
+		let (mut entry, config) = zip.new_file("original.txt").start().expect("zip entry");
+		let mut writer = config.wrap(&mut entry);
+		writer.write_all(b"keep this archive").expect("zip data");
+		let (_, descriptor) = writer.finish().expect("zip data");
+		entry.finish(descriptor).expect("zip entry");
+		let original = zip.finish().expect("zip");
 		std::fs::write(&sibling, &original).expect("write");
 		if path.exists() {
 			// Output and sibling names alias on this filesystem

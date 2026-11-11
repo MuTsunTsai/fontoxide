@@ -11,19 +11,37 @@ homepage.workspace = true
 keywords.workspace = true
 categories.workspace = true
 
+[features]
+default = ["woff", "graphite", "pathops", "repacker"]
+# The features are fontTools' extras (`pip install fonttools[woff]`, ...). Without
+# one, fontoxide behaves as fontTools does without that Python package: using the
+# functionality fails with an `ImportError` (`Error::Import`).
+#
+# WOFF 2.0 (brotli) and `--with-zopfli` for WOFF 1.0 (zopfli). WOFF 1.0 itself
+# only needs zlib, which Python always has (flate2 here).
+woff = ["dep:brotli", "dep:zopfli"]
+# LZ4 compression of the Graphite tables `Silf` and `Glat` (lz4). Without it,
+# compressed tables are kept compressed, with a warning.
+graphite = ["dep:lz4_flex"]
+# `remove_overlaps` (skia-pathops).
+pathops = ["dep:linesweeper", "dep:kurbo"]
+# The HarfBuzz repacker for `GSUB` and `GPOS` (uharfbuzz). Without it, overflows
+# are resolved with fontTools' own serializer.
+repacker = ["dep:fontoxide-repack"]
+
 [dependencies]
 fontoxide-encodings.workspace = true
 fontoxide-misc.workspace = true
 fontoxide-pens.workspace = true
-fontoxide-repack.workspace = true
+fontoxide-repack = { workspace = true, optional = true }
 fontoxide-unicodedata.workspace = true
-brotli.workspace = true
+brotli = { workspace = true, optional = true }
 flate2.workspace = true
-kurbo.workspace = true
-linesweeper.workspace = true
+kurbo = { workspace = true, optional = true }
+linesweeper = { workspace = true, optional = true }
 log.workspace = true
-lz4_flex.workspace = true
-zopfli.workspace = true
+lz4_flex = { workspace = true, optional = true }
+zopfli = { workspace = true, optional = true }
 thiserror.workspace = true
 
 [dev-dependencies]

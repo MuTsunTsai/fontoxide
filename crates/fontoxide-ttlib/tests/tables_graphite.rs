@@ -7,6 +7,7 @@
 //! Compressed tables are compared decompressed: fontTools compresses with LZ4 HC,
 //! fontoxide with `lz4_flex`.
 
+#![cfg(feature = "graphite")]
 #![allow(clippy::unwrap_used)]
 
 use std::path::PathBuf;

@@ -3,8 +3,10 @@
 //! The tests of the private `WOFF2DirectoryEntry`, `WOFF2LocaTable`,
 //! `WOFF2GlyfTable` and `WOFF2HmtxTable` are unit tests in `src/woff2.rs`. The
 //! Python tests use a `WOFF2Reader` or `WOFF2Writer` directly; these use
-//! [`SfntReader`] and [`SfntWriter`], which wrap them.
+//! [`SfntReader`] and [`SfntWriter`], which wrap them. The tests without the
+//! brotli module are in `tests/features.rs`.
 
+#![cfg(feature = "woff")]
 #![allow(non_snake_case)]
 
 use std::path::PathBuf;

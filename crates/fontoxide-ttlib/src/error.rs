@@ -68,6 +68,12 @@ pub enum Error {
 	/// An I/O error.
 	#[error(transparent)]
 	Io(#[from] std::io::Error),
+	/// `ImportError`: the functionality needs an optional dependency of
+	/// fontTools (one of its extras), which the Cargo feature of the same name
+	/// leaves out; the message is fontTools' (for example
+	/// `No module named brotli`).
+	#[error("{0}")]
+	Import(String),
 }
 
 impl From<fontoxide_pens::Error> for Error {

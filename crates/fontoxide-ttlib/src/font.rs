@@ -855,6 +855,11 @@ impl Font {
 			self.load(HEAD)?;
 		}
 		let tags = self.tags();
+		if self.flavor == Some(crate::sfnt::Flavor::Woff2) && !crate::woff2::HAVE_BROTLI {
+			// `WOFF2Writer.__init__`.
+			crate::woff2::log_no_brotli("encoder");
+			return Err(crate::woff2::no_brotli());
+		}
 		let mut writer = SfntWriter::with_buffer(
 			file,
 			tags.len(),

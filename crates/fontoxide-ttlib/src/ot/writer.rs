@@ -122,6 +122,19 @@ impl WriterGraph {
 	/// sharing identical subtables across Extension subtables too. If the
 	/// repacker fails, falls back to `getAllData (remove_duplicate=False)` on
 	/// the shared tree (`tryPackingHarfbuzz`); `log_failure` logs that once.
+	///
+	/// Without the `repacker` feature, fails with [`crate::Error::Import`].
+	#[cfg(not(feature = "repacker"))]
+	pub fn get_all_data_using_harfbuzz(self, log_failure: bool) -> Result<Vec<u8>> {
+		let _ = (self, log_failure);
+		Err(crate::Error::Import("No module named 'uharfbuzz'".into()))
+	}
+
+	/// Packs the table with the HarfBuzz repacker (`getAllDataUsingHarfbuzz`),
+	/// sharing identical subtables across Extension subtables too. If the
+	/// repacker fails, falls back to `getAllData (remove_duplicate=False)` on
+	/// the shared tree (`tryPackingHarfbuzz`); `log_failure` logs that once.
+	#[cfg(feature = "repacker")]
 	pub fn get_all_data_using_harfbuzz(mut self, log_failure: bool) -> Result<Vec<u8>> {
 		let mut keys = StructuralKeys::default();
 		let mut interned = HashMap::new();
@@ -149,6 +162,7 @@ impl WriterGraph {
 	/// UPSTREAM-BUG(B17): `sortCoverageLast` looks for an item named `Coverage`
 	/// among the items, which are `OffsetToWriter`s and bytes without a `name`,
 	/// so it never applies and there are never virtual links.
+	#[cfg(feature = "repacker")]
 	fn gather_graph_for_harfbuzz(
 		&self,
 		id: NodeId,

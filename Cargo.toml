@@ -34,7 +34,9 @@ fontoxide-repack = { path = "crates/fontoxide-repack", version = "0.0.0" }
 fontoxide-subset = { path = "crates/fontoxide-subset", version = "0.0.0" }
 fontoxide-svglib = { path = "crates/fontoxide-svglib", version = "0.0.0" }
 fontoxide-t1lib = { path = "crates/fontoxide-t1lib", version = "0.0.0" }
-fontoxide-ttlib = { path = "crates/fontoxide-ttlib", version = "0.0.0" }
+# Without the extras (see its features): each crate enables the ones it needs, and
+# the umbrella crate `fontoxide` all of them by default.
+fontoxide-ttlib = { path = "crates/fontoxide-ttlib", version = "0.0.0", default-features = false }
 fontoxide-ufolib = { path = "crates/fontoxide-ufolib", version = "0.0.0" }
 fontoxide-unicodedata = { path = "crates/fontoxide-unicodedata", version = "0.0.0" }
 fontoxide-varlib = { path = "crates/fontoxide-varlib", version = "0.0.0" }
@@ -51,9 +53,10 @@ zopfli = { version = "0.8", default-features = false, features = ["std", "zlib"]
 lz4_flex = { version = "0.11", default-features = false, features = ["safe-encode", "safe-decode", "checked-decode"] }
 roxmltree = "0.21.2"
 thiserror = "2.0.21"
-# Zipped UFOs: deflate only, through flate2, whose backend is the pure-Rust default
-# (miniz_oxide) of the `flate2` entry above, so that it builds for wasm32-unknown-unknown.
-zip = { version = "9.5.1", default-features = false, features = ["deflate-flate2"] }
+# Zipped UFOs: the container only, without dependencies; deflate is done with flate2,
+# whose backend is the pure-Rust default (miniz_oxide), so that it builds for
+# wasm32-unknown-unknown.
+rawzip = "0.5.2"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

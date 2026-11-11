@@ -1,5 +1,7 @@
 //! The tests of fontTools' `Tests/ttLib/removeOverlaps_test.py`.
 
+#![cfg(feature = "pathops")]
+
 use std::path::PathBuf;
 
 use fontoxide_ttlib::remove_overlaps::{RemoveOverlapsOptions, remove_overlaps};

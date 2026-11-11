@@ -5,13 +5,13 @@
 //! `OSFS` of the UFO, glyph sets read from a `SubFS` of it, and zipped UFOs
 //! from a `ReadZipFS`.
 
-use std::io::{Cursor, Write};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use fontoxide_ufolib::{UfoLibError, UfoReader};
-use zip::ZipWriter;
-use zip::write::SimpleFileOptions;
+use rawzip::ZipArchiveWriter;
+use rawzip::path::EntryPath;
 
 fn tmp_path(name: &str) -> PathBuf {
 	static COUNTER: AtomicUsize = AtomicUsize::new(0);
@@ -122,19 +122,32 @@ fn test_subfs_rejects_traversal_out_of_root() {
 	let _ = std::fs::remove_dir_all(tmp);
 }
 
-fn evil_zip(path: &Path) {
-	let mut zip = ZipWriter::new(Cursor::new(Vec::new()));
-	for (name, data) in [
-		("font.ufo/metainfo.plist", METAINFO),
-		("../escaped.txt", b"pwned".as_slice()),
-		("font.ufo/lib.plist", b"y".as_slice()),
-	] {
-		zip.start_file(name, SimpleFileOptions::default())
+/// Writes an archive of stored `(name, data)` members, with the names as they
+/// are (`zipfile.ZipFile.writestr`).
+fn write_zip(path: &Path, members: &[(&str, &[u8])]) {
+	let mut zip = ZipArchiveWriter::new(Vec::new());
+	for &(name, data) in members {
+		let (mut entry, config) = zip
+			.new_file(EntryPath::verbatim(name.as_bytes()))
+			.start()
 			.expect("zip entry");
-		zip.write_all(data).expect("zip data");
+		let mut writer = config.wrap(&mut entry);
+		writer.write_all(data).expect("zip data");
+		let (_, descriptor) = writer.finish().expect("zip data");
+		entry.finish(descriptor).expect("zip entry");
 	}
-	let data = zip.finish().expect("zip").into_inner();
-	std::fs::write(path, data).expect("write");
+	std::fs::write(path, zip.finish().expect("zip")).expect("write");
+}
+
+fn evil_zip(path: &Path) {
+	write_zip(
+		path,
+		&[
+			("font.ufo/metainfo.plist", METAINFO),
+			("../escaped.txt", b"pwned"),
+			("font.ufo/lib.plist", b"y"),
+		],
+	);
 }
 
 #[test]
@@ -158,6 +171,33 @@ fn test_readzipfs_rejection_is_repeatable() {
 	for _ in 0..2 {
 		let err = UfoReader::new(&path, false).expect_err("escaping member");
 		assert!(err.to_string().contains("../escaped.txt"), "{err}");
+	}
+	let _ = std::fs::remove_dir_all(tmp);
+}
+
+#[test]
+fn test_readzipfs_failed_mirror_is_not_cached() {
+	// the mirror can also fail to build for reasons the member-name pre-scan
+	// cannot see -- here a member named both as a file and as a directory, which
+	// makes makedirs raise -- and the half-built mirror must not be published
+	let tmp = tmp_path("conflict");
+	let path = tmp.join("conflict.zip");
+	write_zip(
+		&path,
+		&[
+			("node", b"file"),
+			("node/child.txt", b"x"),
+			("after.txt", b"y"),
+		],
+	);
+	// fontoxide reads the archive when the reader is created, so the reader
+	// cannot be created, with the OSError that makedirs raises
+	for _ in 0..2 {
+		match UfoReader::new(&path, false) {
+			Err(UfoLibError::UfoLib(e)) => assert!(e.contains("File exists: 'node'"), "{e}"),
+			Err(e) => panic!("unexpected error: {e}"),
+			Ok(_) => panic!("a member is both a file and a directory"),
+		}
 	}
 	let _ = std::fs::remove_dir_all(tmp);
 }

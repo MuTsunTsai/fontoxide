@@ -7,7 +7,8 @@ license.workspace = true
 publish = false
 
 [dependencies]
-fontoxide-ttlib = { workspace = true, optional = true }
+# All the extras: parity compares against fonttools[all].
+fontoxide-ttlib = { workspace = true, optional = true, features = ["woff", "graphite", "pathops", "repacker"] }
 fontoxide-subset = { workspace = true, optional = true }
 fontoxide-varlib = { workspace = true, optional = true }
 brotli = { workspace = true, optional = true }

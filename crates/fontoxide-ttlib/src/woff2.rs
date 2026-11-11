@@ -6,8 +6,12 @@
 //! The Brotli compressor is the pure-Rust `brotli` crate. It produces the same
 //! bytes as the C library that fontTools uses for small inputs, but not always
 //! for larger ones; the decompressed data is identical.
+//!
+//! Without the `woff` feature (fontTools without the brotli module), reading
+//! and writing WOFF 2.0 fail with [`Error::Import`], as in fontTools.
 
 use std::collections::HashMap;
+#[cfg(feature = "woff")]
 use std::io::Read;
 use std::sync::{Arc, Mutex};
 
@@ -62,6 +66,9 @@ impl FlavorData {
 	/// (`WOFF2FlavorData(transformedTables=...)`); empty disables all transforms.
 	/// Fails unless `glyf` and `loca` are both transformed or both not.
 	pub fn woff2(transformed_tables: &[Tag]) -> Result<Self> {
+		if !HAVE_BROTLI {
+			return Err(no_brotli());
+		}
 		if transformed_tables.contains(&GLYF) != transformed_tables.contains(&LOCA) {
 			return Err(Error::value(
 				"'glyf' and 'loca' must be transformed (or not) together",
@@ -169,6 +176,23 @@ pub fn pack_255_ushort(value: i64) -> Result<Vec<u8>> {
 
 // --- Brotli
 
+/// Whether Brotli is available (`haveBrotli`): the `woff` feature.
+pub(crate) const HAVE_BROTLI: bool = cfg!(feature = "woff");
+
+/// The `ImportError` of WOFF 2.0 without Brotli.
+pub(crate) fn no_brotli() -> Error {
+	Error::Import("No module named brotli".into())
+}
+
+/// The error that fontTools logs before raising [`no_brotli`], for the
+/// decoder or the encoder.
+pub(crate) fn log_no_brotli(what: &str) {
+	log::error!(
+		"The WOFF2 {what} requires the Brotli Python extension, available at: https://github.com/google/brotli"
+	);
+}
+
+#[cfg(feature = "woff")]
 fn brotli_decompress(data: &[u8]) -> Result<Vec<u8>> {
 	let mut out = Vec::new();
 	brotli::BrotliDecompress(&mut &data[..], &mut out)
@@ -176,13 +200,20 @@ fn brotli_decompress(data: &[u8]) -> Result<Vec<u8>> {
 	Ok(out)
 }
 
+#[cfg(not(feature = "woff"))]
+fn brotli_decompress(_data: &[u8]) -> Result<Vec<u8>> {
+	Err(no_brotli())
+}
+
 /// A reader that reports the fraction of `data` read so far.
+#[cfg(feature = "woff")]
 struct ProgressReader<'a> {
 	data: &'a [u8],
 	read: usize,
 	progress: &'a Progress,
 }
 
+#[cfg(feature = "woff")]
 impl Read for ProgressReader<'_> {
 	fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
 		let n = (&self.data[self.read..]).read(buf)?;
@@ -194,6 +225,7 @@ impl Read for ProgressReader<'_> {
 
 /// Compresses `data` (the font data or, if not `font`, the metadata), reporting the
 /// fraction read to `progress`.
+#[cfg(feature = "woff")]
 fn brotli_compress(
 	data: &[u8],
 	font: bool,
@@ -229,6 +261,16 @@ fn brotli_compress(
 		progress(1.0);
 	}
 	Ok(out)
+}
+
+#[cfg(not(feature = "woff"))]
+fn brotli_compress(
+	_data: &[u8],
+	_font: bool,
+	_quality: u32,
+	_progress: Option<&Progress>,
+) -> Result<Vec<u8>> {
+	Err(no_brotli())
 }
 
 // --- Directory entries (`WOFF2DirectoryEntry`)
@@ -346,6 +388,10 @@ struct Cache {
 
 /// Reads a WOFF 2.0 file (`WOFF2Reader`).
 pub(crate) fn read(file: Arc<[u8]>, options: SfntReaderOptions) -> Result<SfntReader> {
+	if !HAVE_BROTLI {
+		log_no_brotli("decoder");
+		return Err(no_brotli());
+	}
 	// The signature is checked first, as in fontTools, even for a short file.
 	if file.get(..4) != Some(b"wOF2") {
 		return Err(Error::ttlib("Not a WOFF2 font (bad signature)"));
@@ -1629,7 +1675,7 @@ fn transform_hmtx(
 	Ok(Some(data))
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "woff"))]
 mod tests {
 	use super::*;
 
@@ -1672,7 +1718,7 @@ mod tests {
 /// The parts of `Tests/ttLib/woff2_test.py` that test private types
 /// (`WOFF2DirectoryEntry`, `WOFF2LocaTable`, `WOFF2GlyfTable`, `WOFF2HmtxTable`);
 /// the rest is in `tests/woff2.rs`.
-#[cfg(test)]
+#[cfg(all(test, feature = "woff"))]
 #[allow(non_snake_case)]
 mod upstream_tests {
 	use std::path::PathBuf;

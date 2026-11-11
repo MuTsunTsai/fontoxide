@@ -19,6 +19,8 @@ log.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
+# The tests compare with fontTools installed with all its extras.
+fontoxide-ttlib = { workspace = true, features = ["woff", "graphite", "pathops", "repacker"] }
 # FontBuilder, feaLib and otlLib, to build the fonts of the tests as fontTools does.
 fontoxide = { path = "../fontoxide" }
 

@@ -252,12 +252,17 @@ pub(crate) fn py_split(s: &str) -> impl Iterator<Item = &str> {
 
 /// `grUtils.decompress`: the table data, decompressed if it is compressed, and
 /// the compression scheme.
+///
+/// Without the `graphite` feature (fontTools without the lz4 module), LZ4 data
+/// is kept compressed, with a warning, as the other unknown schemes.
 pub fn decompress(data: &[u8]) -> Result<(Vec<u8>, i64)> {
 	let compression = exact(py_slice(data, 4, 8), 4)?.u32()?;
 	let scheme = compression >> 27;
+	#[cfg(feature = "graphite")]
 	let size = (compression & 0x07FF_FFFF) as usize;
 	match scheme {
 		0 => Ok((data.to_vec(), 0)),
+		#[cfg(feature = "graphite")]
 		1 => {
 			let res = lz4_flex::block::decompress(&data[8..], size).map_err(|e| {
 				Error::ttlib(format!(
@@ -282,7 +287,9 @@ pub fn decompress(data: &[u8]) -> Result<(Vec<u8>, i64)> {
 /// `grUtils.compress`.
 ///
 /// Scheme 1 compresses with `lz4_flex`, whose output differs from that of LZ4 HC
-/// (see the [module documentation](self)).
+/// (see the [module documentation](self)). Without the `graphite` feature
+/// (fontTools without the lz4 module), the data is left uncompressed, with a
+/// warning, as for the other unknown schemes.
 pub fn compress(scheme: i64, data: &[u8]) -> Result<Vec<u8>> {
 	let field = scheme
 		.checked_mul(1 << 27)
@@ -292,6 +299,7 @@ pub fn compress(scheme: i64, data: &[u8]) -> Result<Vec<u8>> {
 	hdr.pack_u32(field)?;
 	match scheme {
 		0 => Ok(data.to_vec()),
+		#[cfg(feature = "graphite")]
 		1 => {
 			hdr.extend(lz4_flex::block::compress(data));
 			Ok(hdr)
@@ -1400,6 +1408,24 @@ mod tests {
 			[(1, 2, vec![3, 30]), (4, 2, vec![4, 4])]
 		);
 		assert_eq!(entries(&BTreeMap::new(), false), [(1, 0, vec![])]);
+		Ok(())
+	}
+
+	/// fontTools without the lz4 module: `grUtils` warns and leaves the data as
+	/// it is.
+	#[test]
+	#[cfg(not(feature = "graphite"))]
+	fn lz4_without_the_module() -> Result<()> {
+		let data = b"\0\x05\0\0\0\0\0\0hello hello hello hello".to_vec();
+		assert_eq!(compress(1, &data)?, data);
+		let compressed = b"\0\x05\0\0\x08\0\0\x1f\x01\x02".to_vec();
+		assert_eq!(decompress(&compressed)?, (compressed, 1));
+		Ok(())
+	}
+
+	#[test]
+	#[cfg(feature = "graphite")]
+	fn lz4() -> Result<()> {
 		let data = b"\0\x05\0\0\0\0\0\0hello hello hello hello".to_vec();
 		let compressed = compress(1, &data)?;
 		assert_eq!(&compressed[..8], b"\0\x05\0\0\x08\0\0\x1f");

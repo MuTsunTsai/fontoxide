@@ -581,25 +581,37 @@ const ZOPFLI_LEVELS: [u64; 10] = [0, 1, 3, 5, 8, 10, 15, 25, 50, 100];
 /// 0, with zlib otherwise.
 ///
 /// The zopfli output is not always the same bytes as fontTools' (the C zopfli):
-/// only the decompressed data is the same.
-pub fn compress(data: &[u8], level: u32, use_zopfli: bool) -> Vec<u8> {
+/// only the decompressed data is the same. Without the `woff` feature (fontTools
+/// without the zopfli module), compressing with zopfli fails with
+/// [`Error::Import`].
+pub fn compress(data: &[u8], level: u32, use_zopfli: bool) -> Result<Vec<u8>> {
 	let iterations = ZOPFLI_LEVELS
 		.get(level as usize)
 		.copied()
 		.and_then(std::num::NonZeroU64::new);
 	match iterations {
-		Some(iteration_count) if use_zopfli => {
-			let options = zopfli::Options {
-				iteration_count,
-				..Default::default()
-			};
-			let mut out = Vec::new();
-			// Writing to a Vec cannot fail.
-			let _ = zopfli::compress(options, zopfli::Format::Zlib, data, &mut out);
-			out
-		}
-		_ => zlib_compress(data, level),
+		Some(iteration_count) if use_zopfli => zopfli_compress(data, iteration_count),
+		_ => Ok(zlib_compress(data, level)),
 	}
+}
+
+/// `zopfli.zlib.compress`.
+#[cfg(feature = "woff")]
+fn zopfli_compress(data: &[u8], iteration_count: std::num::NonZeroU64) -> Result<Vec<u8>> {
+	let options = zopfli::Options {
+		iteration_count,
+		..Default::default()
+	};
+	let mut out = Vec::new();
+	// Writing to a Vec cannot fail.
+	let _ = zopfli::compress(options, zopfli::Format::Zlib, data, &mut out);
+	Ok(out)
+}
+
+/// `from zopfli.zlib import compress`, without the zopfli module.
+#[cfg(not(feature = "woff"))]
+fn zopfli_compress(_data: &[u8], _iteration_count: std::num::NonZeroU64) -> Result<Vec<u8>> {
+	Err(Error::Import("No module named 'zopfli'".into()))
 }
 
 /// zlib-compresses data at the given level (`zlib.compress`).
@@ -742,8 +754,11 @@ impl SfntWriter {
 		let stored;
 		let raw: &[u8] = if self.flavor == Some(Flavor::Woff) {
 			// Compress unless that does not help; 'head' is always stored raw.
-			let compressed =
-				(!is_head).then(|| compress(data, ZLIB_COMPRESSION_LEVEL, self.use_zopfli));
+			let compressed = if is_head {
+				None
+			} else {
+				Some(compress(data, ZLIB_COMPRESSION_LEVEL, self.use_zopfli)?)
+			};
 			match compressed {
 				Some(c) if c.len() < data.len() => {
 					stored = c;
@@ -801,7 +816,7 @@ impl SfntWriter {
 			let (meta_offset, meta_length, meta_orig_length) = match &data.meta_data {
 				Some(meta) if !meta.is_empty() => {
 					let offset = self.file.len() as u32;
-					let compressed = compress(meta, ZLIB_COMPRESSION_LEVEL, self.use_zopfli);
+					let compressed = compress(meta, ZLIB_COMPRESSION_LEVEL, self.use_zopfli)?;
 					self.file.extend_from_slice(&compressed);
 					(offset, compressed.len() as u32, meta.len() as u32)
 				}

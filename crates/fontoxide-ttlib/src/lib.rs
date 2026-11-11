@@ -11,6 +11,18 @@
 //! let ttx = font.to_ttx(&TtxOptions::default())?;
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
+//!
+//! # Features
+//!
+//! The features are fontTools' extras, all on by default. Without one,
+//! fontoxide behaves as fontTools does without that Python package:
+//!
+//! | Feature    | fontTools extra (package) | Without it |
+//! |------------|---------------------------|------------|
+//! | `woff`     | `woff` (brotli, zopfli)   | reading and writing WOFF 2.0, and WOFF 1.0 with [`WriteOptions::use_zopfli`], fail with [`Error::Import`] |
+//! | `graphite` | `graphite` (lz4)          | LZ4-compressed `Silf` and `Glat` tables are kept compressed, with a warning |
+//! | `pathops`  | `pathops` (skia-pathops)  | [`remove_overlaps`](remove_overlaps::remove_overlaps) fails with [`Error::Import`] |
+//! | `repacker` | `repacker` (uharfbuzz)    | `GSUB` and `GPOS` are packed with fontTools' serializer; [`Font::use_harfbuzz_repacker`] `Some(true)` fails with [`Error::Import`] |
 
 #![forbid(unsafe_code)]
 
