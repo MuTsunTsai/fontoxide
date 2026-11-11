@@ -109,16 +109,17 @@ jobs:
           workspaces: fuzz
       # Keeps the targets compiling and catches shallow regressions: each target
       # runs for a minute from the committed seeds (see fuzz/README.md). No
-      # sanitizer: the code is safe Rust, and ASan does not build here.
+      # sanitizer: the code is safe Rust. The target must be explicit, as the
+      # prebuilt cargo-fuzz defaults to its own (musl) target.
       - name: Run each fuzz target for 60 s
         working-directory: fuzz
         run: |
-          cargo fuzz build -O -s none
+          cargo fuzz build -O -s none --target x86_64-unknown-linux-gnu
           for target in $(cargo fuzz list); do
             case $target in
               font_read | woff2 | subset | ttx_import) max_len=65536 ;;
               *) max_len=16384 ;;
             esac
-            cargo fuzz run -O -s none $target -- -max_total_time=60 -max_len=$max_len \
+            cargo fuzz run -O -s none --target x86_64-unknown-linux-gnu $target -- -max_total_time=60 -max_len=$max_len \
               -rss_limit_mb=2048 -timeout=10
           done
