@@ -4,12 +4,19 @@
 //! |---------------------|-------------------------------|
 //! | [`array_tools`]     | `fontTools.misc.arrayTools`   |
 //! | [`bezier_tools`]    | `fontTools.misc.bezierTools`  |
+//! | [`classify_tools`]  | `fontTools.misc.classifyTools` |
 //! | [`cli_tools`]       | `fontTools.misc.cliTools`     |
+//! | [`eexec`]           | `fontTools.misc.eexec`        |
 //! | [`encoding_tools`]  | `fontTools.misc.encodingTools` |
 //! | [`etree`]           | `fontTools.misc.etree` (lxml serialization) |
+//! | [`filenames`]       | `fontTools.misc.filenames`    |
 //! | [`fixed_tools`]     | `fontTools.misc.fixedTools`   |
 //! | [`ift_sparse_bit_set`] | `fontTools.misc.iftSparseBitSet` |
+//! | [`int_tools`]       | `fontTools.misc.intTools`     |
+//! | [`mac_res`]         | `fontTools.misc.macRes`       |
 //! | [`plistlib`]        | `fontTools.misc.plistlib`     |
+//! | [`ps_lib`]          | `fontTools.misc.psLib`        |
+//! | [`ps_operators`]    | `fontTools.misc.psOperators`  |
 //! | [`round_tools`]     | `fontTools.misc.roundTools`   |
 //! | [`text_tools`]      | `fontTools.misc.textTools`    |
 //! | [`time_tools`]      | `fontTools.misc.timeTools`    |
@@ -23,13 +30,20 @@
 
 pub mod array_tools;
 pub mod bezier_tools;
+pub mod classify_tools;
 pub mod cli_tools;
 pub mod complex;
+pub mod eexec;
 pub mod encoding_tools;
 pub mod etree;
+pub mod filenames;
 pub mod fixed_tools;
 pub mod ift_sparse_bit_set;
+pub mod int_tools;
+pub mod mac_res;
 pub mod plistlib;
+pub mod ps_lib;
+pub mod ps_operators;
 pub mod py;
 pub mod round_tools;
 pub mod text_tools;

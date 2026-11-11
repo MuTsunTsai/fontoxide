@@ -3,12 +3,11 @@
 
 use std::collections::HashMap;
 
-use fontoxide_ttlib::tables::tuple_variation::{Delta, TupleVariation, compile_points};
+use fontoxide_ttlib::tables::tuple_variation::{Delta, TupleVariation};
 use fontoxide_ttlib::{Error, Result};
 
 use super::limits::{NormalizedAxisTriple, NormalizedLimits};
 use super::solver::rebase_tent;
-use crate::iup::iup_delta_optimize;
 
 /// `scaleDeltas`.
 pub(crate) fn scale_deltas(var: &mut TupleVariation, scalar: f64) {
@@ -20,15 +19,6 @@ pub(crate) fn round_deltas(var: &mut TupleVariation) {
 	var.round_deltas();
 }
 
-/// The size of a compiled variation, in a store of its own (`compile`).
-fn compiled_size(var: &TupleVariation, axis_tags: &[String]) -> Result<usize> {
-	let Some(points) = var.used_points() else {
-		return Ok(0);
-	};
-	let (tuple, aux) = var.compile(axis_tags, &HashMap::new(), &compile_points(&points), true)?;
-	Ok(tuple.len() + aux.len())
-}
-
 /// `optimize`: leaves out the deltas that can be interpolated, if that makes the
 /// variation smaller.
 pub(crate) fn optimize(
@@ -36,7 +26,7 @@ pub(crate) fn optimize(
 	coords: &[(f64, f64)],
 	ends: &[usize],
 ) -> Result<()> {
-	optimize_with_tolerance(var, coords, ends, 0.5)
+	var.optimize(coords, ends, 0.5)
 }
 
 /// `optimize(origCoords, endPts, tolerance)`.
@@ -46,36 +36,7 @@ pub(crate) fn optimize_with_tolerance(
 	ends: &[usize],
 	tolerance: f64,
 ) -> Result<()> {
-	let mut deltas = Vec::with_capacity(var.coordinates.len());
-	for delta in &var.coordinates {
-		match delta {
-			// Already optimized.
-			None => return Ok(()),
-			Some(Delta::Point(x, y)) => deltas.push((x.value(), y.value())),
-			Some(Delta::Value(_)) => {
-				return Err(Error::ttlib("TypeError: cannot unpack non-iterable int"));
-			}
-		}
-	}
-	let keep = iup_delta_optimize(&deltas, coords, ends, tolerance)?;
-	if keep.iter().all(|k| *k) {
-		return Ok(());
-	}
-	let optimized = TupleVariation {
-		axes: var.axes.clone(),
-		coordinates: var
-			.coordinates
-			.iter()
-			.zip(&keep)
-			.map(|(d, k)| d.filter(|_| *k))
-			.collect(),
-	};
-	// Shouldn't matter that this is different from fvar.
-	let axis_tags: Vec<String> = var.axes.keys().cloned().collect();
-	if compiled_size(&optimized, &axis_tags)? < compiled_size(var, &axis_tags)? {
-		var.coordinates = optimized.coordinates;
-	}
-	Ok(())
+	var.optimize(coords, ends, tolerance)
 }
 
 /// `changeTupleVariationAxisLimit`.

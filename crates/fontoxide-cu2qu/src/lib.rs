@@ -4,13 +4,24 @@
 //! | fontoxide   | fontTools                  |
 //! |-------------|----------------------------|
 //! | crate root  | `fontTools.cu2qu.cu2qu`    |
-//! | [`Error`]   | `fontTools.cu2qu.errors`   |
+//! | [`Error`], [`errors`] | `fontTools.cu2qu.errors` |
+//! | [`ufo`]     | `fontTools.cu2qu.ufo`      |
+//! | [`cli`]     | `fontTools.cu2qu.cli`      |
+//! | [`pens`]    | `fontTools.pens.cu2quPen`  |
 //!
 //! The arithmetic is the one of fontTools in pure Python (not compiled with
 //! Cython), with Python's complex numbers ([`Complex`]), so the results are
 //! bit for bit the same.
 
 #![forbid(unsafe_code)]
+
+mod argparse;
+pub mod cli;
+pub mod errors;
+pub mod pens;
+pub mod ufo;
+
+pub use errors::{Incompatibility, IncompatibleFontsError, IncompatibleGlyphsError};
 
 use fontoxide_misc::array_tools::Point;
 use fontoxide_misc::complex::{Complex, J};

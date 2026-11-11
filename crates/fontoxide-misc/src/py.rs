@@ -15,6 +15,8 @@ use std::fmt::Write as _;
 /// assert_eq!(float_repr(1e16), "1e+16");
 /// assert_eq!(float_repr(1e-5), "1e-05");
 /// assert_eq!(float_repr(-0.0), "-0.0");
+/// // Exactly halfway between two shortest strings: half to even, like CPython.
+/// assert_eq!(float_repr(1.11112213134765625), "1.1111221313476562");
 /// ```
 pub fn float_repr(value: f64) -> String {
 	if value.is_nan() {
@@ -36,7 +38,12 @@ pub fn float_repr(value: f64) -> String {
 	let sci = format!("{:e}", value.abs());
 	let (mantissa, exponent) = sci.split_once('e').unwrap_or((&sci, "0"));
 	let exponent: i32 = exponent.parse().unwrap_or(0);
-	let digits: String = mantissa.chars().filter(|c| *c != '.').collect();
+	let mut digits: String = mantissa.chars().filter(|c| *c != '.').collect();
+	if digits.len() >= 16
+		&& let Some(even) = shortest_tie_to_even(value.abs(), &digits, exponent)
+	{
+		digits = even;
+	}
 	// Position of the decimal point relative to the digits: value = 0.DIGITS * 10^decpt.
 	let decpt = exponent + 1;
 
@@ -73,6 +80,37 @@ pub fn float_repr(value: f64) -> String {
 		}
 	}
 	out
+}
+
+/// When the value lies exactly halfway between two shortest round-tripping
+/// digit strings, Rust's `{:e}` takes the upper one, while CPython's `repr`
+/// (`_Py_dg_dtoa` mode 0) rounds half to even: e.g. 1.11112213134765625 is
+/// `1.1111221313476562` in Python. Returns the even digits in that case.
+fn shortest_tie_to_even(value: f64, digits: &str, exponent: i32) -> Option<String> {
+	let n = digits.len();
+	let last = *digits.as_bytes().last()?;
+	// A tie needs an odd upper candidate whose even lower neighbor also
+	// round-trips; check that cheaply first.
+	if (last - b'0').is_multiple_of(2) {
+		return None;
+	}
+	let lower = format!("{}{}", &digits[..n - 1], (last - 1) as char);
+	let candidate = format!("{}.{}e{exponent}", &lower[..1], &lower[1..]);
+	if candidate.parse::<f64>().ok()? != value {
+		return None;
+	}
+	// Exact formatting: a double has at most 767 significant digits.
+	let exact = format!("{:.800e}", value);
+	let (mantissa, exp) = exact.split_once('e')?;
+	if exp.parse::<i32>().ok()? != exponent {
+		return None;
+	}
+	let exact_digits: String = mantissa.chars().filter(|c| *c != '.').collect();
+	let exact_digits = exact_digits.trim_end_matches('0');
+	if exact_digits.len() != n + 1 || !exact_digits.ends_with('5') {
+		return None;
+	}
+	(exact_digits[..n] == lower).then_some(lower)
 }
 
 /// Python's `round(x)` for floats: round half to even.

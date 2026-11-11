@@ -393,7 +393,7 @@ const REAL_NIBBLES: [Option<&str>; 15] = [
 ];
 
 /// `read_realNumber`.
-fn read_real(data: &[u8], mut index: usize) -> Result<(f64, usize)> {
+pub fn read_real(data: &[u8], mut index: usize) -> Result<(f64, usize)> {
 	let mut number = String::new();
 	loop {
 		let b = *data.get(index).ok_or_else(index_error)?;

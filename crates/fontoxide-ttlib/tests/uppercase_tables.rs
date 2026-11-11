@@ -262,3 +262,86 @@ fn test_hasExtendedGlyphIDs() -> TestResult {
 	assert!(has_extended_glyph_ids(&mut font)?);
 	Ok(())
 }
+
+/// `Tests/ttLib/tables/G_L_Y_F__test.py::test_split_glyphs_use_uppercase_table_tag`: the glyph
+/// files of a split `GLYF` are wrapped in `<GLYF>`. (fontTools' test stubs the glyph out; this
+/// one has a real outline.)
+#[test]
+fn test_split_glyphs_use_uppercase_table_tag() -> TestResult {
+	let mut font = Font::new();
+	font.set_glyph_order(names(&["a"]));
+	let mut glyf = Glyf::new_as(GLYF);
+	glyf.glyphs.insert(
+		0,
+		Glyph {
+			number_of_contours: 1,
+			coordinates: vec![(0.0, 0.0), (1.0, 0.0), (1.0, 1.0)],
+			end_pts_of_contours: vec![2],
+			flags: vec![1; 3],
+			..Default::default()
+		},
+	);
+	let path = std::path::Path::new("tmp").join("GLYF.ttx");
+	let path = path.to_string_lossy();
+
+	let mut writer = fontoxide_misc::xml_writer::XmlWriter::new();
+	let files = glyf.to_xml_split(&mut writer, &mut font, &path)?;
+
+	let [glyph_file] = files.as_slice() else {
+		panic!("one glyph file: {files:?}");
+	};
+	assert_ne!(glyph_file.path, path);
+	assert!(
+		glyph_file.contents.contains("<GLYF>"),
+		"{}",
+		glyph_file.contents
+	);
+	Ok(())
+}
+
+/// `Tests/ttLib/ttFont_test.py::test_saveXML_splitGlyphs_for_GLYF`: `GLYF` is dumped with its
+/// glyphs split too. (fontTools' test checks that `toXML` gets `splitGlyphs=True`; this one checks
+/// the files.)
+#[test]
+#[allow(non_snake_case)]
+fn test_saveXML_splitGlyphs_for_GLYF() -> TestResult {
+	let mut font = Font::new();
+	font.set_glyph_order(names(&["a"]));
+	let mut glyf = Glyf::new_as(GLYF);
+	glyf.glyphs.insert(
+		0,
+		Glyph {
+			number_of_contours: 1,
+			coordinates: vec![(0.0, 0.0), (1.0, 0.0), (1.0, 1.0)],
+			end_pts_of_contours: vec![2],
+			flags: vec![1; 3],
+			..Default::default()
+		},
+	);
+	font.insert(Box::new(glyf));
+
+	let files = font.to_ttx_files(
+		"font.ttx",
+		&fontoxide_ttlib::TtxOptions {
+			tables: vec![fontoxide_ttlib::TableKey::Table(GLYF)],
+			split_glyphs: true,
+			..Default::default()
+		},
+	)?;
+	let paths: Vec<&str> = files.iter().map(|f| f.path.as_str()).collect();
+	assert_eq!(
+		paths,
+		["font.ttx", "font.G_L_Y_F_.a.ttx", "font.G_L_Y_F_.ttx"]
+	);
+	assert!(
+		files[0]
+			.contents
+			.contains("<GLYF src=\"font.G_L_Y_F_.ttx\"/>")
+	);
+	assert!(
+		files[2]
+			.contents
+			.contains("<TTGlyph src=\"font.G_L_Y_F_.a.ttx\"/>")
+	);
+	Ok(())
+}

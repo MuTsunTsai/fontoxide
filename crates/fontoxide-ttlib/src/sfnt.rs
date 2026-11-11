@@ -396,6 +396,16 @@ impl SfntReader {
 		self.entries.len() != len
 	}
 
+	/// The data of a table as the file stores it, uncompressed (`entry.loadData`):
+	/// the same as [`SfntReader::table_data`], except that a table that WOFF 2.0
+	/// transforms is not rebuilt.
+	pub fn stored_table_data(&self, tag: Tag) -> Result<Vec<u8>> {
+		match &self.container {
+			Container::Woff2(w) => Ok(w.raw(tag)?.to_vec()),
+			_ => Ok(self.table_data(tag)?.to_vec()),
+		}
+	}
+
 	/// The (uncompressed) data of a table (`__getitem__`).
 	pub fn table_data(&self, tag: Tag) -> Result<TableData> {
 		let entry = self

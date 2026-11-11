@@ -73,7 +73,7 @@ fn implemented(table: TableKey) -> bool {
 fn check_all(check: impl Fn(&Path, TableKey, &str) -> Result<String, String>) {
 	let mut failures = Vec::new();
 	for (font, table, expected_path) in cases() {
-		// The Graphite tables are not implemented yet.
+		// Tables that fontoxide does not implement yet.
 		if !implemented(table) {
 			continue;
 		}

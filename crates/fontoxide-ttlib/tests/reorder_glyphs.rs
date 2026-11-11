@@ -269,3 +269,63 @@ fn test_reorder_lazy_arrays_single_pos() -> TestResult {
 fn test_reorder_lazy_arrays_pair_pos() -> TestResult {
 	test_reorder_lazy_arrays(true)
 }
+
+/// Not in fontTools: the `mort` and `morx` tables of fontTools' table tests,
+/// reordered as by `tools/reference/morph_reorder_fixtures.py`, compared with
+/// fontTools as TTX and compiled.
+#[test]
+fn test_reorder_morph() -> TestResult {
+	let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/data/reorder_glyphs/morph");
+	let mut cases = 0;
+	for entry in std::fs::read_dir(&dir)? {
+		let path = entry?.path();
+		let file = path
+			.file_name()
+			.unwrap_or_default()
+			.to_string_lossy()
+			.into_owned();
+		let Some(stem) = file.strip_suffix(".expected.bin") else {
+			continue;
+		};
+		let tag_name = &stem[..4];
+		let tag = fontoxide_ttlib::Tag::new(tag_name.as_bytes().try_into()?);
+		let order: Vec<String> =
+			std::fs::read_to_string(dir.join(format!("{tag_name}.glyphs.txt")))?
+				.lines()
+				.map(str::to_owned)
+				.collect();
+		let mut font = Font::new();
+		font.set_glyph_order(order.clone());
+		let data = std::fs::read(dir.join(format!("{stem}.bin")))?;
+		let table = fontoxide_ttlib::table::decompile_table(tag, &data, &mut font)?;
+		font.insert(table);
+		let new_order: Vec<String> = order[..1]
+			.iter()
+			.chain(order[1..].iter().rev())
+			.cloned()
+			.collect();
+		reorder_glyphs(&mut font, new_order)?;
+
+		let options = fontoxide_ttlib::TtxOptions {
+			tables: vec![fontoxide_ttlib::TableKey::Table(tag)],
+			..Default::default()
+		};
+		let ttx = font.to_ttx(&options)?.replace("\r\n", "\n");
+		let expected = std::fs::read_to_string(dir.join(format!("{stem}.expected.ttx")))?;
+		let strip = |s: &str| match s.find(" ttLibVersion=\"") {
+			Some(i) => {
+				let end = s[i + 15..].find('"').map_or(s.len(), |j| i + 15 + j + 1);
+				format!("{}{}", &s[..i], &s[end..])
+			}
+			None => s.to_owned(),
+		};
+		assert_eq!(strip(&ttx), strip(&expected), "{stem}");
+
+		let mut table = font.get_dyn(tag)?.ok_or("no table")?.clone_table();
+		let compiled = table.compile(&mut font)?;
+		assert_eq!(compiled, std::fs::read(&path)?, "{stem}");
+		cases += 1;
+	}
+	assert_eq!(cases, 10);
+	Ok(())
+}

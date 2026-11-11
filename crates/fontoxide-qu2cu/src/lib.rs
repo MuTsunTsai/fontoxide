@@ -1,11 +1,21 @@
 //! Port of `fontTools.qu2cu`: quadratic splines approximated by cubic
 //! curves.
 //!
+//! | fontoxide   | fontTools                  |
+//! |-------------|----------------------------|
+//! | crate root  | `fontTools.qu2cu.qu2cu`    |
+//! | [`cli`]     | `fontTools.qu2cu.cli`      |
+//! | [`pens`]    | `fontTools.pens.qu2cuPen`  |
+//!
 //! The arithmetic is the one of fontTools in pure Python (not compiled with
 //! Cython), with Python's complex numbers ([`Complex`]), so the results are
 //! bit for bit the same.
 
 #![forbid(unsafe_code)]
+
+mod argparse;
+pub mod cli;
+pub mod pens;
 
 use fontoxide_misc::array_tools::Point;
 use fontoxide_misc::bezier_tools::split_cubic_at_t_c;

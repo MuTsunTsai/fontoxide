@@ -1,0 +1,15 @@
+checksum=1717298705
+designsize=10.0
+codingscheme='DUMMYSPACEENCODING'
+fonttype=0
+family='DUMMYSPAC-FONTFORGE'
+seven_bit_safe_flag=True
+face='MRR'
+extraheader={}
+fontdimens={'SLANT': 0.0, 'SPACE': 0.0010004043579101562, 'STRETCH': 0.0, 'SHRINK': 0.0, 'XHEIGHT': 0.39999961853027344, 'QUAD': 0.0019998550415039062, 'EXTRASPACE': 0.0010004043579101562}
+right_boundary_char=1
+left_boundary_char=256
+kerning={}
+ligatures={}
+chars={32: {'width': 0.0010004043579101562}}
+<TFM for DUMMYSPAC-FONTFORGE in DUMMYSPACEENCODING at 10pt>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont ttLibVersion="4.68">
+  <glyf>
+    <!-- The xMin, yMin, xMax and yMax values
+         will be recalculated by the compiler. -->
+    <TTGlyph name="ellipsis" xMin="55" yMin="0" xMax="668" yMax="122">
+      <component glyphName="period" x="0" y="0" flags="0x4"/>
+      <component glyphName="period" x="241" y="0" flags="0x4"/>
+      <component glyphName="period" x="482" y="0" flags="0x4"/>
+      <instructions>
+        <assembly>
+          SVTCA[0]	/* SetFPVectorToAxis */
+          SVTCA[1]	/* SetFPVectorToAxis */
+        </assembly>
+      </instructions>
+    </TTGlyph>
+  </glyf>
+</ttFont>

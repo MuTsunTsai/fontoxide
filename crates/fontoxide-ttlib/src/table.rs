@@ -220,9 +220,13 @@ macro_rules! registry {
 			}
 		}
 
-		/// Whether fontoxide implements the table (rather than keeping it raw).
+		/// Whether fontoxide implements the table as fontTools does: with a table
+		/// type of its own, or, for tags that fontTools has no table class for
+		/// either (such as `MERG` and `PCLT`), as a raw [`DefaultTable`], which is
+		/// what fontTools uses for them too.
 		pub fn is_implemented(tag: Tag) -> bool {
 			matches!(&tag.0, $($tag)|*)
+				|| !crate::generated::tables::FONTTOOLS_TABLES.contains(&tag)
 		}
 	};
 }
@@ -316,6 +320,11 @@ registry! {
 	b"TSIS" => crate::tables::AsciiTable,
 	b"TSIV" => crate::tables::AsciiTable,
 	b"TTFA" => crate::tables::AsciiTable,
+	b"Feat" => crate::tables::graphite::Feat,
+	b"Glat" => crate::tables::Glat,
+	b"Gloc" => crate::tables::Gloc,
+	b"Silf" => crate::tables::Silf,
+	b"Sill" => crate::tables::Sill,
 }
 
 /// The tables that must be compiled before `tag` (`dependencies`), as declared by

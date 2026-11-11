@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont ttLibVersion="4.68">
+
+  <cmap>
+    <tableVersion version="0"/>
+    <cmap_format_4 platformID="0" platEncID="3" language="0">
+      <map code="0x0" name=".null"/><!-- ???? -->
+      <map code="0xd" name="CR"/><!-- ???? -->
+      <map code="0x20" name="space"/><!-- SPACE -->
+      <map code="0x2e" name="period"/><!-- FULL STOP -->
+      <map code="0x2026" name="ellipsis"/><!-- HORIZONTAL ELLIPSIS -->
+    </cmap_format_4>
+    <cmap_format_6 platformID="1" platEncID="0" language="0">
+      <map code="0x0" name=".null"/>
+      <map code="0xd" name="CR"/>
+      <map code="0x20" name="space"/>
+      <map code="0x2e" name="period"/>
+      <map code="0xc9" name="ellipsis"/>
+    </cmap_format_6>
+    <cmap_format_4 platformID="3" platEncID="1" language="0">
+      <map code="0x0" name=".null"/><!-- ???? -->
+      <map code="0xd" name="CR"/><!-- ???? -->
+      <map code="0x20" name="space"/><!-- SPACE -->
+      <map code="0x2e" name="period"/><!-- FULL STOP -->
+      <map code="0x2026" name="ellipsis"/><!-- HORIZONTAL ELLIPSIS -->
+    </cmap_format_4>
+  </cmap>
+
+</ttFont>

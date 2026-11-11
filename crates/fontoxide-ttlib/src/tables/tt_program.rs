@@ -293,6 +293,24 @@ impl Program {
 	/// Writes the program as TTX (`toXML`): its assembly, or its bytecode with
 	/// the error if it cannot be disassembled.
 	pub fn to_xml(&self, writer: &mut XmlWriter) {
+		self.to_xml_with(writer, true);
+	}
+
+	/// [`Program::to_xml`], where `disassemble` is the font's
+	/// `disassembleInstructions`: without it, the program is written as
+	/// bytecode.
+	pub fn to_xml_with(&self, writer: &mut XmlWriter, disassemble: bool) {
+		if !disassemble {
+			if self.bytecode.is_empty() {
+				return;
+			}
+			writer.begintag("bytecode", &[]);
+			writer.newline();
+			writer.dumphex(&self.bytecode);
+			writer.endtag("bytecode");
+			writer.newline();
+			return;
+		}
 		let assembly = match self.assembly(true) {
 			Ok(a) => a,
 			Err(e) => {

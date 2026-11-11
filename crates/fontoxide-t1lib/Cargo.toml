@@ -1,0 +1,23 @@
+[package]
+name = "fontoxide-t1lib"
+description = "Reading and writing PostScript Type 1 fonts; a port of fontTools.t1Lib"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+fontoxide-encodings.workspace = true
+fontoxide-misc.workspace = true
+fontoxide-pens.workspace = true
+fontoxide-ttlib.workspace = true
+indexmap.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

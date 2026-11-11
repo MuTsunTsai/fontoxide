@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont sfntVersion="OTTO" ttLibVersion="4.68">
+  <GlyphOrder src="TestOTF.GlyphOrder.ttx"/>
+  <head src="TestOTF._h_e_a_d.ttx"/>
+  <hhea src="TestOTF._h_h_e_a.ttx"/>
+  <maxp src="TestOTF._m_a_x_p.ttx"/>
+  <OS_2 src="TestOTF.O_S_2f_2.ttx"/>
+  <name src="TestOTF._n_a_m_e.ttx"/>
+  <cmap src="TestOTF._c_m_a_p.ttx"/>
+  <post src="TestOTF._p_o_s_t.ttx"/>
+  <CFF src="TestOTF.C_F_F_.ttx"/>
+  <hmtx src="TestOTF._h_m_t_x.ttx"/>
+  <DSIG src="TestOTF.D_S_I_G_.ttx"/>
+</ttFont>

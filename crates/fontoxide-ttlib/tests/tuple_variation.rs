@@ -1176,6 +1176,14 @@ fn test_calcInferredDeltas_invalid() {
 }
 
 #[test]
+fn test_optimize() -> Result<()> {
+	let mut v = var(wght_1(), vec![pt(0, 0); 5]);
+	v.optimize(&[(0.0, 0.0); 5], &[0], 0.5)?;
+	assert_eq!(v.coordinates, [None; 5]);
+	Ok(())
+}
+
+#[test]
 fn test_sum_deltas_gvar() -> Result<()> {
 	let mut var1 = var(
 		BTreeMap::new(),

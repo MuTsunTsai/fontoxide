@@ -1,5 +1,5 @@
 //! Port of `fontTools.cffLib`: CFF and CFF2 font data, and Type 2 charstrings
-//! (`fontTools.misc.psCharStrings`).
+//! (`fontTools.misc.psCharStrings`), with Type 1 charstrings in [`t1_charstring`].
 
 pub mod cff2_to_cff;
 pub mod cff_to_cff2;
@@ -9,6 +9,7 @@ pub mod dict;
 pub mod font;
 mod from_xml;
 pub mod specializer;
+pub mod t1_charstring;
 pub mod transforms;
 pub mod width;
 mod xml;

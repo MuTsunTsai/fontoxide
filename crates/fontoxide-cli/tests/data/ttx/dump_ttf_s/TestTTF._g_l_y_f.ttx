@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont ttLibVersion="4.68">
+
+  <glyf>
+
+    <!-- The xMin, yMin, xMax and yMax values
+         will be recalculated by the compiler. -->
+
+    <TTGlyph name=".notdef" xMin="50" yMin="0" xMax="450" yMax="750">
+      <contour>
+        <pt x="50" y="0" on="1"/>
+        <pt x="50" y="750" on="1"/>
+        <pt x="450" y="750" on="1"/>
+        <pt x="450" y="0" on="1"/>
+      </contour>
+      <contour>
+        <pt x="400" y="50" on="1"/>
+        <pt x="400" y="700" on="1"/>
+        <pt x="100" y="700" on="1"/>
+        <pt x="100" y="50" on="1"/>
+      </contour>
+      <instructions>
+        <assembly>
+          SVTCA[0]	/* SetFPVectorToAxis */
+          SVTCA[1]	/* SetFPVectorToAxis */
+        </assembly>
+      </instructions>
+    </TTGlyph>
+
+    <TTGlyph name=".null"/><!-- contains no outline data -->
+
+    <TTGlyph name="CR"/><!-- contains no outline data -->
+
+    <TTGlyph name="ellipsis" xMin="55" yMin="0" xMax="668" yMax="122">
+      <component glyphName="period" x="0" y="0" flags="0x4"/>
+      <component glyphName="period" x="241" y="0" flags="0x4"/>
+      <component glyphName="period" x="482" y="0" flags="0x4"/>
+      <instructions>
+        <assembly>
+          SVTCA[0]	/* SetFPVectorToAxis */
+          SVTCA[1]	/* SetFPVectorToAxis */
+        </assembly>
+      </instructions>
+    </TTGlyph>
+
+    <TTGlyph name="period" xMin="55" yMin="0" xMax="186" yMax="122">
+      <contour>
+        <pt x="55" y="122" on="1"/>
+        <pt x="186" y="122" on="1"/>
+        <pt x="186" y="0" on="1"/>
+        <pt x="55" y="0" on="1"/>
+      </contour>
+      <instructions>
+        <assembly>
+          SVTCA[0]	/* SetFPVectorToAxis */
+          SVTCA[1]	/* SetFPVectorToAxis */
+        </assembly>
+      </instructions>
+    </TTGlyph>
+
+    <TTGlyph name="space"/><!-- contains no outline data -->
+
+  </glyf>
+
+</ttFont>

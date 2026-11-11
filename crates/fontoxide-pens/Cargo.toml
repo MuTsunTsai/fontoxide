@@ -12,9 +12,7 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-fontoxide-cu2qu.workspace = true
 fontoxide-misc.workspace = true
-fontoxide-qu2cu.workspace = true
 log.workspace = true
 thiserror.workspace = true
 

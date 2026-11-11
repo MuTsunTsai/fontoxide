@@ -24,6 +24,7 @@ pub mod font;
 mod generated;
 pub mod glyph_order;
 pub mod glyph_set;
+pub mod iup;
 pub mod ot;
 pub mod pens;
 pub mod remove_overlaps;
@@ -36,6 +37,7 @@ pub mod tables;
 pub mod ttx;
 pub mod var;
 pub mod woff2;
+pub mod woff2_cli;
 
 pub use collection::TtCollection;
 pub use error::{Error, Result};
@@ -46,7 +48,7 @@ pub use glyph_order::GlyphOrder;
 pub use glyph_set::GlyphSet;
 pub use sfnt::{Flavor, FlavorData};
 pub use table::{DefaultTable, Table, TableType};
-pub use ttx::TtxImportOptions;
+pub use ttx::{TtxFile, TtxImportOptions};
 
 /// The fontTools release whose behavior this version matches.
 pub const FONTTOOLS_VERSION: &str = "4.68.0";

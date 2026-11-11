@@ -1,0 +1,2 @@
+# The TTX files of `--newline CRLF` keep their line endings.
+dump_ttf_crlf/* -text

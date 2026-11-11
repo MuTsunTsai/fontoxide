@@ -1,0 +1,76 @@
+%!FontType1-1.1: TestT1-Regular 1.0
+%%BeginResource: font TestT1-Regular
+12 dict dup begin
+/FontType 1 def
+/FontName /TestT1-Regular def
+/FontInfo 14 dict dup begin
+/version (1.0) def
+/Notice (Test T1 is not a trademark of FontTools.) def
+/Copyright (Copyright c 2015 by FontTools. No rights reserved.) def
+/FullName (Test T1) def
+/FamilyName (Test T1) def
+/Weight (Regular) def
+/ItalicAngle 0.000000 def
+/isFixedPitch false def
+/UnderlinePosition -75.000000 def
+/UnderlineThickness 50.000000 def
+/FSType 0 def
+end def
+/PaintType 0 def
+/FontMatrix [0.001 0 0 0.001 0 0] def
+/Encoding 256 array
+0 1 255 {1 index exch /.notdef put} for
+def
+/FontBBox {50.000000 0.000000 668.000000 750.000000} def
+end
+%-- eexec startdup /Private
+8 dict dup begin
+/-| {string currentfile exch readstring pop} def
+/|- {def} def
+/| {put} def
+/BlueValues [0.000000 0.000000] def
+/password 5839 def
+/MinFeature {16 16} def
+/OtherSubrs[{}{}{}{systemdict/internaldict known not{pop 3}{1183615869
+systemdict/internaldict get exec dup/startlock known{/startlock get exec}{dup
+/strtlck known{/strtlck get exec}{pop 3}ifelse}ifelse}ifelse}executeonly]def
+/Subrs 5 array
+dup 0 15 -| hÌ¹·s=¿•{\Oh'¬Š |
+dup 1 9 -| hÌ¹·v­ŞØ6 |
+dup 2 9 -| hÌ¹·v¬ |
+dup 3 5 -| hÌ¹·ö |
+dup 4 13 -| hÌ¹·s:ÆWì>¶ì/ |
+def
+put
+dup /CharStrings
+6 dict dup begin
+/.notdef 35 -| hÌ¹·vÙÅ$‹i¶ ¦¨
+ºhÙà¤ÛxÄèWƒ$3"V8F |-
+/CR 9 -| hÌ¹·vÖl› |-
+/space 9 -| hÌ¹·vÖl› |-
+/period 21 -| hÌ¹·vÖgƒg«_†<·úVÏVÊB |-
+/ellipsis 68 -| hÌ¹·vØ±+À
+6ÉoÙ¦“ÑÉ$ƒûøYñ%¨åZgóÚš¯¥ML˜à» CÍe…æÕĞ½¯çÿIzã |-
+/.null 8 -| hÌ¹·vªja |-
+end put
+end
+dup /FontName get exch definefont pop
+mark%-- eexec end0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+cleartomark
+%%EndResource
+%%EOF 

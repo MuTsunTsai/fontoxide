@@ -293,6 +293,61 @@ impl TupleVariation {
 		self.coordinates.iter().any(Option::is_some)
 	}
 
+	/// The size of the variation compiled on its own, with its own points
+	/// (`len(tupleData) + len(auxData)` of `compile(axisTags)`).
+	fn compiled_size(&self, axis_tags: &[String]) -> Result<usize> {
+		let Some(points) = self.used_points() else {
+			return Ok(0);
+		};
+		let (tuple, aux) =
+			self.compile(axis_tags, &HashMap::new(), &compile_points(&points), true)?;
+		Ok(tuple.len() + aux.len())
+	}
+
+	/// Leaves out the deltas that IUP can infer within `tolerance`, if that
+	/// makes the variation smaller (`optimize(origCoords, endPts, tolerance)`).
+	/// `orig_coords` are the points of the glyph, including the four phantom
+	/// points, and `end_pts` the last point of each contour. Variations that
+	/// already leave out deltas are kept as they are.
+	pub fn optimize(
+		&mut self,
+		orig_coords: &[(f64, f64)],
+		end_pts: &[usize],
+		tolerance: f64,
+	) -> Result<()> {
+		let mut deltas = Vec::with_capacity(self.coordinates.len());
+		for delta in &self.coordinates {
+			match delta {
+				// Already optimized.
+				None => return Ok(()),
+				Some(Delta::Point(x, y)) => deltas.push((x.value(), y.value())),
+				Some(Delta::Value(_)) => {
+					return Err(Error::ttlib("TypeError: cannot unpack non-iterable int"));
+				}
+			}
+		}
+		let keep = crate::iup::iup_delta_optimize(&deltas, orig_coords, end_pts, tolerance)?;
+		if keep.iter().all(|k| *k) {
+			return Ok(());
+		}
+		// Use the "optimized" version only if smaller.
+		let optimized = TupleVariation {
+			axes: self.axes.clone(),
+			coordinates: self
+				.coordinates
+				.iter()
+				.zip(&keep)
+				.map(|(d, k)| d.filter(|_| *k))
+				.collect(),
+		};
+		// Shouldn't matter that this is different from fvar.
+		let axis_tags: Vec<String> = self.axes.keys().cloned().collect();
+		if optimized.compiled_size(&axis_tags)? < self.compiled_size(&axis_tags)? {
+			self.coordinates = optimized.coordinates;
+		}
+		Ok(())
+	}
+
 	/// The peak of each axis, as F2Dot14 (`compileCoord`).
 	pub fn compile_coord(&self, axis_tags: &[String]) -> Result<Vec<u8>> {
 		let mut out = Vec::with_capacity(axis_tags.len() * 2);

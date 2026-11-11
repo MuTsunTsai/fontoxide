@@ -1,0 +1,36 @@
+glyph .notdef 500.0
+moveTo 450.0 0.0
+lineTo 450.0 750.0
+lineTo 50.0 750.0
+lineTo 50.0 0.0
+closePath
+moveTo 100.0 50.0
+lineTo 100.0 700.0
+lineTo 400.0 700.0
+lineTo 400.0 50.0
+closePath
+glyph CR 250.0
+glyph space 250.0
+glyph period 241.0
+moveTo 55.0 0.0
+lineTo 186.0 0.0
+lineTo 186.0 122.0
+lineTo 55.0 122.0
+closePath
+glyph ellipsis 723.0
+moveTo 55.0 0.0
+lineTo 186.0 0.0
+lineTo 186.0 122.0
+lineTo 55.0 122.0
+closePath
+moveTo 296.0 0.0
+lineTo 427.0 0.0
+lineTo 427.0 122.0
+lineTo 296.0 122.0
+closePath
+moveTo 537.0 0.0
+lineTo 668.0 0.0
+lineTo 668.0 122.0
+lineTo 537.0 122.0
+closePath
+glyph .null 0.0

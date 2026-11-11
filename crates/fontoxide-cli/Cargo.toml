@@ -1,0 +1,35 @@
+[package]
+name = "fontoxide-cli"
+description = "The fontTools command lines: ttx and the fonttools dispatcher; a port of fontTools.ttx and fontTools.__main__"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+fontoxide-cu2qu.workspace = true
+fontoxide-fealib.workspace = true
+fontoxide-merge.workspace = true
+fontoxide-misc.workspace = true
+fontoxide-mtilib.workspace = true
+fontoxide-otllib.workspace = true
+fontoxide-pens.workspace = true
+fontoxide-qu2cu.workspace = true
+fontoxide-subset.workspace = true
+fontoxide-ttlib.workspace = true
+fontoxide-varlib.workspace = true
+fontoxide-voltlib.workspace = true
+log.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+# FontBuilder, to build the font of a test as fontTools does.
+fontoxide = { path = "../fontoxide" }
+
+[lints]
+workspace = true

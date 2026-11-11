@@ -1,0 +1,18 @@
+Listing table info for "TestWOFF2.woff2":
+    tag     checksum    length    offset
+    ----  ----------  --------  --------
+    OS/2  0x67230FF8        96         0
+    cmap  0x013122DB       506        96
+    cvt   0x00000000         2       602
+    fpgm  0x00000000         1       604
+    gasp  0x0008001B        12       605
+    glyf  0xF46AEEC5       119       617
+    head  0xCE377F6A        54       736
+    hhea  0x065401E0        36       790
+    hmtx  0x07AC00A0        24       826
+    loca  0x00000000         0       850
+    maxp  0x000F0016        32       850
+    name  0xBBAF083E      1122       882
+    post  0x7225C4E0        55      2004
+    prep  0x00000000         1      2059
+

@@ -2130,32 +2130,66 @@ pub fn read_morx_subtable_xml(element: &Element, font: &mut Font) -> Result<Morx
 }
 
 impl AatStateTable {
-	/// Maps the glyphs of the class lookup and of the per-glyph lookups.
+	/// Maps the glyphs of the class lookup, the per-glyph lookups, the inserted
+	/// glyphs and the ligatures.
+	///
+	/// Ligature actions and components index glyphs arithmetically (by glyph ID
+	/// offsets); fontTools keeps them as numbers, so they are left unchanged here
+	/// too.
 	pub fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		self.glyph_classes = super::aat::remap_keys(std::mem::take(&mut self.glyph_classes), f)?;
 		for lookup in &mut self.per_glyph_lookups {
 			super::aat::remap_aat_lookup(lookup, f)?;
 		}
+		for t in self
+			.states
+			.iter_mut()
+			.flat_map(|s| s.transitions.values_mut())
+		{
+			for g in t
+				.current_insertion_action
+				.iter_mut()
+				.chain(&mut t.marked_insertion_action)
+			{
+				*g = f(*g)?;
+			}
+		}
+		for g in self.ligatures.iter_mut().flatten() {
+			*g = f(*g)?;
+		}
 		Ok(())
 	}
 }
 
+impl MorphSubStruct {
+	/// Maps the glyphs of the subtable.
+	pub fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match self {
+			MorphSubStruct::Rearrangement(v) => v.remap_glyphs(f),
+			MorphSubStruct::Contextual(v) => v.remap_glyphs(f),
+			MorphSubStruct::Ligature(v) => v.remap_glyphs(f),
+			MorphSubStruct::Noncontextual(v) => v.remap_glyphs(f),
+			MorphSubStruct::Insertion(v) => v.remap_glyphs(f),
+		}
+	}
+}
+
 impl MortSubtable {
-	/// Not supported: fontTools cannot subset `mort` either, so it never needs to
-	/// follow a new glyph order.
-	pub fn remap_glyphs(&mut self, _f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		Err(Error::ttlib(
-			"remapping the glyphs of 'mort' subtables is not supported",
-		))
+	/// Maps the glyphs of the subtable.
+	pub fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match &mut self.sub_struct {
+			Some(s) => s.remap_glyphs(f),
+			None => Ok(()),
+		}
 	}
 }
 
 impl MorxSubtable {
-	/// Not supported: fontTools cannot subset `morx` either, so it never needs to
-	/// follow a new glyph order.
-	pub fn remap_glyphs(&mut self, _f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		Err(Error::ttlib(
-			"remapping the glyphs of 'morx' subtables is not supported",
-		))
+	/// Maps the glyphs of the subtable.
+	pub fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		match &mut self.sub_struct {
+			Some(s) => s.remap_glyphs(f),
+			None => Ok(()),
+		}
 	}
 }

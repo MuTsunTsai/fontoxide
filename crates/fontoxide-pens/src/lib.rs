@@ -12,7 +12,6 @@
 //! | [`area_pen`]                  | `fontTools.pens.areaPen`               |
 //! | [`base_pen`]                  | `fontTools.pens.basePen`               |
 //! | [`bounds_pen`]                | `fontTools.pens.boundsPen`             |
-//! | [`cu2qu_pen`]                 | `fontTools.pens.cu2quPen`              |
 //! | [`explicit_closing_line_pen`] | `fontTools.pens.explicitClosingLinePen` |
 //! | [`filter_pen`]                | `fontTools.pens.filterPen`             |
 //! | [`hash_point_pen`]            | `fontTools.pens.hashPointPen`          |
@@ -20,7 +19,6 @@
 //! | [`perimeter_pen`]             | `fontTools.pens.perimeterPen`          |
 //! | [`point_inside_pen`]          | `fontTools.pens.pointInsidePen`        |
 //! | [`point_pen`]                 | `fontTools.pens.pointPen`              |
-//! | [`qu2cu_pen`]                 | `fontTools.pens.qu2cuPen`              |
 //! | [`recording_pen`]             | `fontTools.pens.recordingPen`          |
 //! | [`reverse_contour_pen`]       | `fontTools.pens.reverseContourPen`     |
 //! | [`rounding_pen`]              | `fontTools.pens.roundingPen`           |
@@ -30,7 +28,9 @@
 //! | [`transform_pen`]             | `fontTools.pens.transformPen`          |
 //!
 //! `ttGlyphPen` and `t2CharStringPen` are in `fontoxide_ttlib::pens`, as they
-//! build `glyf` glyphs and CFF charstrings.
+//! build `glyf` glyphs and CFF charstrings; `cu2quPen` and `qu2cuPen` are
+//! `fontoxide_cu2qu::pens` and `fontoxide_qu2cu::pens`, as they convert curves
+//! with those crates.
 //!
 //! Python's pens accept arbitrary keyword arguments in the point pen methods
 //! and pass them on; here only `identifier` is carried.
@@ -40,7 +40,6 @@
 pub mod area_pen;
 pub mod base_pen;
 pub mod bounds_pen;
-pub mod cu2qu_pen;
 pub mod explicit_closing_line_pen;
 pub mod filter_pen;
 pub mod hash_point_pen;
@@ -48,7 +47,6 @@ pub mod moments_pen;
 pub mod perimeter_pen;
 pub mod point_inside_pen;
 pub mod point_pen;
-pub mod qu2cu_pen;
 pub mod recording_pen;
 pub mod reverse_contour_pen;
 pub mod rounding_pen;

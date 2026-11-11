@@ -271,6 +271,7 @@ dependencies = [
 name = "fontoxide"
 version = "0.0.0"
 dependencies = [
+ "fontoxide-afmlib",
  "fontoxide-agl",
  "fontoxide-colorlib",
  "fontoxide-cu2qu",
@@ -278,21 +279,56 @@ dependencies = [
  "fontoxide-fealib",
  "fontoxide-merge",
  "fontoxide-misc",
+ "fontoxide-mtilib",
  "fontoxide-otllib",
  "fontoxide-pens",
  "fontoxide-qu2cu",
  "fontoxide-repack",
  "fontoxide-subset",
+ "fontoxide-svglib",
+ "fontoxide-t1lib",
+ "fontoxide-tfmlib",
  "fontoxide-ttlib",
  "fontoxide-ufolib",
  "fontoxide-unicodedata",
  "fontoxide-varlib",
+ "fontoxide-voltlib",
  "indexmap",
+]
+
+[[package]]
+name = "fontoxide-afmlib"
+version = "0.0.0"
+dependencies = [
+ "fontoxide-misc",
+ "indexmap",
+ "thiserror",
 ]
 
 [[package]]
 name = "fontoxide-agl"
 version = "0.0.0"
+
+[[package]]
+name = "fontoxide-cli"
+version = "0.0.0"
+dependencies = [
+ "fontoxide",
+ "fontoxide-cu2qu",
+ "fontoxide-fealib",
+ "fontoxide-merge",
+ "fontoxide-misc",
+ "fontoxide-mtilib",
+ "fontoxide-otllib",
+ "fontoxide-pens",
+ "fontoxide-qu2cu",
+ "fontoxide-subset",
+ "fontoxide-ttlib",
+ "fontoxide-varlib",
+ "fontoxide-voltlib",
+ "log",
+ "thiserror",
+]
 
 [[package]]
 name = "fontoxide-colorlib"
@@ -310,6 +346,9 @@ name = "fontoxide-cu2qu"
 version = "0.0.0"
 dependencies = [
  "fontoxide-misc",
+ "fontoxide-pens",
+ "fontoxide-ufolib",
+ "log",
  "thiserror",
 ]
 
@@ -358,9 +397,22 @@ dependencies = [
 name = "fontoxide-misc"
 version = "0.0.0"
 dependencies = [
+ "fontoxide-encodings",
  "indexmap",
  "log",
  "roxmltree",
+ "thiserror",
+]
+
+[[package]]
+name = "fontoxide-mtilib"
+version = "0.0.0"
+dependencies = [
+ "fontoxide-misc",
+ "fontoxide-otllib",
+ "fontoxide-ttlib",
+ "indexmap",
+ "log",
  "thiserror",
 ]
 
@@ -379,9 +431,7 @@ dependencies = [
 name = "fontoxide-pens"
 version = "0.0.0"
 dependencies = [
- "fontoxide-cu2qu",
  "fontoxide-misc",
- "fontoxide-qu2cu",
  "log",
  "thiserror",
 ]
@@ -391,6 +441,9 @@ name = "fontoxide-qu2cu"
 version = "0.0.0"
 dependencies = [
  "fontoxide-misc",
+ "fontoxide-pens",
+ "fontoxide-ttlib",
+ "log",
  "thiserror",
 ]
 
@@ -417,6 +470,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "fontoxide-svglib"
+version = "0.0.0"
+dependencies = [
+ "fontoxide-misc",
+ "fontoxide-pens",
+ "roxmltree",
+ "thiserror",
+]
+
+[[package]]
+name = "fontoxide-t1lib"
+version = "0.0.0"
+dependencies = [
+ "fontoxide-encodings",
+ "fontoxide-misc",
+ "fontoxide-pens",
+ "fontoxide-ttlib",
+ "indexmap",
+ "thiserror",
+]
+
+[[package]]
+name = "fontoxide-tfmlib"
+version = "0.0.0"
+dependencies = [
+ "fontoxide-misc",
+ "indexmap",
+ "thiserror",
+]
+
+[[package]]
 name = "fontoxide-ttlib"
 version = "0.0.0"
 dependencies = [
@@ -431,6 +515,7 @@ dependencies = [
  "kurbo",
  "linesweeper",
  "log",
+ "lz4_flex",
  "serde",
  "serde_json",
  "thiserror",
@@ -466,6 +551,18 @@ dependencies = [
  "fontoxide-subset",
  "fontoxide-ttlib",
  "fontoxide-ufolib",
+ "indexmap",
+ "log",
+ "thiserror",
+]
+
+[[package]]
+name = "fontoxide-voltlib"
+version = "0.0.0"
+dependencies = [
+ "fontoxide-fealib",
+ "fontoxide-misc",
+ "fontoxide-ttlib",
  "indexmap",
  "log",
  "thiserror",
@@ -575,6 +672,12 @@ name = "log"
 version = "0.4.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d15f86d12da44cd8d4ec3c73984537eb7f4cadcb9776a575a0a8a05ca11005c"
+
+[[package]]
+name = "lz4_flex"
+version = "0.11.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "373f5eceeeab7925e0c1098212f2fbc4d416adec9d35051a6ab251e824c1854a"
 
 [[package]]
 name = "memchr"

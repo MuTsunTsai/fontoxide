@@ -1,0 +1,14 @@
+Listing table info for "TestWOFF.woff":
+    tag     checksum    length    offset
+    ----  ----------  --------  --------
+    CFF   0x26FCC210       223      1072
+    DSIG  0x00000001         8      1320
+    OS/2  0x67230FF8        84       340
+    cmap  0x013122DB        90       960
+    head  0x0878CD19        54       244
+    hhea  0x065401E0        32       300
+    hmtx  0x07AC00A0        24      1296
+    maxp  0x00065000         6       332
+    name  0x848C7CE8       534       424
+    post  0xFFB80032        19      1052
+

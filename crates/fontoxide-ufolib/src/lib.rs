@@ -8,6 +8,7 @@
 //! | [`fontinfo`]      | the `fontinfo.plist` support of `fontTools.ufoLib` |
 //! | [`glif_lib`]      | `fontTools.ufoLib.glifLib`      |
 //! | [`kerning`]       | `fontTools.ufoLib.kerning`      |
+//! | [`objects`]       | a small part of ufoLib2's `ufoLib2.objects` |
 //! | [`validators`]    | `fontTools.ufoLib.validators`   |
 //! | [`UfoLibError`]   | `fontTools.ufoLib.errors`       |
 //!
@@ -45,6 +46,7 @@ pub mod fontinfo;
 mod fs;
 pub mod glif_lib;
 pub mod kerning;
+pub mod objects;
 mod ufo;
 mod utils;
 pub mod validators;

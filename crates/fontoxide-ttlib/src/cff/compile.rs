@@ -578,7 +578,7 @@ fn fd(v: Option<i64>) -> Result<i64> {
 }
 
 /// `packFDSelect3` / `packFDSelect4`.
-fn pack_fd_select_ranges(array: &[Option<i64>], format: u8) -> Result<Vec<u8>> {
+pub fn pack_fd_select_ranges(array: &[Option<i64>], format: u8) -> Result<Vec<u8>> {
 	if array.is_empty() {
 		return Err(Error::ttlib(
 			"UnboundLocalError: cannot access local variable 'i'",

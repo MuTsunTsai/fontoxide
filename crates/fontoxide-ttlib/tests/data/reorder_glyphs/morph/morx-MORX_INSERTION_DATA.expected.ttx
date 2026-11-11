@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont sfntVersion="\x00\x01\x00\x00" ttLibVersion="4.68">
+
+  <morx>
+    <Version value="2"/>
+    <Reserved value="0"/>
+    <!-- MorphChainCount=1 -->
+    <MorphChain index="0">
+      <DefaultFlags value="0x00000001"/>
+      <!-- StructLength=164 -->
+      <!-- MorphFeatureCount=0 -->
+      <!-- MorphSubtableCount=1 -->
+      <MorphSubtable index="0">
+        <!-- StructLength=148 -->
+        <TextDirection value="Horizontal"/>
+        <ProcessingOrder value="LayoutOrder"/>
+        <!-- MorphType=5 -->
+        <SubFeatureFlags value="0x00000001"/>
+        <InsertionMorph>
+          <StateTable>
+            <!-- GlyphClassCount=6 -->
+            <GlyphClass glyph="g.172" value="5"/>
+            <GlyphClass glyph="g.486" value="5"/>
+            <GlyphClass glyph="g.487" value="5"/>
+            <GlyphClass glyph="g.488" value="5"/>
+            <GlyphClass glyph="g.489" value="5"/>
+            <GlyphClass glyph="g.490" value="5"/>
+            <GlyphClass glyph="g.491" value="5"/>
+            <GlyphClass glyph="g.496" value="4"/>
+            <GlyphClass glyph="g.502" value="4"/>
+            <GlyphClass glyph="g.503" value="4"/>
+            <GlyphClass glyph="g.504" value="4"/>
+            <GlyphClass glyph="g.506" value="4"/>
+            <GlyphClass glyph="g.507" value="4"/>
+            <GlyphClass glyph="g.508" value="4"/>
+            <GlyphClass glyph="g.592" value="5"/>
+            <State index="0">
+              <Transition onGlyphClass="0">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="1">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="2">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="3">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="4">
+                <NewState value="2"/>
+              </Transition>
+              <Transition onGlyphClass="5">
+                <NewState value="0"/>
+              </Transition>
+            </State>
+            <State index="1">
+              <Transition onGlyphClass="0">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="1">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="2">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="3">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="4">
+                <NewState value="2"/>
+              </Transition>
+              <Transition onGlyphClass="5">
+                <NewState value="0"/>
+              </Transition>
+            </State>
+            <State index="2">
+              <Transition onGlyphClass="0">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="1">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="2">
+                <NewState value="2"/>
+              </Transition>
+              <Transition onGlyphClass="3">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="4">
+                <NewState value="2"/>
+              </Transition>
+              <Transition onGlyphClass="5">
+                <NewState value="0"/>
+                <Flags value="CurrentIsKashidaLike,CurrentInsertBefore"/>
+                <CurrentInsertionAction glyph="g.559"/>
+              </Transition>
+            </State>
+          </StateTable>
+        </InsertionMorph>
+      </MorphSubtable>
+    </MorphChain>
+  </morx>
+
+</ttFont>

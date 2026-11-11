@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont sfntVersion="\x00\x01\x00\x00" ttLibVersion="4.68">
+
+  <mort>
+    <Version value="0x00010000"/>
+    <!-- MorphChainCount=1 -->
+    <MorphChain index="0">
+      <DefaultFlags value="0x0000001F"/>
+      <!-- StructLength=528 -->
+      <!-- MorphFeatureCount=0 -->
+      <!-- MorphSubtableCount=5 -->
+      <MorphSubtable index="0">
+        <!-- StructLength=68 -->
+        <CoverageFlags value="32"/>
+        <!-- MorphType=0 -->
+        <SubFeatureFlags value="0x00000001"/>
+        <RearrangementMorph>
+          <StateTable>
+            <!-- GlyphClassCount=6 -->
+            <GlyphClass glyph=".notdef" value="1"/>
+            <GlyphClass glyph="g.1" value="1"/>
+            <GlyphClass glyph="g.10" value="1"/>
+            <GlyphClass glyph="g.12" value="1"/>
+            <GlyphClass glyph="g.14" value="1"/>
+            <GlyphClass glyph="g.15" value="1"/>
+            <GlyphClass glyph="g.16" value="1"/>
+            <GlyphClass glyph="g.17" value="1"/>
+            <GlyphClass glyph="g.18" value="1"/>
+            <GlyphClass glyph="g.19" value="1"/>
+            <GlyphClass glyph="g.2" value="4"/>
+            <GlyphClass glyph="g.20" value="1"/>
+            <GlyphClass glyph="g.21" value="1"/>
+            <GlyphClass glyph="g.22" value="1"/>
+            <GlyphClass glyph="g.23" value="1"/>
+            <GlyphClass glyph="g.24" value="1"/>
+            <GlyphClass glyph="g.25" value="1"/>
+            <GlyphClass glyph="g.26" value="1"/>
+            <GlyphClass glyph="g.27" value="1"/>
+            <GlyphClass glyph="g.28" value="1"/>
+            <GlyphClass glyph="g.29" value="1"/>
+            <GlyphClass glyph="g.3" value="5"/>
+            <GlyphClass glyph="g.4" value="1"/>
+            <GlyphClass glyph="g.5" value="1"/>
+            <GlyphClass glyph="g.6" value="1"/>
+            <GlyphClass glyph="g.7" value="1"/>
+            <GlyphClass glyph="g.8" value="1"/>
+            <GlyphClass glyph="g.9" value="1"/>
+            <GlyphClass glyph="parenleft" value="1"/>
+            <GlyphClass glyph="parenright" value="1"/>
+            <State index="0">
+              <Transition onGlyphClass="0">
+                <NewState value="0"/>
+                <Verb value="0"/><!-- no change -->
+              </Transition>
+              <Transition onGlyphClass="1">
+                <NewState value="0"/>
+                <Verb value="0"/><!-- no change -->
+              </Transition>
+              <Transition onGlyphClass="2">
+                <NewState value="0"/>
+                <Verb value="0"/><!-- no change -->
+              </Transition>
+              <Transition onGlyphClass="3">
+                <NewState value="0"/>
+                <Verb value="0"/><!-- no change -->
+              </Transition>
+              <Transition onGlyphClass="4">
+                <NewState value="0"/>
+                <Flags value="MarkFirst"/>
+                <Verb value="0"/><!-- no change -->
+              </Transition>
+              <Transition onGlyphClass="5">
+                <NewState value="0"/>
+                <Flags value="MarkLast"/>
+                <Verb value="1"/><!-- Ax ⇒ xA -->
+              </Transition>
+            </State>
+          </StateTable>
+        </RearrangementMorph>
+      </MorphSubtable>
+      <MorphSubtable index="1">
+        <!-- StructLength=136 -->
+        <CoverageFlags value="32"/>
+        <!-- MorphType=1 -->
+        <SubFeatureFlags value="0x00000002"/>
+        <ContextualMorph>
+          <StateTable>
+            <!-- GlyphClassCount=5 -->
+            <GlyphClass glyph=".notdef" value="1"/>
+            <GlyphClass glyph="g.1" value="1"/>
+            <GlyphClass glyph="g.10" value="1"/>
+            <GlyphClass glyph="g.12" value="1"/>
+            <GlyphClass glyph="g.14" value="1"/>
+            <GlyphClass glyph="g.15" value="1"/>
+            <GlyphClass glyph="g.16" value="1"/>
+            <GlyphClass glyph="g.17" value="1"/>
+            <GlyphClass glyph="g.18" value="1"/>
+            <GlyphClass glyph="g.19" value="1"/>
+            <GlyphClass glyph="g.2" value="1"/>
+            <GlyphClass glyph="g.20" value="1"/>
+            <GlyphClass glyph="g.21" value="1"/>
+            <GlyphClass glyph="g.22" value="1"/>
+            <GlyphClass glyph="g.23" value="1"/>
+            <GlyphClass glyph="g.24" value="1"/>
+            <GlyphClass glyph="g.25" value="1"/>
+            <GlyphClass glyph="g.26" value="1"/>
+            <GlyphClass glyph="g.27" value="1"/>
+            <GlyphClass glyph="g.28" value="1"/>
+            <GlyphClass glyph="g.29" value="1"/>
+            <GlyphClass glyph="g.3" value="1"/>
+            <GlyphClass glyph="g.4" value="4"/>
+            <GlyphClass glyph="g.5" value="1"/>
+            <GlyphClass glyph="g.6" value="1"/>
+            <GlyphClass glyph="g.7" value="1"/>
+            <GlyphClass glyph="g.8" value="1"/>
+            <GlyphClass glyph="g.9" value="1"/>
+            <GlyphClass glyph="parenleft" value="1"/>
+            <GlyphClass glyph="parenright" value="1"/>
+            <State index="0">
+              <Transition onGlyphClass="0">
+                <NewState value="0"/>
+                <MarkIndex value="65535"/>
+                <CurrentIndex value="65535"/>
+              </Transition>
+              <Transition onGlyphClass="1">
+                <NewState value="0"/>
+                <MarkIndex value="65535"/>
+                <CurrentIndex value="65535"/>
+              </Transition>
+              <Transition onGlyphClass="2">
+                <NewState value="0"/>
+                <MarkIndex value="65535"/>
+                <CurrentIndex value="65535"/>
+              </Transition>
+              <Transition onGlyphClass="3">
+                <NewState value="0"/>
+                <MarkIndex value="65535"/>
+                <CurrentIndex value="65535"/>
+              </Transition>
+              <Transition onGlyphClass="4">
+                <NewState value="0"/>
+                <MarkIndex value="65535"/>
+                <CurrentIndex value="0"/>
+              </Transition>
+            </State>
+            <PerGlyphLookup index="0">
+              <Lookup glyph="g.4" value="g.5"/>
+            </PerGlyphLookup>
+          </StateTable>
+        </ContextualMorph>
+      </MorphSubtable>
+      <MorphSubtable index="2">
+        <!-- StructLength=212 -->
+        <CoverageFlags value="32"/>
+        <!-- MorphType=2 -->
+        <SubFeatureFlags value="0x00000004"/>
+        <LigatureMorph>
+          <StateTable>
+            <!-- GlyphClassCount=6 -->
+            <GlyphClass glyph=".notdef" value="1"/>
+            <GlyphClass glyph="g.1" value="1"/>
+            <GlyphClass glyph="g.10" value="1"/>
+            <GlyphClass glyph="g.12" value="1"/>
+            <GlyphClass glyph="g.14" value="1"/>
+            <GlyphClass glyph="g.15" value="1"/>
+            <GlyphClass glyph="g.16" value="1"/>
+            <GlyphClass glyph="g.17" value="1"/>
+            <GlyphClass glyph="g.18" value="1"/>
+            <GlyphClass glyph="g.19" value="1"/>
+            <GlyphClass glyph="g.2" value="1"/>
+            <GlyphClass glyph="g.20" value="1"/>
+            <GlyphClass glyph="g.21" value="1"/>
+            <GlyphClass glyph="g.22" value="1"/>
+            <GlyphClass glyph="g.23" value="1"/>
+            <GlyphClass glyph="g.24" value="1"/>
+            <GlyphClass glyph="g.25" value="1"/>
+            <GlyphClass glyph="g.26" value="1"/>
+            <GlyphClass glyph="g.27" value="1"/>
+            <GlyphClass glyph="g.28" value="1"/>
+            <GlyphClass glyph="g.29" value="1"/>
+            <GlyphClass glyph="g.3" value="1"/>
+            <GlyphClass glyph="g.4" value="1"/>
+            <GlyphClass glyph="g.5" value="1"/>
+            <GlyphClass glyph="g.6" value="4"/>
+            <GlyphClass glyph="g.7" value="5"/>
+            <GlyphClass glyph="g.8" value="1"/>
+            <GlyphClass glyph="g.9" value="1"/>
+            <GlyphClass glyph="parenleft" value="1"/>
+            <GlyphClass glyph="parenright" value="1"/>
+            <State index="0">
+              <Transition onGlyphClass="0">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="1">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="2">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="3">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="4">
+                <NewState value="1"/>
+                <Flags value="SetComponent"/>
+              </Transition>
+              <Transition onGlyphClass="5">
+                <NewState value="0"/>
+              </Transition>
+            </State>
+            <State index="1">
+              <Transition onGlyphClass="0">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="1">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="2">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="3">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="4">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="5">
+                <NewState value="0"/>
+                <Flags value="SetComponent"/>
+                <Action GlyphIndexDelta="0"/>
+                <Action GlyphIndexDelta="30"/>
+              </Transition>
+            </State>
+            <LigComponents>
+              <LigComponent index="0" value="0"/>
+              <LigComponent index="1" value="0"/>
+              <LigComponent index="2" value="0"/>
+              <LigComponent index="3" value="0"/>
+              <LigComponent index="4" value="0"/>
+              <LigComponent index="5" value="0"/>
+              <LigComponent index="6" value="0"/>
+              <LigComponent index="7" value="0"/>
+              <LigComponent index="8" value="0"/>
+              <LigComponent index="9" value="0"/>
+              <LigComponent index="10" value="0"/>
+              <LigComponent index="11" value="0"/>
+              <LigComponent index="12" value="0"/>
+              <LigComponent index="13" value="0"/>
+              <LigComponent index="14" value="0"/>
+              <LigComponent index="15" value="0"/>
+              <LigComponent index="16" value="0"/>
+              <LigComponent index="17" value="0"/>
+              <LigComponent index="18" value="0"/>
+              <LigComponent index="19" value="0"/>
+              <LigComponent index="20" value="0"/>
+              <LigComponent index="21" value="0"/>
+              <LigComponent index="22" value="0"/>
+              <LigComponent index="23" value="0"/>
+              <LigComponent index="24" value="0"/>
+              <LigComponent index="25" value="0"/>
+              <LigComponent index="26" value="0"/>
+              <LigComponent index="27" value="0"/>
+              <LigComponent index="28" value="0"/>
+              <LigComponent index="29" value="0"/>
+              <LigComponent index="30" value="0"/>
+              <LigComponent index="31" value="0"/>
+              <LigComponent index="32" value="0"/>
+              <LigComponent index="33" value="0"/>
+              <LigComponent index="34" value="0"/>
+              <LigComponent index="35" value="0"/>
+              <LigComponent index="36" value="0"/>
+              <LigComponent index="37" value="0"/>
+              <LigComponent index="38" value="0"/>
+              <LigComponent index="39" value="0"/>
+              <LigComponent index="40" value="0"/>
+              <LigComponent index="41" value="0"/>
+              <LigComponent index="42" value="0"/>
+              <LigComponent index="43" value="0"/>
+              <LigComponent index="44" value="0"/>
+              <LigComponent index="45" value="0"/>
+              <LigComponent index="46" value="0"/>
+              <LigComponent index="47" value="0"/>
+              <LigComponent index="48" value="0"/>
+              <LigComponent index="49" value="0"/>
+              <LigComponent index="50" value="0"/>
+              <LigComponent index="51" value="0"/>
+              <LigComponent index="52" value="0"/>
+              <LigComponent index="53" value="0"/>
+              <LigComponent index="54" value="0"/>
+              <LigComponent index="55" value="0"/>
+              <LigComponent index="56" value="0"/>
+              <LigComponent index="57" value="0"/>
+              <LigComponent index="58" value="0"/>
+              <LigComponent index="59" value="0"/>
+            </LigComponents>
+            <MortLigatureRebase>
+              <Component index="30"/>
+              <Component index="31"/>
+              <Component index="32"/>
+              <Component index="33"/>
+              <Component index="34"/>
+              <Component index="35"/>
+              <Component index="36"/>
+              <Component index="37"/>
+              <Component index="38"/>
+              <Component index="39"/>
+              <Component index="40"/>
+              <Component index="41"/>
+              <Component index="42"/>
+              <Component index="43"/>
+              <Component index="44"/>
+              <Component index="45"/>
+              <Component index="46"/>
+              <Component index="47"/>
+              <Component index="48"/>
+              <Component index="49"/>
+              <Component index="50"/>
+              <Component index="51"/>
+              <Component index="52"/>
+              <Component index="53"/>
+              <Component index="54"/>
+              <Component index="55"/>
+              <Component index="56"/>
+              <Component index="57"/>
+              <Component index="58"/>
+              <Component index="59"/>
+            </MortLigatureRebase>
+            <Ligatures>
+              <Ligature glyph="g.15" index="0"/>
+            </Ligatures>
+          </StateTable>
+        </LigatureMorph>
+      </MorphSubtable>
+      <MorphSubtable index="3">
+        <!-- StructLength=24 -->
+        <CoverageFlags value="32"/>
+        <!-- MorphType=4 -->
+        <SubFeatureFlags value="0x00000008"/>
+        <NoncontextualMorph>
+          <Substitution>
+            <Lookup glyph="g.8" value="g.9"/>
+          </Substitution>
+        </NoncontextualMorph>
+      </MorphSubtable>
+      <MorphSubtable index="4">
+        <!-- StructLength=76 -->
+        <CoverageFlags value="32"/>
+        <!-- MorphType=5 -->
+        <SubFeatureFlags value="0x00000010"/>
+        <InsertionMorph>
+          <StateTable>
+            <!-- GlyphClassCount=5 -->
+            <GlyphClass glyph=".notdef" value="1"/>
+            <GlyphClass glyph="g.1" value="1"/>
+            <GlyphClass glyph="g.10" value="1"/>
+            <GlyphClass glyph="g.12" value="1"/>
+            <GlyphClass glyph="g.14" value="1"/>
+            <GlyphClass glyph="g.15" value="1"/>
+            <GlyphClass glyph="g.16" value="1"/>
+            <GlyphClass glyph="g.17" value="1"/>
+            <GlyphClass glyph="g.18" value="1"/>
+            <GlyphClass glyph="g.19" value="1"/>
+            <GlyphClass glyph="g.2" value="1"/>
+            <GlyphClass glyph="g.20" value="1"/>
+            <GlyphClass glyph="g.21" value="1"/>
+            <GlyphClass glyph="g.22" value="1"/>
+            <GlyphClass glyph="g.23" value="1"/>
+            <GlyphClass glyph="g.24" value="1"/>
+            <GlyphClass glyph="g.25" value="1"/>
+            <GlyphClass glyph="g.26" value="1"/>
+            <GlyphClass glyph="g.27" value="1"/>
+            <GlyphClass glyph="g.28" value="1"/>
+            <GlyphClass glyph="g.29" value="1"/>
+            <GlyphClass glyph="g.3" value="1"/>
+            <GlyphClass glyph="g.4" value="1"/>
+            <GlyphClass glyph="g.5" value="1"/>
+            <GlyphClass glyph="g.6" value="1"/>
+            <GlyphClass glyph="g.7" value="1"/>
+            <GlyphClass glyph="g.8" value="1"/>
+            <GlyphClass glyph="g.9" value="1"/>
+            <GlyphClass glyph="parenleft" value="4"/>
+            <GlyphClass glyph="parenright" value="1"/>
+            <State index="0">
+              <Transition onGlyphClass="0">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="1">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="2">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="3">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="4">
+                <NewState value="0"/>
+                <CurrentInsertionAction glyph="g.12"/>
+              </Transition>
+            </State>
+          </StateTable>
+        </InsertionMorph>
+      </MorphSubtable>
+    </MorphChain>
+  </mort>
+
+</ttFont>

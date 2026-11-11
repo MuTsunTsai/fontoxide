@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont sfntVersion="\x00\x01\x00\x00" ttLibVersion="4.68">
+
+  <morx>
+    <Version value="2"/>
+    <Reserved value="0"/>
+    <!-- MorphChainCount=1 -->
+    <MorphChain index="0">
+      <DefaultFlags value="0x00000001"/>
+      <!-- StructLength=218 -->
+      <!-- MorphFeatureCount=0 -->
+      <!-- MorphSubtableCount=1 -->
+      <MorphSubtable index="0">
+        <!-- StructLength=202 -->
+        <TextDirection value="Vertical"/>
+        <ProcessingOrder value="LayoutOrder"/>
+        <!-- MorphType=2 -->
+        <SubFeatureFlags value="0x00000001"/>
+        <LigatureMorph>
+          <StateTable>
+            <!-- GlyphClassCount=7 -->
+            <GlyphClass glyph="a" value="4"/>
+            <GlyphClass glyph="b" value="4"/>
+            <GlyphClass glyph="c" value="4"/>
+            <GlyphClass glyph="d" value="5"/>
+            <GlyphClass glyph="e" value="5"/>
+            <GlyphClass glyph="g" value="6"/>
+            <GlyphClass glyph="h" value="6"/>
+            <GlyphClass glyph="i" value="6"/>
+            <State index="0">
+              <Transition onGlyphClass="0">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="1">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="2">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="3">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="4">
+                <NewState value="2"/>
+                <Flags value="SetComponent"/>
+              </Transition>
+              <Transition onGlyphClass="5">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="6">
+                <NewState value="0"/>
+              </Transition>
+            </State>
+            <State index="1">
+              <Transition onGlyphClass="0">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="1">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="2">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="3">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="4">
+                <NewState value="2"/>
+                <Flags value="SetComponent"/>
+              </Transition>
+              <Transition onGlyphClass="5">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="6">
+                <NewState value="0"/>
+              </Transition>
+            </State>
+            <State index="2">
+              <Transition onGlyphClass="0">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="1">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="2">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="3">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="4">
+                <NewState value="2"/>
+                <Flags value="SetComponent"/>
+              </Transition>
+              <Transition onGlyphClass="5">
+                <NewState value="3"/>
+                <Flags value="SetComponent"/>
+              </Transition>
+              <Transition onGlyphClass="6">
+                <NewState value="0"/>
+              </Transition>
+            </State>
+            <State index="3">
+              <Transition onGlyphClass="0">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="1">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="2">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="3">
+                <NewState value="0"/>
+              </Transition>
+              <Transition onGlyphClass="4">
+                <NewState value="2"/>
+                <Flags value="SetComponent"/>
+              </Transition>
+              <Transition onGlyphClass="5">
+                <NewState value="3"/>
+                <Flags value="SetComponent"/>
+              </Transition>
+              <Transition onGlyphClass="6">
+                <NewState value="0"/>
+                <Flags value="SetComponent"/>
+                <Action GlyphIndexDelta="-25"/>
+                <Action GlyphIndexDelta="-19"/>
+                <Action GlyphIndexDelta="-14"/>
+              </Transition>
+            </State>
+            <LigComponents>
+              <LigComponent index="0" value="0"/>
+              <LigComponent index="1" value="1"/>
+              <LigComponent index="2" value="2"/>
+              <LigComponent index="3" value="3"/>
+              <LigComponent index="4" value="0"/>
+              <LigComponent index="5" value="4"/>
+              <LigComponent index="6" value="0"/>
+              <LigComponent index="7" value="8"/>
+              <LigComponent index="8" value="16"/>
+            </LigComponents>
+            <Ligatures>
+              <Ligature glyph="adf" index="0"/>
+              <Ligature glyph="adg" index="1"/>
+              <Ligature glyph="adh" index="2"/>
+              <Ligature glyph="adi" index="3"/>
+              <Ligature glyph="aef" index="4"/>
+              <Ligature glyph="aeg" index="5"/>
+              <Ligature glyph="aeh" index="6"/>
+              <Ligature glyph="aei" index="7"/>
+            </Ligatures>
+          </StateTable>
+        </LigatureMorph>
+      </MorphSubtable>
+    </MorphChain>
+  </morx>
+
+</ttFont>

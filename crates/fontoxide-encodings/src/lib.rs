@@ -5,5 +5,8 @@
 //! `fontTools.misc.encodingTools.getEncoding`, matching CPython's codecs exactly
 //! (the tables in `data/codecs` are exported from the fontTools reference
 //! environment), including fontTools' own `x_mac_*_ttx` codecs.
+//!
+//! [`standard_encoding`] is `fontTools.encodings.StandardEncoding`.
 
 pub mod codecs;
+pub mod standard_encoding;

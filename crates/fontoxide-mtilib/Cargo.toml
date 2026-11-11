@@ -1,0 +1,23 @@
+[package]
+name = "fontoxide-mtilib"
+description = "Building OpenType Layout tables from Monotype/FontDame source files; a port of fontTools.mtiLib"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+fontoxide-misc.workspace = true
+fontoxide-otllib.workspace = true
+fontoxide-ttlib.workspace = true
+indexmap.workspace = true
+log.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

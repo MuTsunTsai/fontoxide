@@ -125,6 +125,12 @@ pub struct TtxOptions {
 	/// How to dump bitmap glyph data (`bitmapGlyphDataFormat`): `raw`, `row`,
 	/// `bitwise` or `extfile`.
 	pub bitmap_glyph_data_format: String,
+	/// Write each table to a file of its own, and a main file that refers to
+	/// them (`splitTables`). Only [`Font::to_ttx_files`] can do this.
+	pub split_tables: bool,
+	/// Also write each glyph of `glyf` to a file of its own (`splitGlyphs`);
+	/// implies [`TtxOptions::split_tables`].
+	pub split_glyphs: bool,
 }
 
 impl Default for TtxOptions {
@@ -136,6 +142,8 @@ impl Default for TtxOptions {
 			newline: "\n".into(),
 			disassemble_instructions: true,
 			bitmap_glyph_data_format: "raw".into(),
+			split_tables: false,
+			split_glyphs: false,
 		}
 	}
 }
@@ -894,14 +902,52 @@ impl Font {
 		writer.add(tag, &data)
 	}
 
-	/// Dumps the font as TTX (`saveXML`).
+	/// Dumps the font as TTX (`saveXML` to a stream). Fails with
+	/// [`TtxOptions::split_tables`] or [`TtxOptions::split_glyphs`], which need
+	/// a file name: see [`Font::to_ttx_files`].
 	pub fn to_ttx(&mut self, options: &TtxOptions) -> Result<String> {
 		let mut writer = XmlWriter::with_options(INDENT, &options.newline);
 		self.save_xml(&mut writer, options)?;
 		Ok(writer.into_string())
 	}
 
+	/// Dumps the font as TTX to be saved as `path` (`saveXML(path)`): returns the
+	/// file to save there, first, and, with [`TtxOptions::split_tables`] or
+	/// [`TtxOptions::split_glyphs`], the table and glyph files to save next to
+	/// it, whose names are derived from `path`. Nothing is written to the file
+	/// system.
+	pub fn to_ttx_files(
+		&mut self,
+		path: &str,
+		options: &TtxOptions,
+	) -> Result<Vec<crate::ttx::TtxFile>> {
+		let mut writer = XmlWriter::with_options(INDENT, &options.newline);
+		let mut files = Vec::new();
+		self.save_xml_impl(&mut writer, options, Some(path), &mut files)?;
+		files.insert(
+			0,
+			crate::ttx::TtxFile {
+				path: path.to_owned(),
+				contents: writer.into_string(),
+			},
+		);
+		Ok(files)
+	}
+
 	pub(crate) fn save_xml(&mut self, writer: &mut XmlWriter, options: &TtxOptions) -> Result<()> {
+		self.save_xml_impl(writer, options, None, &mut Vec::new())
+	}
+
+	/// `_saveXML`, where `path` is the file name of `writer` (`writer.filename`),
+	/// and the files of the tables and glyphs of a split dump are added to
+	/// `files`.
+	fn save_xml_impl(
+		&mut self,
+		writer: &mut XmlWriter,
+		options: &TtxOptions,
+		path: Option<&str>,
+		files: &mut Vec<crate::ttx::TtxFile>,
+	) -> Result<()> {
 		self.disassemble_instructions = options.disassemble_instructions;
 		self.bitmap_glyph_data_format = options.bitmap_glyph_data_format.clone();
 		let tables: Vec<TableKey> = if options.tables.is_empty() {
@@ -926,16 +972,65 @@ impl Font {
 			writer.begintag("ttFont", &[("sfntVersion", &sfnt_version)]);
 		}
 		writer.newline();
-		writer.newline();
+		// Always split the tables if the glyphs are split.
+		let split_tables = options.split_tables || options.split_glyphs;
+		let split_path = if split_tables {
+			let Some(path) = path else {
+				return Err(Error::ttlib(
+					"splitTables requires the file name to be a file system path, not a stream.",
+				));
+			};
+			Some(crate::ttx::splitext(path))
+		} else {
+			writer.newline();
+			None
+		};
 		for key in tables {
-			self.table_to_xml(writer, key)?;
+			let Some((stem, ext)) = split_path else {
+				self.table_to_xml(writer, key, None, files)?;
+				continue;
+			};
+			let identifier = match key {
+				TableKey::GlyphOrder => "GlyphOrder".to_owned(),
+				TableKey::Table(tag) => tag_to_identifier(tag),
+			};
+			let table_path = format!("{stem}.{identifier}{ext}");
+			let mut table_writer = XmlWriter::with_options(INDENT, writer.newline_str());
+			// UPSTREAM-BUG(B52): without `writeVersion`, fontTools fails here with
+			// UnboundLocalError ('version' is only set when writing the version);
+			// the version is written anyway.
+			table_writer.begintag("ttFont", &[("ttLibVersion", &TTLIB_VERSION)]);
+			table_writer.newline();
+			table_writer.newline();
+			let xml_tag = match key {
+				TableKey::GlyphOrder => "GlyphOrder".to_owned(),
+				TableKey::Table(tag) => tag_to_xml(tag),
+			};
+			writer.simpletag(&xml_tag, &[("src", &crate::ttx::basename(&table_path))]);
+			writer.newline();
+			let glyphs_path = options.split_glyphs.then_some(table_path.as_str());
+			self.table_to_xml(&mut table_writer, key, glyphs_path, files)?;
+			table_writer.endtag("ttFont");
+			table_writer.newline();
+			files.push(crate::ttx::TtxFile {
+				path: table_path,
+				contents: table_writer.into_string(),
+			});
 		}
 		writer.endtag("ttFont");
 		writer.newline();
 		Ok(())
 	}
 
-	fn table_to_xml(&mut self, writer: &mut XmlWriter, key: TableKey) -> Result<()> {
+	/// `_tableToXML`; `split_glyphs` is the file name of `writer` if the glyphs
+	/// of `glyf` go to files of their own, which are added to `files`.
+	fn table_to_xml(
+		&mut self,
+		writer: &mut XmlWriter,
+		key: TableKey,
+		split_glyphs: Option<&str>,
+		files: &mut Vec<crate::ttx::TtxFile>,
+	) -> Result<()> {
 		let tag = match key {
 			TableKey::GlyphOrder => {
 				log::info!("Dumping 'GlyphOrder' table...");
@@ -974,7 +1069,12 @@ impl Font {
 				(false, false) => writer.begintag(&xml_tag, &[]),
 			}
 			writer.newline();
-			table.to_xml(writer, font)?;
+			let glyf = table.as_any().downcast_ref::<crate::tables::Glyf>();
+			match (split_glyphs, glyf) {
+				(Some(path), Some(glyf)) => files.extend(glyf.to_xml_split(writer, font, path)?),
+				// A raw table under the `glyf` tag ignores `splitGlyphs`.
+				_ => table.to_xml(writer, font)?,
+			}
 			writer.endtag(&xml_tag);
 			writer.newline();
 			writer.newline();
@@ -995,10 +1095,42 @@ impl Font {
 	}
 
 	/// [`Font::import_ttx`] with options.
+	///
+	/// The files that a TTX document split into several files refers to (`src`
+	/// attributes) are read from the current directory, as fontTools does for a
+	/// stream without a file name.
 	pub fn import_ttx_with(
 		&mut self,
 		text: &str,
 		options: &crate::ttx::TtxImportOptions,
+	) -> Result<()> {
+		self.import_ttx_split(text, None, options, &mut crate::ttx::read_ttx_file)
+	}
+
+	/// Merges a TTX file into the font (`importXML(path)`), including the files
+	/// it refers to if it was split into several files.
+	pub fn import_ttx_file(&mut self, path: impl AsRef<std::path::Path>) -> Result<()> {
+		let path = path.as_ref();
+		let text = crate::ttx::read_ttx_file(path)?;
+		self.import_ttx_split(
+			&text,
+			Some(path),
+			&crate::ttx::TtxImportOptions::default(),
+			&mut crate::ttx::read_ttx_file,
+		)
+	}
+
+	/// Merges a TTX document into the font (`importXML`), where `path` is its
+	/// file name, if any, and `load` reads the files it refers to (`src`
+	/// attributes, relative to the directory of the file that refers to them, or
+	/// to the current directory without a file name), as [`crate::ttx::read_ttx_file`]
+	/// does from the file system.
+	pub fn import_ttx_split(
+		&mut self,
+		text: &str,
+		path: Option<&std::path::Path>,
+		options: &crate::ttx::TtxImportOptions,
+		load: &mut crate::ttx::TtxLoader<'_>,
 	) -> Result<()> {
 		if (self.contains(MAXP_32) || self.contains(MAXP)) && self.contains(POST) {
 			// Make sure the glyph order is loaded, as it otherwise gets lost if the
@@ -1008,7 +1140,12 @@ impl Font {
 		}
 		let root =
 			fontoxide_misc::xml_reader::parse(text).map_err(|e| Error::ttx(e.to_string()))?;
-		crate::ttx::import(self, &root, options)
+		let dir = path
+			.and_then(std::path::Path::parent)
+			.map(std::path::Path::to_path_buf)
+			.unwrap_or_default();
+		let mut files = crate::ttx::SubFiles { dir, load };
+		crate::ttx::import(self, &root, options, &mut files)
 	}
 }
 

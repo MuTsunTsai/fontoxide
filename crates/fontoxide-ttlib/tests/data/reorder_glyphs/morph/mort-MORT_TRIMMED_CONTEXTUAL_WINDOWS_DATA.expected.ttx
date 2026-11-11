@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont sfntVersion="\x00\x01\x00\x00" ttLibVersion="4.68">
+
+  <mort>
+    <Version value="0x00010000"/>
+    <!-- MorphChainCount=1 -->
+    <MorphChain index="0">
+      <DefaultFlags value="0x00000001"/>
+      <!-- StructLength=76 -->
+      <!-- MorphFeatureCount=0 -->
+      <!-- MorphSubtableCount=1 -->
+      <MorphSubtable index="0">
+        <!-- StructLength=64 -->
+        <CoverageFlags value="0"/>
+        <!-- MorphType=1 -->
+        <SubFeatureFlags value="0x00000001"/>
+        <ContextualMorph>
+          <StateTable>
+            <!-- GlyphClassCount=5 -->
+            <GlyphClass glyph="g.30" value="4"/>
+            <State index="0">
+              <Transition onGlyphClass="0">
+                <NewState value="0"/>
+                <MarkIndex value="65535"/>
+                <CurrentIndex value="65535"/>
+              </Transition>
+              <Transition onGlyphClass="1">
+                <NewState value="0"/>
+                <MarkIndex value="65535"/>
+                <CurrentIndex value="65535"/>
+              </Transition>
+              <Transition onGlyphClass="2">
+                <NewState value="0"/>
+                <MarkIndex value="65535"/>
+                <CurrentIndex value="65535"/>
+              </Transition>
+              <Transition onGlyphClass="3">
+                <NewState value="0"/>
+                <MarkIndex value="65535"/>
+                <CurrentIndex value="65535"/>
+              </Transition>
+              <Transition onGlyphClass="4">
+                <NewState value="1"/>
+                <Flags value="SetMark"/>
+                <MarkIndex value="2"/>
+                <CurrentIndex value="65535"/>
+              </Transition>
+            </State>
+            <State index="1">
+              <Transition onGlyphClass="0">
+                <NewState value="0"/>
+                <MarkIndex value="65535"/>
+                <CurrentIndex value="65535"/>
+              </Transition>
+              <Transition onGlyphClass="1">
+                <NewState value="0"/>
+                <MarkIndex value="65535"/>
+                <CurrentIndex value="65535"/>
+              </Transition>
+              <Transition onGlyphClass="2">
+                <NewState value="0"/>
+                <MarkIndex value="65535"/>
+                <CurrentIndex value="65535"/>
+              </Transition>
+              <Transition onGlyphClass="3">
+                <NewState value="0"/>
+                <MarkIndex value="65535"/>
+                <CurrentIndex value="65535"/>
+              </Transition>
+              <Transition onGlyphClass="4">
+                <NewState value="0"/>
+                <MarkIndex value="0"/>
+                <CurrentIndex value="1"/>
+              </Transition>
+            </State>
+            <PerGlyphLookup index="0">
+              <Lookup glyph="g.30" value="g.31"/>
+            </PerGlyphLookup>
+            <PerGlyphLookup index="1">
+              <Lookup glyph="g.1" value="g.31"/>
+            </PerGlyphLookup>
+            <PerGlyphLookup index="2">
+            </PerGlyphLookup>
+          </StateTable>
+        </ContextualMorph>
+      </MorphSubtable>
+    </MorphChain>
+  </mort>
+
+</ttFont>

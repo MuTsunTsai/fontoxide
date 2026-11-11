@@ -870,8 +870,13 @@ impl TopDict {
 	}
 }
 
-/// Reads an FDSelect (`FDSelect`).
-fn read_fd_select(data: &[u8], offset: usize, num_glyphs: usize, max: usize) -> Result<FdSelect> {
+/// Reads an FDSelect at `offset` (`FDSelect(file, numGlyphs, maxGlyphs=max)`).
+pub fn read_fd_select(
+	data: &[u8],
+	offset: usize,
+	num_glyphs: usize,
+	max: usize,
+) -> Result<FdSelect> {
 	let mut r = Reader { data, pos: offset };
 	let format = r.card8()?;
 	let gid_array = match format {
@@ -1298,7 +1303,7 @@ fn font_bounds(top: &mut TopDict, global_subrs: &mut [T2CharString]) -> Result<O
 }
 
 /// `TopDict.recalcFontBBox`.
-pub(crate) fn recalc_font_bbox(top: &mut TopDict, global_subrs: &mut [T2CharString]) -> Result<()> {
+pub fn recalc_font_bbox(top: &mut TopDict, global_subrs: &mut [T2CharString]) -> Result<()> {
 	let bbox = match font_bounds(top, global_subrs)? {
 		Some(b) => Value::List(int_rect(b).iter().map(|&v| Value::Int(v)).collect()),
 		None => {

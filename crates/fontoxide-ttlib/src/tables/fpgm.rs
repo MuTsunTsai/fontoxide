@@ -53,7 +53,7 @@ macro_rules! program_table {
 					.unwrap_or_default())
 			}
 
-			fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
+			fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 				let program = self.program.as_ref().ok_or_else(|| {
 					Error::ttlib(concat!(
 						"AttributeError: '",
@@ -61,7 +61,7 @@ macro_rules! program_table {
 						"' object has no attribute 'program'"
 					))
 				})?;
-				program.to_xml(writer);
+				program.to_xml_with(writer, font.disassemble_instructions);
 				Ok(())
 			}
 

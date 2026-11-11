@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont sfntVersion="\x00\x01\x00\x00" ttLibVersion="4.68">
+
+  <mort>
+    <Version value="0x00010000"/>
+    <!-- MorphChainCount=1 -->
+    <MorphChain index="0">
+      <DefaultFlags value="0x00000001"/>
+      <!-- StructLength=80 -->
+      <!-- MorphFeatureCount=3 -->
+      <!-- MorphSubtableCount=1 -->
+      <MorphFeature index="0">
+        <FeatureType value="4"/>
+        <FeatureSetting value="0"/>
+        <EnableFlags value="0x00000001"/>
+        <DisableFlags value="0xFFFFFFFF"/>
+      </MorphFeature>
+      <MorphFeature index="1">
+        <FeatureType value="4"/>
+        <FeatureSetting value="1"/>
+        <EnableFlags value="0x00000000"/>
+        <DisableFlags value="0xFFFFFFFE"/>
+      </MorphFeature>
+      <MorphFeature index="2">
+        <FeatureType value="0"/>
+        <FeatureSetting value="1"/>
+        <EnableFlags value="0x00000000"/>
+        <DisableFlags value="0x00000000"/>
+      </MorphFeature>
+      <MorphSubtable index="0">
+        <!-- StructLength=32 -->
+        <CoverageFlags value="128"/>
+        <!-- MorphType=4 -->
+        <SubFeatureFlags value="0x00000001"/>
+        <NoncontextualMorph>
+          <Substitution>
+            <Lookup glyph="parenleft" value="parenleft.vertical"/>
+            <Lookup glyph="parenright" value="parenright.vertical"/>
+          </Substitution>
+        </NoncontextualMorph>
+      </MorphSubtable>
+    </MorphChain>
+  </mort>
+
+</ttFont>

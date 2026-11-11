@@ -13,6 +13,9 @@ categories.workspace = true
 
 [dependencies]
 fontoxide-misc.workspace = true
+fontoxide-pens.workspace = true
+fontoxide-ttlib.workspace = true
+log.workspace = true
 thiserror.workspace = true
 
 [lints]

@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont sfntVersion="\x00\x01\x00\x00" ttLibVersion="4.68">
+
+  <Feat>
+    <version version="1.0"/>
+
+    <!-- Language -->
+    <feature default="0" fid="1" flags="32768" label="258">
+    </feature>
+
+    <!-- No Manual -->
+    <feature default="1" fid="2" flags="32768" label="262">
+      <setting label="260" value="1"/>  <!-- yes -->
+    </feature>
+
+    <!-- Yes manual -->
+    <feature default="0" fid="3" flags="32768" label="259">
+    </feature>
+  </Feat>
+
+  <Glat>
+    <version compressionScheme="0" version="2.0"/>
+    <glyph name=".notdef">
+    </glyph>
+    <glyph name="space">
+    </glyph>
+    <glyph name="a">
+    </glyph>
+    <glyph name="b">
+    </glyph>
+    <glyph name="c">
+      <attribute index="258" value="30"/>
+    </glyph>
+  </Glat>
+
+  <Gloc>
+    <attributes number="8"/>
+  </Gloc>
+
+  <Silf>
+    <!-- Attributes starting with _ are informative only -->
+    <version compilerVersion="7" compressionScheme="0" version="3.0"/>
+    <silf>
+      <version ruleVersion="1.5"/>
+      <info direction="1" extraAscent="0" extraDescent="0" flags="4" lbGID="6" maxCompPerLig="0" maxGlyphID="7" numLigComp="0" numUserDefn="0"/>
+      <passindexes iBidi="255" iJust="1" iPos="1" iSubst="0"/>
+      <contexts maxPostContext="0" maxPreContext="0"/>
+      <attributes attCollisions="0" attrBreakWeight="2" attrDirectionality="3" attrMirroring="4" attrPseudo="0" attrSkipPasses="1"/>
+      <justifications>
+        <justify attrShrink="2" attrStep="3" attrStretch="1" attrWeight="4" runto="5"/>
+        <justify attrShrink="7" attrStep="8" attrStretch="6" attrWeight="9" runto="10"/>
+      </justifications>
+      <critFeatures>
+        1 2
+      </critFeatures>
+      <scriptTags>
+        latn cyrl
+      </scriptTags>
+      <pseudoMap>
+        <pseudo pseudo="a" unicode="0x41"/>
+        <pseudo pseudo="b" unicode="0x1f600"/>
+      </pseudoMap>
+      <classes>
+        <linearClasses>
+          <linear _index="0">
+            c
+          </linear>
+        </linearClasses>
+        <nonLinearClasses>
+          <nonLinear _index="1">
+            <map glyph="space" index="2"/>
+            <map glyph="a" index="0"/>
+            <map glyph="b" index="1"/>
+          </nonLinear>
+          <nonLinear _index="2">
+            <map glyph="c" index="0"/>
+          </nonLinear>
+        </nonLinearClasses>
+      </classes>
+      <passes>
+        <pass _index="0">
+          <info collisionThreshold="0" flags="0" maxBackup="0" maxRuleContext="3" maxRuleLoop="5" maxRulePreContext="1" minRulePreContext="0"/>
+          <fsminfo numColumns="3" numRows="6" numSuccess="2" numTransitional="5"/>
+          <colmap>
+            .notdef=0 space=0 a=1 b=2 c=0
+          </colmap>
+          <staterulemap>
+            <state number="4" rules="1"/>
+            <state number="5" rules="0"/>
+          </staterulemap>
+          <rules>
+            <rule index="0" precontext="0" sortkey="2">
+              <action>
+                PUT_GLYPH_8BIT_OBS(0)
+                ASSOC(0, 1)
+                NEXT
+                DELETE
+                NEXT
+                RET_ZERO
+              </action>
+            </rule>
+            <rule index="1" precontext="1" sortkey="2">
+              <action>
+                PUT_GLYPH_8BIT_OBS(0)
+                NEXT
+                RET_ZERO
+              </action>
+            </rule>
+          </rules>
+          <passConstraint>
+            PUSH_BYTE(1)
+            PUSH_SHORT(-300)
+            POP_RET
+          </passConstraint>
+          <fsm>
+            <starts>0 1</starts>
+            <row _i="0">1 1 2</row>
+            <row _i="1">0 3 0</row>
+            <row _i="2">0 4 0</row>
+            <row _i="3">0 0 5</row>
+            <row _i="4">0 0 5</row>
+          </fsm>
+        </pass>
+        <pass _index="1">
+          <info collisionThreshold="10" flags="0" maxBackup="0" maxRuleContext="2" maxRuleLoop="5" maxRulePreContext="0" minRulePreContext="0"/>
+          <fsminfo numColumns="2" numRows="3" numSuccess="1" numTransitional="2"/>
+          <colmap>
+            a=0 c=1
+          </colmap>
+          <staterulemap>
+            <state number="2" rules="0"/>
+          </staterulemap>
+          <rules>
+            <rule index="0" precontext="0" sortkey="2">
+              <constraint>
+                PUSH_GLYPH_ATTR(300, -1)
+                RET_TRUE
+              </constraint>
+              <action>
+                COPY_NEXT
+                PUT_COPY(0)
+                PUSH_BYTE(-1)
+                ATTR_SET_SLOT(2)
+                PUSH_BYTE(0)
+                ATTR_SET(17)
+                PUSH_GLYPH_ATTR_OBS(6, 0)
+                ATTR_SET(8)
+                PUSH_GLYPH_ATTR_OBS(7, 0)
+                ATTR_SET(9)
+                PUSH_ATT_TO_GATTR_OBS(6, 0)
+                ATTR_SET(3)
+                PUSH_ATT_TO_GATTR_OBS(7, 0)
+                ATTR_SET(4)
+                NEXT
+                RET_ZERO
+                PUT_SUBS(-1, 2, 3)
+                BITSET(1, 2)
+                ASSOC(1, 2, 3)
+              </action>
+            </rule>
+          </rules>
+          <fsm>
+            <starts>0</starts>
+            <row _i="0">1 0</row>
+            <row _i="1">0 2</row>
+          </fsm>
+        </pass>
+      </passes>
+    </silf>
+  </Silf>
+
+  <Sill>
+    <version version="1.0"/>
+    <lang name="en">
+      <feature fid="nom " val="1"/>
+      <feature fid="1" val="0"/>
+    </lang>
+    <lang name="fred">
+      <feature fid="yesm" val="1"/>
+      <feature fid="nom " val="0"/>
+    </lang>
+    <lang name="zh-H">
+      <feature fid="yesm" val="0"/>
+    </lang>
+  </Sill>
+
+</ttFont>

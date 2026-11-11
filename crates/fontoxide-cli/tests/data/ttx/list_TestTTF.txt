@@ -1,0 +1,19 @@
+Listing table info for "TestTTF.ttf":
+    tag     checksum    length    offset
+    ----  ----------  --------  --------
+    DSIG  0x00000001         8      2328
+    OS/2  0x67230FF8        96       376
+    cmap  0x013122DB       506       496
+    cvt   0x00000000         2      1012
+    fpgm  0x00000000         1      1004
+    gasp  0x0008001B        12      2316
+    glyf  0x1E520134       104      1032
+    head  0x087844B0        54       252
+    hhea  0x065401E0        36       308
+    hmtx  0x07AC00A0        24       472
+    loca  0x005E004C        14      1016
+    maxp  0x000F0016        32       344
+    name  0xBBAF083E      1122      1136
+    post  0x7225C4E0        55      2260
+    prep  0x00000000         1      1008
+

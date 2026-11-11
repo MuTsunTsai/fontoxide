@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont ttLibVersion="4.68">
+
+  <CFF>
+    <major value="1"/>
+    <minor value="0"/>
+    <CFFFont name="TestOTF-Regular">
+      <version value="001.001"/>
+      <Notice value="Copyright \(c\) 2015 by FontTools. No rights reserved."/>
+      <FullName value="Test OTF"/>
+      <FamilyName value="Test OTF"/>
+      <Weight value="Regular"/>
+      <isFixedPitch value="0"/>
+      <ItalicAngle value="0"/>
+      <UnderlinePosition value="-100"/>
+      <UnderlineThickness value="50"/>
+      <PaintType value="0"/>
+      <CharstringType value="2"/>
+      <FontMatrix value="0.001 0 0 0.001 0 0"/>
+      <FontBBox value="50 0 668 750"/>
+      <StrokeWidth value="0"/>
+      <!-- charset is dumped separately as the 'GlyphOrder' element -->
+      <Encoding name="StandardEncoding"/>
+      <Private>
+        <BlueScale value="0.039625"/>
+        <BlueShift value="7"/>
+        <BlueFuzz value="1"/>
+        <ForceBold value="0"/>
+        <LanguageGroup value="0"/>
+        <ExpansionFactor value="0.06"/>
+        <initialRandomSeed value="0"/>
+        <defaultWidthX value="0"/>
+        <nominalWidthX value="0"/>
+        <Subrs>
+          <!-- The 'index' attribute is only for humans; it is ignored when parsed. -->
+          <CharString index="0">
+            131 122 -131 hlineto
+            return
+          </CharString>
+        </Subrs>
+      </Private>
+      <CharStrings>
+        <CharString name=".notdef">
+          500 450 hmoveto
+          750 -400 -750 vlineto
+          50 50 rmoveto
+          650 300 -650 vlineto
+          endchar
+        </CharString>
+        <CharString name=".null">
+          0 endchar
+        </CharString>
+        <CharString name="CR">
+          250 endchar
+        </CharString>
+        <CharString name="ellipsis">
+          723 55 hmoveto
+          -107 callsubr
+          241 -122 rmoveto
+          -107 callsubr
+          241 -122 rmoveto
+          -107 callsubr
+          endchar
+        </CharString>
+        <CharString name="period">
+          241 55 hmoveto
+          -107 callsubr
+          endchar
+        </CharString>
+        <CharString name="space">
+          250 endchar
+        </CharString>
+      </CharStrings>
+    </CFFFont>
+
+    <GlobalSubrs>
+      <!-- The 'index' attribute is only for humans; it is ignored when parsed. -->
+    </GlobalSubrs>
+  </CFF>
+
+</ttFont>

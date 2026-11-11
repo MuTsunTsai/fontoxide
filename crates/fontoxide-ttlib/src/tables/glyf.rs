@@ -994,7 +994,13 @@ impl Glyph {
 	}
 
 	/// `toXML`.
-	fn to_xml(&self, writer: &mut XmlWriter, order: &GlyphOrder, extended: bool) -> Result<()> {
+	fn to_xml(
+		&self,
+		writer: &mut XmlWriter,
+		order: &GlyphOrder,
+		extended: bool,
+		disassemble: bool,
+	) -> Result<()> {
 		if !extended && self.flags.iter().any(|f| f & FLAG_CUBIC != 0) {
 			return Err(Error::ttlib("Cubic flags require the extended GLYF table"));
 		}
@@ -1038,7 +1044,7 @@ impl Glyph {
 			if !p.is_empty() {
 				writer.begintag("instructions", &[]);
 				writer.newline();
-				p.to_xml(writer);
+				p.to_xml_with(writer, disassemble);
 				writer.endtag("instructions");
 			} else {
 				writer.simpletag("instructions", &[]);
@@ -1161,7 +1167,135 @@ fn key_error(order: &GlyphOrder, gid: u32) -> Error {
 	Error::ttlib(format!("KeyError: {:?}", order.name(gid)))
 }
 
+/// The notice at the top of the TTX dump of `glyf`.
+const BBOX_NOTICE: &str =
+	"The xMin, yMin, xMax and yMax values\nwill be recalculated by the compiler.";
+
 impl Glyf {
+	/// `toXML(writer, ttFont, splitGlyphs=True)`: dumps the table with each glyph
+	/// that has outlines or instructions in a file of its own, which the dump
+	/// refers to. `path` is the file name of `writer`, from which the names of
+	/// the glyph files are derived; the glyph files are returned.
+	pub fn to_xml_split(
+		&self,
+		writer: &mut XmlWriter,
+		font: &mut Font,
+		path: &str,
+	) -> Result<Vec<crate::ttx::TtxFile>> {
+		let mut files = Vec::new();
+		self.write_xml(writer, font, Some((path, &mut files)))?;
+		Ok(files)
+	}
+
+	/// `toXML`, with the file name of `writer` and the glyph files if the glyphs
+	/// are split.
+	fn write_xml(
+		&self,
+		writer: &mut XmlWriter,
+		font: &mut Font,
+		mut split: Option<(&str, &mut Vec<crate::ttx::TtxFile>)>,
+	) -> Result<()> {
+		let order = font.glyph_order()?;
+		if split.is_none() {
+			writer.newline();
+			writer.comment(BBOX_NOTICE);
+			writer.newline();
+			writer.newline();
+		}
+		let (prefix, suffix) = match &split {
+			Some((path, _)) => {
+				let (stem, ext) = crate::ttx::splitext(path);
+				(format!("{stem}."), ext.to_owned())
+			}
+			None => Default::default(),
+		};
+		let mut existing_glyph_files = HashSet::new();
+		let table_tag = Table::tag(self).to_string();
+		let mut names: Vec<&String> = order.names().iter().collect();
+		names.sort();
+		for name in names {
+			let Some(gid) = order.id(name) else {
+				continue;
+			};
+			let Some(glyph) = self.glyphs.get(&gid) else {
+				log::warn!("glyph '{name}' does not exist in glyf table");
+				continue;
+			};
+			if glyph.number_of_contours != 0
+				|| glyph.program.as_ref().is_some_and(|p| !p.is_empty())
+			{
+				let mut glyph_file = None;
+				if split.is_some() {
+					let glyph_path = crate::ttx::user_name_to_file_name(
+						name,
+						&existing_glyph_files,
+						&prefix,
+						&suffix,
+					)?;
+					existing_glyph_files.insert(glyph_path.to_lowercase());
+					let mut glyph_writer = XmlWriter::with_options(
+						fontoxide_misc::xml_writer::INDENT,
+						writer.newline_str(),
+					);
+					glyph_writer
+						.begintag("ttFont", &[("ttLibVersion", &crate::font::TTLIB_VERSION)]);
+					glyph_writer.newline();
+					glyph_writer.begintag(&table_tag, &[]);
+					glyph_writer.newline();
+					glyph_writer.comment(BBOX_NOTICE);
+					glyph_writer.newline();
+					writer.simpletag("TTGlyph", &[("src", &crate::ttx::basename(&glyph_path))]);
+					glyph_file = Some((glyph_path, glyph_writer));
+				}
+				let glyph_writer = match &mut glyph_file {
+					Some((_, w)) => w,
+					None => &mut *writer,
+				};
+				let (x_min, y_min, x_max, y_max) =
+					(glyph.x_min, glyph.y_min, glyph.x_max, glyph.y_max);
+				glyph_writer.begintag_ordered(
+					"TTGlyph",
+					&[
+						("name", name),
+						("xMin", &x_min),
+						("yMin", &y_min),
+						("xMax", &x_max),
+						("yMax", &y_max),
+					],
+				);
+				glyph_writer.newline();
+				glyph.to_xml(
+					glyph_writer,
+					&order,
+					self.extended,
+					font.disassemble_instructions,
+				)?;
+				glyph_writer.endtag("TTGlyph");
+				glyph_writer.newline();
+				if let (Some((glyph_path, mut glyph_writer)), Some((_, files))) =
+					(glyph_file, &mut split)
+				{
+					glyph_writer.endtag(&table_tag);
+					glyph_writer.newline();
+					glyph_writer.endtag("ttFont");
+					glyph_writer.newline();
+					files.push(crate::ttx::TtxFile {
+						path: glyph_path,
+						contents: glyph_writer.into_string(),
+					});
+				}
+			} else {
+				writer.simpletag("TTGlyph", &[("name", name)]);
+				writer.comment("contains no outline data");
+				if split.is_none() {
+					writer.newline();
+				}
+			}
+			writer.newline();
+		}
+		Ok(())
+	}
+
 	fn glyph(&self, gid: u32, order: &GlyphOrder) -> Result<&Glyph> {
 		self.glyphs.get(&gid).ok_or_else(|| key_error(order, gid))
 	}
@@ -2095,49 +2229,7 @@ impl Table for Glyf {
 	}
 
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
-		let order = font.glyph_order()?;
-		writer.newline();
-		writer
-			.comment("The xMin, yMin, xMax and yMax values\nwill be recalculated by the compiler.");
-		writer.newline();
-		writer.newline();
-		let mut names: Vec<&String> = order.names().iter().collect();
-		names.sort();
-		for name in names {
-			let Some(gid) = order.id(name) else {
-				continue;
-			};
-			let Some(glyph) = self.glyphs.get(&gid) else {
-				log::warn!("glyph '{name}' does not exist in glyf table");
-				continue;
-			};
-			if glyph.number_of_contours != 0
-				|| glyph.program.as_ref().is_some_and(|p| !p.is_empty())
-			{
-				let (x_min, y_min, x_max, y_max) =
-					(glyph.x_min, glyph.y_min, glyph.x_max, glyph.y_max);
-				writer.begintag_ordered(
-					"TTGlyph",
-					&[
-						("name", name),
-						("xMin", &x_min),
-						("yMin", &y_min),
-						("xMax", &x_max),
-						("yMax", &y_max),
-					],
-				);
-				writer.newline();
-				glyph.to_xml(writer, &order, self.extended)?;
-				writer.endtag("TTGlyph");
-				writer.newline();
-			} else {
-				writer.simpletag("TTGlyph", &[("name", name)]);
-				writer.comment("contains no outline data");
-				writer.newline();
-			}
-			writer.newline();
-		}
-		Ok(())
+		self.write_xml(writer, font, None)
 	}
 
 	fn from_xml(&mut self, element: &Element, font: &mut Font) -> Result<()> {

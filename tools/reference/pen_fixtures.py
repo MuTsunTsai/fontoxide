@@ -1,4 +1,5 @@
-"""Generates crates/fontoxide-pens/tests/data/cu2qu_glyphs.txt.
+"""Generates tests/data/cu2qu_glyphs.txt of crates/fontoxide-cu2qu and
+crates/fontoxide-qu2cu (the same file, for their pen tests).
 
 The cu2quPen and qu2cuPen tests of fontTools draw the UFO glyphs of
 Tests/pens/data/{cubic,quadratic} with ufoLib's GlyphSet, which fontoxide does
@@ -26,7 +27,10 @@ from fontTools.pens.recordingPen import RecordingPen, RecordingPointPen  # noqa:
 from fontTools.ufoLib.glifLib import GlyphSet  # noqa: E402
 
 DATA = ROOT / "upstream" / "fonttools" / "Tests" / "pens" / "data"
-OUT = ROOT / "crates" / "fontoxide-pens" / "tests" / "data" / "cu2qu_glyphs.txt"
+OUTS = [
+    ROOT / "crates" / crate / "tests" / "data" / "cu2qu_glyphs.txt"
+    for crate in ("fontoxide-cu2qu", "fontoxide-qu2cu")
+]
 
 
 def num(v):
@@ -177,8 +181,9 @@ def main():
             prec = RecordingPointPen()
             glyphs[name].drawPoints(prec)
             lines.append(f"{kind}\t{name}\tP\t{point_ops(prec.value)}")
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+    for out in OUTS:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
 if __name__ == "__main__":

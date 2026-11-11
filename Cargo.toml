@@ -18,7 +18,9 @@ categories = ["parser-implementations", "encoding", "text-processing"]
 [workspace.dependencies]
 kurbo = "0.13"
 linesweeper = "0.5"
+fontoxide-afmlib = { path = "crates/fontoxide-afmlib", version = "0.0.0" }
 fontoxide-agl = { path = "crates/fontoxide-agl", version = "0.0.0" }
+fontoxide-cli = { path = "crates/fontoxide-cli", version = "0.0.0" }
 fontoxide-colorlib = { path = "crates/fontoxide-colorlib", version = "0.0.0" }
 fontoxide-cu2qu = { path = "crates/fontoxide-cu2qu", version = "0.0.0" }
 fontoxide-qu2cu = { path = "crates/fontoxide-qu2cu", version = "0.0.0" }
@@ -27,18 +29,25 @@ fontoxide-encodings = { path = "crates/fontoxide-encodings", version = "0.0.0" }
 fontoxide-fealib = { path = "crates/fontoxide-fealib", version = "0.0.0" }
 fontoxide-merge = { path = "crates/fontoxide-merge", version = "0.0.0" }
 fontoxide-misc = { path = "crates/fontoxide-misc", version = "0.0.0" }
+fontoxide-mtilib = { path = "crates/fontoxide-mtilib", version = "0.0.0" }
 fontoxide-otllib = { path = "crates/fontoxide-otllib", version = "0.0.0" }
 fontoxide-pens = { path = "crates/fontoxide-pens", version = "0.0.0" }
 fontoxide-repack = { path = "crates/fontoxide-repack", version = "0.0.0" }
 fontoxide-subset = { path = "crates/fontoxide-subset", version = "0.0.0" }
+fontoxide-svglib = { path = "crates/fontoxide-svglib", version = "0.0.0" }
+fontoxide-t1lib = { path = "crates/fontoxide-t1lib", version = "0.0.0" }
+fontoxide-tfmlib = { path = "crates/fontoxide-tfmlib", version = "0.0.0" }
 fontoxide-ttlib = { path = "crates/fontoxide-ttlib", version = "0.0.0" }
 fontoxide-ufolib = { path = "crates/fontoxide-ufolib", version = "0.0.0" }
 fontoxide-unicodedata = { path = "crates/fontoxide-unicodedata", version = "0.0.0" }
 fontoxide-varlib = { path = "crates/fontoxide-varlib", version = "0.0.0" }
+fontoxide-voltlib = { path = "crates/fontoxide-voltlib", version = "0.0.0" }
 brotli = { version = "9.1.1", default-features = false, features = ["std"] }
 flate2 = "1.1.11"
 indexmap = "2.7"
 log = "0.4.35"
+# Graphite table compression (fontTools' `lz4.block`); block format only, safe code.
+lz4_flex = { version = "0.11", default-features = false, features = ["safe-encode", "safe-decode", "checked-decode"] }
 roxmltree = "0.21.2"
 thiserror = "2.0.21"
 # Zipped UFOs: deflate only, through flate2, whose backend is the pure-Rust default

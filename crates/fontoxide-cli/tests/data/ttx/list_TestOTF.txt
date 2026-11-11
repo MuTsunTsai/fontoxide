@@ -1,0 +1,14 @@
+Listing table info for "TestOTF.otf":
+    tag     checksum    length    offset
+    ----  ----------  --------  --------
+    CFF   0x26FCC210       235      2040
+    DSIG  0x00000001         8      2300
+    OS/2  0x67230FF8        96       272
+    cmap  0x013122DB       506      1500
+    head  0x0878485F        54       172
+    hhea  0x065401E0        36       228
+    hmtx  0x07AC00A0        24      2276
+    maxp  0x00065000         6       264
+    name  0x848C7CE8      1130       368
+    post  0xFFB80032        32      2008
+

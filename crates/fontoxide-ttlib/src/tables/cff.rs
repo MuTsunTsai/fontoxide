@@ -49,6 +49,13 @@ macro_rules! cff_table {
 			}
 
 			fn compile(&mut self, font: &mut Font) -> Result<Vec<u8>> {
+				// `getGlyphOrder` takes the glyph order of a CFF font from this table,
+				// which is detached from the font while compiling.
+				if !$cff2 && !font.has_glyph_order() {
+					if let Ok(names) = self.cff.glyph_order() {
+						font.set_glyph_order(names);
+					}
+				}
 				let order = font.glyph_order()?;
 				let ctx = CompileContext {
 					glyph_order: order.names(),

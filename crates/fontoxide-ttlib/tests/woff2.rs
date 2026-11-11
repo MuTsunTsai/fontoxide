@@ -1116,3 +1116,219 @@ fn test_cubic() -> TestResult {
 	assert_eq!(pen1.value, pen2.value);
 	Ok(())
 }
+
+// --- MainTest: the command line, `fontoxide_ttlib::woff2_cli`
+
+mod main_test {
+	use std::path::{Path, PathBuf};
+	use std::sync::atomic::{AtomicUsize, Ordering};
+
+	use fontoxide_ttlib::woff2_cli::{main, run};
+	use fontoxide_ttlib::{Font, ReadOptions, Tag, WriteOptions};
+
+	use super::{OTX, TTX, TestResult, cff_woff2, import, tt_woff2};
+
+	/// A temporary directory, removed when dropped (`tmpdir`).
+	struct TempDir(PathBuf);
+
+	impl TempDir {
+		fn new() -> std::io::Result<Self> {
+			static COUNTER: AtomicUsize = AtomicUsize::new(0);
+			let path = std::env::temp_dir().join(format!(
+				"fontoxide-ttlib-woff2-main-{}-{}",
+				std::process::id(),
+				COUNTER.fetch_add(1, Ordering::Relaxed)
+			));
+			std::fs::create_dir_all(&path)?;
+			Ok(TempDir(path))
+		}
+
+		fn join(&self, name: &str) -> String {
+			self.0.join(name).to_string_lossy().into_owned()
+		}
+	}
+
+	impl Drop for TempDir {
+		fn drop(&mut self) {
+			let _ = std::fs::remove_dir_all(&self.0);
+		}
+	}
+
+	/// `make_ttf`, and the same for `OTX`.
+	fn make_font(tmpdir: &TempDir, ttx: &str, file_name: &str) -> TestResult<String> {
+		let mut font = import(ttx)?;
+		let filename = tmpdir.join(file_name);
+		std::fs::write(&filename, font.write(&WriteOptions::default())?)?;
+		Ok(filename)
+	}
+
+	fn make_ttf(tmpdir: &TempDir) -> TestResult<String> {
+		make_font(tmpdir, TTX, "TestTTF-Regular.ttf")
+	}
+
+	fn is_file(path: &str) -> bool {
+		Path::new(path).is_file()
+	}
+
+	#[test]
+	fn test_compress_ttf() -> TestResult {
+		let tmpdir = TempDir::new()?;
+		let input_file = make_ttf(&tmpdir)?;
+		assert_eq!(main(&["compress", &input_file])?, 0);
+		assert!(is_file(&tmpdir.join("TestTTF-Regular.woff2")));
+		Ok(())
+	}
+
+	#[test]
+	fn test_compress_ttf_no_glyf_transform() -> TestResult {
+		let tmpdir = TempDir::new()?;
+		let input_file = make_ttf(&tmpdir)?;
+		assert_eq!(main(&["compress", "--no-glyf-transform", &input_file])?, 0);
+		assert!(is_file(&tmpdir.join("TestTTF-Regular.woff2")));
+		Ok(())
+	}
+
+	#[test]
+	fn test_compress_ttf_hmtx_transform() -> TestResult {
+		let tmpdir = TempDir::new()?;
+		let input_file = make_ttf(&tmpdir)?;
+		assert_eq!(main(&["compress", "--hmtx-transform", &input_file])?, 0);
+		assert!(is_file(&tmpdir.join("TestTTF-Regular.woff2")));
+		Ok(())
+	}
+
+	#[test]
+	fn test_compress_ttf_no_glyf_transform_hmtx_transform() -> TestResult {
+		let tmpdir = TempDir::new()?;
+		let input_file = make_ttf(&tmpdir)?;
+		let args = [
+			"compress",
+			"--no-glyf-transform",
+			"--hmtx-transform",
+			&input_file,
+		];
+		assert_eq!(main(&args)?, 0);
+		let output = tmpdir.join("TestTTF-Regular.woff2");
+		assert!(is_file(&output));
+		let font = Font::read(std::fs::read(&output)?, ReadOptions::default())?;
+		let transformed = font.flavor_data.and_then(|d| d.transformed_tables);
+		assert_eq!(transformed, Some(vec![Tag::new(b"hmtx")]));
+		Ok(())
+	}
+
+	#[test]
+	fn test_compress_output_file() -> TestResult {
+		let tmpdir = TempDir::new()?;
+		let input_file = make_ttf(&tmpdir)?;
+		let output_file = tmpdir.join("TestTTF.woff2");
+		assert_eq!(main(&["compress", "-o", &output_file, &input_file])?, 0);
+		assert!(is_file(&output_file));
+		Ok(())
+	}
+
+	#[test]
+	fn test_compress_otf() -> TestResult {
+		let tmpdir = TempDir::new()?;
+		let input_file = make_font(&tmpdir, OTX, "TestOTF-Regular.otf")?;
+		assert_eq!(main(&["compress", &input_file])?, 0);
+		assert!(is_file(&tmpdir.join("TestOTF-Regular.woff2")));
+		Ok(())
+	}
+
+	fn sorted(mut tags: Vec<Tag>) -> Vec<Tag> {
+		tags.sort();
+		tags
+	}
+
+	#[test]
+	fn test_recompress_woff2_keeps_flavorData() -> TestResult {
+		let tmpdir = TempDir::new()?;
+		let mut woff2_font = Font::read(tt_woff2().to_vec(), ReadOptions::default())?;
+		let flavor_data = woff2_font.flavor_data.as_mut().ok_or("no flavorData")?;
+		flavor_data.priv_data = Some(b"FOOBAR".to_vec());
+		let transformed = flavor_data.transformed_tables.clone().unwrap_or_default();
+		let woff2_file = tmpdir.join("TestTTF-Regular.woff2");
+		std::fs::write(&woff2_file, woff2_font.write(&WriteOptions::default())?)?;
+
+		assert_eq!(sorted(transformed), [Tag::new(b"glyf"), Tag::new(b"loca")]);
+
+		assert_eq!(main(&["compress", "--hmtx-transform", &woff2_file])?, 0);
+
+		let output_file = tmpdir.join("TestTTF-Regular#1.woff2");
+		assert!(is_file(&output_file));
+
+		let new_woff2_font = Font::read(std::fs::read(&output_file)?, ReadOptions::default())?;
+		let flavor_data = new_woff2_font.flavor_data.ok_or("no flavorData")?;
+		assert_eq!(
+			sorted(flavor_data.transformed_tables.unwrap_or_default()),
+			[Tag::new(b"glyf"), Tag::new(b"hmtx"), Tag::new(b"loca")]
+		);
+		assert_eq!(flavor_data.priv_data.as_deref(), Some(&b"FOOBAR"[..]));
+		Ok(())
+	}
+
+	#[test]
+	fn test_decompress_ttf() -> TestResult {
+		let tmpdir = TempDir::new()?;
+		let input_file = tmpdir.join("TestTTF-Regular.woff2");
+		std::fs::write(&input_file, tt_woff2())?;
+		assert_eq!(main(&["decompress", &input_file])?, 0);
+		assert!(is_file(&tmpdir.join("TestTTF-Regular.ttf")));
+		Ok(())
+	}
+
+	#[test]
+	fn test_decompress_otf() -> TestResult {
+		let tmpdir = TempDir::new()?;
+		let input_file = tmpdir.join("TestTTF-Regular.woff2");
+		std::fs::write(&input_file, cff_woff2())?;
+		assert_eq!(main(&["decompress", &input_file])?, 0);
+		assert!(is_file(&tmpdir.join("TestTTF-Regular.otf")));
+		Ok(())
+	}
+
+	#[test]
+	fn test_decompress_output_file() -> TestResult {
+		let tmpdir = TempDir::new()?;
+		let input_file = tmpdir.join("TestTTF-Regular.woff2");
+		std::fs::write(&input_file, tt_woff2())?;
+		let output_file = tmpdir.join("TestTTF.ttf");
+		assert_eq!(main(&["decompress", "-o", &output_file, &input_file])?, 0);
+		assert!(is_file(&output_file));
+		Ok(())
+	}
+
+	#[test]
+	fn test_no_subcommand_show_help() -> TestResult {
+		let mut out = Vec::new();
+		assert_eq!(run(&["--help"], &mut out)?, 0);
+		let captured = String::from_utf8(out)?;
+		assert!(captured.contains("usage: fonttools ttLib.woff2"));
+		Ok(())
+	}
+
+	/// Compressing and decompressing round-trips the tables.
+	#[test]
+	fn compress_decompress_roundtrip() -> TestResult {
+		let tmpdir = TempDir::new()?;
+		let input_file = make_ttf(&tmpdir)?;
+		assert_eq!(main(&["compress", "-q", &input_file])?, 0);
+		let woff2 = tmpdir.join("TestTTF-Regular.woff2");
+		assert_eq!(main(&["decompress", "-q", &woff2])?, 0);
+		let decompressed = tmpdir.join("TestTTF-Regular#1.ttf");
+		let mut original = Font::read(std::fs::read(&input_file)?, ReadOptions::default())?;
+		let mut roundtrip = Font::read(std::fs::read(&decompressed)?, ReadOptions::default())?;
+		for tag in original.tags() {
+			// DSIG is dropped; glyf and loca are rebuilt; head is updated.
+			if [b"DSIG", b"head", b"glyf", b"loca"].contains(&&tag.0) {
+				continue;
+			}
+			assert_eq!(
+				original.table_data(tag)?,
+				roundtrip.table_data(tag)?,
+				"{tag}"
+			);
+		}
+		Ok(())
+	}
+}

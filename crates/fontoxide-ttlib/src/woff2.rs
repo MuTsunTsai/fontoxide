@@ -496,7 +496,7 @@ impl Woff2Data {
 	}
 
 	/// The data of a table as stored (`loadData`).
-	fn raw(&self, tag: Tag) -> Result<&[u8]> {
+	pub(crate) fn raw(&self, tag: Tag) -> Result<&[u8]> {
 		let e = self.entry(tag)?;
 		self.stream
 			.get(e.offset..e.offset + e.length)

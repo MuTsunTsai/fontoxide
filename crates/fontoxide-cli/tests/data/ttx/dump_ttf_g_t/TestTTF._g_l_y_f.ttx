@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont ttLibVersion="4.68">
+
+  <glyf>
+    <TTGlyph src="TestTTF._g_l_y_f..notdef.ttx"/>
+    <TTGlyph name=".null"/><!-- contains no outline data -->
+    <TTGlyph name="CR"/><!-- contains no outline data -->
+    <TTGlyph src="TestTTF._g_l_y_f.ellipsis.ttx"/>
+    <TTGlyph src="TestTTF._g_l_y_f.period.ttx"/>
+    <TTGlyph name="space"/><!-- contains no outline data -->
+  </glyf>
+
+</ttFont>
