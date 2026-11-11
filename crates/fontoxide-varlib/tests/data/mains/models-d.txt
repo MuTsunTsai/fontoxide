@@ -1,0 +1,28 @@
+Original locations:
+[{'contrast': 0.0, 'weight': 0.0},
+ {'contrast': 0.0, 'weight': 368.0},
+ {'contrast': 0.0, 'weight': 1000.0},
+ {'contrast': 100.0, 'weight': 1000.0},
+ {'contrast': 100.0, 'weight': 0.0},
+ {'contrast': 100.0, 'weight': 368.0}]
+Normalized locations:
+[{'contrast': 0.0, 'weight': -1.0},
+ {'contrast': 0.0, 'weight': 0.0},
+ {'contrast': 0.0, 'weight': 1.0},
+ {'contrast': 1.0, 'weight': 1.0},
+ {'contrast': 1.0, 'weight': -1.0},
+ {'contrast': 1.0, 'weight': 0.0}]
+Sorted locations:
+[{},
+ {'contrast': 1.0},
+ {'weight': -1.0},
+ {'weight': 1.0},
+ {'contrast': 1.0, 'weight': -1.0},
+ {'contrast': 1.0, 'weight': 1.0}]
+Supports:
+[{},
+ {'contrast': (0, 1.0, 1)},
+ {'weight': (-1, -1.0, 0)},
+ {'weight': (0, 1.0, 1)},
+ {'contrast': (0, 1.0, 1), 'weight': (-1, -1.0, 0)},
+ {'contrast': (0, 1.0, 1), 'weight': (0, 1.0, 1)}]

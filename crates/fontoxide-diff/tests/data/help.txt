@@ -1,0 +1,33 @@
+usage: fonttools diff [-h] [-l] [-U LINES] [-t INCLUDE [INCLUDE ...]]
+                      [-x EXCLUDE [EXCLUDE ...]] [--diff DIFF]
+                      [--diff-arg DIFF_ARG] [--color {auto,never,always}]
+                      [--y1 NUMBER] [--y2 NUMBER] [-a] [-b] [-q]
+                      FILE1 FILE2
+
+An OpenType table diff tool for fonts.
+
+positional arguments:
+  FILE1                 Font file path 1
+  FILE2                 Font file path 2
+
+options:
+  -h, --help            show this help message and exit
+  -l, --summary         Report table presence and binary equality only
+  -U, --lines LINES     Number of context lines for unified diff (default: 3)
+  -t, --include INCLUDE [INCLUDE ...]
+                        Font tables to include. Multiple options are allowed.
+  -x, --exclude EXCLUDE [EXCLUDE ...]
+                        Font tables to exclude. Multiple options are allowed.
+  --diff DIFF           Run external diff tool command (default: diff)
+  --diff-arg DIFF_ARG   External diff tool arguments (default: -u)
+  --color {auto,never,always}
+                        Whether to colorize output (default: auto)
+  --y1 NUMBER           Select font number for TrueType Collection (.ttc/.otc)
+                        FILE1, starting from 0
+  --y2 NUMBER           Select font number for TrueType Collection (.ttc/.otc)
+                        FILE2, starting from 0
+  -a, --always          Compare tables even if binary identical
+  -b, --binary          Compare tables only if binaries differ (default)
+  -q, --quiet           Suppress all output
+== stderr
+== exit 0

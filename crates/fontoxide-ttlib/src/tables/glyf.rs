@@ -903,7 +903,9 @@ impl Glyph {
 		(self.coordinates.len(), self.end_pts_of_contours.len())
 	}
 
-	fn compile_coordinates(&self, extended: bool) -> Result<Vec<u8>> {
+	/// `compileCoordinates`: packed for size (`compileDeltasGreedy`) if
+	/// `optimize_size`, else for speed (`compileDeltasForSpeed`).
+	fn compile_coordinates(&self, extended: bool, optimize_size: bool) -> Result<Vec<u8>> {
 		if self.coordinates.len() != self.flags.len() {
 			return Err(Error::Assertion(
 				"len(self.coordinates) == len(self.flags)".into(),
@@ -926,25 +928,58 @@ impl Glyph {
 		if !extended && self.flags.iter().any(|f| f & FLAG_CUBIC != 0) {
 			return Err(Error::ttlib("Cubic flags require the extended GLYF table"));
 		}
-		// Deltas of the rounded coordinates, packed greedily.
+		// Deltas of the rounded coordinates.
 		let mut last = (0i64, 0i64);
+		let deltas: Vec<(i64, i64)> = self
+			.coordinates
+			.iter()
+			.map(|&(x, y)| {
+				let (x, y) = (ot_round(x), ot_round(y));
+				let d = (x - last.0, y - last.1);
+				last = (x, y);
+				d
+			})
+			.collect();
+		// For speed, every delta of an axis gets the widest representation that
+		// any of them needs: (zero, short) for x and y.
+		let widths = if optimize_size {
+			None
+		} else {
+			let width = |values: &mut dyn Iterator<Item = i64>| -> Result<(bool, bool)> {
+				let (min, max) = values.fold((None, None), |(lo, hi): (Option<i64>, _), v| {
+					(
+						Some(lo.map_or(v, |lo| lo.min(v))),
+						Some(hi.map_or(v, |hi: i64| hi.max(v))),
+					)
+				});
+				let (Some(min), Some(max)) = (min, max) else {
+					return Err(Error::value("min() arg is an empty sequence"));
+				};
+				Ok((
+					min == 0 && max == 0,
+					-255 <= min && min <= max && max <= 255,
+				))
+			};
+			Some((
+				width(&mut deltas.iter().map(|d| d.0))?,
+				width(&mut deltas.iter().map(|d| d.1))?,
+			))
+		};
 		let mut out_flags: Vec<u8> = Vec::new();
 		let mut xs: Vec<u8> = Vec::new();
 		let mut ys: Vec<u8> = Vec::new();
 		let mut last_flag: Option<u8> = None;
 		let mut repeat = 0;
-		for (&flag, &(x, y)) in self.flags.iter().zip(&self.coordinates) {
-			let (x, y) = (ot_round(x), ot_round(y));
-			let (dx, dy) = (x - last.0, y - last.1);
-			last = (x, y);
+		for (&flag, &(dx, dy)) in self.flags.iter().zip(&deltas) {
 			let mut flag = flag;
-			for (d, short, same, out) in [
-				(dx, FLAG_X_SHORT, FLAG_X_SAME, &mut xs),
-				(dy, FLAG_Y_SHORT, FLAG_Y_SAME, &mut ys),
+			for (d, short, same, out, width) in [
+				(dx, FLAG_X_SHORT, FLAG_X_SAME, &mut xs, widths.map(|w| w.0)),
+				(dy, FLAG_Y_SHORT, FLAG_Y_SAME, &mut ys, widths.map(|w| w.1)),
 			] {
-				if d == 0 {
+				let (zero, short_ok) = width.unwrap_or((d == 0, (-255..=255).contains(&d)));
+				if zero {
 					flag |= same;
-				} else if (-255..=255).contains(&d) {
+				} else if short_ok {
 					flag |= short;
 					if d > 0 {
 						flag |= same;
@@ -1600,6 +1635,7 @@ impl Glyf {
 		order: &GlyphOrder,
 		recalc: bool,
 		done: &mut HashSet<u32>,
+		optimize_size: bool,
 	) -> Result<Vec<u8>> {
 		let g = self.glyph(gid, order)?;
 		if let Some(data) = &g.data {
@@ -1634,7 +1670,7 @@ impl Glyf {
 			data.extend_from_slice(&u16_of(p.len() as i64)?.to_be_bytes());
 			data.extend_from_slice(p);
 		} else {
-			data.extend(g.compile_coordinates(self.extended)?);
+			data.extend(g.compile_coordinates(self.extended, optimize_size)?);
 		}
 		Ok(data)
 	}
@@ -1647,7 +1683,26 @@ impl Glyf {
 		order: &GlyphOrder,
 		recalc_bboxes: bool,
 	) -> Result<Vec<u8>> {
-		self.compile_glyph(gid, order, recalc_bboxes, &mut HashSet::new())
+		self.glyph_data_ext(gid, order, recalc_bboxes, true)
+	}
+
+	/// [`Glyf::glyph_data`], with the coordinates packed for size if
+	/// `optimize_size` (the default), else for speed (`compile(glyfTable,
+	/// recalcBBoxes, optimizeSize=optimize_size)`).
+	pub fn glyph_data_ext(
+		&mut self,
+		gid: u32,
+		order: &GlyphOrder,
+		recalc_bboxes: bool,
+		optimize_size: bool,
+	) -> Result<Vec<u8>> {
+		self.compile_glyph(
+			gid,
+			order,
+			recalc_bboxes,
+			&mut HashSet::new(),
+			optimize_size,
+		)
 	}
 
 	/// `glyfTable[name].recalcBounds(glyfTable)`.
@@ -2185,10 +2240,11 @@ impl Table for Glyf {
 			return Err(Error::Assertion("padding in (0, 1, 2, 4)".into()));
 		}
 		let recalc = font.recalc_bboxes;
+		let optimize_size = !font.optimize_font_speed;
 		let mut done = HashSet::new();
 		let mut data_list = Vec::with_capacity(order.len());
 		for gid in 0..order.len() as u32 {
-			let mut d = self.compile_glyph(gid, &order, recalc, &mut done)?;
+			let mut d = self.compile_glyph(gid, &order, recalc, &mut done, optimize_size)?;
 			if padding > 1 {
 				d.resize(d.len().div_ceil(padding) * padding, 0);
 			}

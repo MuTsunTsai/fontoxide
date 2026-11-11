@@ -1,0 +1,43 @@
+    <axis tag="wght" name="Weight" minimum="100" default="400" maximum="1000">
+      <map input="100" output="100"/>
+      <map input="150" output="137.476"/>
+      <map input="200" output="179.287"/>
+      <map input="250" output="225.947"/>
+      <map input="300" output="277.876"/>
+      <map input="350" output="335.711"/>
+      <map input="400" output="400"/>
+      <map input="450" output="434.578"/>
+      <map input="500" output="471.7"/>
+      <map input="550" output="510.999"/>
+      <map input="600" output="552.942"/>
+      <map input="650" output="597.658"/>
+      <map input="700" output="645.018"/>
+      <map input="750" output="695.487"/>
+      <map input="800" output="749.2"/>
+      <map input="850" output="806.314"/>
+      <map input="900" output="867.011"/>
+      <map input="950" output="931.473"/>
+      <map input="1000" output="1000"/>
+    </axis>
+    <axis tag="wdth" name="Width" minimum="25" default="100" maximum="151"/>
+    <axis tag="slnt" name="Slant" minimum="-10" default="0" maximum="0"/>
+    <axis tag="opsz" name="OpticalSize" minimum="8" default="14" maximum="144">
+      <map input="8" output="8"/>
+      <map input="9" output="9.29367"/>
+      <map input="10" output="10.4369"/>
+      <map input="11" output="11.4596"/>
+      <map input="12" output="12.384"/>
+      <map input="14" output="14"/>
+      <map input="18" output="31.6863"/>
+      <map input="24" output="50.6691"/>
+      <map input="30" output="64.5265"/>
+      <map input="36" output="75.3141"/>
+      <map input="48" output="91.4479"/>
+      <map input="60" output="103.223"/>
+      <map input="72" output="112.412"/>
+      <map input="96" output="126.153"/>
+      <map input="120" output="136.213"/>
+      <map input="144" output="144"/>
+    </axis>
+== avar
+000100000000000d0013c000c000caabc7ffd555d0eae000dadeeaabe5f2f555f24900000000055503b00aab07a610000bd7155510501aab151520001a2325551f852aab253f30002b57355531d13aab38b14000400000000010c000c000caabcdcdd555d9fee000e4e7eaabeec30000000001f808b504ec120d07e018e00ad51e2f10bd262116a52bed1c8e3073285f3737342f3c2b400040000003c000c000000000004000400000000003c000c00000000000400040000003c000c00000000000400040000003c000c00000000000400040000003c000c00000000000400040000003c000c00000000000400040000003c000c00000000000400040000003c000c00000000000400040000003c000c0000000000040004000

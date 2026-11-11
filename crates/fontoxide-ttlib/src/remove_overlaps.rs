@@ -43,7 +43,11 @@ use crate::table::TableType;
 use crate::tables::glyf::Glyph;
 #[cfg(feature = "pathops")]
 use crate::tables::{Cff, Cff2, Glyf, Hmtx};
-use crate::{Error, Font, Result};
+use std::io::Write;
+
+use fontoxide_misc::argparse::{Argument, Command as Parser, Nargs};
+
+use crate::{Error, Font, ReadOptions, Result, WriteOptions};
 
 #[cfg(feature = "pathops")]
 const CFF: Tag = Tag::new(b"CFF ");
@@ -798,4 +802,84 @@ mod tests {
 		let glyph = glyph_from_contours(&[path]);
 		assert_eq!(glyph.flags, vec![1, 0, 1]);
 	}
+}
+
+const HELP: &str = "\
+usage: fonttools ttLib.removeOverlaps [-h] [--keep-hinting] [--ignore-errors]
+                                      [--keep-unused-subroutines]
+                                      INPUT.ttf OUTPUT.ttf [GLYPHS ...]
+
+Simplify TrueType glyphs by merging overlapping contours/components. Requires
+https://github.com/fonttools/skia-pathops
+
+positional arguments:
+  INPUT.ttf             Input font file
+  OUTPUT.ttf            Output font file
+  GLYPHS                Optional list of glyph names to remove overlaps from
+
+options:
+  -h, --help            show this help message and exit
+  --keep-hinting        Keep hinting for unmodified glyphs, default is to drop
+                        hinting
+  --ignore-errors       ignore errors while removing overlaps, thus keeping
+                        the tricky glyphs unchanged
+  --keep-unused-subroutines
+                        Keep unused subroutines in CFF table after removing
+                        overlaps, default is to remove them if any glyphs are
+                        modified
+";
+
+const COMMAND: Parser = Parser {
+	prog: "fonttools ttLib.removeOverlaps",
+	module: "ttLib.removeOverlaps",
+	help: HELP,
+	arguments: &[
+		Argument::help(),
+		Argument::positional("INPUT.ttf"),
+		Argument::positional("OUTPUT.ttf"),
+		Argument::positional("GLYPHS").nargs(Nargs::ZeroOrMore),
+		Argument::flag(&["--keep-hinting"]),
+		Argument::flag(&["--ignore-errors"]),
+		Argument::flag(&["--keep-unused-subroutines"]),
+	],
+	required_groups: &[],
+};
+
+/// `fontTools.ttLib.removeOverlaps.main`: removes the overlaps of the glyphs of
+/// a font file. Returns the exit code.
+///
+/// Without the `pathops` feature, it fails with [`Error::Import`] before
+/// parsing the arguments, as importing the module does without skia-pathops.
+pub fn main(args: &[&str]) -> Result<i32> {
+	run(
+		args,
+		&mut std::io::stdout().lock(),
+		&mut std::io::stderr().lock(),
+	)
+}
+
+/// [`main`], writing to `out` and `err`.
+pub fn run(args: &[&str], out: &mut dyn Write, err: &mut dyn Write) -> Result<i32> {
+	if cfg!(not(feature = "pathops")) {
+		return Err(Error::Import("No module named 'pathops'".into()));
+	}
+	let options = match COMMAND.parse_args(args, out, err)? {
+		Ok(options) => options,
+		Err(code) => return Ok(code),
+	};
+	let input = options.str("INPUT.ttf").unwrap_or_default();
+	let output = options.str("OUTPUT.ttf").unwrap_or_default();
+	let glyphs = options.list("GLYPHS");
+	let mut font = Font::read(std::fs::read(input)?, ReadOptions::default())?;
+	remove_overlaps(
+		&mut font,
+		&RemoveOverlapsOptions {
+			glyph_names: (!glyphs.is_empty()).then(|| glyphs.to_vec()),
+			remove_hinting: !options.flag("--keep-hinting"),
+			ignore_errors: options.flag("--ignore-errors"),
+			remove_unused_subroutines: !options.flag("--keep-unused-subroutines"),
+		},
+	)?;
+	std::fs::write(output, font.write(&WriteOptions::default())?)?;
+	Ok(0)
 }

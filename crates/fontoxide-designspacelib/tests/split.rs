@@ -8,8 +8,9 @@ use std::sync::{Mutex, MutexGuard};
 use common::{copy_data, datadir, fail, read_text, tmpdir};
 use fontoxide_designspacelib::plistlib::{Dict, Value};
 use fontoxide_designspacelib::split::{
-	SplitOptions, convert5to4, split_interpolable, split_variable_fonts,
+	SplitOptions, condition_set_from, convert5to4, split_interpolable, split_variable_fonts,
 };
+use fontoxide_designspacelib::types::Range;
 use fontoxide_designspacelib::{
 	AxisDescriptor, Condition, DesignSpaceDocument, DiscreteAxisDescriptor, InstanceDescriptor,
 	Number, RangeAxisSubsetDescriptor, Result, RuleDescriptor, SimpleLocation, SourceDescriptor,
@@ -202,6 +203,28 @@ fn test_optional_min_max() -> Result<()> {
 		);
 	}
 	Ok(())
+}
+
+/// Check that split's internal helper functions produce the correct output
+/// for conditions that are partially unbounded. A missing bound and `None`
+/// are both `None` here.
+#[test]
+fn test_optional_min_max_internal() {
+	let f = Number::Float;
+	for (condition, expected) in [
+		(
+			Condition::new("axis", Some(f(0.5)), None),
+			Range::without_default(f(0.5), f(f64::INFINITY)),
+		),
+		(
+			Condition::new("axis", None, Some(f(0.5))),
+			Range::without_default(f(f64::NEG_INFINITY), f(0.5)),
+		),
+	] {
+		let set = condition_set_from(&[condition]);
+		assert_eq!(set.len(), 1);
+		assert_eq!(set["axis"], expected);
+	}
 }
 
 fn dict(items: Vec<(&str, Value)>) -> Dict {

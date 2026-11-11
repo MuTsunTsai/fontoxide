@@ -11,8 +11,8 @@ use fontoxide_ttlib::pens::{GlyphOptions, TtGlyphPen};
 use fontoxide_ttlib::tables::{Glyf, Head};
 use fontoxide_ttlib::{Font, GlyphSet, ReadOptions, WriteOptions};
 
-use crate::argparse::{self, Kind, Spec, Ty};
 use crate::pens::Qu2CuPen;
+use fontoxide_misc::argparse::{self, Argument, Nargs, Ty};
 
 /// The version of fontTools this is a port of (`fontTools.__version__`).
 const VERSION: &str = fontoxide_ttlib::FONTTOOLS_VERSION;
@@ -44,56 +44,15 @@ options:
                         output directory where to save converted TTFs
 ";
 
-const SPECS: &[Spec] = &[
-	Spec {
-		short: Some("-h"),
-		long: "--help",
-		kind: Kind::Flag,
-		group: None,
-		ty: Ty::Str,
-	},
-	Spec {
-		short: None,
-		long: "--version",
-		kind: Kind::Flag,
-		group: None,
-		ty: Ty::Str,
-	},
-	Spec {
-		short: Some("-v"),
-		long: "--verbose",
-		kind: Kind::Count,
-		group: None,
-		ty: Ty::Str,
-	},
-	Spec {
-		short: Some("-e"),
-		long: "--conversion-error",
-		kind: Kind::Value,
-		group: None,
-		ty: Ty::Float,
-	},
-	Spec {
-		short: Some("-c"),
-		long: "--all-cubic",
-		kind: Kind::Flag,
-		group: None,
-		ty: Ty::Str,
-	},
-	Spec {
-		short: Some("-o"),
-		long: "--output-file",
-		kind: Kind::Value,
-		group: Some(0),
-		ty: Ty::Str,
-	},
-	Spec {
-		short: Some("-d"),
-		long: "--output-dir",
-		kind: Kind::Value,
-		group: Some(0),
-		ty: Ty::Str,
-	},
+const ARGUMENTS: &[Argument] = &[
+	Argument::help(),
+	Argument::version(&["--version"]),
+	Argument::count(&["-v", "--verbose"]),
+	Argument::option(&["-e", "--conversion-error"]).ty(Ty::Float),
+	Argument::flag(&["-c", "--all-cubic"]),
+	Argument::option(&["-o", "--output-file"]).group(0),
+	Argument::option(&["-d", "--output-dir"]).group(0),
+	Argument::positional("INPUT").nargs(Nargs::OneOrMore),
 ];
 
 /// An error of the command line.
@@ -237,7 +196,7 @@ fn basename(path: &str) -> &str {
 /// The `-v` option is accepted, but logging is up to the caller's `log`
 /// implementation.
 pub fn main(args: &[&str]) -> Result<i32, Error> {
-	let parsed = argparse::parse(args, SPECS, "INPUT").map_err(usage)?;
+	let parsed = argparse::parse(args, ARGUMENTS, &[]).map_err(usage)?;
 	if parsed.flag("--help") {
 		print!(
 			"{}",
@@ -249,7 +208,7 @@ pub fn main(args: &[&str]) -> Result<i32, Error> {
 		println!("{VERSION}");
 		return Ok(0);
 	}
-	let conversion_error = match parsed.value("--conversion-error") {
+	let conversion_error = match parsed.get("--conversion-error") {
 		Some(seen) => argparse::parse_float(
 			"-e/--conversion-error",
 			seen.value.as_deref().unwrap_or_default(),
@@ -261,14 +220,14 @@ pub fn main(args: &[&str]) -> Result<i32, Error> {
 	if conversion_error <= 0.0 {
 		return Err(usage("--conversion-error must be greater than zero"));
 	}
-	let infiles = &parsed.positional;
+	let infiles = parsed.list("INPUT");
 	let output_file = parsed
-		.value("--output-file")
-		.and_then(|s| s.value.clone())
+		.str("--output-file")
+		.map(str::to_owned)
 		.filter(|f| !f.is_empty());
 	let output_dir = parsed
-		.value("--output-dir")
-		.and_then(|s| s.value.clone())
+		.str("--output-dir")
+		.map(str::to_owned)
 		.filter(|d| !d.is_empty());
 
 	if infiles.len() > 1 && output_file.is_some() {

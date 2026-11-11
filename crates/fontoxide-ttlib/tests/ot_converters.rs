@@ -632,10 +632,10 @@ fn test_cff2_index_invalid_off_size() {
 fn test_empty_varc_axis_tuples_roundtrip() -> TestResult {
 	let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
 		.join("../../upstream/fonttools/Tests/ttLib/data/varc-ac00-ac01.ttf");
-	// The `optimize_speed` parameter is dropped: there is no `OPTIMIZE_FONT_SPEED`
-	// option, values are always packed for size.
-	{
+	// `lazy` makes no difference: fontoxide always reads fonts completely.
+	for optimize_font_speed in [false, true] {
 		let mut font = Font::read(std::fs::read(&path)?, ReadOptions::default())?;
+		font.optimize_font_speed = optimize_font_speed;
 		let items = &mut font
 			.require::<Varc>()?
 			.axis_indices_list

@@ -1,0 +1,27 @@
+exit 0
+--- stdout
+usage: fonttools cffLib.CFF2ToCFF [-h] [-o OUTPUT.ttf] [--no-recalc-timestamp]
+                                  [--remove-overlaps]
+                                  [--ignore-overlap-errors] [-v | -q]
+                                  INPUT.ttf
+
+Convert a non-variable CFF2 font to CFF.
+
+positional arguments:
+  INPUT.ttf             Input OTF file with CFF table.
+
+options:
+  -h, --help            show this help message and exit
+  -o, --output OUTPUT.ttf
+                        Output instance OTF file (default: INPUT-CFF2.ttf).
+  --no-recalc-timestamp
+                        Don't set the output font's timestamp to the current
+                        time.
+  --remove-overlaps     Merge overlapping contours and components. Requires
+                        skia-pathops
+  --ignore-overlap-errors
+                        Don't crash if the remove-overlaps operation fails for
+                        some glyphs.
+  -v, --verbose         Run more verbosely.
+  -q, --quiet           Turn verbosity off.
+--- stderr

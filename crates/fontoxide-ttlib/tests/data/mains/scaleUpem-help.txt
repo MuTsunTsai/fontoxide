@@ -1,0 +1,14 @@
+exit 0
+--- stdout
+usage: fonttools ttLib.scaleUpem [-h] [--output-file path] font new-upem
+
+Change the units-per-EM of fonts
+
+positional arguments:
+  font                Font file.
+  new-upem            New units-per-EM integer value.
+
+options:
+  -h, --help          show this help message and exit
+  --output-file path  Output file.
+--- stderr

@@ -1,0 +1,5 @@
+exit 2
+--- stdout
+--- stderr
+usage: fonttools cffLib.width [-h] [-b] FILE [FILE ...]
+fonttools cffLib.width: error: the following arguments are required: FILE

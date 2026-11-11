@@ -402,8 +402,7 @@ impl Os2 {
 		let mac_style = if tag == *b"head" {
 			font.require::<crate::tables::Head>()?.mac_style
 		} else {
-			font.load(tag)?;
-			return Ok(());
+			font.require::<crate::tables::Bhed>()?.mac_style
 		};
 		if self.fs_selection & 1 != 0 && mac_style & (1 << 1) == 0 {
 			log::warn!(

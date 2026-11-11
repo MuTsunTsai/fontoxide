@@ -1,0 +1,16 @@
+Binary table summary:
+  file1: <file1>
+  file2: <file2>
+
+Tables only in file1 (1):
+- glyf (104 bytes)
+
+Tables only in file2 (1):
++ CFF  (235 bytes)
+
+Tables in both (1):
+* head: DIFF (54 vs 54 bytes)
+
+Result: DIFFERENT
+== stderr
+== exit 1

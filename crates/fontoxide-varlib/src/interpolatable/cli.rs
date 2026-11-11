@@ -4,6 +4,7 @@ use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::io::Write;
 
 use fontoxide_designspacelib::{Axis, DesignSpaceDocument};
+use fontoxide_misc::argparse::{self, Argument, Command, Nargs, Ty};
 use fontoxide_misc::fixed_tools::float_to_fixed_to_str;
 use fontoxide_misc::py;
 use fontoxide_pens::Pen;
@@ -79,176 +80,67 @@ struct Args {
 	help: bool,
 }
 
-/// The long options, and whether they take a value.
-const LONG_OPTIONS: &[(&str, bool)] = &[
-	("--help", false),
-	("--glyphs", true),
-	("--show-all", false),
-	("--tolerance", true),
-	("--kinkiness", true),
-	("--json", false),
-	("--pdf", true),
-	("--ps", true),
-	("--html", true),
-	("--quiet", false),
-	("--output", true),
-	("--ignore-missing", false),
-	("--name", true),
-	("--verbose", false),
-	("--debug", false),
+/// The arguments of the parser.
+const ARGUMENTS: &[Argument] = &[
+	Argument::help(),
+	Argument::option(&["--glyphs"]),
+	Argument::flag(&["--show-all"]),
+	Argument::option(&["--tolerance"]).ty(Ty::Float),
+	Argument::option(&["--kinkiness"]).ty(Ty::Float),
+	Argument::flag(&["--json"]),
+	Argument::option(&["--pdf"]),
+	Argument::option(&["--ps"]),
+	Argument::option(&["--html"]),
+	Argument::flag(&["--quiet"]),
+	Argument::option(&["--output"]),
+	Argument::flag(&["--ignore-missing"]),
+	Argument::positional("FILE").nargs(Nargs::OneOrMore),
+	Argument::append(&["--name"]),
+	Argument::flag(&["-v", "--verbose"]),
+	Argument::flag(&["--debug"]),
 ];
 
+const COMMAND: Command = Command {
+	prog: "fonttools varLib.interpolatable",
+	module: "varLib.interpolatable",
+	help: HELP,
+	arguments: ARGUMENTS,
+	required_groups: &[],
+};
+
 fn usage(message: String) -> InterpolatableError {
-	let text = format!(
-		"usage: fonttools varLib.interpolatable [-h] ... FILE [FILE ...]\nfonttools varLib.interpolatable: error: {message}"
-	);
+	let text = format!("{}{}: error: {message}", COMMAND.usage(), COMMAND.prog);
 	InterpolatableError::Usage(
-		fontoxide_misc::cli_tools::program_text(
-			&text,
-			"fonttools varLib.interpolatable",
-			"varLib.interpolatable",
-		)
-		.into_owned(),
+		fontoxide_misc::cli_tools::program_text(&text, COMMAND.prog, COMMAND.module).into_owned(),
 	)
 }
 
-/// Whether `argparse` takes an argument as a negative number rather than an
-/// option.
-fn is_negative_number(arg: &str) -> bool {
-	// `^-\d+$|^-\d*\.\d+$`
-	let Some(s) = arg.strip_prefix('-') else {
-		return false;
-	};
-	let digits = |s: &str| s.chars().all(|c| c.is_ascii_digit());
-	match s.split_once('.') {
-		None => !s.is_empty() && digits(s),
-		Some((a, b)) => digits(a) && !b.is_empty() && digits(b),
-	}
-}
-
-/// Parses the command line as `argparse` does: long options may be
-/// abbreviated, and the input files come in one run.
+/// Parses the command line as `argparse` does.
 fn parse_args(args: &[&str]) -> Result<Args> {
-	let mut parsed = Args::default();
-	let mut positional_runs: Vec<Vec<String>> = Vec::new();
-	let mut in_run = false;
-	let mut only_positional = false;
-	let mut i = 0;
-	while i < args.len() {
-		let arg = args[i];
-		i += 1;
-		if only_positional || arg == "-" || !arg.starts_with('-') || is_negative_number(arg) {
-			if !in_run {
-				positional_runs.push(Vec::new());
-				in_run = true;
-			}
-			if let Some(run) = positional_runs.last_mut() {
-				run.push(arg.to_owned());
-			}
-			continue;
-		}
-		in_run = false;
-		if arg == "--" {
-			only_positional = true;
-			continue;
-		}
-		let (option, inline_value) = match arg.split_once('=') {
-			Some((o, v)) if o.starts_with("--") => (o, Some(v.to_owned())),
-			_ => (arg, None),
-		};
-		let (name, takes_value) = match option {
-			"-h" => ("--help", false),
-			"-v" => ("--verbose", false),
-			_ if option.starts_with("--") => {
-				let exact = LONG_OPTIONS.iter().find(|(n, _)| *n == option);
-				let candidates: Vec<&(&str, bool)> = match exact {
-					Some(e) => vec![e],
-					None => LONG_OPTIONS
-						.iter()
-						.filter(|(n, _)| n.starts_with(option))
-						.collect(),
-				};
-				match candidates[..] {
-					[&(n, v)] => (n, v),
-					[] => return Err(usage(format!("unrecognized arguments: {arg}"))),
-					_ => {
-						let names: Vec<&str> = candidates.iter().map(|(n, _)| *n).collect();
-						return Err(usage(format!(
-							"ambiguous option: {option} could match {}",
-							names.join(", ")
-						)));
-					}
-				}
-			}
-			_ => return Err(usage(format!("unrecognized arguments: {arg}"))),
-		};
-		let value = if takes_value {
-			match inline_value {
-				Some(v) => Some(v),
-				None => match args.get(i) {
-					Some(v) if !v.starts_with('-') || *v == "-" || is_negative_number(v) => {
-						i += 1;
-						Some((*v).to_owned())
-					}
-					_ => {
-						let metavar = name.trim_start_matches('-').to_uppercase();
-						return Err(usage(format!(
-							"argument {name} {metavar}: expected one argument"
-						)));
-					}
-				},
-			}
-		} else {
-			if inline_value.is_some() {
-				return Err(usage(format!("argument {name}: ignored explicit argument")));
-			}
-			None
-		};
-		let float = |v: Option<String>| -> Result<Option<f64>> {
-			let v = v.unwrap_or_default();
-			match py::parse_float(&v) {
-				Some(f) => Ok(Some(f)),
-				None => Err(usage(format!(
-					"argument {name} {}: invalid float value: {}",
-					name.trim_start_matches('-').to_uppercase(),
-					py::str_repr(&v)
-				))),
-			}
-		};
-		match name {
-			"--help" => parsed.help = true,
-			"--glyphs" => parsed.glyphs = value,
-			"--show-all" => parsed.show_all = true,
-			"--tolerance" => parsed.tolerance = float(value)?,
-			"--kinkiness" => parsed.kinkiness = float(value)?,
-			"--json" => parsed.json = true,
-			"--pdf" => parsed.pdf = value,
-			"--ps" => parsed.ps = value,
-			"--html" => parsed.html = value,
-			"--quiet" => parsed.quiet = true,
-			"--output" => parsed.output = value,
-			"--ignore-missing" => parsed.ignore_missing = true,
-			"--name" => parsed.name.get_or_insert_with(Vec::new).extend(value),
-			// Logging is up to the caller.
-			_ => {}
-		}
-	}
-	if parsed.help {
-		return Ok(parsed);
-	}
-	let mut runs = positional_runs.into_iter();
-	match runs.next() {
-		Some(run) => parsed.inputs = run,
-		None => return Err(usage("the following arguments are required: FILE".into())),
-	}
-	let extra: Vec<String> = runs.flatten().collect();
-	if !extra.is_empty() {
-		return Err(usage(format!(
-			"unrecognized arguments: {}",
-			extra.join(" ")
-		)));
-	}
-	Ok(parsed)
+	let parsed = argparse::parse(args, ARGUMENTS, &[]).map_err(usage)?;
+	let float = |key: &str| -> Result<Option<f64>> {
+		parsed
+			.str(key)
+			.map(|v| argparse::parse_float(key, v).map_err(usage))
+			.transpose()
+	};
+	let string = |key: &str| parsed.str(key).map(str::to_owned);
+	Ok(Args {
+		glyphs: string("--glyphs"),
+		show_all: parsed.flag("--show-all"),
+		tolerance: float("--tolerance")?,
+		kinkiness: float("--kinkiness")?,
+		json: parsed.flag("--json"),
+		pdf: string("--pdf"),
+		ps: string("--ps"),
+		html: string("--html"),
+		quiet: parsed.flag("--quiet"),
+		output: string("--output"),
+		ignore_missing: parsed.flag("--ignore-missing"),
+		inputs: parsed.list("FILE").to_vec(),
+		name: parsed.get("--name").map(|s| s.values.clone()),
+		help: parsed.flag("--help"),
+	})
 }
 
 /// `os.path.basename` (of `ntpath`, as on Windows).
@@ -697,14 +589,7 @@ pub fn main(args: &[&str]) -> Result<i32> {
 pub fn run(args: &[&str], out: &mut dyn Write) -> Result<Option<Problems>> {
 	let args = parse_args(args)?;
 	if args.help {
-		out.write_all(
-			fontoxide_misc::cli_tools::program_text(
-				HELP,
-				"fonttools varLib.interpolatable",
-				"varLib.interpolatable",
-			)
-			.as_bytes(),
-		)?;
+		COMMAND.print_help(out)?;
 		return Ok(None);
 	}
 	for (option, value) in [

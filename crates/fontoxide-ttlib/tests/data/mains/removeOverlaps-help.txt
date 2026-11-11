@@ -1,0 +1,25 @@
+exit 0
+--- stdout
+usage: fonttools ttLib.removeOverlaps [-h] [--keep-hinting] [--ignore-errors]
+                                      [--keep-unused-subroutines]
+                                      INPUT.ttf OUTPUT.ttf [GLYPHS ...]
+
+Simplify TrueType glyphs by merging overlapping contours/components. Requires
+https://github.com/fonttools/skia-pathops
+
+positional arguments:
+  INPUT.ttf             Input font file
+  OUTPUT.ttf            Output font file
+  GLYPHS                Optional list of glyph names to remove overlaps from
+
+options:
+  -h, --help            show this help message and exit
+  --keep-hinting        Keep hinting for unmodified glyphs, default is to drop
+                        hinting
+  --ignore-errors       ignore errors while removing overlaps, thus keeping
+                        the tricky glyphs unchanged
+  --keep-unused-subroutines
+                        Keep unused subroutines in CFF table after removing
+                        overlaps, default is to remove them if any glyphs are
+                        modified
+--- stderr

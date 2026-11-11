@@ -6,7 +6,8 @@
 //! written, `WriteZipFS` and `TempFS`), seen through an optional
 //! subdirectory prefix (`SubFS`).
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, VecDeque};
+use std::ffi::{OsStr, OsString};
 use std::fmt;
 use std::path::{Component, Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
@@ -91,6 +92,9 @@ pub struct Fs {
 	backend: Backend,
 	/// The path components of the subdirectory (`SubFS`).
 	prefix: Vec<String>,
+	/// The root of a directory of the local disk with symbolic links expanded
+	/// (`OSFS._root`), which every path must stay in.
+	resolved_root: Option<Arc<PathBuf>>,
 }
 
 fn lock(m: &Mutex<MemFs>) -> MutexGuard<'_, MemFs> {
@@ -115,10 +119,13 @@ impl Fs {
 				root.display().to_string()
 			)));
 		}
-		let root = std::path::absolute(root).map_err(FsError::Io)?;
+		let root = normalize_os_path(&std::path::absolute(root).map_err(FsError::Io)?);
+		// `Path(root).resolve()`.
+		let resolved = resolve_under(Path::new(""), root.components().map(|c| c.as_os_str()));
 		Ok(Fs {
-			backend: Backend::Os(Arc::new(normalize_os_path(&root))),
+			backend: Backend::Os(Arc::new(root)),
 			prefix: Vec::new(),
+			resolved_root: Some(Arc::new(resolved)),
 		})
 	}
 
@@ -127,6 +134,7 @@ impl Fs {
 		Fs {
 			backend: Backend::Mem(Arc::new(Mutex::new(mem))),
 			prefix: Vec::new(),
+			resolved_root: None,
 		}
 	}
 
@@ -170,6 +178,25 @@ impl Fs {
 				}
 				p => parts.push(p.to_owned()),
 			}
+		}
+		// `OSFS._abs`: the path with symbolic links expanded, and `..` applied
+		// after them, must stay in the root, so that a link inside the root that
+		// points outside it is rejected too. That resolved path is the one used.
+		if let Some(root) = &self.resolved_root {
+			let rel = self
+				.prefix
+				.iter()
+				.map(OsStr::new)
+				.chain(path.split(separators).map(OsStr::new));
+			let resolved = resolve_under(root, rel);
+			if !is_relative_to(&resolved, root) {
+				return Err(FsError::IllegalBackReference(path.to_owned()));
+			}
+			return Ok(resolved
+				.components()
+				.skip(root.components().count())
+				.map(|c| c.as_os_str().to_string_lossy().into_owned())
+				.collect());
 		}
 		Ok(parts)
 	}
@@ -530,6 +557,7 @@ impl Fs {
 		Ok(Fs {
 			backend: self.backend.clone(),
 			prefix: self.components(path)?,
+			resolved_root: self.resolved_root.clone(),
 		})
 	}
 
@@ -810,6 +838,88 @@ pub(crate) fn py_repr(s: &str) -> String {
 }
 
 /// Removes `.` and `..` components without touching the disk.
+/// The most symbolic links [`resolve_under`] follows, as `os.path.realpath`
+/// (`_MAXLINKS`, beyond which the rest of the path is kept as is).
+const MAX_LINKS: usize = 40;
+
+/// `(base / rel).resolve()` for a `base` that is already resolved: symbolic
+/// links are expanded as far as the path exists (`Path.resolve()`, not
+/// strict). As in `os.path.realpath`, `..` in `rel` applies after the links
+/// before it are expanded on POSIX, but on Windows, `rel` is normalized first
+/// (`ntpath.realpath` calls `normpath`).
+fn resolve_under<'a>(base: &Path, rel: impl IntoIterator<Item = &'a OsStr>) -> PathBuf {
+	let mut out = base.to_path_buf();
+	let mut pending: VecDeque<OsString> = VecDeque::new();
+	for part in rel {
+		if cfg!(windows) && part == ".." {
+			if pending.pop_back().is_none() {
+				out.pop();
+			}
+		} else if !part.is_empty() && part != "." {
+			pending.push_back(part.to_owned());
+		}
+	}
+	let mut links = 0;
+	while let Some(part) = pending.pop_front() {
+		if part.is_empty() || part == "." {
+			continue;
+		}
+		if part == ".." {
+			out.pop();
+			continue;
+		}
+		out.push(&part);
+		if links >= MAX_LINKS {
+			continue;
+		}
+		let is_link = std::fs::symlink_metadata(&out).is_ok_and(|m| m.file_type().is_symlink());
+		if !is_link {
+			continue;
+		}
+		let Ok(target) = std::fs::read_link(&out) else {
+			continue;
+		};
+		links += 1;
+		out.pop();
+		let target = strip_verbatim(&target);
+		if target.has_root() || target.is_absolute() {
+			out = PathBuf::new();
+		}
+		for c in target.components().rev() {
+			pending.push_front(c.as_os_str().to_owned());
+		}
+	}
+	out
+}
+
+/// A path without the `\?\` prefix of Windows verbatim paths, as
+/// `os.path.realpath` gives it.
+fn strip_verbatim(p: &Path) -> PathBuf {
+	let s = p.to_string_lossy();
+	if let Some(rest) = s.strip_prefix(r"\?\UNC\") {
+		PathBuf::from(format!(r"\{rest}"))
+	} else if let Some(rest) = s.strip_prefix(r"\?\") {
+		PathBuf::from(rest)
+	} else {
+		p.to_path_buf()
+	}
+}
+
+/// `path.is_relative_to(root)`, ignoring case on Windows as `PureWindowsPath`
+/// does.
+fn is_relative_to(path: &Path, root: &Path) -> bool {
+	let key = |p: &Path| -> Vec<String> {
+		p.components()
+			.map(|c| {
+				let s = c.as_os_str().to_string_lossy().into_owned();
+				if cfg!(windows) { s.to_lowercase() } else { s }
+			})
+			.collect()
+	};
+	let (path, root) = (key(path), key(root));
+	path.len() >= root.len() && path[..root.len()] == root[..]
+}
+
 fn normalize_os_path(p: &Path) -> PathBuf {
 	let mut out = PathBuf::new();
 	for c in p.components() {

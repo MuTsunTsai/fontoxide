@@ -1,0 +1,302 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<designspace format="3.0">
+  <axes>
+    <axis tag="wght" name="weight" minimum="0" maximum="1000" default="368"/>
+    <axis tag="cntr" name="contrast" minimum="0" maximum="100" default="0">
+      <labelname xml:lang="de">Kontrast</labelname>
+      <labelname xml:lang="en">Contrast</labelname>
+      <labelname xml:lang="fa">کنتراست</labelname>
+    </axis>
+  </axes>
+  <sources>
+    <source filename="master_ufo/TestFamily-Master0.ufo" name="master_0" familyname="Test Family" stylename="Master0">
+      <location>
+        <dimension name="weight" xvalue="0"/>
+        <dimension name="contrast" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="master_ufo/TestFamily-Master1.ufo" name="master_1" familyname="Test Family" stylename="Master1">
+      <lib copy="1"/>
+      <groups copy="1"/>
+      <info copy="1"/>
+      <location>
+        <dimension name="weight" xvalue="368"/>
+        <dimension name="contrast" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="master_ufo/TestFamily-Master2.ufo" name="master_2" familyname="Test Family" stylename="Master2">
+      <location>
+        <dimension name="weight" xvalue="1000"/>
+        <dimension name="contrast" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="master_ufo/TestFamily-Master3.ufo" name="master_3" familyname="Test Family" stylename="Master3">
+      <location>
+        <dimension name="weight" xvalue="1000"/>
+        <dimension name="contrast" xvalue="100"/>
+      </location>
+    </source>
+    <source filename="master_ufo/TestFamily-Master0.ufo" name="master_0" familyname="Test Family" stylename="Master0">
+      <location>
+        <dimension name="weight" xvalue="0"/>
+        <dimension name="contrast" xvalue="100"/>
+      </location>
+    </source>
+    <source filename="master_ufo/TestFamily-Master4.ufo" name="master_4" familyname="Test Family" stylename="Master4">
+      <location>
+        <dimension name="weight" xvalue="368"/>
+        <dimension name="contrast" xvalue="100"/>
+      </location>
+    </source>
+  </sources>
+  <instances>
+    <instance name="instance_ExtraLight" familyname="Test Family" stylename="ExtraLight" filename="instances/TestFamily-ExtraLight.ufo" postscriptfontname="TestFamily-ExtraLight">
+      <location>
+        <dimension name="weight" xvalue="0"/>
+        <dimension name="contrast" xvalue="0"/>
+      </location>
+      <kerning/>
+      <info/>
+    </instance>
+    <instance name="instance_Light" familyname="Test Family" stylename="Light" filename="instances/TestFamily-Light.ufo" postscriptfontname="TestFamily-Light">
+      <location>
+        <dimension name="weight" xvalue="150"/>
+        <dimension name="contrast" xvalue="0"/>
+      </location>
+      <kerning/>
+      <info/>
+    </instance>
+    <instance name="instance_Regular" familyname="Test Family" stylename="Regular" filename="instances/TestFamily-Regular.ufo" postscriptfontname="TestFamily-Regular">
+      <location>
+        <dimension name="weight" xvalue="394"/>
+        <dimension name="contrast" xvalue="0"/>
+      </location>
+      <kerning/>
+      <info/>
+    </instance>
+    <instance name="instance_Semibold" familyname="Test Family" stylename="Semibold" filename="instances/TestFamily-Semibold.ufo" postscriptfontname="TestFamily-Semibold">
+      <location>
+        <dimension name="weight" xvalue="600"/>
+        <dimension name="contrast" xvalue="0"/>
+      </location>
+      <kerning/>
+      <info/>
+    </instance>
+    <instance name="instance_Bold" familyname="Test Family" stylename="Bold" filename="instances/TestFamily-Bold.ufo" postscriptfontname="TestFamily-Bold">
+      <location>
+        <dimension name="weight" xvalue="824"/>
+        <dimension name="contrast" xvalue="0"/>
+      </location>
+      <glyphs>
+        <glyph unicode="0x24" name="dollar">
+          <location>
+            <dimension name="weight" xvalue="824"/>
+            <dimension name="contrast" xvalue="0"/>
+          </location>
+          <masters>
+            <master glyphname="dollar.nostroke" source="master_0">
+              <location>
+                <dimension name="weight" xvalue="0"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+            <master glyphname="dollar.nostroke" source="master_1">
+              <location>
+                <dimension name="weight" xvalue="368"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+            <master glyphname="dollar.nostroke" source="master_2">
+              <location>
+                <dimension name="weight" xvalue="1000"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+            <master glyphname="dollar.nostroke" source="master_3">
+              <location>
+                <dimension name="weight" xvalue="1000"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+            <master glyphname="dollar.nostroke" source="master_0">
+              <location>
+                <dimension name="weight" xvalue="0"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+            <master glyphname="dollar.nostroke" source="master_4">
+              <location>
+                <dimension name="weight" xvalue="368"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+          </masters>
+        </glyph>
+      </glyphs>
+      <kerning/>
+      <info/>
+    </instance>
+    <instance name="instance_Black" familyname="Test Family" stylename="Black" filename="instances/TestFamily-Black.ufo" postscriptfontname="TestFamily-Black">
+      <location>
+        <dimension name="weight" xvalue="1000"/>
+        <dimension name="contrast" xvalue="0"/>
+      </location>
+      <glyphs>
+        <glyph unicode="0x24" name="dollar">
+          <location>
+            <dimension name="weight" xvalue="1000"/>
+            <dimension name="contrast" xvalue="0"/>
+          </location>
+          <masters>
+            <master glyphname="dollar.nostroke" source="master_0">
+              <location>
+                <dimension name="weight" xvalue="0"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+            <master glyphname="dollar.nostroke" source="master_1">
+              <location>
+                <dimension name="weight" xvalue="368"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+            <master glyphname="dollar.nostroke" source="master_2">
+              <location>
+                <dimension name="weight" xvalue="1000"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+            <master glyphname="dollar.nostroke" source="master_3">
+              <location>
+                <dimension name="weight" xvalue="1000"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+            <master glyphname="dollar.nostroke" source="master_0">
+              <location>
+                <dimension name="weight" xvalue="0"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+            <master glyphname="dollar.nostroke" source="master_4">
+              <location>
+                <dimension name="weight" xvalue="368"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+          </masters>
+        </glyph>
+      </glyphs>
+      <kerning/>
+      <info/>
+    </instance>
+    <instance name="instance_BlackMediumContrast" familyname="Test Family" stylename="Black Medium Contrast" filename="instances/TestFamily-BlackMediumContrast.ufo" postscriptfontname="TestFamily-BlackMediumContrast">
+      <location>
+        <dimension name="weight" xvalue="1000"/>
+        <dimension name="contrast" xvalue="50"/>
+      </location>
+      <glyphs>
+        <glyph unicode="0x24" name="dollar">
+          <location>
+            <dimension name="weight" xvalue="1000"/>
+            <dimension name="contrast" xvalue="0"/>
+          </location>
+          <masters>
+            <master glyphname="dollar.nostroke" source="master_0">
+              <location>
+                <dimension name="weight" xvalue="0"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+            <master glyphname="dollar.nostroke" source="master_1">
+              <location>
+                <dimension name="weight" xvalue="368"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+            <master glyphname="dollar.nostroke" source="master_2">
+              <location>
+                <dimension name="weight" xvalue="1000"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+            <master glyphname="dollar.nostroke" source="master_3">
+              <location>
+                <dimension name="weight" xvalue="1000"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+            <master glyphname="dollar.nostroke" source="master_0">
+              <location>
+                <dimension name="weight" xvalue="0"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+            <master glyphname="dollar.nostroke" source="master_4">
+              <location>
+                <dimension name="weight" xvalue="368"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+          </masters>
+        </glyph>
+      </glyphs>
+      <kerning/>
+      <info/>
+    </instance>
+    <instance name="instance_BlackHighContrast" familyname="Test Family" stylename="Black High Contrast" filename="instances/TestFamily-BlackHighContrast.ufo" postscriptfontname="TestFamily-BlackHighContrast">
+      <location>
+        <dimension name="weight" xvalue="1000"/>
+        <dimension name="contrast" xvalue="100"/>
+      </location>
+      <glyphs>
+        <glyph unicode="0x24" name="dollar">
+          <location>
+            <dimension name="weight" xvalue="1000"/>
+            <dimension name="contrast" xvalue="0"/>
+          </location>
+          <masters>
+            <master glyphname="dollar.nostroke" source="master_0">
+              <location>
+                <dimension name="weight" xvalue="0"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+            <master glyphname="dollar.nostroke" source="master_1">
+              <location>
+                <dimension name="weight" xvalue="368"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+            <master glyphname="dollar.nostroke" source="master_2">
+              <location>
+                <dimension name="weight" xvalue="1000"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+            <master glyphname="dollar.nostroke" source="master_3">
+              <location>
+                <dimension name="weight" xvalue="1000"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+            <master glyphname="dollar.nostroke" source="master_0">
+              <location>
+                <dimension name="weight" xvalue="0"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+            <master glyphname="dollar.nostroke" source="master_4">
+              <location>
+                <dimension name="weight" xvalue="368"/>
+                <dimension name="contrast" xvalue="0"/>
+              </location>
+            </master>
+          </masters>
+        </glyph>
+      </glyphs>
+      <kerning/>
+      <info/>
+    </instance>
+  </instances>
+</designspace>

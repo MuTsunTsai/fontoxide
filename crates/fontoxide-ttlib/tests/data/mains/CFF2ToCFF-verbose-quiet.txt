@@ -1,0 +1,8 @@
+exit 2
+--- stdout
+--- stderr
+usage: fonttools cffLib.CFF2ToCFF [-h] [-o OUTPUT.ttf] [--no-recalc-timestamp]
+                                  [--remove-overlaps]
+                                  [--ignore-overlap-errors] [-v | -q]
+                                  INPUT.ttf
+fonttools cffLib.CFF2ToCFF: error: argument -q/--quiet: not allowed with argument -v/--verbose

@@ -10,6 +10,8 @@ repository.workspace = true
 homepage.workspace = true
 keywords.workspace = true
 categories.workspace = true
+# The tests need the fontTools submodule and its test data.
+exclude = ["tests/"]
 
 [dependencies]
 fontoxide-misc.workspace = true

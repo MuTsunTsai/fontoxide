@@ -1,0 +1,7 @@
+exit 2
+--- stdout
+--- stderr
+usage: fonttools ttLib.removeOverlaps [-h] [--keep-hinting] [--ignore-errors]
+                                      [--keep-unused-subroutines]
+                                      INPUT.ttf OUTPUT.ttf [GLYPHS ...]
+fonttools ttLib.removeOverlaps: error: the following arguments are required: OUTPUT.ttf

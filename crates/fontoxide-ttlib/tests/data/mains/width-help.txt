@@ -1,0 +1,13 @@
+exit 0
+--- stdout
+usage: fonttools cffLib.width [-h] [-b] FILE [FILE ...]
+
+Calculate optimum defaultWidthX/nominalWidthX values
+
+positional arguments:
+  FILE               Input TTF files
+
+options:
+  -h, --help         show this help message and exit
+  -b, --brute-force  Use brute-force approach (VERY slow)
+--- stderr

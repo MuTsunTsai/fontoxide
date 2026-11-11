@@ -166,6 +166,9 @@ def measure_vectors():
             b = run(make, lambda p: p.bounds)
             fields.append("None" if b is None else fmt(b))
         lines.append("\t".join(fields))
+    # Some values depend on the platform's math library: the Rust test compares
+    # exactly on this platform only (fontoxide_misc::float_vectors).
+    lines.insert(0, f"# platform: {sys.platform}")
     MEASURE_OUT.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 

@@ -1713,7 +1713,7 @@ impl LookupBuilder {
 				);
 				let mut lookup = b.common.build_lookup(subtables)?;
 				// Compacting now gives smaller subtables, which may prevent overflows.
-				let level = font.gpos_compression_level;
+				let level = font.gpos_compression_level();
 				if level != 0
 					&& let Some(lookup) = &mut lookup
 				{

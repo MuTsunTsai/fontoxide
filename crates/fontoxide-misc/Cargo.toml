@@ -4,12 +4,14 @@ description = "Miscellaneous font utilities; a port of fontTools.misc, agl, afmL
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-license.workspace = true
+license = "MIT AND BSD-3-Clause"
 authors.workspace = true
 repository.workspace = true
 homepage.workspace = true
 keywords.workspace = true
 categories.workspace = true
+# The tests need the fontTools submodule and its test data.
+exclude = ["tests/"]
 
 [dependencies]
 fontoxide-encodings.workspace = true

@@ -1,0 +1,2 @@
+== stderr
+== exit error TTLibFileIsCollectionError: specify a font number between 0 and 1 (inclusive)

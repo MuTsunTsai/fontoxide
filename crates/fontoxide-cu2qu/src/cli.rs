@@ -6,8 +6,8 @@ use std::path::{Path, PathBuf};
 use fontoxide_ufolib::UfoLibError;
 use fontoxide_ufolib::objects::Font;
 
-use crate::argparse::{self, Kind, Spec, Ty};
 use crate::ufo::{self, MaxErr, Options, font_to_quadratic, fonts_to_quadratic};
+use fontoxide_misc::argparse::{self, Argument, Nargs, Ty};
 
 /// The version of fontTools this is a port of (`fontTools.__version__`).
 const VERSION: &str = "4.68.0";
@@ -47,77 +47,21 @@ options:
                         output directory where to save converted UFOs
 ";
 
-const SPECS: &[Spec] = &[
-	Spec {
-		short: Some("-h"),
-		long: "--help",
-		kind: Kind::Flag,
-		group: None,
-		ty: Ty::Str,
-	},
-	Spec {
-		short: None,
-		long: "--version",
-		kind: Kind::Flag,
-		group: None,
-		ty: Ty::Str,
-	},
-	Spec {
-		short: Some("-v"),
-		long: "--verbose",
-		kind: Kind::Count,
-		group: None,
-		ty: Ty::Str,
-	},
-	Spec {
-		short: Some("-e"),
-		long: "--conversion-error",
-		kind: Kind::Value,
-		group: None,
-		ty: Ty::Float,
-	},
-	Spec {
-		short: Some("-m"),
-		long: "--mixed",
-		kind: Kind::Flag,
-		group: None,
-		ty: Ty::Str,
-	},
-	Spec {
-		short: None,
-		long: "--keep-direction",
-		kind: Kind::Flag,
-		group: None,
-		ty: Ty::Str,
-	},
-	Spec {
-		short: Some("-i"),
-		long: "--interpolatable",
-		kind: Kind::Flag,
-		group: Some(0),
-		ty: Ty::Str,
-	},
-	Spec {
-		short: Some("-j"),
-		long: "--jobs",
-		kind: Kind::OptionalValue,
-		group: Some(0),
-		ty: Ty::Int,
-	},
-	Spec {
-		short: Some("-o"),
-		long: "--output-file",
-		kind: Kind::Value,
-		group: Some(1),
-		ty: Ty::Str,
-	},
-	Spec {
-		short: Some("-d"),
-		long: "--output-dir",
-		kind: Kind::Value,
-		group: Some(1),
-		ty: Ty::Str,
-	},
+const ARGUMENTS: &[Argument] = &[
+	Argument::help(),
+	Argument::version(&["--version"]),
+	Argument::count(&["-v", "--verbose"]),
+	Argument::option(&["-e", "--conversion-error"]).ty(Ty::Float),
+	Argument::flag(&["-m", "--mixed"]),
+	Argument::flag(&["--keep-direction"]),
+	Argument::flag(&["-i", "--interpolatable"]).group(0),
+	Argument::option(&["-j", "--jobs"])
+		.nargs(Nargs::Optional)
+		.ty(Ty::Int)
+		.group(0),
+	Argument::option(&["-o", "--output-file"]).group(1),
+	Argument::option(&["-d", "--output-dir"]).group(1),
+	Argument::positional("INPUT").nargs(Nargs::OneOrMore),
 ];
 
 /// An error of the command line.
@@ -233,7 +177,7 @@ fn convert_font(
 /// The `-v` option is accepted, but logging is up to the caller's `log`
 /// implementation. `-j` converts the fonts in threads rather than processes.
 pub fn main(args: &[&str]) -> Result<i32, Error> {
-	let parsed = argparse::parse(args, SPECS, "INPUT").map_err(usage)?;
+	let parsed = argparse::parse(args, ARGUMENTS, &[]).map_err(usage)?;
 	if parsed.flag("--help") {
 		print!(
 			"{}",
@@ -245,7 +189,7 @@ pub fn main(args: &[&str]) -> Result<i32, Error> {
 		println!("{VERSION}");
 		return Ok(0);
 	}
-	let conversion_error = match parsed.value("--conversion-error") {
+	let conversion_error = match parsed.get("--conversion-error") {
 		Some(seen) => Some(
 			argparse::parse_float(
 				"-e/--conversion-error",
@@ -255,16 +199,16 @@ pub fn main(args: &[&str]) -> Result<i32, Error> {
 		),
 		None => None,
 	};
-	let jobs = match parsed.value("--jobs") {
+	let jobs = match parsed.get("--jobs") {
 		Some(seen) => match &seen.value {
 			Some(v) => argparse::parse_int("-j/--jobs", v).map_err(usage)?,
 			None => cpu_count() as i128,
 		},
 		None => 1,
 	};
-	let infiles = &parsed.positional;
-	let output_file = parsed.value("--output-file").and_then(|s| s.value.clone());
-	let output_dir = parsed.value("--output-dir").and_then(|s| s.value.clone());
+	let infiles = parsed.list("INPUT");
+	let output_file = parsed.str("--output-file").map(str::to_owned);
+	let output_dir = parsed.str("--output-dir").map(str::to_owned);
 
 	if infiles.len() > 1 && output_file.is_some() {
 		return Err(usage("-o/--output-file can't be used with multile inputs"));

@@ -124,6 +124,15 @@ impl NameRecord {
 	/// The string as text (`toUnicode()`), with fontTools' heuristics to recover
 	/// misencoded UTF-16.
 	pub fn to_unicode(&self) -> std::result::Result<String, codecs::CodecError> {
+		self.to_unicode_with(codecs::Errors::Strict)
+	}
+
+	/// [`NameRecord::to_unicode`], with bytes that cannot be decoded handled by
+	/// `errors` (`toUnicode(errors)`, `toStr(errors)`).
+	pub fn to_unicode_with(
+		&self,
+		errors: codecs::Errors,
+	) -> std::result::Result<String, codecs::CodecError> {
 		let encoding = self.encoding();
 		let mut string = match &self.string {
 			NameString::Text(s) => s.clone(),
@@ -151,7 +160,7 @@ impl NameRecord {
 						bytes = bytes[1..].iter().flat_map(|&b| [0, b]).collect();
 					}
 				}
-				codecs::decode(encoding, &bytes)?
+				codecs::decode_with(encoding, &bytes, errors)?
 			}
 		};
 		// If the decoded string still looks like UTF-16BE, it suggests a double
@@ -170,16 +179,27 @@ impl NameRecord {
 
 	/// The encoded string (`toBytes()`).
 	pub fn to_bytes(&self) -> std::result::Result<Vec<u8>, codecs::CodecError> {
+		self.to_bytes_with(codecs::Errors::Strict)
+	}
+
+	/// [`NameRecord::to_bytes`], with characters that cannot be encoded handled
+	/// by `errors` (`toBytes(errors)`).
+	pub fn to_bytes_with(
+		&self,
+		errors: codecs::Errors,
+	) -> std::result::Result<Vec<u8>, codecs::CodecError> {
 		match &self.string {
 			NameString::Bytes(b) => Ok(b.clone()),
-			NameString::Text(s) => codecs::encode(self.encoding(), s),
+			NameString::Text(s) => codecs::encode_with(self.encoding(), s, errors),
 		}
 	}
 
-	/// The string with undecodable bytes escaped (`str(record)`).
+	/// The string with undecodable bytes escaped (`str(record)`, which is
+	/// `toStr(errors="backslashreplace")`).
 	pub fn to_str_lossy(&self) -> String {
-		match self.to_unicode() {
+		match self.to_unicode_with(codecs::Errors::BackslashReplace) {
 			Ok(s) => s,
+			// Only for codecs that fontoxide does not have.
 			Err(_) => match &self.string {
 				NameString::Bytes(b) => b
 					.iter()

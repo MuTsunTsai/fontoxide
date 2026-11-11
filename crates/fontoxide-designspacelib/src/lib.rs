@@ -3,6 +3,7 @@
 //! | fontoxide       | fontTools                          |
 //! |-----------------|------------------------------------|
 //! | crate root      | `fontTools.designspaceLib`         |
+//! | [`cli`]         | `fontTools.designspaceLib.main` (`__main__`) |
 //! | [`split`]       | `fontTools.designspaceLib.split`   |
 //! | [`stat_names`]  | `fontTools.designspaceLib.statNames` |
 //! | [`types`]       | `fontTools.designspaceLib.types`   |
@@ -13,6 +14,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod cli;
 mod descriptors;
 mod document;
 pub mod models;

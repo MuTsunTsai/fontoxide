@@ -154,6 +154,13 @@ impl Coverage {
 	}
 }
 
+/// The most glyphs that the ranges of a Coverage or ClassDef expand to. A
+/// real table lists each glyph it covers once, and fonts have far fewer than a
+/// million glyphs.
+// LENIENT(L58): fontTools expands every range, so that a few forged ranges take
+// minutes and gigabytes.
+const MAX_RANGE_GLYPHS: u64 = 1 << 20;
+
 /// Expands (start, end, start coverage index) ranges, sorted by coverage index.
 fn expand_ranges(mut ranges: Vec<(u32, u32, u32)>) -> Vec<u32> {
 	let sorted = {
@@ -167,6 +174,14 @@ fn expand_ranges(mut ranges: Vec<(u32, u32, u32)>) -> Vec<u32> {
 	}
 	let mut glyphs = Vec::new();
 	for (start, end, _) in ranges {
+		let left = MAX_RANGE_GLYPHS.saturating_sub(glyphs.len() as u64);
+		let len = (end as u64 + 1).saturating_sub(start as u64);
+		if len > left {
+			log::warn!(
+				"Coverage ranges cover more than {MAX_RANGE_GLYPHS} glyphs; ignoring the rest"
+			);
+			break;
+		}
 		glyphs.extend(start..end.saturating_add(1));
 	}
 	glyphs
@@ -250,11 +265,21 @@ impl ClassDef {
 			ClassDefRaw::Format2(ClassDefRawFormat2 {
 				class_range_record, ..
 			}) => {
+				let mut budget = MAX_RANGE_GLYPHS;
 				for rec in class_range_record {
 					if rec.class == 0 {
 						continue;
 					}
-					for gid in rec.start..rec.end.saturating_add(1) {
+					let end = rec.end;
+					let len = (end as u64 + 1).saturating_sub(rec.start as u64);
+					if len > budget {
+						log::warn!(
+							"ClassDef ranges cover more than {MAX_RANGE_GLYPHS} glyphs; ignoring the rest"
+						);
+						break;
+					}
+					budget -= len;
+					for gid in rec.start..end.saturating_add(1) {
 						class_defs.insert(gid, rec.class as u32);
 					}
 				}
@@ -262,11 +287,21 @@ impl ClassDef {
 			ClassDefRaw::Format4(ClassDefRawFormat4 {
 				class_range_record, ..
 			}) => {
+				let mut budget = MAX_RANGE_GLYPHS;
 				for rec in class_range_record {
 					if rec.class == 0 {
 						continue;
 					}
-					for gid in rec.start..rec.end.saturating_add(1) {
+					let end = rec.end;
+					let len = (end as u64 + 1).saturating_sub(rec.start as u64);
+					if len > budget {
+						log::warn!(
+							"ClassDef ranges cover more than {MAX_RANGE_GLYPHS} glyphs; ignoring the rest"
+						);
+						break;
+					}
+					budget -= len;
+					for gid in rec.start..end.saturating_add(1) {
 						class_defs.insert(gid, rec.class as u32);
 					}
 				}

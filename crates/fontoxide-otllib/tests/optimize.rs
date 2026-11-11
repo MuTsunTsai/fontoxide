@@ -82,7 +82,7 @@ fn test_optimization_mode() -> Result<()> {
 		order.extend(glyphs);
 		let mut font = Font::new();
 		if let Some(level) = level {
-			font.gpos_compression_level = level;
+			font.set_gpos_compression_level(level)?;
 		}
 		font.set_glyph_order(order);
 		let lookup = build_kern(&mut font, &rules)?;

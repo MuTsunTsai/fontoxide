@@ -58,6 +58,9 @@ pub struct OverflowErrorRecord {
 pub struct WriterGraph {
 	nodes: Vec<Node>,
 	table_tag: Tag,
+	/// Whether values are packed for speed rather than size
+	/// ([`crate::Font::optimize_font_speed`]); `false` by default.
+	pub optimize_font_speed: bool,
 }
 
 /// A writer for one (sub)table: a node in a [`WriterGraph`].
@@ -83,6 +86,7 @@ impl WriterGraph {
 				pos: 0,
 			}],
 			table_tag,
+			optimize_font_speed: false,
 		}
 	}
 
@@ -656,6 +660,11 @@ impl<'g> OtWriter<'g> {
 	/// The table tag.
 	pub fn table_tag(&self) -> Tag {
 		self.graph.table_tag
+	}
+
+	/// See [`WriterGraph::optimize_font_speed`] (`font.cfg[OPTIMIZE_FONT_SPEED]`).
+	pub fn optimize_font_speed(&self) -> bool {
+		self.graph.optimize_font_speed
 	}
 }
 

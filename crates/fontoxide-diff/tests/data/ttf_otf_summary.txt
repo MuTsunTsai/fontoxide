@@ -1,0 +1,29 @@
+Binary table summary:
+  file1: <file1>
+  file2: <file2>
+
+Tables only in file1 (6):
+- cvt  (2 bytes)
+- fpgm (1 bytes)
+- gasp (12 bytes)
+- glyf (104 bytes)
+- loca (14 bytes)
+- prep (1 bytes)
+
+Tables only in file2 (1):
++ CFF  (235 bytes)
+
+Tables in both (9):
+  DSIG: SAME (8 bytes)
+  OS/2: SAME (96 bytes)
+  cmap: SAME (506 bytes)
+* head: DIFF (54 vs 54 bytes)
+  hhea: SAME (36 bytes)
+  hmtx: SAME (24 bytes)
+* maxp: DIFF (32 vs 6 bytes)
+* name: DIFF (1122 vs 1130 bytes)
+* post: DIFF (55 vs 32 bytes)
+
+Result: DIFFERENT
+== stderr
+== exit 1

@@ -1,0 +1,21 @@
+    <axis tag="wght" name="Weight" minimum="100" default="400" maximum="1000">
+      <map input="100" output="100"/>
+      <map input="150" output="137.299"/>
+      <map input="333.5" output="316.385"/>
+      <map input="400" output="400"/>
+      <map input="600" output="554.188"/>
+      <map input="999" output="998.575"/>
+      <map input="1000" output="1000"/>
+    </axis>
+    <axis tag="wdth" name="Width" minimum="25" default="100" maximum="151"/>
+    <axis tag="slnt" name="Slant" minimum="-10" default="0" maximum="0"/>
+    <axis tag="opsz" name="OpticalSize" minimum="8" default="14" maximum="144">
+      <map input="8" output="8"/>
+      <map input="10" output="10.4362"/>
+      <map input="12" output="12.383"/>
+      <map input="14" output="14"/>
+      <map input="72" output="112.184"/>
+      <map input="144" output="144"/>
+    </axis>
+== avar
+000100000000000d0007c000c000caabc7f5f1d0ee2a00000000155510723fe53fd94000400000000006c000c000d555d9fdeaabeec0000000001c8e3056400040000003c000c000000000004000400000000003c000c00000000000400040000003c000c00000000000400040000003c000c00000000000400040000003c000c00000000000400040000003c000c00000000000400040000003c000c00000000000400040000003c000c00000000000400040000003c000c0000000000040004000

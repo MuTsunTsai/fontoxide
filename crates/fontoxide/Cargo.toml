@@ -11,6 +11,8 @@ repository.workspace = true
 homepage.workspace = true
 keywords.workspace = true
 categories.workspace = true
+# The tests need the fontTools submodule and its test data.
+exclude = ["tests/"]
 
 [features]
 # Everything, as `pip install fonttools[all]`.
@@ -18,6 +20,7 @@ default = [
 	"colorlib",
 	"cu2qu",
 	"designspacelib",
+	"diff",
 	"fealib",
 	"merge",
 	"mtilib",
@@ -39,6 +42,7 @@ default = [
 colorlib = ["dep:fontoxide-colorlib"]
 cu2qu = ["dep:fontoxide-cu2qu"]
 designspacelib = ["dep:fontoxide-designspacelib"]
+diff = ["dep:fontoxide-diff"]
 fealib = ["dep:fontoxide-fealib"]
 merge = ["dep:fontoxide-merge"]
 mtilib = ["dep:fontoxide-mtilib"]
@@ -60,6 +64,7 @@ repacker = ["fontoxide-ttlib/repacker", "dep:fontoxide-repack"]
 fontoxide-colorlib = { workspace = true, optional = true }
 fontoxide-cu2qu = { workspace = true, optional = true }
 fontoxide-designspacelib = { workspace = true, optional = true }
+fontoxide-diff = { workspace = true, optional = true }
 fontoxide-fealib = { workspace = true, optional = true }
 fontoxide-merge = { workspace = true, optional = true }
 fontoxide-misc.workspace = true

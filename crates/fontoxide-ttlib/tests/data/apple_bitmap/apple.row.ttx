@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont sfntVersion="\x00\x01\x00\x00" ttLibVersion="4.68">
+
+  <bhed>
+    <!-- Most of this table will be recalculated by the compiler -->
+    <tableVersion value="1.0"/>
+    <fontRevision value="1.0"/>
+    <checkSumAdjustment value="0x87b9f490"/>
+    <magicNumber value="0x5f0f3cf5"/>
+    <flags value="00000000 00000011"/>
+    <unitsPerEm value="1000"/>
+    <created value="Sun Jan 24 05:20:00 1999"/>
+    <modified value="Sun Jan 24 05:20:00 1999"/>
+    <xMin value="0"/>
+    <yMin value="0"/>
+    <xMax value="500"/>
+    <yMax value="500"/>
+    <macStyle value="00000000 00000000"/>
+    <lowestRecPPEM value="3"/>
+    <fontDirectionHint value="2"/>
+    <indexToLocFormat value="0"/>
+    <glyphDataFormat value="0"/>
+  </bhed>
+
+  <bloc>
+    <header version="2.0"/>
+    <strike index="0">
+      <bitmapSizeTable>
+        <sbitLineMetrics direction="hori">
+          <ascender value="6"/>
+          <descender value="-2"/>
+          <widthMax value="8"/>
+          <caretSlopeNumerator value="1"/>
+          <caretSlopeDenominator value="0"/>
+          <caretOffset value="0"/>
+          <minOriginSB value="0"/>
+          <minAdvanceSB value="0"/>
+          <maxBeforeBL value="6"/>
+          <minAfterBL value="-2"/>
+          <pad1 value="0"/>
+          <pad2 value="0"/>
+        </sbitLineMetrics>
+        <sbitLineMetrics direction="vert">
+          <ascender value="6"/>
+          <descender value="-2"/>
+          <widthMax value="8"/>
+          <caretSlopeNumerator value="1"/>
+          <caretSlopeDenominator value="0"/>
+          <caretOffset value="0"/>
+          <minOriginSB value="0"/>
+          <minAdvanceSB value="0"/>
+          <maxBeforeBL value="6"/>
+          <minAfterBL value="-2"/>
+          <pad1 value="0"/>
+          <pad2 value="0"/>
+        </sbitLineMetrics>
+        <colorRef value="0"/>
+        <startGlyphIndex value="1"/>
+        <endGlyphIndex value="4"/>
+        <ppemX value="8"/>
+        <ppemY value="8"/>
+        <bitDepth value="1"/>
+        <flags value="1"/>
+      </bitmapSizeTable>
+      <!-- GlyphIds are written but not read. The firstGlyphIndex and
+           lastGlyphIndex values will be recalculated by the compiler. -->
+      <eblc_index_sub_table_1 imageFormat="1" firstGlyphIndex="1" lastGlyphIndex="2">
+        <glyphLoc id="1" name="A"/>
+        <glyphLoc id="2" name="B"/>
+      </eblc_index_sub_table_1>
+      <eblc_index_sub_table_2 imageFormat="5" firstGlyphIndex="3" lastGlyphIndex="4">
+        <imageSize value="4"/>
+        <BigGlyphMetrics>
+          <height value="4"/>
+          <width value="8"/>
+          <horiBearingX value="0"/>
+          <horiBearingY value="4"/>
+          <horiAdvance value="9"/>
+          <vertBearingX value="0"/>
+          <vertBearingY value="0"/>
+          <vertAdvance value="9"/>
+        </BigGlyphMetrics>
+        <glyphLoc id="3" name="C"/>
+        <glyphLoc id="4" name="D"/>
+      </eblc_index_sub_table_2>
+    </strike>
+    <strike index="1">
+      <bitmapSizeTable>
+        <sbitLineMetrics direction="hori">
+          <ascender value="14"/>
+          <descender value="-2"/>
+          <widthMax value="16"/>
+          <caretSlopeNumerator value="1"/>
+          <caretSlopeDenominator value="0"/>
+          <caretOffset value="0"/>
+          <minOriginSB value="0"/>
+          <minAdvanceSB value="0"/>
+          <maxBeforeBL value="14"/>
+          <minAfterBL value="-2"/>
+          <pad1 value="0"/>
+          <pad2 value="0"/>
+        </sbitLineMetrics>
+        <sbitLineMetrics direction="vert">
+          <ascender value="14"/>
+          <descender value="-2"/>
+          <widthMax value="16"/>
+          <caretSlopeNumerator value="1"/>
+          <caretSlopeDenominator value="0"/>
+          <caretOffset value="0"/>
+          <minOriginSB value="0"/>
+          <minAdvanceSB value="0"/>
+          <maxBeforeBL value="14"/>
+          <minAfterBL value="-2"/>
+          <pad1 value="0"/>
+          <pad2 value="0"/>
+        </sbitLineMetrics>
+        <colorRef value="0"/>
+        <startGlyphIndex value="1"/>
+        <endGlyphIndex value="5"/>
+        <ppemX value="16"/>
+        <ppemY value="16"/>
+        <bitDepth value="1"/>
+        <flags value="1"/>
+      </bitmapSizeTable>
+      <!-- GlyphIds are written but not read. The firstGlyphIndex and
+           lastGlyphIndex values will be recalculated by the compiler. -->
+      <eblc_index_sub_table_3 imageFormat="2" firstGlyphIndex="1" lastGlyphIndex="3">
+        <glyphLoc id="1" name="A"/>
+        <glyphLoc id="3" name="C"/>
+      </eblc_index_sub_table_3>
+      <eblc_index_sub_table_4 imageFormat="6" firstGlyphIndex="2" lastGlyphIndex="4">
+        <glyphLoc id="2" name="B"/>
+        <glyphLoc id="4" name="D"/>
+      </eblc_index_sub_table_4>
+      <eblc_index_sub_table_5 imageFormat="5" firstGlyphIndex="5" lastGlyphIndex="5">
+        <imageSize value="4"/>
+        <BigGlyphMetrics>
+          <height value="4"/>
+          <width value="8"/>
+          <horiBearingX value="0"/>
+          <horiBearingY value="4"/>
+          <horiAdvance value="9"/>
+          <vertBearingX value="0"/>
+          <vertBearingY value="0"/>
+          <vertAdvance value="9"/>
+        </BigGlyphMetrics>
+        <glyphLoc id="5" name="E"/>
+      </eblc_index_sub_table_5>
+    </strike>
+  </bloc>
+
+  <bdat>
+    <header version="2.0"/>
+    <strikedata index="0">
+      <ebdt_bitmap_format_1 name="A">
+        <SmallGlyphMetrics>
+          <height value="2"/>
+          <width value="8"/>
+          <BearingX value="0"/>
+          <BearingY value="2"/>
+          <Advance value="9"/>
+        </SmallGlyphMetrics>
+        <rowimagedata bitDepth="1" height="2" width="8">
+          <row value="18"/>
+          <row value="3c"/>
+        </rowimagedata>
+      </ebdt_bitmap_format_1>
+      <ebdt_bitmap_format_1 name="B">
+        <SmallGlyphMetrics>
+          <height value="5"/>
+          <width value="7"/>
+          <BearingX value="0"/>
+          <BearingY value="5"/>
+          <Advance value="8"/>
+        </SmallGlyphMetrics>
+        <rowimagedata bitDepth="1" height="5" width="7">
+          <row value="fc"/>
+          <row value="82"/>
+          <row value="fc"/>
+          <row value="82"/>
+          <row value="fc"/>
+        </rowimagedata>
+      </ebdt_bitmap_format_1>
+      <ebdt_bitmap_format_5 name="C">
+        <rowimagedata bitDepth="1" height="4" width="8">
+          <row value="3c"/>
+          <row value="42"/>
+          <row value="40"/>
+          <row value="3c"/>
+        </rowimagedata>
+      </ebdt_bitmap_format_5>
+      <ebdt_bitmap_format_5 name="D">
+        <rowimagedata bitDepth="1" height="4" width="8">
+          <row value="f8"/>
+          <row value="88"/>
+          <row value="88"/>
+          <row value="f8"/>
+        </rowimagedata>
+      </ebdt_bitmap_format_5>
+    </strikedata>
+    <strikedata index="1">
+      <ebdt_bitmap_format_2 name="A">
+        <SmallGlyphMetrics>
+          <height value="3"/>
+          <width value="7"/>
+          <BearingX value="0"/>
+          <BearingY value="3"/>
+          <Advance value="8"/>
+        </SmallGlyphMetrics>
+        <rowimagedata bitDepth="1" height="3" width="7">
+          <row value="5a"/>
+          <row value="2c"/>
+          <row value="96"/>
+        </rowimagedata>
+      </ebdt_bitmap_format_2>
+      <ebdt_bitmap_format_2 name="C">
+        <SmallGlyphMetrics>
+          <height value="2"/>
+          <width value="4"/>
+          <BearingX value="0"/>
+          <BearingY value="2"/>
+          <Advance value="5"/>
+        </SmallGlyphMetrics>
+        <rowimagedata bitDepth="1" height="2" width="4">
+          <row value="f0"/>
+          <row value="00"/>
+        </rowimagedata>
+      </ebdt_bitmap_format_2>
+      <ebdt_bitmap_format_6 name="B">
+        <BigGlyphMetrics>
+          <height value="4"/>
+          <width value="8"/>
+          <horiBearingX value="0"/>
+          <horiBearingY value="4"/>
+          <horiAdvance value="9"/>
+          <vertBearingX value="0"/>
+          <vertBearingY value="0"/>
+          <vertAdvance value="9"/>
+        </BigGlyphMetrics>
+        <rowimagedata bitDepth="1" height="4" width="8">
+          <row value="ff"/>
+          <row value="81"/>
+          <row value="81"/>
+          <row value="ff"/>
+        </rowimagedata>
+      </ebdt_bitmap_format_6>
+      <ebdt_bitmap_format_6 name="D">
+        <BigGlyphMetrics>
+          <height value="2"/>
+          <width value="8"/>
+          <horiBearingX value="0"/>
+          <horiBearingY value="2"/>
+          <horiAdvance value="9"/>
+          <vertBearingX value="0"/>
+          <vertBearingY value="0"/>
+          <vertAdvance value="9"/>
+        </BigGlyphMetrics>
+        <rowimagedata bitDepth="1" height="2" width="8">
+          <row value="c3"/>
+          <row value="c3"/>
+        </rowimagedata>
+      </ebdt_bitmap_format_6>
+      <ebdt_bitmap_format_5 name="E">
+        <rowimagedata bitDepth="1" height="4" width="8">
+          <row value="01"/>
+          <row value="02"/>
+          <row value="04"/>
+          <row value="08"/>
+        </rowimagedata>
+      </ebdt_bitmap_format_5>
+    </strikedata>
+  </bdat>
+
+</ttFont>

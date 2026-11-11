@@ -1,5 +1,6 @@
-//! Text codecs by Python name (`str.encode` / `bytes.decode` with
-//! `errors="strict"`).
+//! Text codecs by Python name (`str.encode` / `bytes.decode`), with the error
+//! handlers `strict`, `ignore`, `replace`, `backslashreplace` and
+//! `xmlcharrefreplace` ([`Errors`]).
 //!
 //! Supported: `utf_16_be`, `ascii`, `latin1`, the Macintosh single-byte codecs
 //! (`mac_roman`, `mac_iceland`, `mac_turkish`, `mac_croatian`, `mac_latin2`,
@@ -33,6 +34,9 @@ pub enum CodecError {
 		/// Index of the offending character.
 		position: usize,
 	},
+	/// An unknown error handler (`LookupError`), or one that cannot handle the
+	/// error (`TypeError`).
+	Handler(String),
 }
 
 impl fmt::Display for CodecError {
@@ -51,6 +55,7 @@ impl fmt::Display for CodecError {
 					"'{encoding}' codec can't encode character in position {position}"
 				)
 			}
+			CodecError::Handler(message) => f.write_str(message),
 		}
 	}
 }
@@ -95,6 +100,189 @@ pub fn normalize(name: &str) -> String {
 	}
 }
 
+/// An error handler (the `errors` argument of `bytes.decode` and
+/// `str.encode`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Errors {
+	/// `strict`: fail.
+	#[default]
+	Strict,
+	/// `ignore`: drop what cannot be decoded or encoded.
+	Ignore,
+	/// `replace`: U+FFFD when decoding, `?` when encoding.
+	Replace,
+	/// `backslashreplace`: `\xNN` for each byte that cannot be decoded, `\xNN`,
+	/// `\uNNNN` or `\UNNNNNNNN` for each character that cannot be encoded.
+	BackslashReplace,
+	/// `xmlcharrefreplace`: `&#N;` for each character that cannot be encoded.
+	/// Encoding only.
+	XmlCharRefReplace,
+}
+
+impl Errors {
+	/// The handler with a Python name (`codecs.lookup_error`).
+	pub fn from_name(name: &str) -> Result<Self, CodecError> {
+		Ok(match name {
+			"strict" => Errors::Strict,
+			"ignore" => Errors::Ignore,
+			"replace" => Errors::Replace,
+			"backslashreplace" => Errors::BackslashReplace,
+			"xmlcharrefreplace" => Errors::XmlCharRefReplace,
+			_ => {
+				return Err(CodecError::Handler(format!(
+					"unknown error handler name '{name}'"
+				)));
+			}
+		})
+	}
+}
+
+/// A codec, looked up by normalized name.
+enum Codec {
+	Utf16Be,
+	Ascii,
+	Latin1,
+	Single(&'static SingleByte),
+	Multi(&'static MultiByte, Option<&'static [(u8, char)]>),
+}
+
+fn lookup(name: &str) -> Result<Codec, CodecError> {
+	Ok(match name {
+		"utf_16_be" => Codec::Utf16Be,
+		"ascii" => Codec::Ascii,
+		"latin1" => Codec::Latin1,
+		_ => {
+			if let Some(table) = single_byte(name) {
+				Codec::Single(table)
+			} else if let Some((base, extra)) = extended(name) {
+				let codec = multi_byte(base).ok_or_else(|| CodecError::Unknown(name.into()))?;
+				Codec::Multi(codec, Some(extra))
+			} else {
+				let codec = multi_byte(name).ok_or_else(|| CodecError::Unknown(name.into()))?;
+				Codec::Multi(codec, None)
+			}
+		}
+	})
+}
+
+/// One step of decoding: a character and the number of bytes it takes, or an
+/// error over a number of bytes (CPython's `UnicodeDecodeError.start` to
+/// `.end`).
+enum Step {
+	Char(char, usize),
+	Error(usize),
+}
+
+impl Codec {
+	fn decode_step(&self, data: &[u8], i: usize) -> Step {
+		match self {
+			Codec::Utf16Be => {
+				let rest = data.len() - i;
+				if rest < 2 {
+					// "truncated data".
+					return Step::Error(rest);
+				}
+				let unit = u16::from_be_bytes([data[i], data[i + 1]]);
+				match unit {
+					0xD800..=0xDBFF => {
+						if rest < 4 {
+							// "unexpected end of data".
+							return Step::Error(rest);
+						}
+						let low = u16::from_be_bytes([data[i + 2], data[i + 3]]);
+						if (0xDC00..=0xDFFF).contains(&low) {
+							let c = 0x10000
+								+ ((u32::from(unit) - 0xD800) << 10)
+								+ (u32::from(low) - 0xDC00);
+							match char::from_u32(c) {
+								Some(c) => Step::Char(c, 4),
+								None => Step::Error(2),
+							}
+						} else {
+							// "illegal UTF-16 surrogate".
+							Step::Error(2)
+						}
+					}
+					// "illegal encoding".
+					0xDC00..=0xDFFF => Step::Error(2),
+					_ => match char::from_u32(u32::from(unit)) {
+						Some(c) => Step::Char(c, 2),
+						None => Step::Error(2),
+					},
+				}
+			}
+			Codec::Ascii => {
+				if data[i] < 0x80 {
+					Step::Char(data[i] as char, 1)
+				} else {
+					Step::Error(1)
+				}
+			}
+			Codec::Latin1 => Step::Char(data[i] as char, 1),
+			Codec::Single(table) => match table.decode[data[i] as usize] {
+				Some(c) => Step::Char(c, 1),
+				None => Step::Error(1),
+			},
+			Codec::Multi(codec, extra) => match codec.decode_step(data, i) {
+				Ok((c, n)) => Step::Char(c, n),
+				// fontTools' extended codecs map single bytes on errors.
+				Err(n) => match extra.and_then(|m| m.iter().find(|(k, _)| *k == data[i])) {
+					Some(&(_, c)) => Step::Char(c, 1),
+					None => Step::Error(n),
+				},
+			},
+		}
+	}
+
+	/// Appends the encoding of a character, or returns `false` if the codec
+	/// cannot encode it.
+	fn encode_char(&self, c: char, out: &mut Vec<u8>) -> bool {
+		match self {
+			Codec::Utf16Be => {
+				let mut units = [0u16; 2];
+				for unit in c.encode_utf16(&mut units) {
+					out.extend_from_slice(&unit.to_be_bytes());
+				}
+				true
+			}
+			Codec::Ascii => {
+				let ok = c.is_ascii();
+				if ok {
+					out.push(c as u8);
+				}
+				ok
+			}
+			Codec::Latin1 => match u8::try_from(c as u32) {
+				Ok(b) => {
+					out.push(b);
+					true
+				}
+				Err(_) => false,
+			},
+			Codec::Single(table) => match table.encode.get(&c) {
+				Some(&b) => {
+					out.push(b);
+					true
+				}
+				None => false,
+			},
+			Codec::Multi(codec, extra) => match codec.encode.get(&c) {
+				Some(b) => {
+					out.extend_from_slice(b);
+					true
+				}
+				None => match extra.and_then(|m| m.iter().find(|(_, v)| *v == c)) {
+					Some(&(b, _)) => {
+						out.push(b);
+						true
+					}
+					None => false,
+				},
+			},
+		}
+	}
+}
+
 /// Decodes bytes (`bytes.decode(encoding)`).
 ///
 /// ```
@@ -103,52 +291,59 @@ pub fn normalize(name: &str) -> String {
 /// assert_eq!(decode("utf_16_be", b"\0A\0B").as_deref(), Ok("AB"));
 /// ```
 pub fn decode(encoding: &str, data: &[u8]) -> Result<String, CodecError> {
+	decode_with(encoding, data, Errors::Strict)
+}
+
+/// Decodes bytes with an error handler (`bytes.decode(encoding, errors)`).
+///
+/// ```
+/// use fontoxide_encodings::codecs::{Errors, decode_with};
+/// assert_eq!(
+///     decode_with("ascii", b"a\xffb", Errors::BackslashReplace).as_deref(),
+///     Ok("a\\xffb")
+/// );
+/// assert_eq!(
+///     decode_with("ascii", b"a\xffb", Errors::Replace).as_deref(),
+///     Ok("a\u{FFFD}b")
+/// );
+/// ```
+pub fn decode_with(encoding: &str, data: &[u8], errors: Errors) -> Result<String, CodecError> {
 	let name = normalize(encoding);
-	let err = |position| CodecError::Decode {
-		encoding: name.clone(),
-		position,
-	};
-	match name.as_str() {
-		"utf_16_be" => {
-			if data.len() % 2 == 1 {
-				return Err(err(data.len() - 1));
+	let codec = lookup(&name)?;
+	let mut out = String::with_capacity(data.len());
+	let mut i = 0;
+	while i < data.len() {
+		match codec.decode_step(data, i) {
+			Step::Char(c, n) => {
+				out.push(c);
+				i += n;
 			}
-			let units = data
-				.as_chunks::<2>()
-				.0
-				.iter()
-				.map(|&c| u16::from_be_bytes(c));
-			let mut out = String::with_capacity(data.len() / 2);
-			for (i, r) in char::decode_utf16(units).enumerate() {
-				match r {
-					Ok(c) => out.push(c),
-					Err(_) => return Err(err(2 * i)),
+			Step::Error(n) => {
+				match errors {
+					Errors::Strict => {
+						return Err(CodecError::Decode {
+							encoding: name,
+							position: i,
+						});
+					}
+					Errors::Ignore => {}
+					Errors::Replace => out.push('\u{FFFD}'),
+					Errors::BackslashReplace => {
+						for b in &data[i..i + n] {
+							out.push_str(&format!("\\x{b:02x}"));
+						}
+					}
+					Errors::XmlCharRefReplace => {
+						return Err(CodecError::Handler(
+							"don't know how to handle UnicodeDecodeError in error callback".into(),
+						));
+					}
 				}
+				i += n;
 			}
-			Ok(out)
-		}
-		"ascii" => data
-			.iter()
-			.enumerate()
-			.map(|(i, &b)| if b < 0x80 { Ok(b as char) } else { Err(err(i)) })
-			.collect(),
-		"latin1" => Ok(data.iter().map(|&b| b as char).collect()),
-		_ => {
-			if let Some(table) = single_byte(&name) {
-				return data
-					.iter()
-					.enumerate()
-					.map(|(i, &b)| table.decode[b as usize].ok_or_else(|| err(i)))
-					.collect();
-			}
-			if let Some((base, extra)) = extended(&name) {
-				let codec = multi_byte(base).ok_or_else(|| CodecError::Unknown(name.clone()))?;
-				return codec.decode(data, Some(extra)).map_err(err);
-			}
-			let codec = multi_byte(&name).ok_or_else(|| CodecError::Unknown(name.clone()))?;
-			codec.decode(data, None).map_err(err)
 		}
 	}
+	Ok(out)
 }
 
 /// Encodes text (`str.encode(encoding)`).
@@ -158,45 +353,60 @@ pub fn decode(encoding: &str, data: &[u8]) -> Result<String, CodecError> {
 /// assert_eq!(encode("mac_roman", "café"), Ok(b"caf\x8e".to_vec()));
 /// ```
 pub fn encode(encoding: &str, text: &str) -> Result<Vec<u8>, CodecError> {
+	encode_with(encoding, text, Errors::Strict)
+}
+
+/// Encodes text with an error handler (`str.encode(encoding, errors)`).
+///
+/// ```
+/// use fontoxide_encodings::codecs::{Errors, encode_with};
+/// assert_eq!(encode_with("ascii", "café", Errors::Replace), Ok(b"caf?".to_vec()));
+/// assert_eq!(
+///     encode_with("ascii", "café", Errors::XmlCharRefReplace),
+///     Ok(b"caf&#233;".to_vec())
+/// );
+/// ```
+pub fn encode_with(encoding: &str, text: &str, errors: Errors) -> Result<Vec<u8>, CodecError> {
 	let name = normalize(encoding);
-	let err = |position| CodecError::Encode {
-		encoding: name.clone(),
-		position,
-	};
-	match name.as_str() {
-		"utf_16_be" => Ok(text.encode_utf16().flat_map(u16::to_be_bytes).collect()),
-		"ascii" => text
-			.chars()
-			.enumerate()
-			.map(|(i, c)| {
-				if c.is_ascii() {
-					Ok(c as u8)
+	let codec = lookup(&name)?;
+	let mut out = Vec::with_capacity(text.len());
+	for (i, c) in text.chars().enumerate() {
+		if codec.encode_char(c, &mut out) {
+			continue;
+		}
+		// The replacements are ASCII, which every codec that can fail encodes as
+		// is.
+		// LENIENT(L57): fontTools' `x_mac_*_ttx` codecs add the replacement, a
+		// `str`, to their `bytes` output, so encoding with any handler but
+		// `strict` fails with "TypeError: can't concat str to bytes" when a
+		// character cannot be encoded; that crash is not ported, the handler
+		// applies as with the other codecs.
+		match errors {
+			Errors::Strict => {
+				return Err(CodecError::Encode {
+					encoding: name,
+					position: i,
+				});
+			}
+			Errors::Ignore => {}
+			Errors::Replace => out.push(b'?'),
+			Errors::BackslashReplace => {
+				let code = c as u32;
+				let escape = if code < 0x100 {
+					format!("\\x{code:02x}")
+				} else if code < 0x10000 {
+					format!("\\u{code:04x}")
 				} else {
-					Err(err(i))
-				}
-			})
-			.collect(),
-		"latin1" => text
-			.chars()
-			.enumerate()
-			.map(|(i, c)| u8::try_from(c as u32).map_err(|_| err(i)))
-			.collect(),
-		_ => {
-			if let Some(table) = single_byte(&name) {
-				return text
-					.chars()
-					.enumerate()
-					.map(|(i, c)| table.encode.get(&c).copied().ok_or_else(|| err(i)))
-					.collect();
+					format!("\\U{code:08x}")
+				};
+				out.extend_from_slice(escape.as_bytes());
 			}
-			if let Some((base, extra)) = extended(&name) {
-				let codec = multi_byte(base).ok_or_else(|| CodecError::Unknown(name.clone()))?;
-				return codec.encode(text, Some(extra)).map_err(err);
+			Errors::XmlCharRefReplace => {
+				out.extend_from_slice(format!("&#{};", c as u32).as_bytes());
 			}
-			let codec = multi_byte(&name).ok_or_else(|| CodecError::Unknown(name.clone()))?;
-			codec.encode(text, None).map_err(err)
 		}
 	}
+	Ok(out)
 }
 
 /// Whether the codec is known.
@@ -282,8 +492,11 @@ struct MultiByte {
 	double: HashMap<u16, char>,
 	encode: HashMap<char, Vec<u8>>,
 	/// Longer sequences that only show up through encoding (the EUC-KR make-up
-	/// sequences for Hangul syllables outside KS X 1001), for decoding.
+	/// sequences for Hangul syllables outside KS X 1001).
 	long: HashMap<Vec<u8>, char>,
+	/// The initial, medial and final of each jamo byte of the make-up sequences,
+	/// from `long`.
+	jamo: OnceLock<[[Option<u32>; 3]; 256]>,
 }
 
 const MULTI_BYTE: [&str; 5] = ["shift_jis", "gb2312", "big5", "euc_kr", "johab"];
@@ -312,6 +525,7 @@ fn parse_multi_byte(text: &str) -> MultiByte {
 		double: HashMap::new(),
 		encode: HashMap::new(),
 		long: HashMap::new(),
+		jamo: OnceLock::new(),
 	};
 	let hex_char = |s: &str| u32::from_str_radix(s, 16).ok().and_then(char::from_u32);
 	// Characters whose encoding differs from what the decoding tables imply; an
@@ -380,57 +594,66 @@ fn parse_multi_byte(text: &str) -> MultiByte {
 }
 
 impl MultiByte {
-	fn decode(&self, data: &[u8], extra: Option<&[(u8, char)]>) -> Result<String, usize> {
-		let mut out = String::with_capacity(data.len());
-		let mut i = 0;
-		while i < data.len() {
-			let b = data[i];
-			if !self.long.is_empty()
-				&& let Some(&c) = data.get(i..i + 8).and_then(|s| self.long.get(s))
-			{
-				out.push(c);
-				i += 8;
-				continue;
-			}
-			let decoded = if self.lead[b as usize] {
-				data.get(i + 1)
-					.and_then(|&t| self.double.get(&u16::from_be_bytes([b, t])))
-					.map(|&c| (c, 2))
-			} else {
-				self.single[b as usize].map(|c| (c, 1))
+	/// Decodes the character at `i`: the character and its length, or the
+	/// length of the error (`UnicodeDecodeError.end - .start`).
+	fn decode_step(&self, data: &[u8], i: usize) -> Result<(char, usize), usize> {
+		let b = data[i];
+		if !self.long.is_empty()
+			&& b == EUCKR_JAMO_FIRSTBYTE
+			&& data.get(i + 1) == Some(&EUCKR_JAMO_FILLER)
+		{
+			// A make-up sequence of KS X 1001:1998 Annex 3: CPython's EUC-KR decoder
+			// needs all 8 bytes ("incomplete multibyte sequence" otherwise).
+			let Some(seq) = data.get(i..i + 8) else {
+				return Err(data.len() - i);
 			};
-			match decoded {
-				Some((c, n)) => {
-					out.push(c);
-					i += n;
-				}
-				// fontTools' extended codecs map single bytes on errors.
-				None => match extra.and_then(|m| m.iter().find(|(k, _)| *k == b)) {
-					Some(&(_, c)) => {
-						out.push(c);
-						i += 1;
-					}
-					None => return Err(i),
-				},
-			}
+			return self.makeup(seq).map(|c| (c, 8)).ok_or(1);
 		}
-		Ok(out)
+		let decoded = if self.lead[b as usize] {
+			data.get(i + 1)
+				.and_then(|&t| self.double.get(&u16::from_be_bytes([b, t])))
+				.map(|&c| (c, 2))
+		} else {
+			self.single[b as usize].map(|c| (c, 1))
+		};
+		// CPython's CJK codecs report one byte, also for an incomplete sequence at
+		// the end, which is then a single byte too.
+		decoded.ok_or(1)
 	}
 
-	fn encode(&self, text: &str, extra: Option<&[(u8, char)]>) -> Result<Vec<u8>, usize> {
-		let mut out = Vec::with_capacity(text.len());
-		for (i, c) in text.chars().enumerate() {
-			match self.encode.get(&c) {
-				Some(b) => out.extend_from_slice(b),
-				None => match extra.and_then(|m| m.iter().find(|(_, v)| *v == c)) {
-					Some(&(b, _)) => out.push(b),
-					None => return Err(i),
-				},
-			}
+	/// The syllable of an EUC-KR make-up sequence (`\xa4\xd4` and three
+	/// `\xa4`-prefixed jamo).
+	fn makeup(&self, seq: &[u8]) -> Option<char> {
+		if seq[2] != EUCKR_JAMO_FIRSTBYTE
+			|| seq[4] != EUCKR_JAMO_FIRSTBYTE
+			|| seq[6] != EUCKR_JAMO_FIRSTBYTE
+		{
+			return None;
 		}
-		Ok(out)
+		let jamo = self.jamo.get_or_init(|| {
+			// The jamo bytes, from the sequences that encoding produces, which
+			// cover every initial, medial and final.
+			let mut jamo = [[None; 3]; 256];
+			for (bytes, &c) in &self.long {
+				let s = c as u32 - 0xAC00;
+				let parts = [s / 588, (s % 588) / 28, s % 28];
+				for (k, part) in parts.into_iter().enumerate() {
+					jamo[bytes[3 + 2 * k] as usize][k] = Some(part);
+				}
+			}
+			jamo
+		});
+		let cho = jamo[seq[3] as usize][0]?;
+		let jung = jamo[seq[5] as usize][1]?;
+		let jong = jamo[seq[7] as usize][2]?;
+		char::from_u32(0xAC00 + cho * 588 + jung * 28 + jong)
 	}
 }
+
+/// The bytes that start an EUC-KR make-up sequence (`EUCKR_JAMO_FIRSTBYTE`,
+/// `EUCKR_JAMO_FILLER`).
+const EUCKR_JAMO_FIRSTBYTE: u8 = 0xA4;
+const EUCKR_JAMO_FILLER: u8 = 0xD4;
 
 /// fontTools' `x_mac_*_ttx` codecs (`fontTools.encodings.codecs`): a base codec
 /// plus single bytes that are mapped where the base codec fails.
@@ -511,6 +734,51 @@ mod tests {
 			decode("x_mac_trad_chinese_ttx", b"\xa4\xa4\xff").as_deref(),
 			Ok("中…")
 		);
+	}
+
+	/// The error ranges of CPython's decoders, which the handlers replace (from
+	/// the reference environment; a fuzz comparison of 52,500 inputs over all
+	/// codecs and handlers matched too).
+	#[test]
+	#[allow(clippy::unwrap_used)]
+	fn error_handlers() {
+		let d = |codec, data: &[u8], errors| decode_with(codec, data, errors).unwrap();
+		assert_eq!(
+			d("euc_kr", b"\xa4\xd4\xa4\xa1A", Errors::BackslashReplace),
+			"\\xa4\\xd4\\xa4\\xa1\\x41"
+		);
+		assert_eq!(
+			d(
+				"euc_kr",
+				b"\xa4\xd4\xa4\xa1\xa4\xbf\xa3\xd4",
+				Errors::Replace
+			),
+			"\u{FFFD}\u{6E21}\u{B7}\u{C5D4}\u{FFFD}"
+		);
+		// A make-up sequence of a syllable in KS X 1001.
+		assert_eq!(
+			d(
+				"euc_kr",
+				b"\xa4\xd4\xa4\xa1\xa4\xbf\xa4\xd4",
+				Errors::Strict
+			),
+			"\u{AC00}"
+		);
+		assert_eq!(
+			d("utf_16_be", b"\xd8\x00\x00A\x00", Errors::BackslashReplace),
+			"\\xd8\\x00A\\x00"
+		);
+		assert_eq!(d("utf_16_be", b"\xd8\x00\x00", Errors::Replace), "\u{FFFD}");
+		assert_eq!(d("ascii", b"a\xffb", Errors::Ignore), "ab");
+		assert_eq!(
+			encode_with("big5", "a\u{E9}\u{1F600}", Errors::BackslashReplace),
+			Ok(b"a\\xe9\\U0001f600".to_vec())
+		);
+		assert!(matches!(
+			Errors::from_name("bogus"),
+			Err(CodecError::Handler(_))
+		));
+		assert!(decode_with("ascii", b"\xff", Errors::XmlCharRefReplace).is_err());
 	}
 
 	#[test]

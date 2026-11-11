@@ -180,9 +180,10 @@ fn compile_glyph(
 	axis_tags: &[String],
 	shared: &HashMap<Vec<u8>, usize>,
 	extended: bool,
+	optimize_size: bool,
 ) -> Result<Vec<u8>> {
 	let (count, tuples, data) =
-		compile_tuple_variation_store(variations, axis_tags, shared, true, true)?;
+		compile_tuple_variation_store(variations, axis_tags, shared, true, optimize_size)?;
 	if count == 0 {
 		return Ok(Vec::new());
 	}
@@ -335,10 +336,13 @@ impl Table for Gvar {
 		font.require_locked::<Glyf>(self.extended)?;
 		let by_gid: HashMap<u32, &Vec<TupleVariation>> =
 			self.variations.iter().map(|(g, v)| (*g, v)).collect();
+		let optimize_size = !font.optimize_font_speed;
 		let mut glyphs = Vec::with_capacity(order.len());
 		for gid in 0..order.len() as u32 {
 			glyphs.push(match by_gid.get(&gid) {
-				Some(v) if !v.is_empty() => compile_glyph(v, &axis_tags, &indices, self.extended)?,
+				Some(v) if !v.is_empty() => {
+					compile_glyph(v, &axis_tags, &indices, self.extended, optimize_size)?
+				}
 				_ => Vec::new(),
 			});
 		}

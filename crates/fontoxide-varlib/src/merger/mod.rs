@@ -183,7 +183,7 @@ impl<'a> Merger<'a> {
 			kind,
 			extended: order.len() > 0x10000,
 			order,
-			compression_level: font.gpos_compression_level,
+			compression_level: font.gpos_compression_level(),
 			ttfs: (0..masters.len()).collect(),
 			masters,
 			model: model.clone(),

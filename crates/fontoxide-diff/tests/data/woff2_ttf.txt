@@ -1,0 +1,27 @@
+--- <file1>	<mtime1>
++++ <file2>	<mtime2>
+@@ -16,10 +16,10 @@
+     <tableVersion value="1.0"/>
+     <fontRevision value="1.0"/>
+-    <checkSumAdjustment value="0xbdbeb19f"/>
++    <checkSumAdjustment value="0x28b4d96e"/>
+     <magicNumber value="0x5f0f3cf5"/>
+-    <flags value="00001000 00000011"/>
++    <flags value="00000000 00000011"/>
+     <unitsPerEm value="1000"/>
+     <created value="Thu Jun  4 14:29:11 2015"/>
+-    <modified value="Mon Mar 27 08:07:28 2017"/>
++    <modified value="Sun Mar 26 22:22:29 2017"/>
+     <xMin value="50"/>
+     <yMin value="0"/>
+@@ -355,3 +355,8 @@
+   </gasp>
+ 
++  <DSIG>
++    <!-- note that the Digital Signature will be invalid after recompilation! -->
++    <tableHeader flag="0x0" numSigs="0" version="1"/>
++  </DSIG>
++
+ </ttFont>
+== stderr
+== exit 1

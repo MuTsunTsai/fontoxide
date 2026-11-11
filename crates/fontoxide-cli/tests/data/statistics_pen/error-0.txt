@@ -1,0 +1,5 @@
+2
+usage: fonttools pens.statisticsPen [-h] [-y <number>] [-c] [-q]
+                                    [--variations AXIS=LOC]
+                                    font.ttf [glyph-name ...]
+fonttools pens.statisticsPen: error: the following arguments are required: font.ttf

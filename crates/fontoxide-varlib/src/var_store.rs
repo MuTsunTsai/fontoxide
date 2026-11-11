@@ -246,3 +246,149 @@ impl OnlineVarStoreBuilder {
 		Ok(var_idx)
 	}
 }
+
+const HELP: &str = "\
+usage: varLib.varStore [-h] [--quantization QUANTIZATION] fontfile [outfile]
+
+Optimize a font's GDEF variation store
+
+positional arguments:
+  fontfile
+  outfile
+
+options:
+  -h, --help            show this help message and exit
+  --quantization QUANTIZATION
+";
+
+const COMMAND: fontoxide_misc::argparse::Command = {
+	use fontoxide_misc::argparse::{Argument, Nargs, Ty};
+	fontoxide_misc::argparse::Command {
+		prog: "varLib.varStore",
+		module: "varLib.varStore",
+		help: HELP,
+		arguments: &[
+			Argument::help(),
+			Argument::option(&["--quantization"]).ty(Ty::Int),
+			Argument::positional("fontfile"),
+			Argument::positional("outfile").nargs(Nargs::Optional),
+		],
+		required_groups: &[],
+	}
+};
+
+/// The size of a store compiled on its own (`store.compile(writer, font)`,
+/// `len(writer.getAllData())`).
+fn compiled_size(store: &ot::VarStore, font: &mut fontoxide_ttlib::Font) -> Result<usize> {
+	use fontoxide_ttlib::ot::table::OtTable;
+	let mut graph = fontoxide_ttlib::ot::WriterGraph::new(fontoxide_ttlib::Tag::new(b"GDEF"));
+	store.compile(&mut graph.root(), font)?;
+	Ok(graph.get_all_data()?.len())
+}
+
+/// `Object_remap_device_varidxes`: maps the variation indices of the `Device`
+/// tables (`DeltaFormat` 0x8000; an unknown index is a `KeyError`) and of the
+/// format 2 condition tables (an unknown index becomes `NO_VARIATION_INDEX`).
+fn remap_device_varidxes<T: fontoxide_ttlib::ot::table::OtTable>(
+	table: &mut T,
+	map: &HashMap<u64, u64>,
+) -> Result<()> {
+	use fontoxide_ttlib::ot::varc::NO_VARIATION_INDEX;
+	table.visit_mut(&mut |x| {
+		if let Some(d) = x.downcast_mut::<ot::Device>() {
+			if d.delta_format == 0x8000 {
+				let old = (u64::from(d.start_size) << 16) + u64::from(d.end_size);
+				let new = *map
+					.get(&old)
+					.ok_or_else(|| Error::ttlib(format!("KeyError: {old}")))?;
+				d.start_size = (new >> 16) as u16;
+				d.end_size = (new & 0xFFFF) as u16;
+			}
+		} else if let Some(c) = x.downcast_mut::<ot::ConditionTableFormat2>() {
+			let new = map
+				.get(&u64::from(c.var_idx))
+				.copied()
+				.unwrap_or(NO_VARIATION_INDEX);
+			c.var_idx = new as u32;
+		}
+		Ok(())
+	})
+}
+
+/// `main`: optimizes the variation store of the `GDEF` table of a font, printing
+/// its size before and after, and saves the font to `outfile` if given, with the
+/// variation indices of `GDEF`, `GSUB`, `GPOS`, `MATH` and `JSTF` remapped.
+/// Returns the exit code.
+pub fn main(args: &[&str]) -> crate::errors::Result<i32> {
+	run(
+		args,
+		&mut std::io::stdout().lock(),
+		&mut std::io::stderr().lock(),
+	)
+}
+
+/// [`main`], writing the sizes and the help to `out`, and the usage errors to
+/// `err`.
+pub fn run(
+	args: &[&str],
+	out: &mut dyn std::io::Write,
+	err: &mut dyn std::io::Write,
+) -> crate::errors::Result<i32> {
+	use fontoxide_misc::argparse;
+	use fontoxide_ttlib::tables::{Gdef, Gpos, Gsub, Jstf, Math};
+	use fontoxide_ttlib::{Font, ReadOptions, WriteOptions};
+
+	let options = match COMMAND.parse_args(args, out, err)? {
+		Ok(options) => options,
+		Err(code) => return Ok(code),
+	};
+	let quantization = match options.str("--quantization") {
+		Some(q) => {
+			argparse::parse_int("--quantization", q).map_err(crate::errors::VarLibError::Usage)?
+		}
+		None => 1,
+	};
+	let quantization = i64::try_from(quantization)
+		.map_err(|_| Error::value("OverflowError: Python int too large to convert"))?;
+	let fontfile = options.str("fontfile").unwrap_or_default();
+	let outfile = options.str("outfile");
+
+	let mut font = Font::read(std::fs::read(fontfile)?, ReadOptions::default())?;
+	let mut store = font
+		.require::<Gdef>()?
+		.table
+		.var_store
+		.take()
+		.ok_or_else(|| {
+			Error::ttlib("AttributeError: 'NoneType' object has no attribute 'compile'")
+		})?;
+
+	let size = compiled_size(&store, &mut font)?;
+	writeln!(out, "Before: {size:>7} bytes")?;
+
+	let varidx_map =
+		fontoxide_ttlib::ot::var_store::optimize_quantized(&mut store, true, quantization)?;
+
+	let size = compiled_size(&store, &mut font)?;
+	writeln!(out, "After:  {size:>7} bytes")?;
+	font.require::<Gdef>()?.table.var_store = Some(store);
+
+	if let Some(outfile) = outfile {
+		let map = varidx_map;
+		remap_device_varidxes(&mut font.require::<Gdef>()?.table, &map)?;
+		if let Some(t) = font.get::<Gsub>()? {
+			remap_device_varidxes(&mut t.table, &map)?;
+		}
+		if let Some(t) = font.get::<Gpos>()? {
+			remap_device_varidxes(&mut t.table, &map)?;
+		}
+		if let Some(t) = font.get::<Math>()? {
+			remap_device_varidxes(&mut t.table, &map)?;
+		}
+		if let Some(t) = font.get::<Jstf>()? {
+			remap_device_varidxes(&mut t.table, &map)?;
+		}
+		std::fs::write(outfile, font.write(&WriteOptions::default())?)?;
+	}
+	Ok(0)
+}

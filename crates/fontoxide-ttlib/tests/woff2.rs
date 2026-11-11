@@ -56,6 +56,7 @@ const NO_RECALC: ReadOptions = ReadOptions {
 	ignore_decompile_errors: false,
 	use_legacy_ttc: false,
 	use_harfbuzz_repacker: None,
+	optimize_font_speed: false,
 };
 
 /// `TT_WOFF2` and `CFF_WOFF2` of `setUpModule`.

@@ -1,0 +1,92 @@
+--- <file1>	<mtime1>
++++ <file2>	<mtime2>
+@@ -1,23 +1,9 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+-<ttFont sfntVersion="\x00\x01\x00\x00" ttLibVersion="4.68">
++<ttFont sfntVersion="OTTO" ttLibVersion="4.68">
+ 
+   <maxp>
+-    <!-- Most of this table will be recalculated by the compiler -->
+-    <tableVersion value="0x10000"/>
++    <tableVersion value="0x5000"/>
+     <numGlyphs value="6"/>
+-    <maxPoints value="8"/>
+-    <maxContours value="2"/>
+-    <maxCompositePoints value="12"/>
+-    <maxCompositeContours value="3"/>
+-    <maxZones value="1"/>
+-    <maxTwilightPoints value="0"/>
+-    <maxStorage value="0"/>
+-    <maxFunctionDefs value="0"/>
+-    <maxInstructionDefs value="0"/>
+-    <maxStackElements value="0"/>
+-    <maxSizeOfInstructions value="0"/>
+-    <maxComponentElements value="3"/>
+-    <maxComponentDepth value="1"/>
+   </maxp>
+ 
+   <name>
+@@ -25,25 +11,25 @@
+       Copyright (c) 2015 by FontTools. No rights reserved.
+     </namerecord>
+     <namerecord nameID="1" platformID="1" platEncID="0" langID="0x0" unicode="True">
+-      Test TTF
++      Test OTF
+     </namerecord>
+     <namerecord nameID="2" platformID="1" platEncID="0" langID="0x0" unicode="True">
+       Regular
+     </namerecord>
+     <namerecord nameID="3" platformID="1" platEncID="0" langID="0x0" unicode="True">
+-      FontTools: Test TTF: 2015
++      FontTools: Test OTF: 2015
+     </namerecord>
+     <namerecord nameID="4" platformID="1" platEncID="0" langID="0x0" unicode="True">
+-      Test TTF
++      Test OTF
+     </namerecord>
+     <namerecord nameID="5" platformID="1" platEncID="0" langID="0x0" unicode="True">
+       Version 1.000
+     </namerecord>
+     <namerecord nameID="6" platformID="1" platEncID="0" langID="0x0" unicode="True">
+-      TestTTF-Regular
++      TestOTF-Regular
+     </namerecord>
+     <namerecord nameID="7" platformID="1" platEncID="0" langID="0x0" unicode="True">
+-      Test TTF is not a trademark of FontTools.
++      Test OTF is not a trademark of FontTools.
+     </namerecord>
+     <namerecord nameID="8" platformID="1" platEncID="0" langID="0x0" unicode="True">
+       FontTools
+@@ -67,25 +53,25 @@
+       Copyright (c) 2015 by FontTools. No rights reserved.
+     </namerecord>
+     <namerecord nameID="1" platformID="3" platEncID="1" langID="0x409">
+-      Test TTF
++      Test OTF
+     </namerecord>
+     <namerecord nameID="2" platformID="3" platEncID="1" langID="0x409">
+       Regular
+     </namerecord>
+     <namerecord nameID="3" platformID="3" platEncID="1" langID="0x409">
+-      FontTools: Test TTF: 2015
++      FontTools: Test OTF: 2015
+     </namerecord>
+     <namerecord nameID="4" platformID="3" platEncID="1" langID="0x409">
+-      Test TTF
++      Test OTF
+     </namerecord>
+     <namerecord nameID="5" platformID="3" platEncID="1" langID="0x409">
+       Version 1.000
+     </namerecord>
+     <namerecord nameID="6" platformID="3" platEncID="1" langID="0x409">
+-      TestTTF-Regular
++      TestOTF-Regular
+     </namerecord>
+     <namerecord nameID="7" platformID="3" platEncID="1" langID="0x409">
+-      Test TTF is not a trademark of FontTools.
++      Test OTF is not a trademark of FontTools.
+     </namerecord>
+     <namerecord nameID="8" platformID="3" platEncID="1" langID="0x409">
+       FontTools
+== stderr
+== exit 1

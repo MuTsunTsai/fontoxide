@@ -1,5 +1,5 @@
-//! `EBLC` and `CBLC`: bitmap locations (`fontTools.ttLib.tables.E_B_L_C_`,
-//! `C_B_L_C_`, `BitmapGlyphMetrics`).
+//! `EBLC`, `CBLC` and `bloc`: bitmap locations (`fontTools.ttLib.tables.E_B_L_C_`,
+//! `C_B_L_C_`, `_b_l_o_c`, `BitmapGlyphMetrics`).
 
 use fontoxide_misc::Tag;
 use fontoxide_misc::xml_reader::Element;
@@ -602,12 +602,13 @@ pub struct Strike {
 }
 
 /// Embedded (`COLOR` false) or Color (`COLOR` true) Bitmap Location table
-/// (`table_E_B_L_C_`, `table_C_B_L_C_`).
+/// (`table_E_B_L_C_`, `table_C_B_L_C_`), or with `APPLE`, Apple's `bloc`
+/// (`table__b_l_o_c`).
 ///
 /// See <https://learn.microsoft.com/en-us/typography/opentype/spec/eblc> and
 /// <https://learn.microsoft.com/en-us/typography/opentype/spec/cblc>.
 #[derive(Debug, Clone, PartialEq, Default)]
-pub struct BitmapLocator<const COLOR: bool> {
+pub struct BitmapLocator<const COLOR: bool, const APPLE: bool = false> {
 	/// The table version.
 	pub version: f64,
 	/// The strikes. Only a TTX document with gaps in its strike indices leaves
@@ -619,10 +620,14 @@ pub struct BitmapLocator<const COLOR: bool> {
 pub type Eblc = BitmapLocator<false>;
 /// `CBLC`.
 pub type Cblc = BitmapLocator<true>;
+/// `bloc`: Apple's `EBLC` (`table__b_l_o_c`), with `bdat`.
+pub type Bloc = BitmapLocator<false, true>;
 
-impl<const COLOR: bool> TableType for BitmapLocator<COLOR> {
+impl<const COLOR: bool, const APPLE: bool> TableType for BitmapLocator<COLOR, APPLE> {
 	const TAG: Tag = if COLOR {
 		Tag::new(b"CBLC")
+	} else if APPLE {
+		Tag::new(b"bloc")
 	} else {
 		Tag::new(b"EBLC")
 	};
@@ -690,7 +695,7 @@ impl<const COLOR: bool> TableType for BitmapLocator<COLOR> {
 	}
 }
 
-impl<const COLOR: bool> BitmapLocator<COLOR> {
+impl<const COLOR: bool, const APPLE: bool> BitmapLocator<COLOR, APPLE> {
 	fn compile_table(&mut self) -> Result<Vec<u8>> {
 		let mut sub_table_data = Vec::new();
 		let mut data_size = 8 + self.strikes.len() * 48;
@@ -757,7 +762,7 @@ impl<const COLOR: bool> BitmapLocator<COLOR> {
 	}
 }
 
-impl<const COLOR: bool> Table for BitmapLocator<COLOR> {
+impl<const COLOR: bool, const APPLE: bool> Table for BitmapLocator<COLOR, APPLE> {
 	fn tag(&self) -> Tag {
 		Self::TAG
 	}

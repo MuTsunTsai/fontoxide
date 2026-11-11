@@ -1,0 +1,16 @@
+    <axis tag="wght" name="Weight" minimum="356.5" default="356.5" maximum="840.3">
+      <map input="356.5" output="356.5"/>
+      <map input="400" output="388.672"/>
+      <map input="450" output="428.005"/>
+      <map input="500" output="469.988"/>
+      <map input="550" output="514.777"/>
+      <map input="600" output="562.545"/>
+      <map input="650" output="613.502"/>
+      <map input="700" output="667.847"/>
+      <map input="750" output="725.794"/>
+      <map input="800" output="787.57"/>
+      <map input="840.3" output="840.3"/>
+    </axis>
+    <axis tag="opsz" name="OpticalSize" minimum="0" default="0" maximum="1"/>
+== avar
+0001000000000008000b0000000005c104420c5e097612fc0f03199914f020361b4226d321ff2d712930340e30da3aab3906400040000000000000000000000000000000

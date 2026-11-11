@@ -1,0 +1,12 @@
+{
+	"explorer.fileNesting.enabled": true,
+	"explorer.fileNesting.expand": false,
+	"explorer.fileNesting.patterns": {
+		".gitignore": ".git*",
+		"README.md": "LICENSE",
+	},
+	"files.exclude": {
+		"target/": true,
+		"corpus/": true
+	}
+}

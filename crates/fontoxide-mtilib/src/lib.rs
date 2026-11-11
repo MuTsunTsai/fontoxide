@@ -17,7 +17,6 @@
 
 #![forbid(unsafe_code)]
 
-mod argparse;
 pub mod cli;
 mod context;
 mod glyphs;

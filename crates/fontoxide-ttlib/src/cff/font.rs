@@ -87,6 +87,17 @@ pub(crate) fn read_index(data: &[u8], pos: usize, cff2: bool) -> Result<(Vec<Vec
 	if off_size > 4 {
 		return Err(Error::Assertion(format!("offSize too large: {off_size}")));
 	}
+	// LENIENT(L58): fontTools reads `count + 1` empty offsets for an offSize of 0,
+	// which a forged count makes take minutes; such an INDEX has no data.
+	if off_size == 0 {
+		return Err(Error::Assertion("offSize must be at least 1".into()));
+	}
+	// The offsets must fit in the data: checked before reserving room for a
+	// count that the file may have forged (a CFF2 count is 32-bit). The error
+	// is the one the loop below would report at the end of the data.
+	if (count + 1).saturating_mul(off_size) > data.len().saturating_sub(r.pos) {
+		return Err(struct_error(4));
+	}
 	let mut offsets = Vec::with_capacity(count + 1);
 	for _ in 0..=count {
 		let chunk = r.read(off_size);
@@ -98,21 +109,21 @@ pub(crate) fn read_index(data: &[u8], pos: usize, cff2: bool) -> Result<(Vec<Vec
 	let base = r.pos - 1;
 	let mut items = Vec::with_capacity(count);
 	for i in 0..count {
-		let start = base + offsets[i];
+		let start = base.saturating_add(offsets[i]);
 		let size = offsets[i + 1] as i64 - offsets[i] as i64;
 		let item = if size < 0 {
 			// `file.read(negative)` reads to the end.
 			data.get(start.min(data.len())..).unwrap_or_default()
 		} else {
 			let s = start.min(data.len());
-			&data[s..(start + size as usize).min(data.len())]
+			&data[s..start.saturating_add(size as usize).min(data.len())]
 		};
 		if item.len() as i64 != size {
 			return Err(Error::Assertion("len(data) == size".into()));
 		}
 		items.push(item.to_vec());
 	}
-	Ok((items, base + offsets[count]))
+	Ok((items, base.saturating_add(offsets[count])))
 }
 
 /// The custom strings of a CFF font (`IndexedStrings`), after the standard ones.

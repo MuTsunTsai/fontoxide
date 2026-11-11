@@ -9,6 +9,7 @@ use std::io::{Read, Write};
 
 use fontoxide_misc::cli_tools::{make_output_file_name, program_text};
 use fontoxide_ttlib::binary::calc_checksum;
+use fontoxide_ttlib::mac_utils;
 use fontoxide_ttlib::tables::Head;
 use fontoxide_ttlib::{
 	Flavor, Font, ReadOptions, TableKey, Tag, TtxImportOptions, TtxOptions, WriteOptions,
@@ -802,10 +803,17 @@ pub fn tt_dump_with_io(
 	io: &mut Io<'_>,
 ) -> Result<()> {
 	let timer = Timer::start();
+	// `TTFont(input, 0)`: the first `sfnt` resource of a resource fork (a
+	// `.dfont` file), else the file itself.
 	let (data, input_name) = if input == "-" {
 		(io.read_stdin()?, "<stdin>")
-	} else {
+	} else if mac_utils::get_sfnt_res_indices(input)?.is_empty() {
 		(std::fs::read(input)?, input)
+	} else {
+		(
+			mac_utils::sfnt_resource(input, &mac_utils::ResNameOrIndex::Index(1))?,
+			input,
+		)
 	};
 	let output_name = if output == "-" { "<stdout>" } else { output };
 	log::info!("Dumping \"{input_name}\" to \"{output_name}\"...");
@@ -898,10 +906,7 @@ pub fn tt_compile_with_io(
 		}
 	};
 	if options.optimize_font_speed {
-		return Err(fontoxide_ttlib::Error::ttlib(
-			"--optimize-font-speed is not supported: fontoxide has no OPTIMIZE_FONT_SPEED option",
-		)
-		.into());
+		font.optimize_font_speed = true;
 	}
 	if input == "-" {
 		let data = io.read_stdin()?;

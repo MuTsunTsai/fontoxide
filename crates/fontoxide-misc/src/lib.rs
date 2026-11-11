@@ -6,6 +6,7 @@
 //! |---------------------|-------------------------------|
 //! | [`afm_lib`]         | `fontTools.afmLib`            |
 //! | [`agl`]             | `fontTools.agl`               |
+//! | [`argparse`]        | Python's `argparse`, as the command lines use it |
 //! | [`array_tools`]     | `fontTools.misc.arrayTools`   |
 //! | [`bezier_tools`]    | `fontTools.misc.bezierTools`  |
 //! | [`classify_tools`]  | `fontTools.misc.classifyTools` |
@@ -35,6 +36,7 @@
 
 pub mod afm_lib;
 pub mod agl;
+pub mod argparse;
 pub mod array_tools;
 pub mod bezier_tools;
 pub mod classify_tools;
@@ -45,6 +47,9 @@ pub mod encoding_tools;
 pub mod etree;
 pub mod filenames;
 pub mod fixed_tools;
+// Test support: comparing fontTools vectors across platforms.
+#[doc(hidden)]
+pub mod float_vectors;
 pub mod ift_sparse_bit_set;
 pub mod int_tools;
 pub mod mac_res;

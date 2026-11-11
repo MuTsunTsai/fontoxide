@@ -1,0 +1,3 @@
+== stderr
+[*] ERROR: specify a font number between 0 and 1 (inclusive)
+== exit 2

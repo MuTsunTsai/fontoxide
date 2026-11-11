@@ -44,6 +44,7 @@ DUMPS = [
 	("woff", "TestWOFF.woff", []),
 	("woff2", "TestWOFF2.woff2", []),
 	("ttc_1", "TestTTC.ttc", ["-y", "1"]),
+	("dfont", "TestDFONT.dfont", []),
 ]
 
 LISTS = ["TestTTF.ttf", "TestOTF.otf", "TestWOFF.woff", "TestWOFF2.woff2"]
@@ -52,6 +53,7 @@ LISTS = ["TestTTF.ttf", "TestOTF.otf", "TestWOFF.woff", "TestWOFF2.woff2"]
 COMPILES = [
 	("ttf", "TestTTF.ttx", []),
 	("ttf_b", "TestTTF.ttx", ["-b"]),
+	("ttf_speed", "TestTTF.ttx", ["--optimize-font-speed"]),
 	("ttf_woff", "TestTTF.ttx", ["--flavor", "woff"]),
 	("ttf_woff2", "TestTTF.ttx", ["--flavor", "woff2"]),
 	("otf", "TestOTF.ttx", []),

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<designspace format="5.1">
+  <axes>
+    <axis tag="wght" name="Weight" minimum="0" maximum="1000" default="368"/>
+    <axis tag="cntr" name="Contrast" minimum="0" maximum="100" default="0"/>
+  </axes>
+</designspace>

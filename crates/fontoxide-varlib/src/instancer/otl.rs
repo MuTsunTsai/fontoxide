@@ -7,6 +7,7 @@
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
+use fontoxide_misc::classify_tools::Classifier;
 use fontoxide_misc::round_tools::ot_round;
 use fontoxide_ttlib::beyond64k::convert_layout_formats;
 use fontoxide_ttlib::binary::fit;
@@ -417,55 +418,35 @@ fn pair_pos_format1_flatten(list: &[&ot::PairPosFormat1]) -> Result<ot::PairPosF
 	})
 }
 
-/// `classifyTools.Classifier`: the classes, sorted by decreasing size, then by the
-/// sorted glyph names.
+/// `classifyTools.Classifier` on the glyph names: the classes, sorted by
+/// decreasing size, then by the sorted glyph names.
 fn classify(
 	sets: impl IntoIterator<Item = BTreeSet<u32>>,
 	order: &GlyphOrder,
 ) -> Vec<BTreeSet<u32>> {
-	let mut classes: Vec<BTreeSet<u32>> = Vec::new();
-	let mut mapping: HashMap<u32, usize> = HashMap::new();
+	let mut ids: HashMap<String, u32> = HashMap::new();
+	let mut classifier = Classifier::new(true);
 	for set in sets {
-		if set.is_empty() {
-			continue;
-		}
-		let mut by_class: BTreeMap<usize, BTreeSet<u32>> = BTreeMap::new();
-		let mut new = BTreeSet::new();
-		for g in set {
-			match mapping.get(&g) {
-				Some(&class) => {
-					by_class.entry(class).or_default().insert(g);
-				}
-				None => {
-					new.insert(g);
-				}
-			}
-		}
-		if !new.is_empty() {
-			for &g in &new {
-				mapping.insert(g, classes.len());
-			}
-			classes.push(new);
-		}
-		for (class, part) in by_class {
-			for g in &part {
-				classes[class].remove(g);
-				mapping.insert(*g, classes.len());
-			}
-			classes.push(part);
-		}
+		let names: Vec<String> = set
+			.into_iter()
+			.map(|g| {
+				let name = order.name(g).into_owned();
+				ids.insert(name.clone(), g);
+				name
+			})
+			.collect();
+		classifier.add(names);
 	}
-	let mut keyed: Vec<(usize, Vec<String>, BTreeSet<u32>)> = classes
-		.into_iter()
-		.filter(|c| !c.is_empty())
-		.map(|c| {
-			let mut names: Vec<String> = c.iter().map(|&g| order.name(g).into_owned()).collect();
-			names.sort();
-			(c.len(), names, c)
+	classifier
+		.get_classes()
+		.iter()
+		.map(|class| {
+			class
+				.iter()
+				.filter_map(|name| ids.get(name).copied())
+				.collect()
 		})
-		.collect();
-	keyed.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
-	keyed.into_iter().map(|k| k.2).collect()
+		.collect()
 }
 
 /// `_ClassDef_merge_classify`: with `all_glyphs`, class 0 has the glyphs of those

@@ -127,6 +127,9 @@ def main():
             start = spline[-1]
         q2c(splines, rng.choice([0.5, 1.0, 2.0]), rng.random() < 0.3)
     QU2CU_OUT.parent.mkdir(parents=True, exist_ok=True)
+    # Some values depend on the platform's math library: the Rust test compares
+    # exactly on this platform only (fontoxide_misc::float_vectors).
+    lines.insert(0, f"# platform: {sys.platform}")
     QU2CU_OUT.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 

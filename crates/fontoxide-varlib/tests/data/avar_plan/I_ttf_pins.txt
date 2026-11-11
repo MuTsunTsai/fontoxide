@@ -1,0 +1,57 @@
+    <axis tag="wght" name="Weight" minimum="100" default="400" maximum="1000">
+      <map input="100" output="1"/>
+      <map input="150" output="88.6658"/>
+      <map input="200" output="187.9"/>
+      <map input="250" output="300"/>
+      <map input="300" output="209.799"/>
+      <map input="350" output="111.355"/>
+      <map input="400" output="4"/>
+      <map input="450" output="93.2154"/>
+      <map input="500" output="189.22"/>
+      <map input="550" output="292.525"/>
+      <map input="600" output="403.264"/>
+      <map input="650" output="522.278"/>
+      <map input="700" output="650"/>
+      <map input="750" output="555.936"/>
+      <map input="800" output="457.07"/>
+      <map input="850" output="353.263"/>
+      <map input="900" output="244.35"/>
+      <map input="950" output="130.028"/>
+      <map input="1000" output="10"/>
+    </axis>
+    <axis tag="wdth" name="Width" minimum="25" default="100" maximum="151">
+      <map input="25" output="25"/>
+      <map input="37.5" output="42.5"/>
+      <map input="50" output="60"/>
+      <map input="62.5" output="70"/>
+      <map input="75" output="80"/>
+      <map input="87.5" output="90"/>
+      <map input="100" output="100"/>
+      <map input="112.5" output="112.5"/>
+      <map input="125" output="125"/>
+      <map input="137.5" output="137.5"/>
+      <map input="150" output="150"/>
+      <map input="151" output="151"/>
+    </axis>
+    <axis tag="slnt" name="Slant" minimum="-10" default="0" maximum="0"/>
+    <axis tag="opsz" name="OpticalSize" minimum="8" default="14" maximum="144">
+      <map input="8" output="8"/>
+      <map input="9" output="9.29267"/>
+      <map input="10" output="10.4355"/>
+      <map input="11" output="11.4582"/>
+      <map input="12" output="12.3829"/>
+      <map input="14" output="14"/>
+      <map input="18" output="16.8265"/>
+      <map input="20" output="18"/>
+      <map input="24" output="27.5425"/>
+      <map input="30" output="38.8709"/>
+      <map input="36" output="47.8725"/>
+      <map input="48" output="61.597"/>
+      <map input="60" output="71.8583"/>
+      <map input="72" output="80"/>
+      <map input="96" output="109.082"/>
+      <map input="120" output="129.11"/>
+      <map input="144" output="144"/>
+    </axis>
+== avar
+000100000000000d0013c000c000caabe587d5551003e0004000eaab2c7ff555173600000000055508d70aab125a10001c961555278e1aab335920004000255540002aab400030004000355540003aab400040004000000cc000c000caabceefd555dddee000e666eaabeeeff555f777000000000fb00fb01f5f1f5f2f0f2f0f3ebf3ebf400040000011c000c000caabcdcad555d9fae000e4e3eaabeec00000000001f8016402f401f804ec06ab07e00c3f0ad510ad10bd176f16a51c7c1c8e207e285f2ecf342f38ab400040000003c000c000000000004000400000000003c000c00000000000400040000003c000c00000000000400040000003c000c00000000000400040000003c000c00000000000400040000003c000c00000000000400040000003c000c00000000000400040000003c000c00000000000400040000003c000c0000000000040004000

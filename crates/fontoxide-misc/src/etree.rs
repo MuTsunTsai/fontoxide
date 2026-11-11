@@ -1,12 +1,12 @@
 //! A minimal element tree for building XML, serialized the way lxml does
 //! (`fontTools.misc.etree` uses lxml when it is installed, as in the reference
-//! environment).
+//! environment), and parsed from a string ([`fromstring`]).
 //!
-//! Only what fontTools builds with `etree.Element` is supported: elements with
-//! attributes, text and child elements, no tails, comments or processing
-//! instructions. Attribute names may use the Clark notation for the `xml`
-//! namespace (`{http://www.w3.org/XML/1998/namespace}lang`), which is written as
-//! `xml:lang`.
+//! Elements have attributes, text, child elements and tails; there are no
+//! comments or processing instructions. Names may use the Clark notation
+//! (`{uri}name`); the `xml` namespace
+//! (`{http://www.w3.org/XML/1998/namespace}lang`) is written as `xml:lang`,
+//! other namespaces cannot be written.
 
 use std::fmt;
 
@@ -36,6 +36,8 @@ pub struct Element {
 	pub text: Option<String>,
 	/// The child elements.
 	pub children: Vec<Element>,
+	/// The text after the element, before its next sibling (`tail`).
+	pub tail: Option<String>,
 }
 
 impl Element {
@@ -170,7 +172,8 @@ fn write_element(
 	}
 	out.push('>');
 	// An element with text has mixed content: libxml2 does not format inside it.
-	let format = pretty && element.text.is_none();
+	let format =
+		pretty && element.text.is_none() && element.children.iter().all(|c| c.tail.is_none());
 	if let Some(text) = &element.text {
 		check_xml_string(text)?;
 		push_text(out, text);
@@ -183,6 +186,10 @@ fn write_element(
 			indent(out, level + 1);
 		}
 		write_element(out, child, level + 1, format)?;
+		if let Some(tail) = &child.tail {
+			check_xml_string(tail)?;
+			push_text(out, tail);
+		}
 		if format {
 			out.push('\n');
 		}
@@ -197,7 +204,7 @@ fn write_element(
 }
 
 /// `etree.ElementTree(root).write(f, encoding="UTF-8", xml_declaration=...,
-/// pretty_print=...)`, as a string.
+/// pretty_print=...)`, as a string. The tail of `root` is not written.
 pub fn tostring(
 	root: &Element,
 	pretty_print: bool,
@@ -212,6 +219,54 @@ pub fn tostring(
 		out.push('\n');
 	}
 	Ok(out)
+}
+
+/// The name of a parsed element or attribute: Clark notation if it has a
+/// namespace.
+fn clark(namespace: Option<&str>, name: &str) -> String {
+	match namespace {
+		Some(ns) => format!("{{{ns}}}{name}"),
+		None => name.to_owned(),
+	}
+}
+
+fn convert(node: roxmltree::Node<'_, '_>) -> Result<Element, EtreeError> {
+	let tag = node.tag_name();
+	let mut element = Element::new(clark(tag.namespace(), tag.name()));
+	element.attrib = node
+		.attributes()
+		.map(|a| (clark(a.namespace(), a.name()), a.value().to_owned()))
+		.collect();
+	for child in node.children() {
+		if child.is_element() {
+			element.children.push(convert(child)?);
+		} else if child.is_text() {
+			let text = child.text().unwrap_or_default();
+			let slot = match element.children.last_mut() {
+				Some(last) => &mut last.tail,
+				None => &mut element.text,
+			};
+			slot.get_or_insert_with(String::new).push_str(text);
+		} else {
+			return Err(EtreeError(
+				"comments and processing instructions are not supported".into(),
+			));
+		}
+	}
+	Ok(element)
+}
+
+/// Parses a document and returns its root element (`etree.fromstring(text)`).
+/// Comments and processing instructions inside the root element are not
+/// supported.
+pub fn fromstring(text: &str) -> Result<Element, EtreeError> {
+	let options = roxmltree::ParsingOptions {
+		allow_dtd: true,
+		..Default::default()
+	};
+	let doc = roxmltree::Document::parse_with_options(text, options)
+		.map_err(|e| EtreeError(e.to_string()))?;
+	convert(doc.root_element())
 }
 
 #[cfg(test)]

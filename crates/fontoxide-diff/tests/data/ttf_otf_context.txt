@@ -1,0 +1,334 @@
+--- <file1>	<mtime1>
++++ <file2>	<mtime2>
+@@ -1,9 +1,9 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+-<ttFont sfntVersion="\x00\x01\x00\x00" ttLibVersion="4.68">
++<ttFont sfntVersion="OTTO" ttLibVersion="4.68">
+ 
+   <GlyphOrder>
+     <!-- The 'id' attribute is only for humans; it is ignored when parsed. -->
+     <GlyphID id="0" name=".notdef"/>
+     <GlyphID id="1" name=".null"/>
+     <GlyphID id="2" name="CR"/>
+     <GlyphID id="3" name="space"/>
+@@ -11,155 +11,60 @@
+     <GlyphID id="5" name="ellipsis"/>
+   </GlyphOrder>
+ 
+   <head>
+     <!-- Most of this table will be recalculated by the compiler -->
+     <tableVersion value="1.0"/>
+     <fontRevision value="1.0"/>
+-    <checkSumAdjustment value="0x28b4d96e"/>
++    <checkSumAdjustment value="0x4e5f578f"/>
+     <magicNumber value="0x5f0f3cf5"/>
+     <flags value="00000000 00000011"/>
+     <unitsPerEm value="1000"/>
+     <created value="Thu Jun  4 14:29:11 2015"/>
+-    <modified value="Sun Mar 26 22:22:29 2017"/>
++    <modified value="Sun Mar 26 22:38:12 2017"/>
+     <xMin value="50"/>
+     <yMin value="0"/>
+     <xMax value="668"/>
+     <yMax value="750"/>
+     <macStyle value="00000000 00000000"/>
+     <lowestRecPPEM value="9"/>
+     <fontDirectionHint value="2"/>
+     <indexToLocFormat value="0"/>
+     <glyphDataFormat value="0"/>
+   </head>
+ 
+   <maxp>
+-    <!-- Most of this table will be recalculated by the compiler -->
+-    <tableVersion value="0x10000"/>
++    <tableVersion value="0x5000"/>
+     <numGlyphs value="6"/>
+-    <maxPoints value="8"/>
+-    <maxContours value="2"/>
+-    <maxCompositePoints value="12"/>
+-    <maxCompositeContours value="3"/>
+-    <maxZones value="1"/>
+-    <maxTwilightPoints value="0"/>
+-    <maxStorage value="0"/>
+-    <maxFunctionDefs value="0"/>
+-    <maxInstructionDefs value="0"/>
+-    <maxStackElements value="0"/>
+-    <maxSizeOfInstructions value="0"/>
+-    <maxComponentElements value="3"/>
+-    <maxComponentDepth value="1"/>
+   </maxp>
+-
+-  <fpgm>
+-    <assembly>
+-      SVTCA[0]	/* SetFPVectorToAxis */
+-    </assembly>
+-  </fpgm>
+-
+-  <prep>
+-    <assembly>
+-      SVTCA[0]	/* SetFPVectorToAxis */
+-    </assembly>
+-  </prep>
+-
+-  <cvt>
+-    <cv index="0" value="0"/>
+-  </cvt>
+-
+-  <loca>
+-    <!-- The 'loca' table will be calculated by the compiler -->
+-  </loca>
+-
+-  <glyf>
+-
+-    <!-- The xMin, yMin, xMax and yMax values
+-         will be recalculated by the compiler. -->
+-
+-    <TTGlyph name=".notdef" xMin="50" yMin="0" xMax="450" yMax="750">
+-      <contour>
+-        <pt x="50" y="0" on="1"/>
+-        <pt x="50" y="750" on="1"/>
+-        <pt x="450" y="750" on="1"/>
+-        <pt x="450" y="0" on="1"/>
+-      </contour>
+-      <contour>
+-        <pt x="400" y="50" on="1"/>
+-        <pt x="400" y="700" on="1"/>
+-        <pt x="100" y="700" on="1"/>
+-        <pt x="100" y="50" on="1"/>
+-      </contour>
+-      <instructions>
+-        <assembly>
+-          SVTCA[0]	/* SetFPVectorToAxis */
+-          SVTCA[1]	/* SetFPVectorToAxis */
+-        </assembly>
+-      </instructions>
+-    </TTGlyph>
+-
+-    <TTGlyph name=".null"/><!-- contains no outline data -->
+-
+-    <TTGlyph name="CR"/><!-- contains no outline data -->
+-
+-    <TTGlyph name="ellipsis" xMin="55" yMin="0" xMax="668" yMax="122">
+-      <component glyphName="period" x="0" y="0" flags="0x4"/>
+-      <component glyphName="period" x="241" y="0" flags="0x4"/>
+-      <component glyphName="period" x="482" y="0" flags="0x4"/>
+-      <instructions>
+-        <assembly>
+-          SVTCA[0]	/* SetFPVectorToAxis */
+-          SVTCA[1]	/* SetFPVectorToAxis */
+-        </assembly>
+-      </instructions>
+-    </TTGlyph>
+-
+-    <TTGlyph name="period" xMin="55" yMin="0" xMax="186" yMax="122">
+-      <contour>
+-        <pt x="55" y="122" on="1"/>
+-        <pt x="186" y="122" on="1"/>
+-        <pt x="186" y="0" on="1"/>
+-        <pt x="55" y="0" on="1"/>
+-      </contour>
+-      <instructions>
+-        <assembly>
+-          SVTCA[0]	/* SetFPVectorToAxis */
+-          SVTCA[1]	/* SetFPVectorToAxis */
+-        </assembly>
+-      </instructions>
+-    </TTGlyph>
+-
+-    <TTGlyph name="space"/><!-- contains no outline data -->
+-
+-  </glyf>
+ 
+   <name>
+     <namerecord nameID="0" platformID="1" platEncID="0" langID="0x0" unicode="True">
+       Copyright (c) 2015 by FontTools. No rights reserved.
+     </namerecord>
+     <namerecord nameID="1" platformID="1" platEncID="0" langID="0x0" unicode="True">
+-      Test TTF
++      Test OTF
+     </namerecord>
+     <namerecord nameID="2" platformID="1" platEncID="0" langID="0x0" unicode="True">
+       Regular
+     </namerecord>
+     <namerecord nameID="3" platformID="1" platEncID="0" langID="0x0" unicode="True">
+-      FontTools: Test TTF: 2015
++      FontTools: Test OTF: 2015
+     </namerecord>
+     <namerecord nameID="4" platformID="1" platEncID="0" langID="0x0" unicode="True">
+-      Test TTF
++      Test OTF
+     </namerecord>
+     <namerecord nameID="5" platformID="1" platEncID="0" langID="0x0" unicode="True">
+       Version 1.000
+     </namerecord>
+     <namerecord nameID="6" platformID="1" platEncID="0" langID="0x0" unicode="True">
+-      TestTTF-Regular
++      TestOTF-Regular
+     </namerecord>
+     <namerecord nameID="7" platformID="1" platEncID="0" langID="0x0" unicode="True">
+-      Test TTF is not a trademark of FontTools.
++      Test OTF is not a trademark of FontTools.
+     </namerecord>
+     <namerecord nameID="8" platformID="1" platEncID="0" langID="0x0" unicode="True">
+       FontTools
+     </namerecord>
+     <namerecord nameID="9" platformID="1" platEncID="0" langID="0x0" unicode="True">
+       FontTools
+     </namerecord>
+@@ -175,33 +80,33 @@
+     <namerecord nameID="18" platformID="1" platEncID="0" langID="0x0" unicode="True">
+       Test TTF
+     </namerecord>
+     <namerecord nameID="0" platformID="3" platEncID="1" langID="0x409">
+       Copyright (c) 2015 by FontTools. No rights reserved.
+     </namerecord>
+     <namerecord nameID="1" platformID="3" platEncID="1" langID="0x409">
+-      Test TTF
++      Test OTF
+     </namerecord>
+     <namerecord nameID="2" platformID="3" platEncID="1" langID="0x409">
+       Regular
+     </namerecord>
+     <namerecord nameID="3" platformID="3" platEncID="1" langID="0x409">
+-      FontTools: Test TTF: 2015
++      FontTools: Test OTF: 2015
+     </namerecord>
+     <namerecord nameID="4" platformID="3" platEncID="1" langID="0x409">
+-      Test TTF
++      Test OTF
+     </namerecord>
+     <namerecord nameID="5" platformID="3" platEncID="1" langID="0x409">
+       Version 1.000
+     </namerecord>
+     <namerecord nameID="6" platformID="3" platEncID="1" langID="0x409">
+-      TestTTF-Regular
++      TestOTF-Regular
+     </namerecord>
+     <namerecord nameID="7" platformID="3" platEncID="1" langID="0x409">
+-      Test TTF is not a trademark of FontTools.
++      Test OTF is not a trademark of FontTools.
+     </namerecord>
+     <namerecord nameID="8" platformID="3" platEncID="1" langID="0x409">
+       FontTools
+     </namerecord>
+     <namerecord nameID="9" platformID="3" platEncID="1" langID="0x409">
+       FontTools
+     </namerecord>
+@@ -213,38 +118,96 @@
+     </namerecord>
+     <namerecord nameID="14" platformID="3" platEncID="1" langID="0x409">
+       https://github.com/behdad/fonttools/blob/master/LICENSE.txt
+     </namerecord>
+   </name>
+ 
+   <post>
+-    <formatType value="2.0"/>
++    <formatType value="3.0"/>
+     <italicAngle value="0.0"/>
+     <underlinePosition value="-75"/>
+     <underlineThickness value="50"/>
+     <isFixedPitch value="0"/>
+     <minMemType42 value="0"/>
+     <maxMemType42 value="0"/>
+     <minMemType1 value="0"/>
+     <maxMemType1 value="0"/>
+-    <psNames>
+-      <!-- This file uses unique glyph names based on the information
+-           found in the 'post' table. Since these names might not be unique,
+-           we have to invent artificial names in case of clashes. In order to
+-           be able to retain the original information, we need a name to
+-           ps name mapping for those cases where they differ. That's what
+-           you see below.
+-            -->
+-    </psNames>
+-    <extraNames>
+-      <!-- following are the name that are not taken from the standard Mac glyph order -->
+-      <psName name=".null"/>
+-      <psName name="CR"/>
+-    </extraNames>
+   </post>
+ 
+-  <gasp>
+-    <gaspRange rangeMaxPPEM="8" rangeGaspBehavior="10"/>
+-    <gaspRange rangeMaxPPEM="65535" rangeGaspBehavior="15"/>
+-  </gasp>
++  <CFF>
++    <major value="1"/>
++    <minor value="0"/>
++    <CFFFont name="TestOTF-Regular">
++      <version value="001.001"/>
++      <Notice value="Copyright \(c\) 2015 by FontTools. No rights reserved."/>
++      <FullName value="Test OTF"/>
++      <FamilyName value="Test OTF"/>
++      <Weight value="Regular"/>
++      <isFixedPitch value="0"/>
++      <ItalicAngle value="0"/>
++      <UnderlinePosition value="-100"/>
++      <UnderlineThickness value="50"/>
++      <PaintType value="0"/>
++      <CharstringType value="2"/>
++      <FontMatrix value="0.001 0 0 0.001 0 0"/>
++      <FontBBox value="50 0 668 750"/>
++      <StrokeWidth value="0"/>
++      <!-- charset is dumped separately as the 'GlyphOrder' element -->
++      <Encoding name="StandardEncoding"/>
++      <Private>
++        <BlueScale value="0.039625"/>
++        <BlueShift value="7"/>
++        <BlueFuzz value="1"/>
++        <ForceBold value="0"/>
++        <LanguageGroup value="0"/>
++        <ExpansionFactor value="0.06"/>
++        <initialRandomSeed value="0"/>
++        <defaultWidthX value="0"/>
++        <nominalWidthX value="0"/>
++        <Subrs>
++          <!-- The 'index' attribute is only for humans; it is ignored when parsed. -->
++          <CharString index="0">
++            131 122 -131 hlineto
++            return
++          </CharString>
++        </Subrs>
++      </Private>
++      <CharStrings>
++        <CharString name=".notdef">
++          500 450 hmoveto
++          750 -400 -750 vlineto
++          50 50 rmoveto
++          650 300 -650 vlineto
++          endchar
++        </CharString>
++        <CharString name=".null">
++          0 endchar
++        </CharString>
++        <CharString name="CR">
++          250 endchar
++        </CharString>
++        <CharString name="ellipsis">
++          723 55 hmoveto
++          -107 callsubr
++          241 -122 rmoveto
++          -107 callsubr
++          241 -122 rmoveto
++          -107 callsubr
++          endchar
++        </CharString>
++        <CharString name="period">
++          241 55 hmoveto
++          -107 callsubr
++          endchar
++        </CharString>
++        <CharString name="space">
++          250 endchar
++        </CharString>
++      </CharStrings>
++    </CFFFont>
++
++    <GlobalSubrs>
++      <!-- The 'index' attribute is only for humans; it is ignored when parsed. -->
++    </GlobalSubrs>
++  </CFF>
+ 
+ </ttFont>
+== stderr
+== exit 1

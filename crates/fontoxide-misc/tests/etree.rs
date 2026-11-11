@@ -1,13 +1,13 @@
 //! `Tests/misc/etree_test.py`.
 //!
-//! fontoxide's [`etree`](fontoxide_misc::etree) only builds and serializes
-//! trees; XML is parsed with [`xml_reader`](fontoxide_misc::xml_reader), so the
-//! entity expansion tests run against that.
+//! The entity expansion tests run against
+//! [`xml_reader`](fontoxide_misc::xml_reader), which parses fontoxide's XML
+//! files.
 
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use fontoxide_misc::etree::{Element, XML_NS, tostring};
+use fontoxide_misc::etree::{Element, XML_NS, fromstring, tostring};
 use fontoxide_misc::xml_reader;
 
 fn tmp_dir(name: &str) -> PathBuf {
@@ -31,10 +31,65 @@ fn file_uri(path: &std::path::Path) -> String {
 	}
 }
 
-/// The `xml_ns_attrib_utf_8` case of `test_roundtrip_string`, built instead of
-/// parsed (the other cases have tails, which fontoxide's trees don't have).
 #[test]
 fn test_roundtrip_string() {
+	for (id, xml) in [
+		(
+			"simple_xml_no_indent",
+			concat!(
+				"<root>",
+				"<element key=\"value\">text</element>",
+				"<element>text</element>tail",
+				"<empty-element/>",
+				"</root>"
+			),
+		),
+		(
+			"simple_xml_indent",
+			concat!(
+				"<root>\n",
+				"  <element key=\"value\">text</element>\n",
+				"  <element>text</element>tail\n",
+				"  <empty-element/>\n",
+				"</root>"
+			),
+		),
+		(
+			"xml_ns_attrib_utf_8",
+			concat!(
+				"<axis default=\"400\" maximum=\"1000\" minimum=\"1\" name=\"weight\" tag=\"wght\">",
+				"<labelname xml:lang=\"fa-IR\">قطر</labelname>",
+				"</axis>"
+			),
+		),
+	] {
+		let root = fromstring(xml).expect(id);
+		let result = tostring(&root, false, false).expect(id);
+		assert_eq!(result, xml, "{id}");
+	}
+}
+
+/// Tails, with pretty printing, which does not format mixed content (checked
+/// against lxml).
+#[test]
+fn tails_are_mixed_content() {
+	let root = fromstring("<a><b>x</b>t<c><d/></c></a>").expect("valid");
+	assert_eq!(root.children[0].tail.as_deref(), Some("t"));
+	assert_eq!(
+		tostring(&root, true, false).expect("serializable"),
+		"<a><b>x</b>t<c><d/></c></a>\n"
+	);
+	let root = fromstring("<a><b/><c><d/>t</c></a>").expect("valid");
+	assert_eq!(
+		tostring(&root, true, false).expect("serializable"),
+		"<a>\n  <b/>\n  <c><d/>t</c>\n</a>\n"
+	);
+}
+
+/// The `xml_ns_attrib_utf_8` case of `test_roundtrip_string`, built instead of
+/// parsed.
+#[test]
+fn test_roundtrip_string_built() {
 	let mut root = Element::new("axis");
 	for (k, v) in [
 		("default", "400"),

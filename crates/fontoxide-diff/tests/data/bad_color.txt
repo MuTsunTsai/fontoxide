@@ -1,0 +1,8 @@
+== stderr
+usage: fonttools diff [-h] [-l] [-U LINES] [-t INCLUDE [INCLUDE ...]]
+                      [-x EXCLUDE [EXCLUDE ...]] [--diff DIFF]
+                      [--diff-arg DIFF_ARG] [--color {auto,never,always}]
+                      [--y1 NUMBER] [--y2 NUMBER] [-a] [-b] [-q]
+                      FILE1 FILE2
+fonttools diff: error: argument --color: invalid choice: 'red' (choose from 'auto', 'never', 'always')
+== exit 2

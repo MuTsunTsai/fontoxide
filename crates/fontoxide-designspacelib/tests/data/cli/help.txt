@@ -1,0 +1,10 @@
+usage: designspaceLib [-h] input output
+
+Roundtrip .designspace file through the DesignSpaceDocument class
+
+positional arguments:
+  input
+  output
+
+options:
+  -h, --help  show this help message and exit

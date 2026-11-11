@@ -139,8 +139,10 @@ const CHAR_NEWLINE_: &str = "\r\n";
 const CHAR_SYMBOL_: &str = ",;:-+'{}[]<>()=";
 const CHAR_DIGIT_: &str = "0123456789";
 const CHAR_HEXDIGIT_: &str = "0123456789ABCDEFabcdef";
-const CHAR_NAME_START_: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_+*:.^~!\\";
-const CHAR_NAME_CONTINUATION_: &str =
+/// The characters that can start a name (`Lexer.CHAR_NAME_START_`).
+pub const CHAR_NAME_START_: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_+*:.^~!\\";
+/// The characters that can continue a name (`Lexer.CHAR_NAME_CONTINUATION_`).
+pub const CHAR_NAME_CONTINUATION_: &str =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.+*:^~!/-";
 
 /// `x in s` for an optional character, like `next_char in s` in Python, which

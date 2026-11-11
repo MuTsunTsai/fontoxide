@@ -146,11 +146,14 @@ fn format_points(points: &[Point]) -> String {
 	v.join(" ")
 }
 
-/// Each vector against fontTools, bit for bit. The vectors include the
+/// Each vector against fontTools: bit for bit on the platform the vectors
+/// were made on, approximately elsewhere (see `fontoxide_misc::float_vectors`;
+/// the fitting amplifies the platform differences of `hypot`). The vectors include the
 /// roundtrip of `test_roundtrip` (cu2qu, then qu2cu, at tolerance 1).
 #[test]
 fn differential_vectors() {
-	let vectors = include_str!("data/qu2cu_vectors.txt");
+	let vectors =
+		fontoxide_misc::float_vectors::Vectors::new(include_str!("data/qu2cu_vectors.txt"));
 	let mut failures = Vec::new();
 	for line in vectors.lines() {
 		let fields: Vec<&str> = line.split('\t').collect();
@@ -166,7 +169,7 @@ fn differential_vectors() {
 				v.join(" | ")
 			})
 			.unwrap_or_else(|_| "!E".into());
-		if got != expected {
+		if !vectors.matches(expected, &got) {
 			failures.push(format!("{line}\n  got {got}"));
 		}
 	}

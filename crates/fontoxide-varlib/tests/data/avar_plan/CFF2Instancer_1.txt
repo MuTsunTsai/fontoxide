@@ -1,0 +1,21 @@
+    <axis tag="wght" name="Weight" minimum="100" default="100" maximum="900">
+      <map input="100" output="100"/>
+      <map input="150" output="127.526"/>
+      <map input="200" output="157.882"/>
+      <map input="250" output="191.21"/>
+      <map input="300" output="225.903"/>
+      <map input="350" output="264.163"/>
+      <map input="400" output="304.703"/>
+      <map input="450" output="348.543"/>
+      <map input="500" output="395.211"/>
+      <map input="550" output="445.565"/>
+      <map input="600" output="498.661"/>
+      <map input="650" output="555.997"/>
+      <map input="700" output="616.625"/>
+      <map input="750" output="680.99"/>
+      <map input="800" output="749.669"/>
+      <map input="850" output="822.659"/>
+      <map input="900" output="900"/>
+    </axis>
+== avar
+000100000000000100110000000004000234080004a10c00074c10000a1314000d22180010601c0013e22000179e24001ba528001fe52c00247b3000295434002e7b380033f93c0039d040004000

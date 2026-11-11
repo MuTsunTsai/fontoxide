@@ -4,12 +4,14 @@ description = "Unicode character properties; a port of fontTools.unicodedata"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-license.workspace = true
+license = "MIT AND Unicode-3.0"
 authors.workspace = true
 repository.workspace = true
 homepage.workspace = true
 keywords.workspace = true
 categories.workspace = true
+# The tests need the fontTools submodule and its test data.
+exclude = ["tests/"]
 
 [dependencies]
 

@@ -1,0 +1,3 @@
+== stderr
+[*] ERROR: The external diff tool executable 'nonexistent-diff-tool' was not found.
+== exit 2

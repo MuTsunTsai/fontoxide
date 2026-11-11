@@ -1,0 +1,20 @@
+usage: fonttools pens.statisticsPen [-h] [-y <number>] [-c] [-q]
+                                    [--variations AXIS=LOC]
+                                    font.ttf [glyph-name ...]
+
+Report font glyph shape geometricsl statistics
+
+positional arguments:
+  font.ttf              Font file.
+  glyph-name            Glyph names.
+
+options:
+  -h, --help            show this help message and exit
+  -y <number>           Face index into a collection to open. Zero based.
+  -c, --control         Use the control-box pen instead of the Green therem.
+  -q, --quiet           Only report font-wide statistics.
+  --variations AXIS=LOC
+                        List of space separated locations. A location consist
+                        in the name of a variation axis, followed by '=' and a
+                        number. E.g.: wght=700 wdth=80. The default is the
+                        location of the base master.

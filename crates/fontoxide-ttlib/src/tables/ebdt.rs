@@ -1,4 +1,5 @@
-//! `EBDT` and `CBDT`: bitmap data (`fontTools.ttLib.tables.E_B_D_T_`, `C_B_D_T_`).
+//! `EBDT`, `CBDT` and `bdat`: bitmap data (`fontTools.ttLib.tables.E_B_D_T_`,
+//! `C_B_D_T_`, `_b_d_a_t`).
 
 use std::borrow::Cow;
 use std::collections::{BTreeSet, HashMap};
@@ -561,12 +562,13 @@ struct Export {
 }
 
 /// Embedded (`COLOR` false) or Color (`COLOR` true) Bitmap Data table
-/// (`table_E_B_D_T_`, `table_C_B_D_T_`).
+/// (`table_E_B_D_T_`, `table_C_B_D_T_`), or with `APPLE`, Apple's `bdat`
+/// (`table__b_d_a_t`).
 ///
 /// See <https://learn.microsoft.com/en-us/typography/opentype/spec/ebdt> and
 /// <https://learn.microsoft.com/en-us/typography/opentype/spec/cbdt>.
 #[derive(Debug, Clone, PartialEq, Default)]
-pub struct BitmapData<const COLOR: bool> {
+pub struct BitmapData<const COLOR: bool, const APPLE: bool = false> {
 	/// The table version.
 	pub version: f64,
 	/// All glyphs. Strikes refer to them by index, so that glyphs at the same
@@ -581,6 +583,8 @@ pub struct BitmapData<const COLOR: bool> {
 pub type Ebdt = BitmapData<false>;
 /// `CBDT`.
 pub type Cbdt = BitmapData<true>;
+/// `bdat`: Apple's `EBDT` (`table__b_d_a_t`), with `bloc`.
+pub type Bdat = BitmapData<false, true>;
 
 impl BitmapGlyph {
 	/// The glyph with its data parsed, which fails on malformed data.
@@ -594,16 +598,18 @@ impl BitmapGlyph {
 	}
 }
 
-impl<const COLOR: bool> TableType for BitmapData<COLOR> {
+impl<const COLOR: bool, const APPLE: bool> TableType for BitmapData<COLOR, APPLE> {
 	const TAG: Tag = if COLOR {
 		Tag::new(b"CBDT")
+	} else if APPLE {
+		Tag::new(b"bdat")
 	} else {
 		Tag::new(b"EBDT")
 	};
 
 	fn decompile(data: &[u8], font: &mut Font) -> Result<Self> {
 		let (header, _) = EbdtHeader::unpack2(data)?;
-		let locator = font.require::<BitmapLocator<COLOR>>()?;
+		let locator = font.require::<BitmapLocator<COLOR, APPLE>>()?;
 		let mut seen: HashMap<(u64, u64), usize> = HashMap::new();
 		let mut glyphs = Vec::new();
 		let mut strike_data = Vec::with_capacity(locator.strikes.len());
@@ -636,7 +642,7 @@ impl<const COLOR: bool> TableType for BitmapData<COLOR> {
 	}
 }
 
-impl<const COLOR: bool> BitmapData<COLOR> {
+impl<const COLOR: bool, const APPLE: bool> BitmapData<COLOR, APPLE> {
 	/// `writeData` for a glyph with image data.
 	fn write_image(
 		&self,
@@ -727,7 +733,7 @@ impl<const COLOR: bool> BitmapData<COLOR> {
 	/// The sizes and bit depths for the `row` and `bitwise` formats.
 	fn exports(&self, font: &mut Font) -> Result<HashMap<usize, Export>> {
 		let mut exports = HashMap::new();
-		let locator = font.require::<BitmapLocator<COLOR>>()?;
+		let locator = font.require::<BitmapLocator<COLOR, APPLE>>()?;
 		for (strike, dict) in locator.strikes.iter().zip(&self.strike_data) {
 			let strike = strike.as_ref().ok_or_else(|| missing("indexSubTables"))?;
 			let dict = dict.as_ref().ok_or_else(|| missing("strikeData"))?;
@@ -761,7 +767,7 @@ impl<const COLOR: bool> BitmapData<COLOR> {
 	}
 }
 
-impl<const COLOR: bool> Table for BitmapData<COLOR> {
+impl<const COLOR: bool, const APPLE: bool> Table for BitmapData<COLOR, APPLE> {
 	fn tag(&self) -> Tag {
 		Self::TAG
 	}
@@ -774,7 +780,7 @@ impl<const COLOR: bool> Table for BitmapData<COLOR> {
 		.pack(&mut out)?;
 		// Glyphs that have been written, by entry in `glyphs`.
 		let mut placed: HashMap<usize, (u64, u64)> = HashMap::new();
-		let locator = font.require::<BitmapLocator<COLOR>>()?;
+		let locator = font.require::<BitmapLocator<COLOR, APPLE>>()?;
 		for (strike, dict) in locator.strikes.iter_mut().zip(&self.strike_data) {
 			let strike = strike.as_mut().ok_or_else(|| missing("indexSubTables"))?;
 			for table in &mut strike.index_sub_tables {
@@ -809,7 +815,7 @@ impl<const COLOR: bool> Table for BitmapData<COLOR> {
 		let mut exports = if matches!(font.bitmap_glyph_data_format.as_str(), "row" | "bitwise") {
 			self.exports(font)?
 		} else {
-			font.require::<BitmapLocator<COLOR>>()?;
+			font.require::<BitmapLocator<COLOR, APPLE>>()?;
 			HashMap::new()
 		};
 		writer.simpletag_ordered("header", &[("version", &Value::Float(self.version))]);

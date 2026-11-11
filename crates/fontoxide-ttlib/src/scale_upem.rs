@@ -11,6 +11,10 @@
 //! fontTools fails later, when compiling the table.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::io::Write;
+
+use fontoxide_misc::argparse::{Argument, Command};
+use fontoxide_misc::cli_tools::make_output_file_name;
 
 use fontoxide_misc::round_tools::ot_round;
 
@@ -32,7 +36,7 @@ use crate::tables::tuple_variation::Delta;
 use crate::tables::{
 	Avar, Cff, Cff2, Colr, Fvar, Glyf, Gvar, Head, Hhea, Hmtx, Kern, Os2, Post, Vhea, Vmtx, Vorg,
 };
-use crate::{Error, Font, Result};
+use crate::{Error, Font, ReadOptions, Result, WriteOptions};
 
 /// The scaling of `ScalerVisitor`.
 #[derive(Debug, Clone, Copy)]
@@ -1049,4 +1053,71 @@ fn remap_var_idxes(condition: &mut ot::ConditionTable, mapping: &HashMap<u64, u6
 		_ => {}
 	}
 	Ok(())
+}
+
+const HELP: &str = "\
+usage: fonttools ttLib.scaleUpem [-h] [--output-file path] font new-upem
+
+Change the units-per-EM of fonts
+
+positional arguments:
+  font                Font file.
+  new-upem            New units-per-EM integer value.
+
+options:
+  -h, --help          show this help message and exit
+  --output-file path  Output file.
+";
+
+const COMMAND: Command = Command {
+	prog: "fonttools ttLib.scaleUpem",
+	module: "ttLib.scaleUpem",
+	help: HELP,
+	arguments: &[
+		Argument::help(),
+		Argument::positional("font"),
+		Argument::positional("new-upem"),
+		Argument::option(&["--output-file"]),
+	],
+	required_groups: &[],
+};
+
+/// `fontTools.ttLib.scaleUpem.main`: changes the units-per-EM of a font file.
+/// Returns the exit code.
+///
+/// LENIENT(L55): a new units-per-EM that does not fit `head.unitsPerEm` fails before
+/// scaling; fontTools fails when saving the font.
+pub fn main(args: &[&str]) -> Result<i32> {
+	run(
+		args,
+		&mut std::io::stdout().lock(),
+		&mut std::io::stderr().lock(),
+	)
+}
+
+/// [`main`], writing to `out` and `err`.
+pub fn run(args: &[&str], out: &mut dyn Write, err: &mut dyn Write) -> Result<i32> {
+	let options = match COMMAND.parse_args(args, out, err)? {
+		Ok(options) => options,
+		Err(code) => return Ok(code),
+	};
+	let font_file = options.str("font").unwrap_or_default();
+	let mut font = Font::read(std::fs::read(font_file)?, ReadOptions::default())?;
+	let new_upem = options.str("new-upem").unwrap_or_default();
+	let new_upem = fontoxide_misc::py::parse_int(new_upem).ok_or_else(|| {
+		Error::value(format!(
+			"invalid literal for int() with base 10: {}",
+			fontoxide_misc::py::str_repr(new_upem)
+		))
+	})?;
+	let new_upem = u16::try_from(new_upem)
+		.map_err(|_| Error::Struct("'H' format requires 0 <= number <= 65535".into()))?;
+	let output_file = match options.str("--output-file") {
+		Some(output) => output.to_owned(),
+		None => make_output_file_name(font_file, None, None, true, "-scaled"),
+	};
+	scale_upem(&mut font, new_upem)?;
+	writeln!(out, "Writing {output_file}")?;
+	std::fs::write(&output_file, font.write(&WriteOptions::default())?)?;
+	Ok(0)
 }

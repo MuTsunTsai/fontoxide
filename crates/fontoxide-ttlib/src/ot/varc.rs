@@ -316,6 +316,13 @@ impl VarComponent {
 
 	/// Writes the component (`compile`), appending it to `out`.
 	pub fn compile(&self, out: &mut Vec<u8>) -> Result<()> {
+		self.compile_ext(out, true)
+	}
+
+	/// [`VarComponent::compile`], with the axis values packed for size if
+	/// `optimize_size` (the default), else for speed (`not
+	/// font.cfg[OPTIMIZE_FONT_SPEED]`).
+	pub fn compile_ext(&self, out: &mut Vec<u8>, optimize_size: bool) -> Result<()> {
 		let mut data = Vec::new();
 		let mut flags = self.flags;
 
@@ -347,7 +354,7 @@ impl VarComponent {
 				.iter()
 				.map(|&v| float_to_fixed(v, 14))
 				.collect();
-			data.extend(compile_delta_values(&values, true)?);
+			data.extend(compile_delta_values(&values, optimize_size)?);
 		} else {
 			flags = clear(flags, flags::HAVE_AXES);
 		}
@@ -531,10 +538,10 @@ impl VarCompositeGlyph {
 		Ok(VarCompositeGlyph { components })
 	}
 
-	fn compile(&self) -> Result<Vec<u8>> {
+	fn compile(&self, optimize_size: bool) -> Result<Vec<u8>> {
 		let mut out = Vec::new();
 		for c in &self.components {
-			c.compile(&mut out)?;
+			c.compile_ext(&mut out, optimize_size)?;
 		}
 		Ok(out)
 	}
@@ -681,9 +688,10 @@ pub fn read_tuple_list_offset(r: &mut OtReader<'_>) -> Result<Vec<Vec<i64>>> {
 
 /// `TupleList` (`CFF2Index` of `TupleValues`): writes the tuples.
 pub fn write_tuple_list(w: &mut OtWriter<'_>, tuples: &[Vec<i64>]) -> Result<()> {
+	let optimize_size = !w.optimize_font_speed();
 	let items = tuples
 		.iter()
-		.map(|t| compile_delta_values(t, true))
+		.map(|t| compile_delta_values(t, optimize_size))
 		.collect::<Result<Vec<_>>>()?;
 	write_index(w, &items)
 }
@@ -751,9 +759,10 @@ pub fn write_var_composite_glyphs(
 	w: &mut OtWriter<'_>,
 	glyphs: &[VarCompositeGlyph],
 ) -> Result<()> {
+	let optimize_size = !w.optimize_font_speed();
 	let items = glyphs
 		.iter()
-		.map(VarCompositeGlyph::compile)
+		.map(|g| g.compile(optimize_size))
 		.collect::<Result<Vec<_>>>()?;
 	write_index(w, &items)
 }

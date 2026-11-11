@@ -15,7 +15,6 @@
 
 #![forbid(unsafe_code)]
 
-mod argparse;
 pub mod cli;
 pub mod errors;
 pub mod pens;

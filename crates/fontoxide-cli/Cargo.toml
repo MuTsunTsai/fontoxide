@@ -10,6 +10,8 @@ repository.workspace = true
 homepage.workspace = true
 keywords.workspace = true
 categories.workspace = true
+# The tests need the fontTools submodule and its test data.
+exclude = ["tests/"]
 
 [features]
 default = ["woff", "graphite", "pathops", "repacker"]
@@ -48,6 +50,8 @@ required-features = ["fonttools-names"]
 
 [dependencies]
 fontoxide-cu2qu.workspace = true
+fontoxide-designspacelib.workspace = true
+fontoxide-diff.workspace = true
 fontoxide-fealib.workspace = true
 fontoxide-merge.workspace = true
 fontoxide-misc.workspace = true

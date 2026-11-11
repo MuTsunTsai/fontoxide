@@ -1,0 +1,106 @@
+--- <file1>	<mtime1>
++++ <file2>	<mtime2>
+@@ -2 +2 @@
+-<ttFont sfntVersion="\x00\x01\x00\x00" ttLibVersion="4.68">
++<ttFont sfntVersion="OTTO" ttLibVersion="4.68">
+@@ -18 +18 @@
+-    <checkSumAdjustment value="0x28b4d96e"/>
++    <checkSumAdjustment value="0x4e5f578f"/>
+@@ -23 +23 @@
+-    <modified value="Sun Mar 26 22:22:29 2017"/>
++    <modified value="Sun Mar 26 22:38:12 2017"/>
+@@ -36,2 +36 @@
+-    <!-- Most of this table will be recalculated by the compiler -->
+-    <tableVersion value="0x10000"/>
++    <tableVersion value="0x5000"/>
+@@ -39,13 +37,0 @@
+-    <maxPoints value="8"/>
+-    <maxContours value="2"/>
+-    <maxCompositePoints value="12"/>
+-    <maxCompositeContours value="3"/>
+-    <maxZones value="1"/>
+-    <maxTwilightPoints value="0"/>
+-    <maxStorage value="0"/>
+-    <maxFunctionDefs value="0"/>
+-    <maxInstructionDefs value="0"/>
+-    <maxStackElements value="0"/>
+-    <maxSizeOfInstructions value="0"/>
+-    <maxComponentElements value="3"/>
+-    <maxComponentDepth value="1"/>
+@@ -53,20 +38,0 @@
+-
+-  <fpgm>
+-    <assembly>
+-      SVTCA[0]	/* SetFPVectorToAxis */
+-    </assembly>
+-  </fpgm>
+-
+-  <prep>
+-    <assembly>
+-      SVTCA[0]	/* SetFPVectorToAxis */
+-    </assembly>
+-  </prep>
+-
+-  <cvt>
+-    <cv index="0" value="0"/>
+-  </cvt>
+-
+-  <loca>
+-    <!-- The 'loca' table will be calculated by the compiler -->
+-  </loca>
+@@ -79 +45 @@
+-      Test TTF
++      Test OTF
+@@ -85 +51 @@
+-      FontTools: Test TTF: 2015
++      FontTools: Test OTF: 2015
+@@ -88 +54 @@
+-      Test TTF
++      Test OTF
+@@ -94 +60 @@
+-      TestTTF-Regular
++      TestOTF-Regular
+@@ -97 +63 @@
+-      Test TTF is not a trademark of FontTools.
++      Test OTF is not a trademark of FontTools.
+@@ -121 +87 @@
+-      Test TTF
++      Test OTF
+@@ -127 +93 @@
+-      FontTools: Test TTF: 2015
++      FontTools: Test OTF: 2015
+@@ -130 +96 @@
+-      Test TTF
++      Test OTF
+@@ -136 +102 @@
+-      TestTTF-Regular
++      TestOTF-Regular
+@@ -139 +105 @@
+-      Test TTF is not a trademark of FontTools.
++      Test OTF is not a trademark of FontTools.
+@@ -159 +125 @@
+-    <formatType value="2.0"/>
++    <formatType value="3.0"/>
+@@ -168,14 +133,0 @@
+-    <psNames>
+-      <!-- This file uses unique glyph names based on the information
+-           found in the 'post' table. Since these names might not be unique,
+-           we have to invent artificial names in case of clashes. In order to
+-           be able to retain the original information, we need a name to
+-           ps name mapping for those cases where they differ. That's what
+-           you see below.
+-            -->
+-    </psNames>
+-    <extraNames>
+-      <!-- following are the name that are not taken from the standard Mac glyph order -->
+-      <psName name=".null"/>
+-      <psName name="CR"/>
+-    </extraNames>
+@@ -184,5 +135,0 @@
+-  <gasp>
+-    <gaspRange rangeMaxPPEM="8" rangeGaspBehavior="10"/>
+-    <gaspRange rangeMaxPPEM="65535" rangeGaspBehavior="15"/>
+-  </gasp>
+-
+== stderr
+== exit 1

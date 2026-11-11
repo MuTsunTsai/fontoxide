@@ -1,0 +1,24 @@
+--- <file1>	<mtime1>
++++ <file2>	<mtime2>
+@@ -1,16 +1,16 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+-<ttFont sfntVersion="\x00\x01\x00\x00" ttLibVersion="4.68">
++<ttFont sfntVersion="OTTO" ttLibVersion="4.68">
+ 
+   <head>
+     <!-- Most of this table will be recalculated by the compiler -->
+     <tableVersion value="1.0"/>
+     <fontRevision value="1.0"/>
+-    <checkSumAdjustment value="0x28b4d96e"/>
++    <checkSumAdjustment value="0x4e5f578f"/>
+     <magicNumber value="0x5f0f3cf5"/>
+     <flags value="00000000 00000011"/>
+     <unitsPerEm value="1000"/>
+     <created value="Thu Jun  4 14:29:11 2015"/>
+-    <modified value="Sun Mar 26 22:22:29 2017"/>
++    <modified value="Sun Mar 26 22:38:12 2017"/>
+     <xMin value="50"/>
+     <yMin value="0"/>
+     <xMax value="668"/>
+== stderr
+== exit 1

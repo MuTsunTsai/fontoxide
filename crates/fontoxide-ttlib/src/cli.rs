@@ -53,8 +53,10 @@ fn usage(message: String) -> Error {
 /// font as a font, several as a collection. Returns the exit code.
 ///
 /// fontoxide always reads fonts completely, so `--lazy` only changes which
-/// tables are decompiled, as in fontTools. `--optimize-font-speed` is not
-/// supported: fontoxide has no `OPTIMIZE_FONT_SPEED` option.
+/// tables are decompiled, as in fontTools. `--optimize-font-speed` sets
+/// [`Font::optimize_font_speed`] on the fonts that are not in collections and,
+/// without `-t` or `--no-lazy`, decompiles `glyf`, `GLYF`, `gvar`, `GVAR` and
+/// `VARC` so that they are recompiled.
 pub fn main(args: &[&str]) -> Result<i32> {
 	let mut fonts_args: Vec<&str> = Vec::new();
 	let mut tables: Option<Vec<&str>> = None;
@@ -64,6 +66,7 @@ pub fn main(args: &[&str]) -> Result<i32> {
 	let mut flavor: Option<&str> = None;
 	let mut recalc_timestamp = true;
 	let mut recalc_bboxes = true;
+	let mut optimize_font_speed = false;
 	let mut it = args.iter().copied();
 	let mut only_positional = false;
 	while let Some(arg) = it.next() {
@@ -104,11 +107,7 @@ pub fn main(args: &[&str]) -> Result<i32> {
 			"--no-lazy" if inline.is_none() => lazy = Some(false),
 			"--no-recalc-timestamp" if inline.is_none() => recalc_timestamp = false,
 			"-b" if inline.is_none() => recalc_bboxes = false,
-			"--optimize-font-speed" if inline.is_none() => {
-				return Err(Error::ttlib(
-					"--optimize-font-speed is not supported: fontoxide has no OPTIMIZE_FONT_SPEED option",
-				));
-			}
+			"--optimize-font-speed" if inline.is_none() => optimize_font_speed = true,
 			_ => return Err(usage(format!("unrecognized arguments: {arg}"))),
 		}
 	}
@@ -126,16 +125,23 @@ pub fn main(args: &[&str]) -> Result<i32> {
 	};
 
 	let mut fonts = Vec::new();
+	// The tags of the last font that was not in a collection (`font`, which
+	// outlives the loop in Python).
+	let mut last_font_tags: Option<Vec<Tag>> = None;
 	for path in fonts_args {
 		let data: std::sync::Arc<[u8]> = std::fs::read(path)?.into();
 		let options = ReadOptions {
 			font_number: usize::try_from(font_number).ok(),
 			recalc_bboxes,
 			recalc_timestamp,
+			optimize_font_speed,
 			..Default::default()
 		};
 		match Font::read(data.clone(), options) {
-			Ok(font) => fonts.push(font),
+			Ok(font) => {
+				last_font_tags = Some(font.tags());
+				fonts.push(font);
+			}
 			Err(Error::FileIsCollection(_)) => {
 				fonts.extend(TtCollection::read(data, ReadOptions::default())?.fonts);
 			}
@@ -143,9 +149,26 @@ pub fn main(args: &[&str]) -> Result<i32> {
 		}
 	}
 
+	let speed_tags;
 	let tables = match tables {
 		Some(tables) => tables,
 		None if lazy == Some(false) => vec!["*"],
+		None if optimize_font_speed => {
+			// `{"glyf", "GLYF", "gvar", "GVAR", "VARC"}.intersection(font.keys())`,
+			// with the last font read.
+			// UPSTREAM-BUG(B76): without any font that is not in a collection, `font` is
+			// unbound and fontTools fails.
+			let tags = last_font_tags.ok_or_else(|| {
+				Error::ttlib(
+					"UnboundLocalError: cannot access local variable 'font' where it is not associated with a value",
+				)
+			})?;
+			speed_tags = ["glyf", "GLYF", "gvar", "GVAR", "VARC"]
+				.into_iter()
+				.filter(|t| Tag::from_str_exact(t).is_some_and(|tag| tags.contains(&tag)))
+				.collect::<Vec<_>>();
+			speed_tags
+		}
 		None => Vec::new(),
 	};
 	for font in &mut fonts {

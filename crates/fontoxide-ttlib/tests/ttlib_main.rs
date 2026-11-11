@@ -1,11 +1,12 @@
 //! `Tests/ttLib/main_test.py`: the command line, [`fontoxide_ttlib::cli::main`].
 
-#![allow(non_snake_case)]
+#![allow(non_snake_case, clippy::unwrap_used)]
 
 use std::path::{Path, PathBuf};
 
+use fontoxide_ttlib::beyond64k::{ConvertOptions, upper_tables};
 use fontoxide_ttlib::cli::main;
-use fontoxide_ttlib::{Font, ReadOptions, TtCollection, WriteOptions};
+use fontoxide_ttlib::{Font, ReadOptions, Tag, TtCollection, WriteOptions};
 
 type TestResult = Result<(), Box<dyn std::error::Error>>;
 
@@ -162,13 +163,37 @@ fn test_ttLib_open_multiple_fonts_save_ttcollection() -> TestResult {
 	Ok(())
 }
 
-/// `--optimize-font-speed` is not supported (fontoxide has no
-/// `OPTIMIZE_FONT_SPEED` option), and rejected rather than ignored.
 #[test]
-fn optimize_font_speed_is_rejected() -> TestResult {
-	let tmp = TempDir::new("optimize_font_speed")?;
+fn test_ttLib_open_save_beyond64k_ttfont_optimize_font_speed() -> TestResult {
+	let tmp = TempDir::new("open_save_beyond64k_ttfont_optimize_font_speed")?;
 	let path = ttfont_path(&tmp)?;
-	let output = tmp.join("out.ttf");
-	assert!(main(&["--optimize-font-speed", "-o", &output, &path]).is_err());
+	let mut font = read_font(&path)?;
+	upper_tables(&mut font, &ConvertOptions::default())?;
+	std::fs::write(&path, font.write(&WriteOptions::default())?)?;
+
+	let output = tmp.join("TestTTF-Regular.ttf");
+	assert_eq!(main(&["--optimize-font-speed", "-o", &output, &path])?, 0);
+
+	let mut font = read_font(&output)?;
+	assert!(font.contains(Tag::new(b"GLYF")));
+	assert!(!font.contains(Tag::new(b"glyf")));
+	assert_eq!(
+		glyph_order(&mut font)?,
+		glyph_order(&mut read_font(&path)?)?
+	);
+	// The outlines are packed for speed: larger than the input.
+	let size = |p: &str| std::fs::metadata(p).map(|m| m.len());
+	assert!(size(&path)? < size(&output)?);
+	Ok(())
+}
+
+/// With `--optimize-font-speed` and no font outside a collection, fontTools
+/// fails: the tables to decompile come from an unbound `font`.
+#[test]
+fn optimize_font_speed_with_only_collections() -> TestResult {
+	let tmp = TempDir::new("optimize_font_speed_with_only_collections")?;
+	let path = ttcollection_path(&tmp)?;
+	let error = main(&["--optimize-font-speed", &path]).unwrap_err();
+	assert!(error.to_string().contains("UnboundLocalError"), "{error}");
 	Ok(())
 }

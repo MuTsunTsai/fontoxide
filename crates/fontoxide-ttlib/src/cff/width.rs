@@ -2,9 +2,17 @@
 //!
 //! CFF glyphs whose width equals the Private DICT's `defaultWidthX` value do not need
 //! to specify their width in their charstring, saving bytes. This module determines
-//! the optimum `defaultWidthX` and `nominalWidthX` values for a font.
+//! the optimum `defaultWidthX` and `nominalWidthX` values for a font; [`main`] is its
+//! command line.
 
 use std::collections::BTreeMap;
+use std::io::Write;
+
+use fontoxide_misc::argparse::{Argument, Command, Nargs};
+
+use super::cff2_to_cff::get_hmtx_tag;
+use crate::tables::Hmtx;
+use crate::{Error, Font, ReadOptions, Result};
 
 /// A cumulative sum or maximum of frequencies (`cumSum`).
 struct Cumulative {
@@ -54,11 +62,26 @@ impl Cumulative {
 	}
 }
 
-/// `byteCost`.
-fn byte_cost(widths: &BTreeMap<i64, i64>, default: i64, nominal: i64) -> i64 {
+/// The number of glyphs of each width.
+fn frequencies(widths: &[i64]) -> BTreeMap<i64, i64> {
+	let mut frequencies = BTreeMap::new();
+	for &w in widths {
+		*frequencies.entry(w).or_insert(0) += 1;
+	}
+	frequencies
+}
+
+/// `byteCost`: the number of bytes the widths take in the charstrings with
+/// the default and nominal widths (`None`: no default width).
+pub fn byte_cost(widths: &[i64], default: Option<i64>, nominal: i64) -> i64 {
+	frequency_byte_cost(&frequencies(widths), default, nominal)
+}
+
+/// `byteCost` of the frequencies of the widths.
+fn frequency_byte_cost(widths: &BTreeMap<i64, i64>, default: Option<i64>, nominal: i64) -> i64 {
 	let mut cost = 0;
 	for (&w, &freq) in widths {
-		if w == default {
+		if Some(w) == default {
 			continue;
 		}
 		let diff = (w - nominal).abs();
@@ -76,10 +99,7 @@ fn byte_cost(widths: &BTreeMap<i64, i64>, default: i64, nominal: i64) -> i64 {
 /// `optimizeWidths`: given a list of glyph widths, the best CFF default and nominal
 /// glyph widths. This algorithm is linear in UPEM+numGlyphs.
 pub fn optimize_widths(widths: &[i64]) -> (i64, i64) {
-	let mut frequencies = BTreeMap::new();
-	for &w in widths {
-		*frequencies.entry(w).or_insert(0) += 1;
-	}
+	let frequencies = frequencies(widths);
 	let minw = *frequencies.keys().next().unwrap_or(&0);
 	let maxw = *frequencies.keys().next_back().unwrap_or(&0);
 	let add = |a: i64, b: i64| a + b;
@@ -144,15 +164,103 @@ pub fn optimize_widths(widths: &[i64]) -> (i64, i64) {
 		}
 	}
 	let mut default = ends[0];
-	let mut lowest = byte_cost(&frequencies, default, nominal);
+	let mut lowest = frequency_byte_cost(&frequencies, Some(default), nominal);
 	for &end in &ends[1..] {
-		let cost = byte_cost(&frequencies, end, nominal);
+		let cost = frequency_byte_cost(&frequencies, Some(end), nominal);
 		if cost < lowest {
 			lowest = cost;
 			default = end;
 		}
 	}
 	(default, nominal)
+}
+
+/// `optimizeWidthsBruteforce`: [`optimize_widths`] by trying every pair of
+/// widths. Very slow; only works for the smallest of fonts.
+pub fn optimize_widths_bruteforce(widths: &[i64]) -> (i64, i64) {
+	let frequencies = frequencies(widths);
+	// Maximum number of bytes using default can possibly save
+	let max_default_advantage = 5 * frequencies.values().copied().max().unwrap_or(0);
+	let minw = widths.iter().copied().min().unwrap_or(0);
+	let maxw = widths.iter().copied().max().unwrap_or(0);
+
+	let mut best_cost = widths.len() as i64 * 5 + 1;
+	let (mut best_default, mut best_nominal) = (minw, minw);
+	for nominal in minw..=maxw {
+		if frequency_byte_cost(&frequencies, None, nominal) > best_cost + max_default_advantage {
+			continue;
+		}
+		for default in minw..=maxw {
+			let cost = frequency_byte_cost(&frequencies, Some(default), nominal);
+			if cost < best_cost {
+				best_cost = cost;
+				best_default = default;
+				best_nominal = nominal;
+			}
+		}
+	}
+	(best_default, best_nominal)
+}
+
+const HELP: &str = "usage: fonttools cffLib.width [-h] [-b] FILE [FILE ...]
+
+Calculate optimum defaultWidthX/nominalWidthX values
+
+positional arguments:
+  FILE               Input TTF files
+
+options:
+  -h, --help         show this help message and exit
+  -b, --brute-force  Use brute-force approach (VERY slow)
+";
+
+const COMMAND: Command = Command {
+	prog: "fonttools cffLib.width",
+	module: "cffLib.width",
+	help: HELP,
+	arguments: &[
+		Argument::help(),
+		Argument::positional("FILE").nargs(Nargs::OneOrMore),
+		Argument::flag(&["-b", "--brute-force"]),
+	],
+	required_groups: &[],
+};
+
+/// `fontTools.cffLib.width.main`: prints the optimum `defaultWidthX` and
+/// `nominalWidthX` of each font given on the command line. Returns the exit
+/// code.
+pub fn main(args: &[&str]) -> Result<i32> {
+	run(
+		args,
+		&mut std::io::stdout().lock(),
+		&mut std::io::stderr().lock(),
+	)
+}
+
+/// [`main`], writing to `out` and `err`.
+pub fn run(args: &[&str], out: &mut dyn Write, err: &mut dyn Write) -> Result<i32> {
+	let options = match COMMAND.parse_args(args, out, err)? {
+		Ok(options) => options,
+		Err(code) => return Ok(code),
+	};
+	for fontfile in options.list("FILE") {
+		let mut font = Font::read(std::fs::read(fontfile)?, ReadOptions::default())?;
+		let tag = get_hmtx_tag(&font);
+		let hmtx = font.get_at::<Hmtx>(tag)?.ok_or(Error::TableNotFound(tag))?;
+		let widths: Vec<i64> = hmtx.metrics.values().map(|m| i64::from(m.0)).collect();
+		let (default, nominal) = if options.flag("--brute-force") {
+			optimize_widths_bruteforce(&widths)
+		} else {
+			optimize_widths(&widths)
+		};
+		writeln!(
+			out,
+			"glyphs={} default={default} nominal={nominal} byteCost={}",
+			widths.len(),
+			byte_cost(&widths, Some(default), nominal)
+		)?;
+	}
+	Ok(0)
 }
 
 #[cfg(test)]

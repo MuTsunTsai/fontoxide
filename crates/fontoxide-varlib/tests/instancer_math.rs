@@ -12,10 +12,9 @@ use common::{instantiate, pin};
 use fontoxide_misc::round_tools::ot_round;
 use fontoxide_subset::{Options, Subsetter};
 use fontoxide_ttlib::ot::types as ot;
-use fontoxide_ttlib::ot::var_store;
 use fontoxide_ttlib::tables::{Fvar, Gdef, Math};
 use fontoxide_ttlib::var::VarStoreInstancer;
-use fontoxide_ttlib::{Font, Tag};
+use fontoxide_ttlib::{Font, ReadOptions, Tag, WriteOptions};
 use fontoxide_varlib::instancer::AxisTriple;
 use module_support::*;
 
@@ -199,25 +198,25 @@ fn test_subset_retains_math_only_variation_rows() -> TestResult {
 	check_values(&mut result, 1.0, 1.0)
 }
 
-/// What `varLib.varStore.main` does to a font.
-fn optimize_var_store(font: &mut Font) -> TestResult {
-	let gdef = font.require::<Gdef>()?;
-	let store = gdef.var_store.as_mut().ok_or("no VarStore")?;
-	let map = var_store::optimize(store, true)?;
-	let map = map.into_iter().collect();
-	fontoxide_subset::varstore::remap_device_varidxes(&mut gdef.table, &map)?;
-	let math = font.require::<Math>()?;
-	fontoxide_subset::varstore::remap_device_varidxes(&mut math.table, &map)?;
-	Ok(())
-}
-
 #[test]
 fn test_varstore_cli_remaps_math_indices() -> TestResult {
 	let mut font = font_fixture()?;
-	// `main([source, output])` and `TTFont(output)`: through files in fontTools.
-	let mut source = roundtrip(&mut font)?;
-	optimize_var_store(&mut source)?;
-	let optimized = roundtrip(&mut source)?;
+	let tmp_path = std::env::temp_dir().join(format!(
+		"fontoxide-instancer-math-varstore-cli-{}",
+		std::process::id()
+	));
+	std::fs::create_dir_all(&tmp_path)?;
+	let (source, output) = (tmp_path.join("source.ttf"), tmp_path.join("optimized.ttf"));
+	std::fs::write(&source, font.write(&WriteOptions::default())?)?;
+	let mut out = Vec::new();
+	let code = fontoxide_varlib::var_store::run(
+		&[&source.to_string_lossy(), &output.to_string_lossy()],
+		&mut out,
+		&mut std::io::sink(),
+	)?;
+	assert_eq!(code, 0);
+	let optimized = Font::read(std::fs::read(&output)?, ReadOptions::default())?;
+	let _ = std::fs::remove_dir_all(&tmp_path);
 	let mut result = instance(&optimized, &[("wght", pin(1.0))])?;
 	check_values(&mut result, 1.0, 1.0)
 }

@@ -10,6 +10,8 @@ repository.workspace = true
 homepage.workspace = true
 keywords.workspace = true
 categories.workspace = true
+# The tests need the fontTools submodule and its test data.
+exclude = ["tests/"]
 
 [dependencies]
 fontoxide-misc.workspace = true
@@ -21,7 +23,7 @@ thiserror.workspace = true
 
 [dev-dependencies]
 # The tests compare with fontTools installed with all its extras.
-fontoxide-ttlib = { workspace = true, features = ["woff", "graphite", "pathops", "repacker"] }
+fontoxide-ttlib = { path = "../fontoxide-ttlib", default-features = false, features = ["woff", "graphite", "pathops", "repacker"] }
 
 [lints]
 workspace = true

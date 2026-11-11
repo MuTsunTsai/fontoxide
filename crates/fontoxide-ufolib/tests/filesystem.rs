@@ -86,6 +86,72 @@ fn test_osfs_rejects_traversal() {
 	}
 }
 
+/// A symbolic link to a directory, or `None` if the system does not allow it
+/// (on Windows, creating one needs the developer mode or privileges).
+fn symlink_dir(target: &Path, link: &Path) -> Option<()> {
+	#[cfg(windows)]
+	let result = std::os::windows::fs::symlink_dir(target, link);
+	#[cfg(unix)]
+	let result = std::os::unix::fs::symlink(target, link);
+	#[cfg(not(any(windows, unix)))]
+	let result: std::io::Result<()> = Err(std::io::ErrorKind::Unsupported.into());
+	match result {
+		Ok(()) => Some(()),
+		Err(e) => {
+			eprintln!("skipped: symlinks not supported ({e})");
+			None
+		}
+	}
+}
+
+#[test]
+fn test_osfs_rejects_symlink_out_of_root() {
+	// resolve() expands symlinks, so a link inside the root that points outside
+	// it is rejected as well; this is stricter than pyfilesystem2 and intended.
+	let tmp = tmp_path("symlink");
+	std::fs::create_dir(tmp.join("outside")).expect("mkdir");
+	std::fs::write(tmp.join("outside").join("secret.txt"), b"secret").expect("write");
+	let root = tmp.join("root");
+	make_ufo(&root);
+	if symlink_dir(&tmp.join("outside"), &root.join("link")).is_none() {
+		let _ = std::fs::remove_dir_all(tmp);
+		return;
+	}
+	let reader = UfoReader::new(&root, false).expect("reader");
+	let err = reader
+		.read_bytes_from_path("link/secret.txt")
+		.expect_err("link out of the root");
+	assert!(is_illegal_back_reference(&err), "{err}");
+	// On POSIX, `..` applies after the link is expanded, as in `Path.resolve()`;
+	// on Windows, before (`ntpath.realpath` normalizes first; checked with
+	// fontTools on Windows).
+	let up = reader.read_bytes_from_path("link/../secret.txt");
+	let back = reader.read_bytes_from_path("link/../root/metainfo.plist");
+	if cfg!(windows) {
+		assert_eq!(up.expect("read"), None);
+		assert_eq!(back.expect("read"), None);
+	} else {
+		assert!(is_illegal_back_reference(&up.expect_err("link/..")));
+		assert_eq!(back.expect("read"), Some(METAINFO.to_vec()));
+	}
+
+	// Negative control: a link that stays inside the root is followed.
+	std::fs::create_dir(root.join("inside")).expect("mkdir");
+	std::fs::write(root.join("inside").join("a.txt"), b"hello").expect("write");
+	symlink_dir(&root.join("inside"), &root.join("link2")).expect("symlink");
+	assert_eq!(
+		reader.read_bytes_from_path("link2/a.txt").expect("read"),
+		Some(b"hello".to_vec())
+	);
+	// A relative link out of the root.
+	symlink_dir(Path::new("../outside"), &root.join("link3")).expect("symlink");
+	let err = reader
+		.read_bytes_from_path("link3/secret.txt")
+		.expect_err("relative link");
+	assert!(is_illegal_back_reference(&err), "{err}");
+	let _ = std::fs::remove_dir_all(tmp);
+}
+
 #[test]
 fn test_subfs_rejects_traversal_out_of_root() {
 	// mirrors how ufoLib opens a glyph set: an OSFS rooted at the UFO, a SubFS

@@ -1,0 +1,7 @@
+weight: 0.275296
+weight (perceptual): 0.274746
+width:  0.735
+slant:  -0.0270746
+slant angle:  1.55088
+slant (perceptual):  -0.0367626
+slant (perceptual) angle:  2.10539

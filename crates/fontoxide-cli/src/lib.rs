@@ -4,6 +4,7 @@
 //! |------------------|----------------------|
 //! | [`ttx`]          | `fontTools.ttx`      |
 //! | [`fontoxide_main`], [`fonttools_main`], [`run_module`], [`help`] | `fontTools.__main__`, `fontTools.help` |
+//! | [`statistics_pen`] | `fontTools.pens.statisticsPen.main` |
 //! | [`svg_path_pen`] | `fontTools.pens.svgPathPen.main` |
 //! | [`logging`]      | `fontTools.misc.loggingTools.configLogger` |
 //! | [`getopt`]       | Python's `getopt.gnu_getopt` |
@@ -25,6 +26,7 @@
 
 pub mod getopt;
 pub mod logging;
+pub mod statistics_pen;
 pub mod svg_path_pen;
 pub mod ttx;
 
@@ -52,14 +54,40 @@ pub struct Module {
 /// The modules that `fonttools` can run, sorted by name.
 pub const MODULES: &[Module] = &[
 	Module {
+		name: "cffLib.CFF2ToCFF",
+		description: Some("Convert CFF2 OTF font to CFF OTF font"),
+		main: |a| Ok(fontoxide_ttlib::cff::cff2_to_cff::main(a)?),
+	},
+	Module {
 		name: "cffLib.CFFToCFF2",
 		description: Some("Convert CFF OTF font to CFF2 OTF font"),
 		main: |a| Ok(fontoxide_ttlib::cff::cff_to_cff2::main(a)?),
 	},
 	Module {
+		name: "cffLib.width",
+		description: Some("Calculate optimum defaultWidthX/nominalWidthX values"),
+		main: |a| {
+			// Without arguments, the module runs its doctests.
+			if a.is_empty() {
+				return Ok(0);
+			}
+			Ok(fontoxide_ttlib::cff::width::main(a)?)
+		},
+	},
+	Module {
 		name: "cu2qu",
 		description: Some("Convert a UFO font from cubic to quadratic curves"),
 		main: |a| Ok(fontoxide_cu2qu::cli::main(a)?),
+	},
+	Module {
+		name: "designspaceLib",
+		description: Some("Roundtrip .designspace file through the DesignSpaceDocument class"),
+		main: |a| Ok(fontoxide_designspacelib::cli::main(a)?),
+	},
+	Module {
+		name: "diff",
+		description: Some("Compare two fonts for differences"),
+		main: |a| Ok(fontoxide_diff::main(a)?),
 	},
 	Module {
 		name: "feaLib",
@@ -90,6 +118,11 @@ pub const MODULES: &[Module] = &[
 		main: |a| Ok(fontoxide_otllib::optimize::main(a)?),
 	},
 	Module {
+		name: "pens.statisticsPen",
+		description: Some("Report font glyph shape geometricsl statistics"),
+		main: |a| Ok(statistics_pen::main(a)?),
+	},
+	Module {
 		name: "pens.svgPathPen",
 		description: Some("Generate per-character SVG from font and text"),
 		main: |a| Ok(svg_path_pen::main(a)?),
@@ -115,6 +148,16 @@ pub const MODULES: &[Module] = &[
 		main: |a| Ok(fontoxide_ttlib::beyond64k::main(a)?),
 	},
 	Module {
+		name: "ttLib.removeOverlaps",
+		description: Some("Simplify glyphs in TTFont by merging overlapping contours."),
+		main: |a| Ok(fontoxide_ttlib::remove_overlaps::main(a)?),
+	},
+	Module {
+		name: "ttLib.scaleUpem",
+		description: Some("Change the units-per-EM of fonts"),
+		main: |a| Ok(fontoxide_ttlib::scale_upem::main(a)?),
+	},
+	Module {
 		name: "ttLib.woff2",
 		description: Some("Compress and decompress WOFF2 fonts"),
 		main: |a| Ok(fontoxide_ttlib::woff2_cli::main(a)?),
@@ -130,6 +173,11 @@ pub const MODULES: &[Module] = &[
 		main: |a| Ok(fontoxide_varlib::build::main(a)?),
 	},
 	Module {
+		name: "varLib.avar.build",
+		description: Some("Add `avar` table from designspace file to variable font."),
+		main: |a| Ok(fontoxide_varlib::avar::cli::build_main(a)?),
+	},
+	Module {
 		name: "varLib.avar.map",
 		description: Some("Map variation coordinates through the `avar` table."),
 		main: |a| {
@@ -140,6 +188,26 @@ pub const MODULES: &[Module] = &[
 			}
 			Ok(0)
 		},
+	},
+	Module {
+		name: "varLib.avar.plan",
+		description: Some("Plan the standard axis mappings for a variable font"),
+		main: |a| Ok(fontoxide_varlib::avar::plan::main(a)?),
+	},
+	Module {
+		name: "varLib.avar.unbuild",
+		description: Some("Print `avar` table as a designspace snippet."),
+		main: |a| Ok(fontoxide_varlib::avar::cli::unbuild_main(a)?),
+	},
+	Module {
+		name: "varLib.avarPlanner",
+		description: None,
+		main: |a| Ok(fontoxide_varlib::avar::plan::avar_planner_main(a)?),
+	},
+	Module {
+		name: "varLib.hvar",
+		description: Some("Add `HVAR` table to variable font."),
+		main: |a| Ok(fontoxide_varlib::hvar::main(a)?),
 	},
 	Module {
 		name: "varLib.instancer",
@@ -157,9 +225,31 @@ pub const MODULES: &[Module] = &[
 		main: |a| Ok(fontoxide_varlib::interpolate_layout::main(a)?),
 	},
 	Module {
+		name: "varLib.models",
+		description: Some("Normalize locations on a given designspace"),
+		main: |a| {
+			// Without arguments, the module runs its doctests.
+			if a.is_empty() {
+				return Ok(0);
+			}
+			Ok(fontoxide_varlib::models::main(a)?)
+		},
+	},
+	Module {
 		name: "varLib.mutator",
 		description: Some("Instantiate a variation font"),
 		main: |a| Ok(fontoxide_varlib::mutator::main(a)?),
+	},
+	Module {
+		name: "varLib.varStore",
+		description: Some("Optimize a font's GDEF variation store"),
+		main: |a| {
+			// Without arguments, the module runs its doctests.
+			if a.is_empty() {
+				return Ok(0);
+			}
+			Ok(fontoxide_varlib::var_store::main(a)?)
+		},
 	},
 	Module {
 		name: "voltLib",
@@ -175,45 +265,7 @@ pub const MODULES: &[Module] = &[
 
 /// The command lines of fontTools that fontoxide does not have (yet), with the
 /// descriptions `fonttools help` shows for them.
-pub const MISSING_MODULES: &[(&str, &str)] = &[
-	("cffLib.CFF2ToCFF", "Convert CFF2 OTF font to CFF OTF font"),
-	(
-		"cffLib.width",
-		"Calculate optimum defaultWidthX/nominalWidthX values",
-	),
-	(
-		"designspaceLib",
-		"Roundtrip .designspace file through the DesignSpaceDocument class",
-	),
-	("diff", "Compare two fonts for differences"),
-	(
-		"pens.statisticsPen",
-		"Report font glyph shape geometricsl statistics",
-	),
-	(
-		"ttLib.removeOverlaps",
-		"Simplify glyphs in TTFont by merging overlapping contours.",
-	),
-	("ttLib.scaleUpem", "Change the units-per-EM of fonts"),
-	(
-		"varLib.avar.build",
-		"Add `avar` table from designspace file to variable font.",
-	),
-	(
-		"varLib.avar.plan",
-		"Plan the standard axis mappings for a variable font",
-	),
-	(
-		"varLib.avar.unbuild",
-		"Print `avar` table as a designspace snippet.",
-	),
-	("varLib.hvar", "Add `HVAR` table to variable font."),
-	(
-		"varLib.models",
-		"Normalize locations on a given designspace",
-	),
-	("varLib.varStore", "Optimize a font's GDEF variation store"),
-];
+pub const MISSING_MODULES: &[(&str, &str)] = &[];
 
 /// The module named `name` (without `fontTools.`).
 pub fn find_module(name: &str) -> Option<&'static Module> {

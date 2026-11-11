@@ -1,0 +1,43 @@
+
+glyph: .notdef
+area: 0
+momentX: 0
+momentY: 0
+momentXX: 0
+momentYY: 0
+momentXY: 0
+meanX: 0
+meanY: 0
+varianceX: 0
+varianceY: 0
+stddevX: 0
+stddevY: 0
+covariance: 0
+correlation: 0
+slant: 0
+
+glyph: OE
+area: 0.385246
+momentX: 0.190441
+momentY: 0.134625
+momentXX: 0.117714
+momentYY: 0.0664076
+momentXY: 0.0665883
+meanX: 0.494337
+meanY: 0.349453
+varianceX: 0.0611852
+varianceY: 0.0502602
+stddevX: 0.247356
+stddevY: 0.224188
+covariance: 9.88748e-05
+correlation: 0.001783
+slant: 0.00196726
+
+font:
+weight: 0.262072
+weight (perceptual): 0.261548
+width:  0.735
+slant:  0.000983629
+slant angle:  -0.0563578
+slant (perceptual):  0.00133559
+slant (perceptual) angle:  -0.0765239

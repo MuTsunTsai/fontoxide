@@ -1,0 +1,5 @@
+exit 2
+--- stdout
+--- stderr
+usage: fonttools ttLib.scaleUpem [-h] [--output-file path] font new-upem
+fonttools ttLib.scaleUpem: error: the following arguments are required: new-upem

@@ -3,7 +3,7 @@
 //! | fontoxide      | fontTools                  |
 //! |----------------|----------------------------|
 //! | [`build`]      | `fontTools.varLib` (`build`, `build_many`, `main`...) |
-//! | [`avar`]       | `fontTools.varLib.avar` (`build`, `map`, `unbuild`) |
+//! | [`avar`]       | `fontTools.varLib.avar` (`build`, `map`, `plan`, `unbuild`) |
 //! | [`builder`]    | `fontTools.varLib.builder` |
 //! | [`cff`]        | `fontTools.varLib.cff`     |
 //! | [`errors`]     | `fontTools.varLib.errors` |

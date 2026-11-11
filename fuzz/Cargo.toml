@@ -1,0 +1,71 @@
+[package]
+name = "fontoxide-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+# All subpackages and extras (the default features).
+fontoxide = { path = "../crates/fontoxide" }
+
+# Not a member of the main workspace: it needs nightly and libFuzzer.
+[workspace]
+members = ["."]
+
+[profile.release]
+debug = 1
+# Arithmetic overflow is a finding, as in debug builds.
+overflow-checks = true
+
+[[bin]]
+name = "font_read"
+path = "fuzz_targets/font_read.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "woff2"
+path = "fuzz_targets/woff2.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "ttx_import"
+path = "fuzz_targets/ttx_import.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fealib_parse"
+path = "fuzz_targets/fealib_parse.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "glif"
+path = "fuzz_targets/glif.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "plist"
+path = "fuzz_targets/plist.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "subset"
+path = "fuzz_targets/subset.rs"
+test = false
+doc = false
+bench = false

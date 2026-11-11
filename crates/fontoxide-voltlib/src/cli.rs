@@ -5,6 +5,9 @@ use std::collections::HashSet;
 use std::path::Path;
 
 use fontoxide_fealib::builder::add_open_type_features_from_string;
+use fontoxide_fealib::lexer::{
+	CHAR_NAME_CONTINUATION_ as FEA_NAME_CONTINUATION, CHAR_NAME_START_ as FEA_NAME_START,
+};
 use fontoxide_misc::cli_tools::make_output_file_name;
 use fontoxide_ttlib::tables::Post;
 use fontoxide_ttlib::{Font, ReadOptions, Tag, WriteOptions};
@@ -15,12 +18,6 @@ use crate::volt_to_fea::{TABLES, VoltToFea, log_not_implemented, read_input};
 
 /// The tables that can be built (`SUPPORTED_TABLES`).
 pub const SUPPORTED_TABLES: [&str; 4] = [TABLES[0], TABLES[1], TABLES[2], "cmap"];
-
-/// `Lexer.CHAR_NAME_START_` of feaLib.
-const FEA_NAME_START: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_+*:.^~!\\";
-/// `Lexer.CHAR_NAME_CONTINUATION_` of feaLib.
-const FEA_NAME_CONTINUATION: &str =
-	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.+*:^~!/-";
 
 /// Whether the glyph name is invalid in feature files (`invalid_fea_glyph_name`).
 pub fn invalid_fea_glyph_name(name: &str) -> Result<bool> {

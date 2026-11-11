@@ -1,0 +1,3 @@
+glyphs=2 default=640 nominal=370 byteCost=1
+glyphs=1711 default=0 nominal=604 byteCost=2415
+glyphs=2 default=640 nominal=370 byteCost=1

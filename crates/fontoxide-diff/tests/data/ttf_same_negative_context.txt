@@ -1,0 +1,5 @@
+--- <file1>	<mtime1>
++++ <file1>	<mtime1>
+@@ -16,-1 +16,-1 @@
+== stderr
+== exit 1

@@ -84,6 +84,7 @@ pub fn compile_table<T: OtTable + Any>(
 	let mut hb_first_error_logged = false;
 	loop {
 		let mut graph = WriterGraph::new(tag);
+		graph.optimize_font_speed = font.optimize_font_speed;
 		table.compile(&mut graph.root(), font)?;
 		let result = match state {
 			RepackerState::HbFt => graph.get_all_data_using_harfbuzz(!hb_first_error_logged),

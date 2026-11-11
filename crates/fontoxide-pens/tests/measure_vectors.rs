@@ -1,10 +1,12 @@
 //! A differential check of the measuring pens (moments, statistics, area,
 //! perimeter and bounds) against vectors made by
-//! `tools/reference/pen_fixtures.py`, bit for bit.
+//! `tools/reference/pen_fixtures.py`: bit for bit on the platform they were
+//! made on, approximately elsewhere (see `fontoxide_misc::float_vectors`).
 
 mod common;
 
 use common::ops;
+use fontoxide_misc::float_vectors::Vectors;
 use fontoxide_misc::py::float_repr;
 use fontoxide_pens::area_pen::AreaPen;
 use fontoxide_pens::moments_pen::MomentsPen;
@@ -52,7 +54,7 @@ fn bounds(b: Result<Option<[f64; 4]>>) -> String {
 
 #[test]
 fn measure_vectors() {
-	let vectors = include_str!("data/measure_vectors.txt");
+	let vectors = Vectors::new(include_str!("data/measure_vectors.txt"));
 	let mut failures = Vec::new();
 	for line in vectors.lines() {
 		let f: Vec<&str> = line.split('\t').collect();
@@ -108,7 +110,7 @@ fn measure_vectors() {
 			"control bounds",
 		];
 		for ((name, g), e) in names.iter().zip(&got).zip(&f[1..]) {
-			if g != e {
+			if !vectors.matches(e, g) {
 				failures.push(format!(
 					"{name}: {}\n  expected {e}\n  got      {g}",
 					&f[0][..f[0].len().min(80)]

@@ -1078,15 +1078,29 @@ fn test_roundtrip_DSIG_split_at_XML_parse_buffer_size() -> TestResult {
 	Ok(())
 }
 
-/// `test_main_ttx_compile_optimize_font_speed` is not ported, as fontoxide has
-/// no `OPTIMIZE_FONT_SPEED` option: the option is rejected.
 #[test]
-fn optimize_font_speed_is_rejected() -> TestResult {
+fn test_main_ttx_compile_optimize_font_speed() -> TestResult {
 	let tmp = TempDir::new()?;
-	let out = tmp.join("TestTTF-speed.ttf");
-	let (_, code) =
-		capture_logs(|| ttx::main(&["--optimize-font-speed", "-o", &out, &getpath("TestTTF.ttx")]));
-	assert_eq!(code?, 1);
+	let inpath = getpath("TestTTF.ttx");
+
+	let size_optimized = tmp.join("TestTTF-size.ttf");
+	assert_eq!(ttx::main(&["-q", "-o", &size_optimized, &inpath])?, 0);
+
+	let speed_optimized = tmp.join("TestTTF-speed.ttf");
+	assert_eq!(
+		ttx::main(&[
+			"-q",
+			"--optimize-font-speed",
+			"-o",
+			&speed_optimized,
+			&inpath
+		])?,
+		0
+	);
+
+	// the speed-optimized font should end up larger than the size-optimized one
+	let size = |p: &str| std::fs::metadata(p).map(|m| m.len());
+	assert!(size(&size_optimized)? < size(&speed_optimized)?);
 	Ok(())
 }
 
@@ -1141,6 +1155,7 @@ fn dumps_match_fonttools() -> TestResult {
 		("woff", "TestWOFF.woff", &[]),
 		("woff2", "TestWOFF2.woff2", &[]),
 		("ttc_1", "TestTTC.ttc", &["-y", "1"]),
+		("dfont", "TestDFONT.dfont", &[]),
 	] {
 		let tmp = TempDir::new()?;
 		let stem = font.split('.').next().unwrap_or_default();
@@ -1193,6 +1208,7 @@ fn compiles_match_fonttools() -> TestResult {
 	for (case, font, options) in [
 		("ttf", "TestTTF.ttx", &[][..]),
 		("ttf_b", "TestTTF.ttx", &["-b"]),
+		("ttf_speed", "TestTTF.ttx", &["--optimize-font-speed"]),
 		("ttf_woff", "TestTTF.ttx", &["--flavor", "woff"]),
 		("ttf_woff2", "TestTTF.ttx", &["--flavor", "woff2"]),
 		("otf", "TestOTF.ttx", &[]),

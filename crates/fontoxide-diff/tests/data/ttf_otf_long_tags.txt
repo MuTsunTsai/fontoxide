@@ -1,0 +1,10 @@
+--- <file1>	<mtime1>
++++ <file2>	<mtime2>
+@@ -1,4 +1,4 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+-<ttFont sfntVersion="\x00\x01\x00\x00" ttLibVersion="4.68">
++<ttFont sfntVersion="OTTO" ttLibVersion="4.68">
+ 
+ </ttFont>
+== stderr
+== exit 1

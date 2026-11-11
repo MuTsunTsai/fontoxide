@@ -7,7 +7,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 use fontoxide_ttlib::{Font, ReadOptions};
 
 use crate::BuildOptions;
-use crate::argparse::{self, Kind, Spec, Ty};
+use fontoxide_misc::argparse::{self, Argument, Nargs};
 
 /// The usage message.
 pub const USAGE: &str =
@@ -30,28 +30,11 @@ options:
   --table, -t TABLE  Table to fill (sniffed from input file if not provided)
 ";
 
-const SPECS: &[Spec] = &[
-	Spec {
-		short: Some("-h"),
-		long: "--help",
-		kind: Kind::Flag,
-		group: None,
-		ty: Ty::Str,
-	},
-	Spec {
-		short: Some("-f"),
-		long: "--font",
-		kind: Kind::Value,
-		group: None,
-		ty: Ty::Str,
-	},
-	Spec {
-		short: Some("-t"),
-		long: "--table",
-		kind: Kind::Value,
-		group: None,
-		ty: Ty::Str,
-	},
+const ARGUMENTS: &[Argument] = &[
+	Argument::help(),
+	Argument::option(&["--font", "-f"]),
+	Argument::option(&["--table", "-t"]),
+	Argument::positional("FILE").nargs(Nargs::OneOrMore),
 ];
 
 /// An error of the command line.
@@ -101,15 +84,15 @@ pub fn main_with(
 	font: Option<&mut Font>,
 	out: &mut dyn Write,
 ) -> Result<i32, Error> {
-	let parsed = argparse::parse(args, SPECS, "FILE").map_err(usage)?;
+	let parsed = argparse::parse(args, ARGUMENTS, &[]).map_err(usage)?;
 	if parsed.flag("--help") {
 		out.write_all(
 			fontoxide_misc::cli_tools::program_text(HELP, "fonttools mtiLib", "mtiLib").as_bytes(),
 		)?;
 		return Ok(0);
 	}
-	let table_tag = parsed.value("--table").and_then(|s| s.value.clone());
-	let font_path = parsed.value("--font").and_then(|s| s.value.clone());
+	let table_tag = parsed.str("--table").map(str::to_owned);
+	let font_path = parsed.str("--font").map(str::to_owned);
 
 	let mut own_font;
 	let (font, add_glyphs) = match (font, font_path) {
@@ -131,7 +114,7 @@ pub fn main_with(
 		..BuildOptions::default()
 	};
 
-	for path in &parsed.positional {
+	for path in parsed.list("FILE") {
 		log::debug!("Processing {path}");
 		let data = std::fs::read(path)?;
 		let data = data.strip_prefix(b"\xEF\xBB\xBF").unwrap_or(&data);

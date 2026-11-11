@@ -9,3 +9,7 @@
 # Python reference environment.
 /tools/reference/.venv/
 __pycache__/
+
+# Agent
+.claude/
+CLAUDE.md

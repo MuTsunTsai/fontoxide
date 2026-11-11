@@ -1,9 +1,13 @@
 //! Port of `fontTools.varLib.hvar`: adds `HVAR` or `VVAR` to a variable font from
-//! the phantom points of its `gvar`.
+//! the phantom points of its `gvar`; and its command line (`main`).
 
+use std::io::Write;
+
+use fontoxide_misc::argparse::{Argument, Command};
+use fontoxide_misc::cli_tools::make_output_file_name;
 use fontoxide_ttlib::tables::tuple_variation::Delta;
 use fontoxide_ttlib::tables::{Fvar, Gvar};
-use fontoxide_ttlib::{Font, Tag};
+use fontoxide_ttlib::{Font, ReadOptions, Tag, WriteOptions};
 
 use crate::build::{DeltasAndSupports, MetricsFields, add_vhvar};
 use crate::errors::Result;
@@ -82,4 +86,69 @@ pub fn add_hvar(font: &mut Font) -> Result<()> {
 /// `gvar` phantom points.
 pub fn add_vvar(font: &mut Font) -> Result<()> {
 	add(font, MetricsFields::Vvar, b"VVAR")
+}
+
+const HELP: &str = "usage: fonttools varLib.hvar [-h] [-o OUTPUT_FILE] varfont.ttf
+
+Add `HVAR` table from to variable font.
+
+positional arguments:
+  varfont.ttf           Variable-font file.
+
+options:
+  -h, --help            show this help message and exit
+  -o, --output-file OUTPUT_FILE
+                        Output font file name.
+";
+
+const COMMAND: Command = Command {
+	prog: "fonttools varLib.hvar",
+	module: "varLib.hvar",
+	help: HELP,
+	arguments: &[
+		Argument::help(),
+		Argument::positional("varfont.ttf"),
+		Argument::option(&["-o", "--output-file"]),
+	],
+	required_groups: &[],
+};
+
+/// `main`: adds `HVAR` (and `VVAR`, if the font has `vmtx`) to a variable font,
+/// saving it to `-o` or `<font>.hvar.<ext>`. Returns the exit code: 1 if the
+/// font is not variable.
+pub fn main(args: &[&str]) -> Result<i32> {
+	run(
+		args,
+		&mut std::io::stdout().lock(),
+		&mut std::io::stderr().lock(),
+	)
+}
+
+/// [`main`], writing the help to `out` and the usage errors to `err`.
+pub fn run(args: &[&str], out: &mut dyn Write, err: &mut dyn Write) -> Result<i32> {
+	let options = match COMMAND.parse_args(args, out, err)? {
+		Ok(options) => options,
+		Err(code) => return Ok(code),
+	};
+	let font_path = options.str("varfont.ttf").unwrap_or_default();
+	let mut font = Font::read(std::fs::read(font_path)?, ReadOptions::default())?;
+	if !font.contains(Tag::new(b"fvar")) {
+		log::error!("Not a variable font.");
+		return Ok(1);
+	}
+
+	add_hvar(&mut font)?;
+	if font.contains(Tag::new(b"vmtx")) || font.contains(Tag::new(b"VMTX")) {
+		add_vvar(&mut font)?;
+	}
+
+	let outfile = match options.str("--output-file") {
+		None => make_output_file_name(font_path, None, None, true, ".hvar"),
+		Some(outfile) => outfile.to_owned(),
+	};
+	if !outfile.is_empty() {
+		log::info!("Saving {outfile}");
+		std::fs::write(&outfile, font.write(&WriteOptions::default())?)?;
+	}
+	Ok(0)
 }

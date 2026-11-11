@@ -1,0 +1,3 @@
+== stderr
+[*] ERROR: The file path 'nonexistent.ttf' can not be found.
+== exit 2

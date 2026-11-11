@@ -89,3 +89,35 @@ jobs:
       # to catch, rather than pass them off as matches.
       - name: Parity harness self-test
         run: cargo xtask parity --self-test
+
+  fuzz:
+    runs-on: ubuntu-latest
+    # A short random run: a new finding is reported, but does not fail the
+    # workflow. The regression inputs run in `cargo test` (fuzz_regressions).
+    continue-on-error: true
+    env:
+      # Nightly may warn about lints that stable does not have yet.
+      RUSTFLAGS: ""
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-fuzz
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fuzz
+      # Keeps the targets compiling and catches shallow regressions: each target
+      # runs for a minute from the committed seeds (see fuzz/README.md).
+      - name: Run each fuzz target for 60 s
+        working-directory: fuzz
+        run: |
+          cargo fuzz build -O
+          for target in $(cargo fuzz list); do
+            case $target in
+              font_read | woff2 | subset | ttx_import) max_len=65536 ;;
+              *) max_len=16384 ;;
+            esac
+            cargo fuzz run -O $target -- -max_total_time=60 -max_len=$max_len \
+              -rss_limit_mb=2048 -timeout=10
+          done

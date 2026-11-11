@@ -694,16 +694,29 @@ fn test_extended_mac_encodings() {
 
 #[test]
 fn test_extended_mac_encodings_errors() {
+	use fontoxide_encodings::codecs::Errors;
 	let s = "汉仪彩云体简";
 	let encoded = fontoxide_encodings::codecs::encode("x_mac_simp_chinese_ttx", s).unwrap();
 	let mut name = make_name(encoded.clone(), 123, 1, 25, 0);
-	assert_eq!(name.to_unicode().unwrap(), s);
-	// An incomplete sequence fails to decode strictly. (fontoxide has no other
-	// error handlers.)
+	// first check we round-trip with 'strict'
+	assert_eq!(name.to_unicode_with(Errors::Strict).unwrap(), s);
+
+	// append an incomplete invalid sequence and check that we handle
+	// errors with the requested error handler
 	let mut truncated = encoded;
 	truncated.push(0xba);
 	name.string = NameString::Bytes(truncated);
+	assert_eq!(
+		name.to_unicode_with(Errors::BackslashReplace).unwrap(),
+		format!("{s}\\xba")
+	);
+	assert_eq!(
+		name.to_unicode_with(Errors::Replace).unwrap(),
+		format!("{s}\u{FFFD}")
+	);
 	assert!(name.to_unicode().is_err());
+	// `str(name)`.
+	assert_eq!(name.to_str_lossy(), format!("{s}\\xba"));
 }
 
 #[test]

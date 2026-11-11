@@ -34,6 +34,8 @@ pub struct ReadOptions {
 	pub use_legacy_ttc: bool,
 	/// See [`Font::use_harfbuzz_repacker`].
 	pub use_harfbuzz_repacker: Option<bool>,
+	/// See [`Font::optimize_font_speed`].
+	pub optimize_font_speed: bool,
 }
 
 impl Default for ReadOptions {
@@ -46,6 +48,7 @@ impl Default for ReadOptions {
 			ignore_decompile_errors: false,
 			use_legacy_ttc: false,
 			use_harfbuzz_repacker: None,
+			optimize_font_speed: false,
 		}
 	}
 }
@@ -197,12 +200,18 @@ pub struct Font {
 	pub use_harfbuzz_repacker: Option<bool>,
 	/// How much `otlLib` compacts the class-based PairPos subtables it builds
 	/// (`fontTools.otlLib.optimize.gpos:COMPRESSION_LEVEL`), 0 to 9: 0 (the
-	/// default) does not compact them.
-	pub gpos_compression_level: u8,
+	/// default) does not compact them. See [`Font::set_gpos_compression_level`].
+	gpos_compression_level: u8,
 	/// Whether `otlLib` writes contextual positioning without context as GPOS
 	/// lookup type 7 (`fontTools.otlLib.builder:WRITE_GPOS7`). The default,
 	/// `false`, always writes type 8, for older macOS versions.
 	pub write_gpos7: bool,
+	/// Whether tables are compiled for rendering speed rather than size
+	/// (`fontTools.ttLib:OPTIMIZE_FONT_SPEED`): `glyf` coordinates use the widest
+	/// representation needed by any point of a glyph, and the deltas of `gvar` and
+	/// `VARC` are not packed for size. The default, `false`, optimizes for size.
+	/// Only tables that are decompiled are recompiled, as always.
+	pub optimize_font_speed: bool,
 	/// Set while [`Font::load_post_without_glyph_names`] loads `post`.
 	pub(crate) skip_post_glyph_names: bool,
 }
@@ -231,6 +240,7 @@ impl Clone for Font {
 			use_harfbuzz_repacker: self.use_harfbuzz_repacker,
 			gpos_compression_level: self.gpos_compression_level,
 			write_gpos7: self.write_gpos7,
+			optimize_font_speed: self.optimize_font_speed,
 			skip_post_glyph_names: self.skip_post_glyph_names,
 		}
 	}
@@ -329,6 +339,7 @@ impl Font {
 			use_harfbuzz_repacker: None,
 			gpos_compression_level: 0,
 			write_gpos7: false,
+			optimize_font_speed: false,
 			skip_post_glyph_names: false,
 		}
 	}
@@ -383,6 +394,7 @@ impl Font {
 		font.recalc_timestamp = options.recalc_timestamp;
 		font.ignore_decompile_errors = options.ignore_decompile_errors;
 		font.use_harfbuzz_repacker = options.use_harfbuzz_repacker;
+		font.optimize_font_speed = options.optimize_font_speed;
 		font.reader = Some(reader);
 		Ok(font)
 	}
@@ -607,6 +619,27 @@ impl Font {
 	/// Whether the glyph order is set, or has been derived already.
 	pub fn has_glyph_order(&self) -> bool {
 		self.glyph_order.is_some()
+	}
+
+	/// How much `otlLib` compacts the class-based PairPos subtables it builds
+	/// (`font.cfg["fontTools.otlLib.optimize.gpos:COMPRESSION_LEVEL"]`), 0 to 9:
+	/// 0 (the default) does not compact them.
+	pub fn gpos_compression_level(&self) -> u8 {
+		self.gpos_compression_level
+	}
+
+	/// Sets [`Font::gpos_compression_level`]
+	/// (`font.cfg["fontTools.otlLib.optimize.gpos:COMPRESSION_LEVEL"] = level`).
+	/// A level above 9 is rejected, as the validation of the config option does
+	/// (`ConfigValueValidationError`).
+	pub fn set_gpos_compression_level(&mut self, level: u8) -> Result<()> {
+		if level > 9 {
+			return Err(Error::value(format!(
+				"Config option fontTools.otlLib.optimize.gpos:COMPRESSION_LEVEL: value is invalid (given {level})"
+			)));
+		}
+		self.gpos_compression_level = level;
+		Ok(())
 	}
 
 	/// Sets the glyph order (`setGlyphOrder`).

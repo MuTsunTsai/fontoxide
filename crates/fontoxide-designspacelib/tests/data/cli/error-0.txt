@@ -1,0 +1,3 @@
+2
+usage: designspaceLib [-h] input output
+designspaceLib: error: the following arguments are required: input, output

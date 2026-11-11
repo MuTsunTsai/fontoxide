@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<designspace format="5.1">
+  <axes>
+    <axis tag="wght" name="Weight" minimum="100" maximum="900" default="400">
+      <map input="100" output="100"/>
+      <map input="199.993896484375" output="160.9375"/>
+      <map input="300.006103515625" output="250"/>
+      <map input="400" output="400"/>
+      <map input="500.006103515625" output="489.996337890625"/>
+      <map input="600.01220703125" output="590.00244140625"/>
+      <map input="699.98779296875" output="704.99267578125"/>
+      <map input="799.993896484375" output="794.989013671875"/>
+      <map input="900" output="900"/>
+    </axis>
+    <mappings>
+      <mapping>
+        <input>
+          <dimension name="Weight" xvalue="590.00244140625"/>
+        </input>
+        <output>
+          <dimension name="Weight" xvalue="639.990234375"/>
+        </output>
+      </mapping>
+    </mappings>
+  </axes>
+</designspace>

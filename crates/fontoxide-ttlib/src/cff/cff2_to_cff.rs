@@ -1,5 +1,10 @@
 //! CFF2 to CFF converter (`fontTools.cffLib.CFF2ToCFF`).
 
+use std::io::Write;
+
+use fontoxide_misc::argparse::{Argument, Command};
+use fontoxide_misc::cli_tools::make_output_file_name;
+
 use super::charstring::{T2CharString, Token, subr_bias};
 use super::dict::{Conv, Value, operator};
 use super::font::{
@@ -8,8 +13,9 @@ use super::font::{
 use super::specializer::{SpecializeOptions, specialize_program};
 use super::transforms::private_of;
 use super::width::optimize_widths;
+use crate::remove_overlaps::{RemoveOverlapsOptions, remove_overlaps};
 use crate::tables::{Cff, Cff2, Hmtx, Post};
-use crate::{Error, Font, Result, Tag};
+use crate::{Error, Font, ReadOptions, Result, Tag, WriteOptions};
 
 /// `dictionary changed size during iteration`.
 ///
@@ -410,4 +416,125 @@ pub fn convert_cff2_to_cff(font: &mut Font, update_post_table: bool) -> Result<(
 		}
 	}
 	Ok(())
+}
+
+const HELP: &str = "\
+usage: fonttools cffLib.CFF2ToCFF [-h] [-o OUTPUT.ttf] [--no-recalc-timestamp]
+                                  [--remove-overlaps]
+                                  [--ignore-overlap-errors] [-v | -q]
+                                  INPUT.ttf
+
+Convert a non-variable CFF2 font to CFF.
+
+positional arguments:
+  INPUT.ttf             Input OTF file with CFF table.
+
+options:
+  -h, --help            show this help message and exit
+  -o, --output OUTPUT.ttf
+                        Output instance OTF file (default: INPUT-CFF2.ttf).
+  --no-recalc-timestamp
+                        Don't set the output font's timestamp to the current
+                        time.
+  --remove-overlaps     Merge overlapping contours and components. Requires
+                        skia-pathops
+  --ignore-overlap-errors
+                        Don't crash if the remove-overlaps operation fails for
+                        some glyphs.
+  -v, --verbose         Run more verbosely.
+  -q, --quiet           Turn verbosity off.
+";
+
+const COMMAND: Command = Command {
+	prog: "fonttools cffLib.CFF2ToCFF",
+	module: "cffLib.CFF2ToCFF",
+	help: HELP,
+	arguments: &[
+		Argument::help(),
+		Argument::positional("INPUT.ttf"),
+		Argument::option(&["-o", "--output"]),
+		Argument::flag(&["--no-recalc-timestamp"]),
+		Argument::flag(&["--remove-overlaps"]),
+		Argument::flag(&["--ignore-overlap-errors"]),
+		Argument::flag(&["-v", "--verbose"]).group(0),
+		Argument::flag(&["-q", "--quiet"]).group(0),
+	],
+	required_groups: &[],
+};
+
+/// `fontTools.cffLib.CFF2ToCFF.main`: converts a non-variable CFF2 OTF font file
+/// to a CFF one. Returns the exit code.
+///
+/// `-v` and `-q` are accepted; logging is up to the caller's `log`
+/// implementation. `--remove-overlaps` needs the `pathops` feature (as
+/// fontTools needs skia-pathops): without it, it fails with [`Error::Import`].
+pub fn main(args: &[&str]) -> Result<i32> {
+	run(
+		args,
+		&mut std::io::stdout().lock(),
+		&mut std::io::stderr().lock(),
+	)
+}
+
+/// [`main`], writing to `out` and `err`.
+pub fn run(args: &[&str], out: &mut dyn Write, err: &mut dyn Write) -> Result<i32> {
+	let options = match COMMAND.parse_args(args, out, err)? {
+		Ok(options) => options,
+		Err(code) => return Ok(code),
+	};
+	let infile = options.str("INPUT.ttf").unwrap_or_default();
+	if !std::path::Path::new(infile).is_file() {
+		return Ok(COMMAND.error(err, &format!("No such file '{infile}'"))?);
+	}
+	let outfile = match options.str("--output").filter(|o| !o.is_empty()) {
+		Some(output) => output.to_owned(),
+		None => make_output_file_name(infile, None, None, true, "-CFF"),
+	};
+	let mut font = Font::read(
+		std::fs::read(infile)?,
+		ReadOptions {
+			recalc_timestamp: !options.flag("--no-recalc-timestamp"),
+			recalc_bboxes: false,
+			..Default::default()
+		},
+	)?;
+
+	// UPSTREAM-BUG(B26): the conversion clears `cff2GetGlyphOrder` before the
+	// charstrings of the freshly read font are loaded, which read the FDSelect with
+	// it; the check of a variable font comes first.
+	if font.contains(Tag::new(b"CFF2"))
+		&& font
+			.require::<Cff2>()?
+			.cff
+			.top_dicts
+			.first()
+			.is_some_and(|t| t.var_store.is_none() && t.raw.iter().any(|(k, _)| *k == "FDSelect"))
+	{
+		return Err(Error::ttlib("TypeError: 'NoneType' object is not callable"));
+	}
+	convert_cff2_to_cff(&mut font, true)?;
+
+	if options.flag("--remove-overlaps") {
+		log::debug!("Removing overlaps");
+		let data = font.write(&WriteOptions::default())?;
+		font = Font::read(
+			data,
+			ReadOptions {
+				recalc_timestamp: false,
+				recalc_bboxes: false,
+				..Default::default()
+			},
+		)?;
+		remove_overlaps(
+			&mut font,
+			&RemoveOverlapsOptions {
+				ignore_errors: options.flag("--ignore-overlap-errors"),
+				..Default::default()
+			},
+		)?;
+	}
+
+	log::info!("Saving {outfile}");
+	std::fs::write(&outfile, font.write(&WriteOptions::default())?)?;
+	Ok(0)
 }

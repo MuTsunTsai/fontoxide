@@ -1025,8 +1025,6 @@ mod glyph_component_test {
 		assert!(comp.transform.is_none());
 	}
 
-	/// Only the size-optimized packing is ported: fontoxide has no
-	/// `OPTIMIZE_FONT_SPEED` option and always packs for size.
 	#[test]
 	fn test_compile_for_speed() -> TestResult {
 		let glyph = simple_glyph(
@@ -1050,19 +1048,28 @@ mod glyph_component_test {
 			],
 			&[6],
 		);
-		// `glyph.compile(None)` writes the extended format.
-		let data = compile_in(&glyph, GLYF_UPPER, &["a"])?;
-		let glyph = Glyph::decompile_ext(&data, 1, true)?;
-		assert_eq!(
-			draw(&glyph),
-			[
-				PenOp::MoveTo((0.0, 0.0)),
-				PenOp::CurveTo(vec![(1.0, 0.0), (1.0, 0.0), (1.0, 0.5)]),
-				PenOp::CurveTo(vec![(1.0, 1.0), (1.0, 1.0), (0.5, 1.0)]),
-				PenOp::CurveTo(vec![(0.0, 1.0), (0.0, 1.0), (0.0, 0.0)]),
-				PenOp::ClosePath,
-			]
-		);
+		// `glyph.compile(None, optimizeSize=...)` writes the extended format.
+		let order = order(&["a"]);
+		let mut glyf = Glyf::new_as(GLYF_UPPER);
+		glyf.glyphs.insert(0, glyph);
+		let size_bytes = glyf.glyph_data_ext(0, &order, true, true)?;
+		let speed_bytes = glyf.glyph_data_ext(0, &order, true, false)?;
+
+		assert!(size_bytes.len() < speed_bytes.len());
+
+		for data in [size_bytes, speed_bytes] {
+			let glyph = Glyph::decompile_ext(&data, 1, true)?;
+			assert_eq!(
+				draw(&glyph),
+				[
+					PenOp::MoveTo((0.0, 0.0)),
+					PenOp::CurveTo(vec![(1.0, 0.0), (1.0, 0.0), (1.0, 0.5)]),
+					PenOp::CurveTo(vec![(1.0, 1.0), (1.0, 1.0), (0.5, 1.0)]),
+					PenOp::CurveTo(vec![(0.0, 1.0), (0.0, 1.0), (0.0, 0.0)]),
+					PenOp::ClosePath,
+				]
+			);
+		}
 		Ok(())
 	}
 

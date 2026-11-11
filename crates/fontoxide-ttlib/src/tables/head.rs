@@ -1,4 +1,5 @@
-//! `head`: Font Header table (`fontTools.ttLib.tables._h_e_a_d`).
+//! `head`: Font Header table (`fontTools.ttLib.tables._h_e_a_d`), and `bhed`
+//! (`_b_h_e_d`).
 
 use fontoxide_misc::Tag;
 use fontoxide_misc::fixed_tools::{float_to_fixed_to_str, str_to_fixed_to_float};
@@ -96,25 +97,20 @@ impl Head {
 		self.y_max = crate::binary::fit(y_max, "yMax")?;
 		Ok(())
 	}
-}
 
-impl Table for Head {
-	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		let _ = f;
-		Ok(())
-	}
-
-	fn tag(&self) -> Tag {
-		Self::TAG
-	}
-
-	fn compile(&mut self, font: &mut Font) -> Result<Vec<u8>> {
+	/// `compile`; while the outlines are loaded, `stand_in` makes a copy of the
+	/// table to stand in for it in the font.
+	fn compile_with(
+		&mut self,
+		font: &mut Font,
+		stand_in: fn(&Head) -> Box<dyn Table>,
+	) -> Result<Vec<u8>> {
 		if font.recalc_bboxes {
 			// For TrueType-flavored fonts, the bounding box is set in maxp.recalc().
 			if font.contains(Tag::new(b"VARC")) {
 				// Loading the outlines may need this table, which is detached from the
 				// font while compiling; a copy stands in until that is over.
-				font.insert(self.clone_table());
+				font.insert(stand_in(self));
 				let glyph_set = crate::glyph_set::GlyphSet::new(font)?;
 				let mut pen = fontoxide_pens::BoundsPen::new_bounds(Some(&glyph_set));
 				for name in glyph_set.glyph_order().names() {
@@ -156,6 +152,21 @@ impl Table for Head {
 		let mut data = Vec::with_capacity(Self::SIZE);
 		self.pack(&mut data)?;
 		Ok(data)
+	}
+}
+
+impl Table for Head {
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
+
+	fn tag(&self) -> Tag {
+		Self::TAG
+	}
+
+	fn compile(&mut self, font: &mut Font) -> Result<Vec<u8>> {
+		self.compile_with(font, |head| Box::new(head.clone()))
 	}
 
 	fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
@@ -217,6 +228,60 @@ impl Table for Head {
 			}
 		}
 		Ok(())
+	}
+
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+/// Apple's bitmap-only font header (`table__b_h_e_d`): a `head` table under the
+/// tag `bhed`, with the same binary and TTX forms.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct Bhed(pub Head);
+
+impl std::ops::Deref for Bhed {
+	type Target = Head;
+
+	fn deref(&self) -> &Head {
+		&self.0
+	}
+}
+
+impl std::ops::DerefMut for Bhed {
+	fn deref_mut(&mut self) -> &mut Head {
+		&mut self.0
+	}
+}
+
+impl TableType for Bhed {
+	const TAG: Tag = Tag::new(b"bhed");
+
+	fn decompile(data: &[u8], font: &mut Font) -> Result<Self> {
+		Head::decompile(data, font).map(Bhed)
+	}
+}
+
+impl Table for Bhed {
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		self.0.remap_glyphs(f)
+	}
+
+	fn tag(&self) -> Tag {
+		Self::TAG
+	}
+
+	fn compile(&mut self, font: &mut Font) -> Result<Vec<u8>> {
+		self.0
+			.compile_with(font, |head| Box::new(Bhed(head.clone())))
+	}
+
+	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
+		self.0.to_xml(writer, font)
+	}
+
+	fn from_xml(&mut self, element: &Element, font: &mut Font) -> Result<()> {
+		self.0.from_xml(element, font)
 	}
 
 	fn clone_table(&self) -> Box<dyn Table> {

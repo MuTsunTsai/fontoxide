@@ -11,6 +11,7 @@
 //! | [`colorlib`]         | `fontTools.colorLib` | `colorlib` |
 //! | [`cu2qu`]            | `fontTools.cu2qu` | `cu2qu` |
 //! | [`designspacelib`]   | `fontTools.designspaceLib` | `designspacelib` |
+//! | [`diff`]             | `fontTools.diff` | `diff` |
 //! | [`fealib`]           | `fontTools.feaLib` | `fealib` |
 //! | [`merge`]            | `fontTools.merge` | `merge` |
 //! | [`misc`]             | `fontTools.misc` | always |
@@ -58,6 +59,8 @@ pub use fontoxide_colorlib as colorlib;
 pub use fontoxide_cu2qu as cu2qu;
 #[cfg(feature = "designspacelib")]
 pub use fontoxide_designspacelib as designspacelib;
+#[cfg(feature = "diff")]
+pub use fontoxide_diff as diff;
 #[cfg(feature = "fealib")]
 pub use fontoxide_fealib as fealib;
 #[cfg(feature = "merge")]
