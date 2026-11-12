@@ -1,9 +1,17 @@
 name: CI
 
+# Changes that only touch documentation or editor settings do not run CI. No
+# test reads these files (the crates do not include their READMEs as docs).
 on:
   push:
     branches: [main]
+    paths-ignore: &docs-only
+      - "**.md"
+      - "**/LICENSE*"
+      - ".vscode/**"
+      - ".gitignore"
   pull_request:
+    paths-ignore: *docs-only
 
 env:
   CARGO_TERM_COLOR: always

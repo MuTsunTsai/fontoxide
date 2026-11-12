@@ -403,14 +403,16 @@ source they are marked `UPSTREAM-BUG(Bn)`, with the number in parentheses below.
 - An invalid `VDMX` group raises an `AttributeError` instead of an `AssertionError`.
   (B41)
 - `scaleUpem` by a factor of 2 or 0.5 makes COLRv1 fonts impossible to save (a
-  `PaintScaleUniform` of 2.0). Fix proposed in
-  [fonttools#4405](https://github.com/fonttools/fonttools/pull/4405). (B44)
+  `PaintScaleUniform` of 2.0). Fixed upstream in
+  [fonttools#4405](https://github.com/fonttools/fonttools/pull/4405), merged after 4.68.0.
+  (B44)
 - `reorderGlyphs` on a CFF2 font renames the charstrings by position instead of moving
   them, so glyphs get the wrong outlines; on CID-keyed fonts, `FDSelect` is not
   reordered. (B46, B47)
 - Converting a freshly loaded CFF font to CFF2 (`cffLib.CFFToCFF2`) fails with "CFF2
-  CharStrings must form a glyph-order prefix" for many fonts, a regression in 4.68.0. Fix
-  proposed in [fonttools#4404](https://github.com/fonttools/fonttools/pull/4404). (B51)
+  CharStrings must form a glyph-order prefix" for many fonts, a regression in 4.68.0. Fixed
+  upstream in [fonttools#4404](https://github.com/fonttools/fonttools/pull/4404), merged after
+  4.68.0. (B51)
 - Converting CFF2 to CFF fails with a `TypeError` for fonts with an `FDSelect`, in the
   instancer's `downgrade_cff2` and in `cffLib.CFF2ToCFF`, a regression in 4.68.0; fixed
   upstream in [fonttools#4401](https://github.com/fonttools/fonttools/pull/4401), merged
@@ -537,8 +539,8 @@ fontoxide will follow them when it moves to the fontTools release that contains 
 | [fonttools#4396](https://github.com/fonttools/fonttools/pull/4396): subsetting `Device` tables that point to missing delta sets | merged | already behaves as fixed |
 | [fonttools#4401](https://github.com/fonttools/fonttools/pull/4401): CFF2 to CFF with `FDSelect` | merged | reproduces the bug (B26) |
 | [fonttools#4402](https://github.com/fonttools/fonttools/pull/4402): order of `COLR` v0 layers when subsetting | merged | already behaves as fixed |
-| [fonttools#4404](https://github.com/fonttools/fonttools/pull/4404): CFF to CFF2 on a freshly loaded font | open | reproduces the bug (B51) |
-| [fonttools#4405](https://github.com/fonttools/fonttools/pull/4405): `scaleUpem` of COLRv1 by 2 or 0.5 | open | reproduces the bug (B44) |
+| [fonttools#4404](https://github.com/fonttools/fonttools/pull/4404): CFF to CFF2 on a freshly loaded font | merged | reproduces the bug (B51) |
+| [fonttools#4405](https://github.com/fonttools/fonttools/pull/4405): `scaleUpem` of COLRv1 by 2 or 0.5 | merged | reproduces the bug (B44) |
 
 ## Reporting a difference
 
