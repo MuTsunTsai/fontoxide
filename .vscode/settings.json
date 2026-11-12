@@ -8,5 +8,12 @@
 	"files.exclude": {
 		"target/": true,
 		"corpus/": true
+	},
+	"material-icon-theme.folders.associations": {
+		"artifacts": "examples",
+		"corpus": "attachment",
+		"fuzz": "test",
+		"fuzz_targets": "target",
+		"upstream": "src"
 	}
 }

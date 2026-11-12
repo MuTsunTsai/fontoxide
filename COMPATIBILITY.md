@@ -428,18 +428,21 @@ source they are marked `UPSTREAM-BUG(Bn)`, with the number in parentheses below.
 
 - `EBDT`/`CBDT` glyphs of format 8 or 9 keep their old component glyph IDs, and the
   components are not added to the closure. `CBDT` is kept by default, so default options
-  can trigger this. (B22)
+  can trigger this. Reported upstream in
+  [fonttools#4413](https://github.com/fonttools/fonttools/issues/4413). (B22)
 - `--recalc-max-context` fails on fonts with `OS/2` version 0 or 1. (B23)
 
 **varLib**
 
 - featureVars on FeatureVariations 1.1: the font is modified (lookups inserted, features
   sorted, `LookupVariationRecord`s left pointing to the old indices) before the error is
-  raised. (B28, B29)
+  raised. Reported upstream in
+  [fonttools#4414](https://github.com/fonttools/fonttools/issues/4414). (B28, B29)
 - interpolatable: the "try harder" start point check uses the point count of the wrong
   contour when contours were reordered. (B43)
 - CFF2 masters with different hint masks build without the "Hintmask values cannot
-  differ" error; the default master's masks are used. (B49)
+  differ" error; the default master's masks are used. Reported upstream in
+  [fonttools#4415](https://github.com/fonttools/fonttools/issues/4415). (B49)
 - `varLib.avarPlanner` (the old name of `varLib.avar.plan`) exits with status 0 on
   failure. (B75)
 
@@ -519,8 +522,8 @@ Where fontTools crashes or hangs, fontoxide does the sensible thing instead:
 
 - `scaleUpem` skips `kern` subtables of unknown formats and glyph components positioned
   by points (fontTools: `AttributeError`). (B45)
-- `reorderGlyphs` skips null coverages, as in most `MATH` tables (fontTools:
-  `AttributeError`). (B48)
+- `reorderGlyphs` skips null coverages, as in `MATH` tables built without extended
+  shapes or horizontal variants (fontTools: `AttributeError`). (B48)
 - `save_xml` without the version and with split output still writes the version
   (fontTools: `UnboundLocalError`). (B52)
 - mtiLib: a mixed-case `Subtable End` is an error (fontTools loops forever). (B59)
@@ -541,6 +544,9 @@ fontoxide will follow them when it moves to the fontTools release that contains 
 | [fonttools#4402](https://github.com/fonttools/fonttools/pull/4402): order of `COLR` v0 layers when subsetting | merged | already behaves as fixed |
 | [fonttools#4404](https://github.com/fonttools/fonttools/pull/4404): CFF to CFF2 on a freshly loaded font | merged | reproduces the bug (B51) |
 | [fonttools#4405](https://github.com/fonttools/fonttools/pull/4405): `scaleUpem` of COLRv1 by 2 or 0.5 | merged | reproduces the bug (B44) |
+| [fonttools#4410](https://github.com/fonttools/fonttools/pull/4410): unknown charstring operators raise instead of truncating the charstring | open | reproduces the bug (B15) |
+| [fonttools#4411](https://github.com/fonttools/fonttools/pull/4411): `reorderGlyphs` on CFF2 fonts | open | reproduces the bug (B46) |
+| [fonttools#4412](https://github.com/fonttools/fonttools/pull/4412): `reorderGlyphs` with null coverages | open | already behaves as fixed |
 
 ## Reporting a difference
 

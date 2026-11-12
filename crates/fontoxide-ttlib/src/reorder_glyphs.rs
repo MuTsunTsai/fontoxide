@@ -32,8 +32,9 @@ fn set_repr(names: &BTreeSet<&str>) -> String {
 /// (`ReorderCoverage` with a `parallel_list_attr`).
 fn sort_coverage<T>(coverage: &mut Option<Box<Coverage>>, parallel: &mut Vec<T>) -> Result<()> {
 	// UPSTREAM-BUG(B48): fontTools fails with an AttributeError on a null coverage
-	// offset (as the `ExtendedShapeCoverage` or `HorizGlyphCoverage` of most
-	// MATH tables); here it is skipped.
+	// offset (as the `ExtendedShapeCoverage` or `HorizGlyphCoverage` of a MATH
+	// table built without extended shapes or horizontal variants); here it is
+	// skipped.
 	let Some(coverage) = coverage else {
 		return Ok(());
 	};
