@@ -352,7 +352,8 @@ fn compile_action(t: &AatAction, index: Option<&ActionIndex>) -> Result<Vec<u8>>
 				*index
 					.ligatures
 					.get(&key)
-					.ok_or_else(|| Error::ttlib("KeyError: ligature actions"))? as i64
+					.ok_or_else(|| Error::ttlib("KeyError: ligature actions"))?
+					as i64
 			};
 			out.extend_from_slice(&ushort(at)?.to_be_bytes());
 		}
@@ -376,7 +377,8 @@ fn compile_action(t: &AatAction, index: Option<&ActionIndex>) -> Result<Vec<u8>>
 					*index
 						.insertions
 						.get(action)
-						.ok_or_else(|| Error::ttlib("KeyError: insertion action"))? as i64
+						.ok_or_else(|| Error::ttlib("KeyError: insertion action"))?
+						as i64
 				};
 				out.extend_from_slice(&ushort(at)?.to_be_bytes());
 			}

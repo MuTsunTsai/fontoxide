@@ -135,10 +135,11 @@ pub fn approx_segments(a: &[PenOp], b: &[PenOp]) -> bool {
 					(Some(p), Some(q)) => close(*p, *q),
 					(None, None) => true,
 					_ => false,
-				}) && match (x, y) {
-				(PenOp::AddComponent(n, t), PenOp::AddComponent(m, u)) => n == m && t == u,
-				_ => true,
-			}
+				})
+				&& match (x, y) {
+					(PenOp::AddComponent(n, t), PenOp::AddComponent(m, u)) => n == m && t == u,
+					_ => true,
+				}
 		})
 }
 

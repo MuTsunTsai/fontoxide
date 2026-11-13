@@ -84,7 +84,9 @@ program_table!(
 	/// programs, run once when the font is first used.
 	///
 	/// See <https://learn.microsoft.com/en-us/typography/opentype/spec/fpgm>.
-	Fpgm, b"fpgm", "table__f_p_g_m"
+	Fpgm,
+	b"fpgm",
+	"table__f_p_g_m"
 );
 
 program_table!(
@@ -92,5 +94,7 @@ program_table!(
 	/// or transformation changes.
 	///
 	/// See <https://learn.microsoft.com/en-us/typography/opentype/spec/prep>.
-	Prep, b"prep", "table__p_r_e_p"
+	Prep,
+	b"prep",
+	"table__p_r_e_p"
 );

@@ -840,7 +840,8 @@ impl Glyph {
 				}
 				*flags
 					.get_mut(j)
-					.ok_or_else(|| Error::ttlib("IndexError: bytearray index out of range"))? = flag;
+					.ok_or_else(|| Error::ttlib("IndexError: bytearray index out of range"))? =
+					flag;
 				j += 1;
 			}
 			if j >= count {

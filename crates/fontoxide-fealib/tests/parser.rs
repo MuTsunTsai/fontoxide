@@ -2818,8 +2818,8 @@ fn test_valuerecord_scoping() -> Result<()> {
 	)?;
 	let foo = get!(&doc.statements[0], ValueRecordDefinition);
 	assert_eq!(opt_int(&foo.value.x_advance), Some(789));
-	for i in 1..3 {
-		let v = get!(&stmts(&doc.statements[i])[0], ValueRecordDefinition);
+	for statement in &doc.statements[1..3] {
+		let v = get!(&stmts(statement)[0], ValueRecordDefinition);
 		assert_eq!(opt_int(&v.value.x_advance), Some(789));
 	}
 	Ok(())

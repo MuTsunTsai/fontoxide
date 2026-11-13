@@ -489,7 +489,8 @@ impl Fs {
 					Ok(()) => {}
 					Err(e)
 						if e.kind() == std::io::ErrorKind::AlreadyExists
-							&& exist_ok && p.is_dir() => {}
+							&& exist_ok
+							&& p.is_dir() => {}
 					Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
 						return Err(FsError::Exists(format!("{} already exists", py_repr(path))));
 					}

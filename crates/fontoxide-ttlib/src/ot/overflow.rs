@@ -453,7 +453,8 @@ fn split_mapping<V: Clone>(
 		Some(name) if name == set_name => {
 			record.item_index.ok_or_else(|| {
 				Error::ttlib("TypeError: unsupported operand type(s) for -: 'NoneType' and 'int'")
-			})? as i64 - 1
+			})? as i64
+				- 1
 		}
 		_ => return Err(Error::ttlib("UnboundLocalError: 'newLen'")),
 	};

@@ -34,7 +34,8 @@ fn parse_hex(s: &str) -> Result<u32> {
 		&& bytes.iter().enumerate().all(|(i, &b)| {
 			b.is_ascii_hexdigit()
 				|| (b == b'_'
-					&& i > 0 && bytes[i - 1].is_ascii_hexdigit()
+					&& i > 0
+					&& bytes[i - 1].is_ascii_hexdigit()
 					&& bytes.get(i + 1).is_some_and(u8::is_ascii_hexdigit))
 		});
 	if !valid {

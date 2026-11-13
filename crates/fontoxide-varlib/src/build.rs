@@ -1941,7 +1941,8 @@ pub fn build_many(
 					let found = designspace.sources.iter().enumerate().position(|(i, o)| {
 						!used[i]
 							&& o.filename == s.filename
-							&& o.path == s.path && o.name == s.name
+							&& o.path == s.path
+							&& o.name == s.name
 							&& o.layer_name == s.layer_name
 					});
 					if let Some(i) = found {

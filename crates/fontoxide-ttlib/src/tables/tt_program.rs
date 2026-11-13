@@ -226,10 +226,14 @@ fn join_lines(text: &str) -> String {
 		let is_break = matches!(
 			c,
 			'\n' | '\r'
-				| '\x0b' | '\x0c'
-				| '\x1c' | '\x1d'
-				| '\x1e' | '\u{85}'
-				| '\u{2028}' | '\u{2029}'
+				| '\x0b'
+				| '\x0c'
+				| '\x1c'
+				| '\x1d'
+				| '\x1e'
+				| '\u{85}'
+				| '\u{2028}'
+				| '\u{2029}'
 		);
 		if is_break {
 			lines.push(&text[start..i]);

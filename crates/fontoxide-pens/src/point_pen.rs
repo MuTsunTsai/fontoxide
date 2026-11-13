@@ -173,7 +173,8 @@ impl<'p> PointToSegmentPen<'p> {
 					// is drawn to keep the duplicate point (fontmake#572).
 					if i + 1 != n_segments
 						|| self.output_implied_closing_line
-						|| !closed || pt == last_pt
+						|| !closed
+						|| pt == last_pt
 					{
 						if let Some(pt) = pt {
 							pen.line_to(pt)?;

@@ -537,12 +537,16 @@ impl Pass {
 		let nr = nr as i64;
 		let total = o_rule_map[o_rule_map.len() - 1];
 		self.fsm_offset = 32
-			+ 8 + pass_ranges.len() as i64 * 6
+			+ 8
+			+ pass_ranges.len() as i64 * 6
 			+ o_rule_map.len() as i64 * 2
 			+ 2 * total
-			+ 2 + 2 * self.start_states.len() as i64
-			+ 3 * nr + 3
-			+ 4 * nr + 4;
+			+ 2
+			+ 2 * self.start_states.len() as i64
+			+ 3 * nr
+			+ 3
+			+ 4 * nr
+			+ 4;
 		self.pc_code = self.fsm_offset + 2 * self.num_transitional * self.num_columns + 1 + base;
 		self.rc_code = self.pc_code + self.pass_constraints.len() as i64;
 		self.a_code = self.rc_code + constraint_code.len() as i64;
@@ -1224,10 +1228,15 @@ impl SilfSubtable {
 		data = py_tail(data, 8 + 6 * num_pseudo);
 		let mut currpos = 20
 			+ 8 * s.num_j_levels
-			+ 10 + 2 * ncf
-			+ 1 + 1 + 4 * nst
-			+ 6 + 4 * np
-			+ 8 + 6 * num_pseudo;
+			+ 10
+			+ 2 * ncf
+			+ 1
+			+ 1
+			+ 4 * nst
+			+ 6
+			+ 4 * np
+			+ 8
+			+ 6 * num_pseudo;
 		if version >= 3.0 {
 			currpos += 8;
 		}

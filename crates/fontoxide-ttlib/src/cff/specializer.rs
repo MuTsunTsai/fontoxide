@@ -210,10 +210,14 @@ pub fn program_to_commands(
 			&& matches!(
 				op,
 				"hstem"
-					| "hstemhm" | "vstem"
-					| "vstemhm" | "cntrmask"
-					| "hintmask" | "hmoveto"
-					| "vmoveto" | "rmoveto"
+					| "hstemhm"
+					| "vstem"
+					| "vstemhm"
+					| "cntrmask"
+					| "hintmask"
+					| "hmoveto"
+					| "vmoveto"
+					| "rmoveto"
 					| "endchar"
 			) {
 			seen_width_op = true;

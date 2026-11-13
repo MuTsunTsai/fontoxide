@@ -90,91 +90,135 @@ macro_rules! otl_table {
 
 otl_table!(
 	/// Baseline table.
-	Base, b"BASE", ot::BASE
+	Base,
+	b"BASE",
+	ot::BASE
 );
 otl_table!(
 	/// Glyph Definition table.
-	Gdef, b"GDEF", ot::GDEF
+	Gdef,
+	b"GDEF",
+	ot::GDEF
 );
 otl_table!(
 	/// Glyph Positioning table.
-	Gpos, b"GPOS", ot::GPOS
+	Gpos,
+	b"GPOS",
+	ot::GPOS
 );
 otl_table!(
 	/// Glyph Substitution table.
-	Gsub, b"GSUB", ot::GSUB
+	Gsub,
+	b"GSUB",
+	ot::GSUB
 );
 otl_table!(
 	/// Horizontal Metrics Variations table.
-	Hvar, b"HVAR", ot::HVAR
+	Hvar,
+	b"HVAR",
+	ot::HVAR
 );
 otl_table!(
 	/// Justification table.
-	Jstf, b"JSTF", ot::JSTF
+	Jstf,
+	b"JSTF",
+	ot::JSTF
 );
 otl_table!(
 	/// Mathematical Typesetting table.
-	Math, b"MATH", ot::MATH
+	Math,
+	b"MATH",
+	ot::MATH
 );
 otl_table!(
 	/// Metrics Variations table.
-	Mvar, b"MVAR", ot::MVAR
+	Mvar,
+	b"MVAR",
+	ot::MVAR
 );
 otl_table!(
 	/// Style Attributes table.
-	Stat, b"STAT", ot::STAT
+	Stat,
+	b"STAT",
+	ot::STAT
 );
 otl_table!(
 	/// VTT character group data.
-	Tsic, b"TSIC", ot::TSIC
+	Tsic,
+	b"TSIC",
+	ot::TSIC
 );
 otl_table!(
 	/// Variable Composites table.
-	Varc, b"VARC", ot::VARC
+	Varc,
+	b"VARC",
+	ot::VARC
 );
 otl_table!(
 	/// Vertical Metrics Variations table.
-	Vvar, b"VVAR", ot::VVAR
+	Vvar,
+	b"VVAR",
+	ot::VVAR
 );
 otl_table!(
 	/// AAT anchor point table.
-	Ankr, b"ankr", ot::Ankr
+	Ankr,
+	b"ankr",
+	ot::Ankr
 );
 otl_table!(
 	/// AAT baseline table.
-	Bsln, b"bsln", ot::Bsln
+	Bsln,
+	b"bsln",
+	ot::Bsln
 );
 otl_table!(
 	/// AAT CID to glyph mapping table.
-	Cidg, b"cidg", ot::Cidg
+	Cidg,
+	b"cidg",
+	ot::Cidg
 );
 otl_table!(
 	/// AAT feature name table.
-	Feat, b"feat", ot::Feat
+	Feat,
+	b"feat",
+	ot::Feat
 );
 otl_table!(
 	/// AAT glyph to CID mapping table.
-	Gcid, b"gcid", ot::Gcid
+	Gcid,
+	b"gcid",
+	ot::Gcid
 );
 otl_table!(
 	/// AAT ligature caret table.
-	Lcar, b"lcar", ot::Lcar
+	Lcar,
+	b"lcar",
+	ot::Lcar
 );
 otl_table!(
 	/// AAT glyph metamorphosis table.
-	Mort, b"mort", ot::Mort
+	Mort,
+	b"mort",
+	ot::Mort
 );
 otl_table!(
 	/// AAT extended glyph metamorphosis table.
-	Morx, b"morx", ot::Morx
+	Morx,
+	b"morx",
+	ot::Morx
 );
 otl_table!(
 	/// AAT optical bounds table.
-	Opbd, b"opbd", ot::Opbd
+	Opbd,
+	b"opbd",
+	ot::Opbd
 );
 otl_table!(
 	/// AAT glyph properties table.
-	Prop, b"prop", ot::Prop
+	Prop,
+	b"prop",
+	ot::Prop
 );
 
 // UPSTREAM-BUG(B8): the patch map is format-switching, but `toXML2` of the

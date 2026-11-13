@@ -70,7 +70,8 @@ impl Random {
 			for k in 0..624 {
 				let y = (self.state[k] & 0x8000_0000) | (self.state[(k + 1) % 624] & 0x7FFF_FFFF);
 				self.state[k] = self.state[(k + 397) % 624]
-					^ (y >> 1) ^ if y & 1 != 0 { 0x9908_B0DF } else { 0 };
+					^ (y >> 1)
+					^ if y & 1 != 0 { 0x9908_B0DF } else { 0 };
 			}
 			self.index = 0;
 		}

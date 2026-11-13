@@ -1584,7 +1584,8 @@ impl Encoder {
 			} else if abs_x < 65 && abs_y < 65 {
 				flag(
 					on_curve_bit
-						+ 20 + ((abs_x - 1) & 0x30)
+						+ 20
+						+ ((abs_x - 1) & 0x30)
 						+ (((abs_y - 1) & 0x30) >> 2)
 						+ xy_sign_bits,
 				);
@@ -1593,7 +1594,8 @@ impl Encoder {
 			} else if abs_x < 769 && abs_y < 769 {
 				flag(
 					on_curve_bit
-						+ 84 + 12 * (((abs_x - 1) & 0x300) >> 8)
+						+ 84
+						+ 12 * (((abs_x - 1) & 0x300) >> 8)
 						+ (((abs_y - 1) & 0x300) >> 6)
 						+ xy_sign_bits,
 				);

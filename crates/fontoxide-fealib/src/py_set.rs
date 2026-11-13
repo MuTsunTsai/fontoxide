@@ -111,9 +111,9 @@ impl IntSet {
 				return;
 			}
 			if i + LINEAR_PROBES <= mask {
-				for j in i + 1..=i + LINEAR_PROBES {
-					if self.table[j].is_none() {
-						self.table[j] = Some((key, hash));
+				for slot in &mut self.table[i + 1..=i + LINEAR_PROBES] {
+					if slot.is_none() {
+						*slot = Some((key, hash));
 						return;
 					}
 				}

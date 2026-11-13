@@ -240,14 +240,28 @@ metrics_table!(
 	/// Horizontal Metrics table (`table__h_m_t_x`).
 	///
 	/// See <https://learn.microsoft.com/en-us/typography/opentype/spec/hmtx>.
-	Hmtx, b"hmtx", b"HMTX", Hhea, number_of_h_metrics, "numberOfHMetrics", "width", "lsb"
+	Hmtx,
+	b"hmtx",
+	b"HMTX",
+	Hhea,
+	number_of_h_metrics,
+	"numberOfHMetrics",
+	"width",
+	"lsb"
 );
 
 metrics_table!(
 	/// Vertical Metrics table (`table__v_m_t_x`).
 	///
 	/// See <https://learn.microsoft.com/en-us/typography/opentype/spec/vmtx>.
-	Vmtx, b"vmtx", b"VMTX", Vhea, number_of_v_metrics, "numberOfVMetrics", "height", "tsb"
+	Vmtx,
+	b"vmtx",
+	b"VMTX",
+	Vhea,
+	number_of_v_metrics,
+	"numberOfVMetrics",
+	"height",
+	"tsb"
 );
 
 /// Results of `hhea.recalc` / `vhea.recalc`.
