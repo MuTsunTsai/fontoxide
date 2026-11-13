@@ -8,7 +8,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::binary::WriteBytes;
 use crate::sstruct::{I16, U16, U16Wide, U32, eval};
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::{Error, Font, Result};
 
 crate::sstruct! {
@@ -201,6 +201,12 @@ macro_rules! header_table {
 				Ok(data)
 			}
 
+			fn clone_table(&self) -> Box<dyn Table> {
+				Box::new(self.clone())
+			}
+		}
+
+		impl TableXml for $ty {
 			fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 				for (name, value) in self.values() {
 					if name == "tableVersion" {
@@ -238,10 +244,6 @@ macro_rules! header_table {
 					)));
 				}
 				Ok(())
-			}
-
-			fn clone_table(&self) -> Box<dyn Table> {
-				Box::new(self.clone())
 			}
 		}
 	};

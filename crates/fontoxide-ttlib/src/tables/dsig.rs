@@ -6,7 +6,7 @@ use fontoxide_misc::xml_reader::{Content, Element};
 use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::binary::{Reader, WriteBytes};
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::tables::eblc::{clip, int_attr};
 use crate::{Error, Font, Result};
 
@@ -172,6 +172,16 @@ impl Table for Dsig {
 		Ok(headers)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+
+	fn remap_glyphs(&mut self, _f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		Ok(())
+	}
+}
+
+impl TableXml for Dsig {
 	fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 		writer.comment("note that the Digital Signature will be invalid after recompilation!");
 		writer.newline();
@@ -227,14 +237,6 @@ impl Table for Dsig {
 			}
 			_ => {}
 		}
-		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
-
-	fn remap_glyphs(&mut self, _f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		Ok(())
 	}
 }

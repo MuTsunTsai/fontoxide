@@ -9,7 +9,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 use crate::binary::{Reader, WriteBytes};
 use crate::generated::standard_glyph_order::STANDARD_GLYPH_ORDER;
 use crate::sstruct::{F16Dot16, I16, U32, eval};
-use crate::table::{Table, TableType, read_hex};
+use crate::table::{Table, TableType, TableXml, read_hex};
 use crate::{Error, Font, Result};
 
 crate::sstruct! {
@@ -364,6 +364,12 @@ impl Table for Post {
 		Ok(data)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Post {
 	fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 		for (name, value) in self.header.values() {
 			writer.simpletag(name, &[("value", &value)]);
@@ -447,10 +453,6 @@ impl Table for Post {
 			}
 		}
 		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
 	}
 }
 

@@ -134,7 +134,7 @@ pub fn main_with(
 		let name = tag.as_string();
 		writer.begintag(&name, &[]);
 		writer.newline();
-		decompiled.to_xml(&mut writer, font)?;
+		fontoxide_ttlib::table::table_to_xml(decompiled.as_ref(), &mut writer, font)?;
 		writer.endtag(&name);
 		writer.newline();
 		out.write_all(writer.into_string().as_bytes())?;

@@ -33,20 +33,15 @@ impl<T: Any> AsAny for T {
 /// modify each other: `hmtx` needs `hhea` to decompile, compiling `maxp` updates the
 /// bounding box in `head`, and so on. While one of these methods runs, the table
 /// itself is detached from the font.
-pub trait Table: AsAny + fmt::Debug + Send + Sync {
+///
+/// `fmt::Debug` is not a supertrait, for the same reason as [`TableXml`]: the
+/// `Debug` of `dyn Table` shows only the tag; downcast to see the contents.
+pub trait Table: AsAny + Send + Sync {
 	/// The table tag (`tableTag`).
 	fn tag(&self) -> Tag;
 
 	/// Compiles the table to binary (`compile`).
 	fn compile(&mut self, font: &mut Font) -> Result<Vec<u8>>;
-
-	/// Writes the table's TTX content, without the enclosing table element
-	/// (`toXML`).
-	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()>;
-
-	/// Reads one child element of the table's TTX element (`fromXML`).
-	#[allow(clippy::wrong_self_convention)]
-	fn from_xml(&mut self, element: &Element, font: &mut Font) -> Result<()>;
 
 	/// A deep copy.
 	fn clone_table(&self) -> Box<dyn Table>;
@@ -71,9 +66,34 @@ pub trait Table: AsAny + fmt::Debug + Send + Sync {
 	}
 }
 
+/// The TTX side of a table (`toXML` and `fromXML` of `DefaultTable` and its
+/// subclasses).
+///
+/// This is a trait of its own rather than part of [`Table`], so that a program
+/// that never reads or writes TTX does not link the XML code of every table:
+/// the vtable of `dyn Table` would keep it. Use [`table_to_xml`] and
+/// [`table_from_xml`] on a `dyn Table`.
+pub trait TableXml {
+	/// Writes the table's TTX content, without the enclosing table element
+	/// (`toXML`).
+	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()>;
+
+	/// Reads one child element of the table's TTX element (`fromXML`).
+	#[allow(clippy::wrong_self_convention)]
+	fn from_xml(&mut self, element: &Element, font: &mut Font) -> Result<()>;
+}
+
 impl Clone for Box<dyn Table> {
 	fn clone(&self) -> Self {
 		self.clone_table()
+	}
+}
+
+impl fmt::Debug for dyn Table {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		f.debug_struct("Table")
+			.field("tag", &self.tag())
+			.finish_non_exhaustive()
 	}
 }
 
@@ -155,6 +175,20 @@ impl Table for DefaultTable {
 		Ok(self.data.clone())
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+
+	fn is_raw(&self) -> bool {
+		true
+	}
+
+	fn decompile_error(&self) -> Option<&str> {
+		self.error.as_deref()
+	}
+}
+
+impl TableXml for DefaultTable {
 	fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 		if let Some(error) = &self.error {
 			writer.comment("An error occurred during the decompilation of this table");
@@ -180,24 +214,18 @@ impl Table for DefaultTable {
 		self.data = read_hex(element)?;
 		Ok(())
 	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
-
-	fn is_raw(&self) -> bool {
-		true
-	}
-
-	fn decompile_error(&self) -> Option<&str> {
-		self.error.as_deref()
-	}
 }
 
 /// `readHex(content)` for an element.
 pub fn read_hex(element: &Element) -> Result<Vec<u8>> {
 	fontoxide_misc::text_tools::read_hex(element.text_chunks())
 		.ok_or_else(|| Error::value("invalid hex data"))
+}
+
+/// The error for a table whose type is not the one registered for its tag, which
+/// [`table_to_xml`] and [`table_from_xml`] cannot reach.
+fn no_xml(tag: Tag) -> Error {
+	Error::ttlib(format!("no TTX support for the '{tag}' table's type"))
 }
 
 macro_rules! registry {
@@ -227,6 +255,40 @@ macro_rules! registry {
 		pub fn is_implemented(tag: Tag) -> bool {
 			matches!(&tag.0, $($tag)|*)
 				|| !crate::generated::tables::FONTTOOLS_TABLES.contains(&tag)
+		}
+
+		/// Writes the TTX content of a table ([`TableXml::to_xml`] of its type).
+		pub fn table_to_xml(table: &dyn Table, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
+			if let Some(raw) = table.as_any().downcast_ref::<DefaultTable>() {
+				return raw.to_xml(writer, font);
+			}
+			match &table.tag().0 {
+				$($tag => {
+					if let Some(t) = table.as_any().downcast_ref::<$ty>() {
+						return t.to_xml(writer, font);
+					}
+				})*
+				_ => {}
+			}
+			Err(no_xml(table.tag()))
+		}
+
+		/// Reads one child element of a table's TTX element
+		/// ([`TableXml::from_xml`] of its type).
+		pub fn table_from_xml(table: &mut dyn Table, element: &Element, font: &mut Font) -> Result<()> {
+			let tag = table.tag();
+			if let Some(raw) = table.as_any_mut().downcast_mut::<DefaultTable>() {
+				return raw.from_xml(element, font);
+			}
+			match &tag.0 {
+				$($tag => {
+					if let Some(t) = table.as_any_mut().downcast_mut::<$ty>() {
+						return t.from_xml(element, font);
+					}
+				})*
+				_ => {}
+			}
+			Err(no_xml(tag))
 		}
 	};
 }

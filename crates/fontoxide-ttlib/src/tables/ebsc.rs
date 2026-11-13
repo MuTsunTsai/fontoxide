@@ -8,7 +8,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::binary::fit;
 use crate::sstruct::{F16Dot16, U8, U32, Value, eval};
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::tables::eblc::SbitLineMetrics;
 use crate::{Error, Font, Result};
 
@@ -197,6 +197,17 @@ impl Table for Ebsc {
 		Ok(out)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
+}
+
+impl TableXml for Ebsc {
 	fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 		writer.simpletag_ordered(
 			"header",
@@ -242,15 +253,6 @@ impl Table for Ebsc {
 			}
 			_ => {}
 		}
-		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
-
-	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		let _ = f;
 		Ok(())
 	}
 }

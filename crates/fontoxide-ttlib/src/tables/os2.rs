@@ -9,7 +9,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::binary::{Reader, WriteBytes, fit};
 use crate::sstruct::{Bytes, I16, U8, U16, U32, eval};
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::{Error, Font, Result};
 
 crate::sstruct! {
@@ -538,6 +538,12 @@ impl Table for Os2 {
 		Ok(data)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Os2 {
 	fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 		writer.comment(
 			"The fields 'usFirstCharIndex' and 'usLastCharIndex'\nwill be recalculated by the compiler",
@@ -653,10 +659,6 @@ impl Table for Os2 {
 			}
 		}
 		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
 	}
 }
 

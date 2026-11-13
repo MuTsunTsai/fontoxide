@@ -1118,7 +1118,7 @@ impl Font {
 			match (split_glyphs, glyf) {
 				(Some(path), Some(glyf)) => files.extend(glyf.to_xml_split(writer, font, path)?),
 				// A raw table under the `glyf` tag ignores `splitGlyphs`.
-				_ => table.to_xml(writer, font)?,
+				_ => crate::table::table_to_xml(table, writer, font)?,
 			}
 			writer.endtag(&xml_tag);
 			writer.newline();

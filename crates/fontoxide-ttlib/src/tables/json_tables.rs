@@ -4,7 +4,7 @@ use fontoxide_misc::Tag;
 use fontoxide_misc::xml_reader::Element;
 use fontoxide_misc::xml_writer::XmlWriter;
 
-use crate::table::{DefaultTable, Table, TableType};
+use crate::table::{DefaultTable, Table, TableType, TableXml};
 use crate::tables::json::{self, DumpOptions, JsonValue};
 use crate::{Error, Font, Result};
 
@@ -46,6 +46,17 @@ impl Table for Debg {
 		Ok(json::dumps(&self.data, &DumpOptions::default()).into_bytes())
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
+}
+
+impl TableXml for Debg {
 	fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 		// The JSON indentation inside the CDATA block matches the writer's.
 		let indent = " ".repeat(writer.indent_white().chars().count());
@@ -73,15 +84,6 @@ impl Table for Debg {
 		if element.name == "json" {
 			self.data = json::loads(&element_text(element)).map_err(|e| Error::value(e.repr))?;
 		}
-		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
-
-	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		let _ = f;
 		Ok(())
 	}
 }
@@ -183,6 +185,21 @@ impl Table for Bgcl {
 		}
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+
+	fn decompile_error(&self) -> Option<&str> {
+		self.error.as_deref()
+	}
+
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
+}
+
+impl TableXml for Bgcl {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let Some(value) = &self.json else {
 			let raw = DefaultTable {
@@ -241,19 +258,6 @@ impl Table for Bgcl {
 				self.error = Some(format!("bgcl JSON parse error in fromXML: {}", e.repr));
 			}
 		}
-		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
-
-	fn decompile_error(&self) -> Option<&str> {
-		self.error.as_deref()
-	}
-
-	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		let _ = f;
 		Ok(())
 	}
 }

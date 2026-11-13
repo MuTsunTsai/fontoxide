@@ -9,7 +9,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::binary::{Reader, WriteBytes, fit};
 use crate::sstruct::{Bytes, F16Dot16, U16, U32, eval};
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::tables::Name;
 use crate::{Error, Font, Result};
 
@@ -419,6 +419,12 @@ impl Table for Fvar {
 		Ok(data)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Fvar {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let names = font.get::<Name>()?.map(|n| n.clone());
 		for axis in &self.axes {
@@ -437,10 +443,6 @@ impl Table for Fvar {
 			_ => {}
 		}
 		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
 	}
 }
 

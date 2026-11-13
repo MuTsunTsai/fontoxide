@@ -7,7 +7,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::binary::{Reader, WriteBytes, fit};
 use crate::sstruct::{F16Dot16, I8, U8, U16, U32, Value, eval};
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::{Error, Font, Result};
 
 crate::sstruct! {
@@ -771,6 +771,24 @@ impl<const COLOR: bool, const APPLE: bool> Table for BitmapLocator<COLOR, APPLE>
 		self.compile_table()
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+
+	/// The first and last glyph are recalculated when compiling.
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for strike in self.strikes.iter_mut().flatten() {
+			for table in &mut strike.index_sub_tables {
+				for name in &mut table.names {
+					*name = f(*name)?;
+				}
+			}
+		}
+		Ok(())
+	}
+}
+
+impl<const COLOR: bool, const APPLE: bool> TableXml for BitmapLocator<COLOR, APPLE> {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		writer.simpletag_ordered("header", &[("version", &Value::Float(self.version))]);
 		writer.newline();
@@ -825,22 +843,6 @@ impl<const COLOR: bool, const APPLE: bool> Table for BitmapLocator<COLOR, APPLE>
 				self.strikes[index] = Some(strike);
 			}
 			_ => {}
-		}
-		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
-
-	/// The first and last glyph are recalculated when compiling.
-	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		for strike in self.strikes.iter_mut().flatten() {
-			for table in &mut strike.index_sub_tables {
-				for name in &mut table.names {
-					*name = f(*name)?;
-				}
-			}
 		}
 		Ok(())
 	}

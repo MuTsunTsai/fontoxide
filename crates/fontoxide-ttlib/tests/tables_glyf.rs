@@ -1240,7 +1240,7 @@ mod glyph_cubic_test {
 				let mut font = fake_font(&["a"]);
 				let glyf = glyf_of(vec![glyph]);
 				let mut writer = XmlWriter::new();
-				let error = error_text(fontoxide_ttlib::Table::to_xml(
+				let error = error_text(fontoxide_ttlib::TableXml::to_xml(
 					&glyf,
 					&mut writer,
 					&mut font,

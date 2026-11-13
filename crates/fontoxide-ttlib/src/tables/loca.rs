@@ -4,7 +4,7 @@ use fontoxide_misc::Tag;
 use fontoxide_misc::xml_reader::Element;
 use fontoxide_misc::xml_writer::XmlWriter;
 
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::tables::{Head, Maxp};
 use crate::{Error, Font, Result};
 
@@ -119,6 +119,12 @@ impl Table for Loca {
 		Ok(data)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Loca {
 	fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 		writer.comment("The 'loca' table will be calculated by the compiler");
 		writer.newline();
@@ -134,9 +140,5 @@ impl Table for Loca {
 			"can't handle '{}' element",
 			element.name
 		)))
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
 	}
 }

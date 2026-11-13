@@ -4,7 +4,8 @@
 //! [`codecs`] decodes and encodes text with the codecs named by
 //! `fontTools.misc.encodingTools.getEncoding`, matching CPython's codecs exactly
 //! (the tables in `data/codecs` are exported from the fontTools reference
-//! environment), including fontTools' own `x_mac_*_ttx` codecs.
+//! environment by `tools/reference/codecs_export.py`), including fontTools' own
+//! `x_mac_*_ttx` codecs.
 //!
 //! [`standard_encoding`] is `fontTools.encodings.StandardEncoding`.
 

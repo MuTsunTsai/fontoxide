@@ -11,7 +11,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 use crate::generated::ot;
 use crate::ot::OtReader;
 use crate::ot::table::{OtTable, XmlCtx};
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::{Error, Font, Result};
 
 macro_rules! otl_table {
@@ -70,6 +70,12 @@ macro_rules! otl_table {
 				crate::ot::overflow::compile_table(&mut self.table, Self::TAG, font)
 			}
 
+			fn clone_table(&self) -> Box<dyn Table> {
+				Box::new(self.clone())
+			}
+		}
+
+		impl TableXml for $name {
 			fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 				self.table.to_xml2(writer, font)
 			}
@@ -77,10 +83,6 @@ macro_rules! otl_table {
 			fn from_xml(&mut self, element: &Element, font: &mut Font) -> Result<()> {
 				let from_xml: fn(&mut $ty, &Element, &mut Font) -> Result<()> = $from_xml;
 				from_xml(&mut self.table, element, font)
-			}
-
-			fn clone_table(&self) -> Box<dyn Table> {
-				Box::new(self.clone())
 			}
 		}
 	};

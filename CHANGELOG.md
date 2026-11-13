@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). fontoxide
 is 0.x: each update to a new fontTools release bumps the minor version.
 
+## Unreleased
+
+### Changed
+
+- **Breaking:** `to_xml` and `from_xml` moved from the `Table` trait to a new trait,
+  `TableXml`, and `fmt::Debug` is no longer a supertrait of `Table`. Programs that never
+  read or write TTX no longer link the XML code of every table, which the vtable of
+  `dyn Table` kept; a WebAssembly build that reads, instantiates, subsets and saves fonts
+  shrank by about 38%. To migrate:
+  - import `fontoxide_ttlib::TableXml` to call `to_xml` or `from_xml` on a table type;
+  - on a `dyn Table`, call `fontoxide_ttlib::table::table_to_xml` or `table_from_xml`,
+    which dispatch on the table's tag;
+  - the `Debug` of `dyn Table` shows only its tag; downcast to see the contents.
+- The tables of the multi-byte codecs (`shift_jis`, `gb2312`, `big5`, `euc_kr`, `johab`)
+  are stored in a compact binary format, 114 KB instead of 734 KB, exported by
+  `tools/reference/codecs_export.py`. Decoding and encoding are unchanged.
+
 ## 0.1.0 — 2026-11-11
 
 Tracks fontTools 4.68.0.

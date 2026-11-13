@@ -10,7 +10,7 @@ use fontoxide_misc::text_tools::{Literal, safe_eval};
 use fontoxide_misc::xml_reader::Element;
 
 use crate::font::{TableKey, xml_to_tag};
-use crate::table::{DefaultTable, new_table};
+use crate::table::{DefaultTable, new_table, table_from_xml};
 use crate::{Error, Font, Result};
 
 /// Options for importing TTX.
@@ -198,10 +198,10 @@ fn import_table(
 						"TypeError: cannot unpack non-iterable NoneType object (no content in {src})"
 					))
 				})?;
-			font.with_table(tag, |table, font| table.from_xml(last, font))?;
+			font.with_table(tag, |table, font| table_from_xml(table, last, font))?;
 			continue;
 		}
-		font.with_table(tag, |table, font| table.from_xml(child, font))?;
+		font.with_table(tag, |table, font| table_from_xml(table, child, font))?;
 	}
 	Ok(())
 }

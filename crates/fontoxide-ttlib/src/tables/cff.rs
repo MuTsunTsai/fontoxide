@@ -5,7 +5,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::cff::compile::CompileContext;
 use crate::cff::font::CffFontSet;
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::{Error, Font, Result, Tag};
 
 macro_rules! cff_table {
@@ -65,16 +65,18 @@ macro_rules! cff_table {
 				self.cff.compile($cff2, &ctx)
 			}
 
+			fn clone_table(&self) -> Box<dyn Table> {
+				Box::new(self.clone())
+			}
+		}
+
+		impl TableXml for $name {
 			fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 				self.cff.to_xml(writer)
 			}
 
 			fn from_xml(&mut self, element: &Element, _font: &mut Font) -> Result<()> {
 				self.cff.from_xml(element)
-			}
-
-			fn clone_table(&self) -> Box<dyn Table> {
-				Box::new(self.clone())
 			}
 		}
 	};

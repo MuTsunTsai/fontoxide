@@ -12,7 +12,7 @@ use fontoxide_pens::BoundsPen;
 use crate::binary::{Reader, WriteBytes};
 use crate::glyph_set::GlyphSet;
 use crate::sstruct::eval;
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::tables::cff::{Cff, Cff2};
 use crate::tables::glyf::Glyf;
 use crate::tables::hhea::{Hhea, Vhea};
@@ -183,6 +183,12 @@ macro_rules! metrics_table {
 				Ok(data)
 			}
 
+			fn clone_table(&self) -> Box<dyn Table> {
+				Box::new(self.clone())
+			}
+		}
+
+		impl TableXml for $ty {
 			fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 				let order = font.glyph_order()?;
 				let mut entries: Vec<(String, Metric)> = self
@@ -225,10 +231,6 @@ macro_rules! metrics_table {
 					),
 				);
 				Ok(())
-			}
-
-			fn clone_table(&self) -> Box<dyn Table> {
-				Box::new(self.clone())
 			}
 		}
 	};

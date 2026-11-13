@@ -9,7 +9,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::binary::{Reader, WriteBytes, fit, get_search_range};
 use crate::sstruct::{Value, eval};
-use crate::table::{Table, TableType, read_hex};
+use crate::table::{Table, TableType, TableXml, read_hex};
 use crate::tables::eblc::{clip, required_attr};
 use crate::{Error, Font, Result};
 
@@ -347,6 +347,25 @@ impl Table for Kern {
 		Ok(out)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for table in self.kern_tables.iter_mut().flatten() {
+			if let KernSubtable::Format0(t) = table {
+				let mut kern_table = BTreeMap::new();
+				for (&(left, right), &value) in &t.kern_table {
+					kern_table.insert((f(left)?, f(right)?), value);
+				}
+				t.kern_table = kern_table;
+			}
+		}
+		Ok(())
+	}
+}
+
+impl TableXml for Kern {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let version = self.version.as_ref().ok_or_else(missing_version)?;
 		writer.simpletag("version", &[("value", version)]);
@@ -400,23 +419,6 @@ impl Table for Kern {
 			}
 		};
 		self.kern_tables.get_or_insert_default().push(table);
-		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
-
-	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		for table in self.kern_tables.iter_mut().flatten() {
-			if let KernSubtable::Format0(t) = table {
-				let mut kern_table = BTreeMap::new();
-				for (&(left, right), &value) in &t.kern_table {
-					kern_table.insert((f(left)?, f(right)?), value);
-				}
-				t.kern_table = kern_table;
-			}
-		}
 		Ok(())
 	}
 }

@@ -18,7 +18,7 @@ use fontoxide_pens::{Pen, PointPen, SegmentType};
 use crate::binary::fit;
 use crate::glyph_order::GlyphOrder;
 use crate::sstruct::eval;
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::tables::tt_program::Program;
 use crate::tables::{Loca, Maxp};
 use crate::{Error, Font, Result};
@@ -2284,6 +2284,12 @@ impl Table for Glyf {
 		Ok(data)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Glyf {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		self.write_xml(writer, font, None)
 	}
@@ -2315,9 +2321,5 @@ impl Table for Glyf {
 		}
 		self.glyphs.insert(gid, glyph);
 		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
 	}
 }

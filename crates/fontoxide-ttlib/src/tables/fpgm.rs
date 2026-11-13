@@ -5,7 +5,7 @@ use fontoxide_misc::Tag;
 use fontoxide_misc::xml_reader::Element;
 use fontoxide_misc::xml_writer::XmlWriter;
 
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::tables::tt_program::Program;
 use crate::{Error, Font, Result};
 
@@ -53,6 +53,12 @@ macro_rules! program_table {
 					.unwrap_or_default())
 			}
 
+			fn clone_table(&self) -> Box<dyn Table> {
+				Box::new(self.clone())
+			}
+		}
+
+		impl TableXml for $name {
 			fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 				let program = self.program.as_ref().ok_or_else(|| {
 					Error::ttlib(concat!(
@@ -68,10 +74,6 @@ macro_rules! program_table {
 			fn from_xml(&mut self, element: &Element, _font: &mut Font) -> Result<()> {
 				self.program = Some(Program::from_xml(element)?);
 				Ok(())
-			}
-
-			fn clone_table(&self) -> Box<dyn Table> {
-				Box::new(self.clone())
 			}
 		}
 	};

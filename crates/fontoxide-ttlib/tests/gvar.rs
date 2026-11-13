@@ -18,7 +18,7 @@ use fontoxide_ttlib::tables::tuple_variation::{
 	Delta, TupleVariation, compile_tuple_variation_store, decompile_tuple_variation_store,
 };
 use fontoxide_ttlib::tables::{Fvar, Glyf, Gvar};
-use fontoxide_ttlib::{Font, ReadOptions, Table, TableType, Tag, TtxOptions};
+use fontoxide_ttlib::{Font, ReadOptions, Table, TableType, TableXml, Tag, TtxOptions};
 
 type TestResult = Result<(), Box<dyn std::error::Error>>;
 type Variations = Vec<(u32, Vec<TupleVariation>)>;

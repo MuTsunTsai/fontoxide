@@ -10,7 +10,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::binary::{Reader, WriteBytes, fit};
 use crate::sstruct::{U32, U64, Value, eval};
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::{Error, Font, Result};
 
 fn int_attr<T>(element: &Element, name: &str) -> Result<T>
@@ -152,6 +152,12 @@ impl Table for Vorg {
 		Ok(data)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Vorg {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		writer.simpletag("majorVersion", &[("value", &self.major_version)]);
 		writer.newline();
@@ -205,10 +211,6 @@ impl Table for Vorg {
 			_ => {}
 		}
 		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
 	}
 }
 
@@ -316,6 +318,12 @@ impl Table for Ltag {
 		Ok(data)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Ltag {
 	fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 		writer.simpletag("version", &[("value", &self.version)]);
 		writer.newline();
@@ -341,10 +349,6 @@ impl Table for Ltag {
 			_ => {}
 		}
 		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
 	}
 }
 
@@ -388,6 +392,12 @@ impl Table for Fftm {
 		Ok(data)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Fftm {
 	fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 		writer.comment("FontForge's timestamp, font source creation and modification dates");
 		writer.newline();
@@ -418,10 +428,6 @@ impl Table for Fftm {
 			return Err(Error::ttx(format!("unknown 'FFTM' field: {name}")));
 		}
 		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
 	}
 }
 

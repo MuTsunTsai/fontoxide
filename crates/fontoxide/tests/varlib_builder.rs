@@ -133,7 +133,7 @@ fn test_empty_vhvar_size() -> TestResult {
 "#;
 		let actual = vf.with_table(tag, |t: &mut dyn Table, font: &mut Font| {
 			let mut writer = XmlWriter::with_options("  ", "\n");
-			t.to_xml(&mut writer, font)?;
+			fontoxide::ttlib::table::table_to_xml(t, &mut writer, font)?;
 			Ok(writer.into_string())
 		})?;
 		assert_eq!(actual, expected);

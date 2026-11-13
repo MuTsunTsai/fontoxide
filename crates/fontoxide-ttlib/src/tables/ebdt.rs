@@ -12,7 +12,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::binary::{Reader, WriteBytes, fit};
 use crate::sstruct::{F16Dot16, I8, U16, Value, eval};
-use crate::table::{Table, TableType, read_hex};
+use crate::table::{Table, TableType, TableXml, read_hex};
 use crate::tables::eblc::{
 	BigGlyphMetrics, BitmapLocator, SmallGlyphMetrics, clip, int_attr, literal, metrics_to_xml,
 	required_attr,
@@ -811,6 +811,34 @@ impl<const COLOR: bool, const APPLE: bool> Table for BitmapData<COLOR, APPLE> {
 		Ok(out)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let mut used = BTreeSet::new();
+		for dict in self.strike_data.iter_mut().flatten() {
+			let mut glyphs = HashMap::with_capacity(dict.glyphs.len());
+			for gid in &mut dict.order {
+				let index = dict.glyphs[gid];
+				used.insert(index);
+				*gid = f(*gid)?;
+				glyphs.insert(*gid, index);
+			}
+			dict.glyphs = glyphs;
+		}
+		for index in used {
+			if let BitmapGlyph::Parsed(parsed) = &mut self.glyphs[index] {
+				for c in parsed.components.iter_mut().flatten() {
+					c.glyph = f(c.glyph)?;
+				}
+			}
+		}
+		Ok(())
+	}
+}
+
+impl<const COLOR: bool, const APPLE: bool> TableXml for BitmapData<COLOR, APPLE> {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let mut exports = if matches!(font.bitmap_glyph_data_format.as_str(), "row" | "bitwise") {
 			self.exports(font)?
@@ -905,32 +933,6 @@ impl<const COLOR: bool, const APPLE: bool> Table for BitmapData<COLOR, APPLE> {
 				self.strike_data[strike_index] = Some(dict);
 			}
 			_ => {}
-		}
-		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
-
-	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		let mut used = BTreeSet::new();
-		for dict in self.strike_data.iter_mut().flatten() {
-			let mut glyphs = HashMap::with_capacity(dict.glyphs.len());
-			for gid in &mut dict.order {
-				let index = dict.glyphs[gid];
-				used.insert(index);
-				*gid = f(*gid)?;
-				glyphs.insert(*gid, index);
-			}
-			dict.glyphs = glyphs;
-		}
-		for index in used {
-			if let BitmapGlyph::Parsed(parsed) = &mut self.glyphs[index] {
-				for c in parsed.components.iter_mut().flatten() {
-					c.glyph = f(c.glyph)?;
-				}
-			}
 		}
 		Ok(())
 	}

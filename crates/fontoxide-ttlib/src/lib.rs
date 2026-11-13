@@ -60,7 +60,7 @@ pub use fontoxide_misc::time_tools::set_clock;
 pub use glyph_order::GlyphOrder;
 pub use glyph_set::GlyphSet;
 pub use sfnt::{Flavor, FlavorData};
-pub use table::{DefaultTable, Table, TableType};
+pub use table::{DefaultTable, Table, TableType, TableXml};
 pub use ttx::{TtxFile, TtxImportOptions};
 
 /// The fontTools release whose behavior this version matches.

@@ -50,7 +50,7 @@ pub fn path<'v>(value: &'v Value, keys: &[&str]) -> &'v Value {
 /// The TTX of a table, without the XML declaration.
 pub fn table_xml(table: &dyn Table, font: &mut Font) -> Result<String> {
 	let mut writer = XmlWriter::with_options("  ", "\n");
-	table.to_xml(&mut writer, font)?;
+	fontoxide_ttlib::table::table_to_xml(table, &mut writer, font)?;
 	let text = writer.into_string();
 	Ok(text
 		.split_once('\n')

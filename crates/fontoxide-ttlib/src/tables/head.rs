@@ -9,7 +9,7 @@ use fontoxide_misc::xml_reader::Element;
 use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::sstruct::{F16Dot16, I16, U16, U32, U64, Value, eval};
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::{Error, Font, Result};
 
 /// The error when `recalc_timestamp` is on but there is no current time.
@@ -169,6 +169,12 @@ impl Table for Head {
 		self.compile_with(font, |head| Box::new(head.clone()))
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Head {
 	fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 		writer.comment("Most of this table will be recalculated by the compiler");
 		writer.newline();
@@ -229,10 +235,6 @@ impl Table for Head {
 		}
 		Ok(())
 	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
 }
 
 /// Apple's bitmap-only font header (`table__b_h_e_d`): a `head` table under the
@@ -276,16 +278,18 @@ impl Table for Bhed {
 			.compile_with(font, |head| Box::new(Bhed(head.clone())))
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Bhed {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		self.0.to_xml(writer, font)
 	}
 
 	fn from_xml(&mut self, element: &Element, font: &mut Font) -> Result<()> {
 		self.0.from_xml(element, font)
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
 	}
 }
 

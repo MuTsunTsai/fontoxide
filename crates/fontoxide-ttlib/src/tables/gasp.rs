@@ -9,7 +9,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::binary::{Reader, WriteBytes, fit};
 use crate::sstruct::eval;
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::{Error, Font, Result};
 
 /// Use grid-fitting (`GASP_GRIDFIT`).
@@ -88,6 +88,12 @@ impl Table for Gasp {
 		Ok(data)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Gasp {
 	fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 		for (max_ppem, behavior) in &self.gasp_range {
 			writer.simpletag_ordered(
@@ -115,9 +121,5 @@ impl Table for Gasp {
 		self.gasp_range
 			.insert(int("rangeMaxPPEM")?, int("rangeGaspBehavior")?);
 		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
 	}
 }

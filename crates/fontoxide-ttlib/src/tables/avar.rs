@@ -13,7 +13,7 @@ use crate::generated::ot;
 use crate::ot::table::{OtTable, XmlCtx, xml_struct};
 use crate::ot::{OtReader, WriterGraph};
 use crate::sstruct::eval;
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::tables::Fvar;
 use crate::{Error, Font, Result};
 
@@ -190,6 +190,12 @@ impl Table for Avar {
 		graph.get_all_data()
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Avar {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		writer.simpletag(
 			"version",
@@ -273,10 +279,6 @@ impl Table for Avar {
 			}
 		}
 		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
 	}
 }
 

@@ -6,7 +6,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::binary::{WriteBytes, fit};
 use crate::sstruct::eval;
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::{Error, Font, Result};
 
 /// Control Value Table (`table__c_v_t`): values referenced by TrueType
@@ -55,6 +55,12 @@ impl Table for Cvt {
 		Ok(data)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Cvt {
 	fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 		for (i, value) in self.values.iter().enumerate() {
 			writer.simpletag("cv", &[("value", value), ("index", &i)]);
@@ -82,9 +88,5 @@ impl Table for Cvt {
 		}
 		self.values[index] = value;
 		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
 	}
 }

@@ -28,7 +28,7 @@ use fontoxide_ttlib::ot::types as ot;
 use fontoxide_ttlib::ot::varc::{VarComponent, flags as varc_flags};
 use fontoxide_ttlib::ot::{CountRef, OtReader, OverflowErrorRecord, StateValue, WriterGraph};
 use fontoxide_ttlib::tables::{Gpos, Gsub};
-use fontoxide_ttlib::{Font, Table, TableType, Tag};
+use fontoxide_ttlib::{Font, Table, TableType, TableXml, Tag};
 
 type TestResult<T = ()> = Result<T, Box<dyn std::error::Error>>;
 
@@ -2202,7 +2202,7 @@ fn test_parse_Device_DeltaValue_from_XML_and_compile() -> TestResult {
 // FeatureVariations with FeatureParams
 
 /// What the tests need of `GSUB` and `GPOS`.
-trait Layout: TableType + Table + Clone + 'static {
+trait Layout: TableType + Table + TableXml + Clone + 'static {
 	const NAME: &'static str;
 	fn layout(&self) -> LayoutRef<'_>;
 	fn feature_list_mut(&mut self, extended: bool) -> Option<&mut ot::FeatureList>;

@@ -11,7 +11,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::binary::{Reader, WriteBytes, fit};
 use crate::sstruct::{F16Dot16, U16, U32, Value, eval};
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::tables::Name;
 use crate::{Error, Font, Result};
 
@@ -477,6 +477,17 @@ impl Table for Trak {
 		Ok(out)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
+}
+
+impl TableXml for Trak {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let version = self.version.as_ref().ok_or_else(|| missing("version"))?;
 		let format = self.format.ok_or_else(|| missing("format"))?;
@@ -510,15 +521,6 @@ impl Table for Trak {
 			"vertData" => self.vert_data = TrackData::read_xml(element)?,
 			_ => {}
 		}
-		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
-
-	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		let _ = f;
 		Ok(())
 	}
 }

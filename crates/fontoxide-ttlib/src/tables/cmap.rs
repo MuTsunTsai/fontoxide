@@ -20,7 +20,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 use crate::binary::{WriteBytes, fit, get_search_range};
 use crate::glyph_order::GlyphOrder;
 use crate::sstruct::eval;
-use crate::table::{Table, TableType, read_hex};
+use crate::table::{Table, TableType, TableXml, read_hex};
 use crate::{Error, Font, Result};
 
 /// Character code to glyph ID (`subtable.cmap`, which fontTools keys to glyph
@@ -953,6 +953,12 @@ impl Table for Cmap {
 		Ok(data)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Cmap {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		writer.simpletag("tableVersion", &[("version", &self.table_version)]);
 		writer.newline();
@@ -979,10 +985,6 @@ impl Table for Cmap {
 		table.from_xml(element, font)?;
 		self.tables.push(table);
 		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
 	}
 }
 
@@ -1012,16 +1014,18 @@ impl Table for Dmap {
 		self.0.compile(font)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Dmap {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		self.0.to_xml(writer, font)
 	}
 
 	fn from_xml(&mut self, element: &Element, font: &mut Font) -> Result<()> {
 		self.0.from_xml(element, font)
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
 	}
 }
 

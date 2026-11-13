@@ -9,7 +9,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::binary::fit;
 use crate::sstruct::eval;
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::tables::Name;
 use crate::{Error, Font, Result};
 
@@ -331,6 +331,12 @@ impl Table for Cpal {
 		Ok(out)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Cpal {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		writer.simpletag("version", &[("value", &self.version)]);
 		writer.newline();
@@ -471,10 +477,6 @@ impl Table for Cpal {
 			}
 		}
 		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
 	}
 }
 

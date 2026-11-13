@@ -7,7 +7,7 @@ use common::*;
 use fontoxide_misc::xml_writer::XmlWriter;
 use fontoxide_ttlib::tables::Svg;
 use fontoxide_ttlib::tables::svg::SvgDocument;
-use fontoxide_ttlib::{Font, Table, Tag, WriteOptions};
+use fontoxide_ttlib::{Font, TableXml, Tag, WriteOptions};
 
 const SVG_NS: &str = "http://www.w3.org/2000/svg";
 

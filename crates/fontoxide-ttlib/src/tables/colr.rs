@@ -18,7 +18,7 @@ use crate::glyph_set::GlyphSet;
 use crate::ot::colr::ClipList;
 use crate::ot::types::Paint;
 use crate::sstruct::eval;
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::{Error, Font, Result};
 
 /// A layer of a version 0 color glyph (`LayerRecord`): a glyph drawn in a
@@ -414,6 +414,12 @@ impl Table for Colr {
 		graph.get_all_data()
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Colr {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		if let Some(table) = &self.table {
 			return table.to_xml2(writer, font);
@@ -479,9 +485,5 @@ impl Table for Colr {
 			}
 		}
 		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
 	}
 }

@@ -11,7 +11,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::binary::{Reader, WriteBytes};
 use crate::sstruct::{U16, eval};
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::{Error, Font, Result};
 
 crate::sstruct! {
@@ -869,6 +869,12 @@ impl Table for Name {
 		Ok(data)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Name {
 	fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 		for name in &self.names {
 			name.to_xml(writer);
@@ -882,10 +888,6 @@ impl Table for Name {
 		}
 		self.names.push(NameRecord::from_xml(element)?);
 		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
 	}
 }
 

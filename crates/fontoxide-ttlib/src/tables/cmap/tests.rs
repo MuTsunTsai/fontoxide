@@ -752,7 +752,7 @@ fn unsupported_format_is_preserved() {
 	assert_eq!(cmap.tables[0].format, 10);
 	let mut font = Font::new();
 	let mut writer = XmlWriter::new();
-	assert!(Table::to_xml(&cmap, &mut writer, &mut font).is_ok());
+	assert!(TableXml::to_xml(&cmap, &mut writer, &mut font).is_ok());
 	let compiled = Table::compile(&mut cmap, &mut font).unwrap_or_default();
 	let reloaded = Cmap::parse(&compiled).unwrap_or_default();
 	assert_eq!(reloaded.tables[0].format, 10);

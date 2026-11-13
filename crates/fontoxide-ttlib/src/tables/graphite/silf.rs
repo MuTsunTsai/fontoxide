@@ -13,7 +13,7 @@ use super::{
 	round_version,
 };
 use crate::binary::Reader;
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::{Error, Font, Result};
 
 // ---------------------------------------------------------------------------
@@ -1647,6 +1647,19 @@ impl Table for Silf {
 		Ok(hdr)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for s in &mut self.silfs {
+			s.remap_glyphs(f)?;
+		}
+		Ok(())
+	}
+}
+
+impl TableXml for Silf {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		writer.comment("Attributes starting with _ are informative only");
 		writer.newline();
@@ -1684,17 +1697,6 @@ impl Table for Silf {
 				self.silfs.push(s);
 			}
 			_ => {}
-		}
-		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
-
-	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		for s in &mut self.silfs {
-			s.remap_glyphs(f)?;
 		}
 		Ok(())
 	}

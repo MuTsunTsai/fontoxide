@@ -8,7 +8,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::binary::fit;
 use crate::sstruct::{Bytes, U32};
-use crate::table::{Table, TableType, read_hex};
+use crate::table::{Table, TableType, TableXml, read_hex};
 use crate::{Error, Font, Result};
 
 crate::sstruct! {
@@ -161,6 +161,17 @@ impl Table for Meta {
 		Ok(out)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
+}
+
+impl TableXml for Meta {
 	fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 		for (tag, value) in &self.data {
 			match (is_text_tag(tag), value) {
@@ -214,15 +225,6 @@ impl Table for Meta {
 			}
 			name => return Err(Error::ttlib(format!("can't handle '{name}' element"))),
 		}
-		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
-
-	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		let _ = f;
 		Ok(())
 	}
 }

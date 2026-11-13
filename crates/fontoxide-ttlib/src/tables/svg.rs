@@ -9,7 +9,7 @@ use fontoxide_misc::xml_reader::Element;
 use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::binary::{Reader, WriteBytes, fit};
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::tables::eblc::{clip, required_attr};
 use crate::{Error, Font, Result};
 
@@ -166,6 +166,17 @@ impl Table for Svg {
 		Ok(out)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+
+	fn remap_glyphs(&mut self, _f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		// The documents are subset with the glyphs, which sets the IDs.
+		Ok(())
+	}
+}
+
+impl TableXml for Svg {
 	fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 		for doc in self.doc_list.as_ref().ok_or_else(no_doc_list)? {
 			if doc.compressed {
@@ -223,15 +234,6 @@ impl Table for Svg {
 			compressed,
 		};
 		self.doc_list.get_or_insert_default().push(doc);
-		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
-
-	fn remap_glyphs(&mut self, _f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		// The documents are subset with the glyphs, which sets the IDs.
 		Ok(())
 	}
 }

@@ -24,7 +24,8 @@ assert_eq!(decode("mac_roman", b"caf\x8e").as_deref(), Ok("café"));
 This version follows **fontTools 4.68.0**. The codecs decode and encode exactly
 as CPython's codecs do, with the same error handlers; the mapping tables in
 `data/codecs` were exported from CPython 3.13 in the fontTools reference
-environment. Differences from fontTools are listed in
+environment (`tools/reference/codecs_export.py`). Differences from fontTools are
+listed in
 [COMPATIBILITY.md](https://github.com/MuTsunTsai/fontoxide/blob/main/COMPATIBILITY.md).
 
 The crate is pure safe Rust and builds for `wasm32-unknown-unknown`.

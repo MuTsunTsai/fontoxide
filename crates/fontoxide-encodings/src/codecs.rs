@@ -438,12 +438,20 @@ codec_data!(
 	"mac_romanian",
 	"mac_greek",
 	"mac_cyrillic",
-	"shift_jis",
-	"gb2312",
-	"big5",
-	"euc_kr",
-	"johab",
 );
+
+/// The tables of the multi-byte codecs, in the binary format that
+/// `tools/reference/codecs_export.py` describes.
+fn codec_binary(name: &str) -> Option<&'static [u8]> {
+	Some(match name {
+		"shift_jis" => include_bytes!("../data/codecs/shift_jis.bin"),
+		"gb2312" => include_bytes!("../data/codecs/gb2312.bin"),
+		"big5" => include_bytes!("../data/codecs/big5.bin"),
+		"euc_kr" => include_bytes!("../data/codecs/euc_kr.bin"),
+		"johab" => include_bytes!("../data/codecs/johab.bin"),
+		_ => return None,
+	})
+}
 
 struct SingleByte {
 	decode: [Option<char>; 256],
@@ -506,19 +514,51 @@ fn multi_byte(name: &str) -> Option<&'static MultiByte> {
 	let tables = TABLES.get_or_init(|| {
 		MULTI_BYTE
 			.iter()
-			.filter_map(|&n| Some((n, parse_multi_byte(codec_text(n)?))))
+			.filter_map(|&n| Some((n, parse_multi_byte(codec_binary(n)?)?)))
 			.collect()
 	});
 	tables.get(name)
 }
 
-fn parse_hex_bytes(v: &str) -> Vec<u8> {
-	(0..v.len() / 2)
-		.filter_map(|i| u8::from_str_radix(&v[2 * i..2 * i + 2], 16).ok())
-		.collect()
+/// A big-endian reader over the bytes of a codec table.
+struct Bytes<'a>(&'a [u8]);
+
+impl Bytes<'_> {
+	fn take(&mut self, n: usize) -> Option<&[u8]> {
+		let (head, rest) = self.0.split_at_checked(n)?;
+		self.0 = rest;
+		Some(head)
+	}
+
+	fn u8(&mut self) -> Option<u8> {
+		Some(self.take(1)?[0])
+	}
+
+	fn u16(&mut self) -> Option<u16> {
+		let b = self.take(2)?;
+		Some(u16::from_be_bytes([b[0], b[1]]))
+	}
+
+	fn u32(&mut self) -> Option<u32> {
+		let b = self.take(4)?;
+		Some(u32::from_be_bytes([b[0], b[1], b[2], b[3]]))
+	}
+
+	fn char(&mut self) -> Option<Option<char>> {
+		let cp = self.u16()?;
+		Some(if cp == 0xFFFF {
+			None
+		} else {
+			char::from_u32(u32::from(cp))
+		})
+	}
 }
 
-fn parse_multi_byte(text: &str) -> MultiByte {
+/// The number of initial, medial and final jamo of the EUC-KR make-up
+/// sequences.
+const JAMO_COUNTS: [usize; 3] = [19, 21, 28];
+
+fn parse_multi_byte(data: &[u8]) -> Option<MultiByte> {
 	let mut codec = MultiByte {
 		single: [None; 256],
 		lead: [false; 256],
@@ -527,45 +567,59 @@ fn parse_multi_byte(text: &str) -> MultiByte {
 		long: HashMap::new(),
 		jamo: OnceLock::new(),
 	};
-	let hex_char = |s: &str| u32::from_str_radix(s, 16).ok().and_then(char::from_u32);
+	let mut r = Bytes(data);
+	for _ in 0..r.u16()? {
+		let b = r.u8()?;
+		codec.single[b as usize] = r.char()?;
+	}
+	for _ in 0..r.u16()? {
+		let first = r.u16()?;
+		let len = r.u16()?;
+		for k in 0..len {
+			let seq = first.checked_add(k)?;
+			if let Some(c) = r.char()? {
+				codec.lead[(seq >> 8) as usize] = true;
+				codec.double.insert(seq, c);
+			}
+		}
+	}
 	// Characters whose encoding differs from what the decoding tables imply; an
 	// empty vector means the character does not encode.
 	let mut overrides: HashMap<char, Vec<u8>> = HashMap::new();
-	for line in text.lines() {
-		let Some((kind, items)) = line.split_once(' ') else {
-			continue;
+	for _ in 0..r.u16()? {
+		let c = char::from_u32(r.u32()?)?;
+		let len = r.u8()?;
+		overrides.insert(c, r.take(len.into())?.to_vec());
+	}
+	if r.u8()? == 1 {
+		// The Hangul syllables outside KS X 1001 encode as make-up sequences.
+		let parts = JAMO_COUNTS.map(|n| r.take(n).map(<[u8]>::to_vec));
+		let [Some(cho), Some(jung), Some(jong)] = parts else {
+			return None;
 		};
-		for item in items.split(' ').filter(|s| !s.is_empty()) {
-			let Some((k, v)) = item.split_once(':') else {
+		let decodable: std::collections::HashSet<char> = codec.double.values().copied().collect();
+		for s in 0..(19 * 21 * 28) {
+			let c = char::from_u32(0xAC00 + s)?;
+			if decodable.contains(&c) {
 				continue;
-			};
-			match kind {
-				"single" => {
-					if let (Ok(b), Some(c)) = (u8::from_str_radix(k, 16), hex_char(v)) {
-						codec.single[b as usize] = Some(c);
-					}
-				}
-				"double" => {
-					if let (Ok(seq), Some(c)) = (u16::from_str_radix(k, 16), hex_char(v)) {
-						codec.lead[(seq >> 8) as usize] = true;
-						codec.double.insert(seq, c);
-					}
-				}
-				"encode" => {
-					if let Some(c) = hex_char(k) {
-						let bytes = if v == "-" {
-							Vec::new()
-						} else {
-							parse_hex_bytes(v)
-						};
-						if bytes.len() > 2 {
-							codec.long.insert(bytes.clone(), c);
-						}
-						overrides.insert(c, bytes);
-					}
-				}
-				_ => {}
 			}
+			let (i, m, f) = (
+				(s / 588) as usize,
+				((s % 588) / 28) as usize,
+				(s % 28) as usize,
+			);
+			let bytes = vec![
+				EUCKR_JAMO_FIRSTBYTE,
+				EUCKR_JAMO_FILLER,
+				EUCKR_JAMO_FIRSTBYTE,
+				cho[i],
+				EUCKR_JAMO_FIRSTBYTE,
+				jung[m],
+				EUCKR_JAMO_FIRSTBYTE,
+				jong[f],
+			];
+			codec.long.insert(bytes.clone(), c);
+			overrides.insert(c, bytes);
 		}
 	}
 	// The first sequence that decodes to a character is its encoding, unless
@@ -590,7 +644,7 @@ fn parse_multi_byte(text: &str) -> MultiByte {
 			codec.encode.insert(c, bytes);
 		}
 	}
-	codec
+	Some(codec)
 }
 
 impl MultiByte {

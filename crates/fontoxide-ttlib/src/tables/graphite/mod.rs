@@ -30,7 +30,7 @@ use fontoxide_misc::xml_reader::Element;
 use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::binary::{Reader, WriteBytes};
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::{Error, Font, Result};
 
 pub use silf::{Classes, Justify, Pass, Silf, SilfSubtable, assemble, disassemble};
@@ -568,6 +568,16 @@ impl Table for Feat {
 		}
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+
+	fn remap_glyphs(&mut self, _f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		Ok(())
+	}
+}
+
+impl TableXml for Feat {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		writer.simpletag("version", &[("version", &self.version)]);
 		writer.newline();
@@ -633,14 +643,6 @@ impl Table for Feat {
 			}
 			_ => {}
 		}
-		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
-
-	fn remap_glyphs(&mut self, _f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		Ok(())
 	}
 }
@@ -727,6 +729,16 @@ impl Table for Sill {
 		Ok(out)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+
+	fn remap_glyphs(&mut self, _f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		Ok(())
+	}
+}
+
+impl TableXml for Sill {
 	fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 		writer.simpletag("version", &[("version", &self.version)]);
 		writer.newline();
@@ -760,14 +772,6 @@ impl Table for Sill {
 			}
 			_ => {}
 		}
-		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
-
-	fn remap_glyphs(&mut self, _f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		Ok(())
 	}
 }
@@ -877,6 +881,16 @@ impl Table for Gloc {
 		Ok(data)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+
+	fn remap_glyphs(&mut self, _f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		Ok(())
+	}
+}
+
+impl TableXml for Gloc {
 	fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 		writer.simpletag("attributes", &[("number", &self.num_attribs)]);
 		writer.newline();
@@ -887,14 +901,6 @@ impl Table for Gloc {
 		if element.name == "attributes" {
 			self.num_attribs = eval_int(attr(element, "number")?)?;
 		}
-		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
-
-	fn remap_glyphs(&mut self, _f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
 		Ok(())
 	}
 }
@@ -1261,6 +1267,17 @@ impl Table for Glat {
 		Ok(data)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		self.attributes = crate::ot::aat::remap_keys(std::mem::take(&mut self.attributes), f)?;
+		Ok(())
+	}
+}
+
+impl TableXml for Glat {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		writer.simpletag(
 			"version",
@@ -1376,15 +1393,6 @@ impl Table for Glat {
 			}
 		}
 		self.attributes.insert(gid, attributes);
-		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
-
-	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		self.attributes = crate::ot::aat::remap_keys(std::mem::take(&mut self.attributes), f)?;
 		Ok(())
 	}
 }

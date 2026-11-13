@@ -7,6 +7,7 @@ use std::path::PathBuf;
 
 use fontoxide_misc::xml_reader::{self, Element};
 use fontoxide_misc::xml_writer::XmlWriter;
+use fontoxide_ttlib::table::{table_from_xml, table_to_xml};
 use fontoxide_ttlib::{Font, Result, Table};
 
 pub type TestResult = std::result::Result<(), Box<dyn std::error::Error>>;
@@ -55,7 +56,7 @@ pub fn writer_lines(writer: XmlWriter) -> Vec<String> {
 /// `getXML(table.toXML, font)`: the lines of the table's TTX content.
 pub fn get_xml(table: &dyn Table, font: &mut Font) -> Result<Vec<String>> {
 	let mut writer = XmlWriter::with_options("  ", "\n");
-	table.to_xml(&mut writer, font)?;
+	table_to_xml(table, &mut writer, font)?;
 	Ok(writer_lines(writer))
 }
 
@@ -68,7 +69,7 @@ pub fn parse_xml(xml: &str) -> Vec<Element> {
 /// `for name, attrs, content in parseXML(xml): table.fromXML(name, attrs, content, font)`.
 pub fn from_xml(table: &mut dyn Table, xml: &str, font: &mut Font) -> Result<()> {
 	for element in parse_xml(xml) {
-		table.from_xml(&element, font)?;
+		table_from_xml(table, &element, font)?;
 	}
 	Ok(())
 }

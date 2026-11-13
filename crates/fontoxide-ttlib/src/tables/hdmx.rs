@@ -9,7 +9,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::binary::{Reader, WriteBytes, fit};
 use crate::sstruct::{I32, U16, eval};
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::tables::Maxp;
 use crate::{Error, Font, Result};
 
@@ -110,6 +110,12 @@ impl Table for Hdmx {
 		Ok(data)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Hdmx {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		writer.begintag("hdmxData", &[]);
 		writer.newline();
@@ -196,10 +202,6 @@ impl Table for Hdmx {
 		}
 		Ok(())
 	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
 }
 
 /// Linear Threshold table (`table_L_T_S_H_`).
@@ -270,6 +272,12 @@ impl Table for Ltsh {
 		Ok(data)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Ltsh {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let order = font.glyph_order()?;
 		let mut entries: Vec<(String, u8)> = self
@@ -301,10 +309,6 @@ impl Table for Ltsh {
 		let gid = font.glyph_id(name)?;
 		self.y_pels.insert(gid, fit(v, "yPel")?);
 		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
 	}
 }
 

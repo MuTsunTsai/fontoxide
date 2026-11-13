@@ -6,7 +6,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::binary::WriteBytes;
 use crate::sstruct::{I32, U16, eval};
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::{Error, Font, Result};
 
 crate::sstruct! {
@@ -152,6 +152,12 @@ impl Table for Maxp {
 		Ok(data)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Maxp {
 	fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 		let v1 = self.table_version != VERSION_0_5;
 		if v1 {
@@ -198,10 +204,6 @@ impl Table for Maxp {
 			}
 		}
 		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
 	}
 }
 

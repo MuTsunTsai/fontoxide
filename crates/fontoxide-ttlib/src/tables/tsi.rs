@@ -15,7 +15,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::binary::{Reader, WriteBytes, fit};
 use crate::sstruct::eval;
-use crate::table::{DefaultTable, Table, TableType};
+use crate::table::{DefaultTable, Table, TableType, TableXml};
 use crate::tables::Maxp;
 use crate::{Error, Font, Result};
 
@@ -144,6 +144,18 @@ impl Table for TsiIndex {
 		self.compile_records()
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+
+	/// The records are recalculated when the program table is compiled.
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
+}
+
+impl TableXml for TsiIndex {
 	fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 		writer.comment("This table will be calculated by the compiler");
 		writer.newline();
@@ -155,16 +167,6 @@ impl Table for TsiIndex {
 		let mut raw = DefaultTable::new(self.tag, Vec::new());
 		raw.from_xml(element, font)?;
 		*self = Self::decompile_as(self.tag, &raw.data, font)?;
-		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
-
-	/// The records are recalculated when the program table is compiled.
-	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		let _ = f;
 		Ok(())
 	}
 }
@@ -423,6 +425,25 @@ impl Table for TsiPrograms {
 		Ok(data)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+
+	/// Programs of glyphs that no longer exist are dropped, as fontTools ignores
+	/// names that are not in the glyph order when compiling.
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let mut programs = BTreeMap::new();
+		for (gid, text) in std::mem::take(&mut self.glyph_programs) {
+			if let Ok(new) = f(gid) {
+				programs.insert(new, text);
+			}
+		}
+		self.glyph_programs = programs;
+		Ok(())
+	}
+}
+
+impl TableXml for TsiPrograms {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let order = font.glyph_order()?;
 		let mut glyph_programs: Vec<(String, &String)> = self
@@ -466,23 +487,6 @@ impl Table for TsiPrograms {
 			}
 			_ => {}
 		}
-		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
-
-	/// Programs of glyphs that no longer exist are dropped, as fontTools ignores
-	/// names that are not in the glyph order when compiling.
-	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		let mut programs = BTreeMap::new();
-		for (gid, text) in std::mem::take(&mut self.glyph_programs) {
-			if let Ok(new) = f(gid) {
-				programs.insert(new, text);
-			}
-		}
-		self.glyph_programs = programs;
 		Ok(())
 	}
 }
@@ -534,6 +538,25 @@ impl Table for Tsi5 {
 		Ok(data)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+
+	/// Entries of glyphs that no longer exist are dropped, as fontTools ignores
+	/// names that are not in the glyph order when compiling.
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let mut grouping = BTreeMap::new();
+		for (gid, v) in std::mem::take(&mut self.glyph_grouping) {
+			if let Ok(new) = f(gid) {
+				grouping.insert(new, v);
+			}
+		}
+		self.glyph_grouping = grouping;
+		Ok(())
+	}
+}
+
+impl TableXml for Tsi5 {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let order = font.glyph_order()?;
 		let mut groups: Vec<(String, i64)> = self
@@ -563,23 +586,6 @@ impl Table for Tsi5 {
 			.as_int()
 			.ok_or_else(|| Error::value("invalid glyphgroup value"))?;
 		self.glyph_grouping.insert(gid, fit(value, "glyphgroup")?);
-		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
-
-	/// Entries of glyphs that no longer exist are dropped, as fontTools ignores
-	/// names that are not in the glyph order when compiling.
-	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		let mut grouping = BTreeMap::new();
-		for (gid, v) in std::mem::take(&mut self.glyph_grouping) {
-			if let Ok(new) = f(gid) {
-				grouping.insert(new, v);
-			}
-		}
-		self.glyph_grouping = grouping;
 		Ok(())
 	}
 }
@@ -647,6 +653,17 @@ impl Table for AsciiTable {
 		Ok(self.data.clone())
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		let _ = f;
+		Ok(())
+	}
+}
+
+impl TableXml for AsciiTable {
 	fn to_xml(&self, writer: &mut XmlWriter, _font: &mut Font) -> Result<()> {
 		if !self.data.is_ascii() {
 			return Err(ascii_error(&self.data));
@@ -683,15 +700,6 @@ impl Table for AsciiTable {
 			)));
 		}
 		self.data = text.into_bytes();
-		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
-
-	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		let _ = f;
 		Ok(())
 	}
 }

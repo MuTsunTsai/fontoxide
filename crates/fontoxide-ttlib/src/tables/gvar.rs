@@ -9,7 +9,7 @@ use fontoxide_misc::xml_reader::Element;
 use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::sstruct::eval;
-use crate::table::{Table, TableType};
+use crate::table::{Table, TableType, TableXml};
 use crate::tables::glyf::{Glyf, Glyph};
 use crate::tables::tuple_variation::{
 	TupleVariation, compile_shared_tuples, compile_tuple_variation_store, decompile_shared_tuples,
@@ -385,6 +385,12 @@ impl Table for Gvar {
 		Ok(out)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Gvar {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		writer.simpletag("version", &[("value", &self.version)]);
 		writer.newline();
@@ -464,10 +470,6 @@ impl Table for Gvar {
 			_ => {}
 		}
 		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
 	}
 }
 
@@ -566,6 +568,12 @@ impl Table for Cvar {
 		self.compile_with(font, false)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+}
+
+impl TableXml for Cvar {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		let axis_tags = fvar_axis_tags(font)?;
 		writer.simpletag(
@@ -606,9 +614,5 @@ impl Table for Cvar {
 			_ => {}
 		}
 		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
 	}
 }

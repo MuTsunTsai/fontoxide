@@ -10,7 +10,7 @@ use fontoxide_misc::xml_writer::XmlWriter;
 
 use crate::binary::{Reader, fit};
 use crate::sstruct::{Bytes, I16, U16, U32, Value, eval};
-use crate::table::{Table, TableType, read_hex};
+use crate::table::{Table, TableType, TableXml, read_hex};
 use crate::tables::eblc::{clip, int_attr, required_attr};
 use crate::{Error, Font, Result};
 
@@ -395,6 +395,25 @@ impl Table for Sbix {
 		Ok(header)
 	}
 
+	fn clone_table(&self) -> Box<dyn Table> {
+		Box::new(self.clone())
+	}
+
+	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
+		for strike in self.strikes.values_mut() {
+			let glyphs = std::mem::take(&mut strike.glyphs);
+			for (gid, mut glyph) in glyphs {
+				if let Some(reference) = &mut glyph.reference {
+					*reference = f(*reference)?;
+				}
+				strike.glyphs.insert(f(gid)?, glyph);
+			}
+		}
+		Ok(())
+	}
+}
+
+impl TableXml for Sbix {
 	fn to_xml(&self, writer: &mut XmlWriter, font: &mut Font) -> Result<()> {
 		writer.simpletag("version", &[("value", &self.version)]);
 		writer.newline();
@@ -430,23 +449,6 @@ impl Table for Sbix {
 				self.strikes.insert(strike.ppem, strike);
 			}
 			name => return Err(Error::ttlib(format!("can't handle '{name}' element"))),
-		}
-		Ok(())
-	}
-
-	fn clone_table(&self) -> Box<dyn Table> {
-		Box::new(self.clone())
-	}
-
-	fn remap_glyphs(&mut self, f: &mut dyn FnMut(u32) -> Result<u32>) -> Result<()> {
-		for strike in self.strikes.values_mut() {
-			let glyphs = std::mem::take(&mut strike.glyphs);
-			for (gid, mut glyph) in glyphs {
-				if let Some(reference) = &mut glyph.reference {
-					*reference = f(*reference)?;
-				}
-				strike.glyphs.insert(f(gid)?, glyph);
-			}
 		}
 		Ok(())
 	}

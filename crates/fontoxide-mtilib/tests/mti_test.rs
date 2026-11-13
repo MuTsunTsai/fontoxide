@@ -79,7 +79,7 @@ fn table_xml(table: &dyn Table, font: &mut Font) -> TestResult<String> {
 	let tag = table.tag().as_string();
 	writer.begintag(&tag, &[]);
 	writer.newline();
-	table.to_xml(&mut writer, font)?;
+	fontoxide_ttlib::table::table_to_xml(table, &mut writer, font)?;
 	writer.endtag(&tag);
 	writer.newline();
 	Ok(writer.into_string())
