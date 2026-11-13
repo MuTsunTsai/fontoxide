@@ -389,7 +389,9 @@ source they are marked `UPSTREAM-BUG(Bn)`, with the number in parentheses below.
 - An empty `loca` cannot be compiled on its own. (B13)
 - A simple glyph without `<instructions>` in TTX cannot be compiled; add an empty
   `<instructions/>`. (B14)
-- An unknown operator in a CFF or Type 1 charstring silently ends the charstring. (B15)
+- An unknown operator in a CFF or Type 1 charstring silently ends the charstring. Fixed
+  upstream in [fonttools#4410](https://github.com/fonttools/fonttools/pull/4410), merged after
+  4.68.0: unknown operators are now ignored and the stack cleared, as CFF2 requires. (B15)
 - A CID-keyed font whose last glyph has CID 0 can get a charset without its last range.
   (B16)
 - With the HarfBuzz repacker, `Coverage` tables of `AlternateSubst` and `LigatureSubst`
@@ -408,7 +410,10 @@ source they are marked `UPSTREAM-BUG(Bn)`, with the number in parentheses below.
   (B44)
 - `reorderGlyphs` on a CFF2 font renames the charstrings by position instead of moving
   them, so glyphs get the wrong outlines; on CID-keyed fonts, `FDSelect` is not
-  reordered. (B46, B47)
+  reordered. Fixed upstream in
+  [fonttools#4411](https://github.com/fonttools/fonttools/pull/4411) and
+  [fonttools#4416](https://github.com/fonttools/fonttools/pull/4416), merged after 4.68.0.
+  (B46, B47)
 - Converting a freshly loaded CFF font to CFF2 (`cffLib.CFFToCFF2`) fails with "CFF2
   CharStrings must form a glyph-order prefix" for many fonts, a regression in 4.68.0. Fixed
   upstream in [fonttools#4404](https://github.com/fonttools/fonttools/pull/4404), merged after
@@ -544,9 +549,14 @@ fontoxide will follow them when it moves to the fontTools release that contains 
 | [fonttools#4402](https://github.com/fonttools/fonttools/pull/4402): order of `COLR` v0 layers when subsetting | merged | already behaves as fixed |
 | [fonttools#4404](https://github.com/fonttools/fonttools/pull/4404): CFF to CFF2 on a freshly loaded font | merged | reproduces the bug (B51) |
 | [fonttools#4405](https://github.com/fonttools/fonttools/pull/4405): `scaleUpem` of COLRv1 by 2 or 0.5 | merged | reproduces the bug (B44) |
-| [fonttools#4410](https://github.com/fonttools/fonttools/pull/4410): unknown charstring operators raise instead of truncating the charstring | open | reproduces the bug (B15) |
-| [fonttools#4411](https://github.com/fonttools/fonttools/pull/4411): `reorderGlyphs` on CFF2 fonts | open | reproduces the bug (B46) |
-| [fonttools#4412](https://github.com/fonttools/fonttools/pull/4412): `reorderGlyphs` with null coverages | open | already behaves as fixed |
+| [fonttools#4410](https://github.com/fonttools/fonttools/pull/4410): unknown charstring operators are ignored instead of truncating the charstring | merged | reproduces the bug (B15) |
+| [fonttools#4411](https://github.com/fonttools/fonttools/pull/4411): `reorderGlyphs` on CFF2 fonts | merged | reproduces the bug (B46) |
+| [fonttools#4412](https://github.com/fonttools/fonttools/pull/4412): `reorderGlyphs` with null coverages | merged | already behaves as fixed |
+| [fonttools#4417](https://github.com/fonttools/fonttools/pull/4417): `--recalc-max-context` with `OS/2` versions 0 and 1 | open | reproduces the bug (B23) |
+| [fonttools#4418](https://github.com/fonttools/fonttools/pull/4418): default value of `bsln` and `prop` when subsetting | open | already behaves as fixed (B20) |
+| [fonttools#4419](https://github.com/fonttools/fonttools/pull/4419): cu2qu reporting unchanged glyphs as modified | open | reproduces the bug (B61) |
+| [fonttools#4420](https://github.com/fonttools/fonttools/pull/4420): `ttLib --optimize-font-speed` on collections | open | reproduces the bug (B76) |
+| [fonttools#4421](https://github.com/fonttools/fonttools/pull/4421): `fonttools diff` color, `-t` and error handling | open | reproduces the bugs (B72–B74) |
 
 ## Reporting a difference
 
